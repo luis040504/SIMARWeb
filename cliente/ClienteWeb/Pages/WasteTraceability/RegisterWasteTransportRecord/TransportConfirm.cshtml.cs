@@ -5,6 +5,26 @@ using System.Collections.Generic;
 
 namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteTransportRecord
 {
+
+    public class ServicioTransporte
+    {
+        public int Id { get; set; }
+        public string Cliente { get; set; }
+        public string Direccion { get; set; }
+        public string Contrato { get; set; }
+        public string Conductor { get; set; }
+        public string Vehiculo { get; set; }
+        public string Placa { get; set; }
+        public string TipoVehiculo { get; set; }
+        public string TipoResiduoTransporte { get; set; }
+        public string Tecnico { get; set; }
+        public DateTime FechaServicio { get; set; }
+        public string Estado { get; set; }
+        public string Observaciones { get; set; }
+        public string TipoResiduo { get; set; }
+        public double CantidadEstimada { get; set; }
+    }
+
     public class TransportConfirmModel : PageModel
     {
         public ServicioTransporte Servicio { get; set; }
@@ -28,7 +48,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteTransportRecord
             {
                 TempData["MensajeError"] = "El servicio debe estar en estado 'Recolectado' para iniciar el transporte. Estado actual: " + Servicio.Estado;
                 TempData["TipoError"] = "EX-02";
-                return RedirectToPage("Index");
+                return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
             }
             
             return Page();
@@ -49,7 +69,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteTransportRecord
                 {
                     TempData["MensajeError"] = "El servicio ya no se puede transportar porque su estado actual es: " + servicio.Estado;
                     TempData["TipoError"] = "EX-02";
-                    return RedirectToPage("Index");
+                    return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
                 }
                 
                 Random rand = new Random();
@@ -64,19 +84,19 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteTransportRecord
                 
                 TempData["MensajeExito"] = $"Inicio de transporte exitoso. Servicio {id} - {fechaInicioTransporte:dd/MM/yyyy HH:mm:ss}";
                 
-                return RedirectToPage("Index");
+                return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
             }
             catch (Exception)
             {
                 TempData["MensajeError"] = "No se pudo guardar el inicio del transporte. Por favor intente más tarde.";
                 TempData["TipoError"] = "EX-01";
-                return RedirectToPage("IndexRegisterWasteTransportRecord");
+                return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
             }
         }
 
         public IActionResult OnPostCancelar()
         {
-            return RedirectToPage("IndexRegisterWasteTransportRecord");
+            return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
         }
 
         private ServicioTransporte ObtenerServicioPorId(int id)

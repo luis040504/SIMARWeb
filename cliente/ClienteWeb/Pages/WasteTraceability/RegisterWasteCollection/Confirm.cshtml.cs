@@ -28,7 +28,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
             {
                 TempData["MensajeError"] = "El servicio ya no se puede iniciar porque su estado actual es: " + Servicio.Estado;
                 TempData["TipoError"] = "EX-02";
-                return RedirectToPage("Index");
+                return RedirectToPage("IndexRegisterWasteCollection");
             }
             
             return Page();
@@ -49,7 +49,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                 {
                     TempData["MensajeError"] = "El servicio ya no se puede iniciar porque su estado actual es: " + servicio.Estado + ". Por favor, contacte a su administrador.";
                     TempData["TipoError"] = "EX-02";
-                    return RedirectToPage("Index");
+                    return RedirectToPage("IndexRegisterWasteCollection");
                 }
                 
                 Random rand = new Random();
@@ -73,7 +73,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
             {
                 TempData["MensajeError"] = "Error de conexión. No se pudo iniciar el servicio. Intente de nuevo.";
                 TempData["TipoError"] = "EX-01";
-                return RedirectToPage("Index");
+                return RedirectToPage("IndexRegisterWasteCollection");
             }
         }
 

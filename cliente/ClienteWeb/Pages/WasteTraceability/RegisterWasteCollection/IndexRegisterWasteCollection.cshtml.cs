@@ -126,5 +126,10 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
         {
             return RedirectToPage("Confirm", new { id });
         }
+
+        public IActionResult OnPostIniciarTransporte(int id)
+        {
+            return RedirectToPage("../RegisterWasteTransportRecord/TransportConfirm", new { id });
+        }
     }
 }
