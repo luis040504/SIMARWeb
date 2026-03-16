@@ -25,7 +25,7 @@ app.MapRazorPages()
 
 // Redirigir la raíz a tu página específica
 app.MapGet("/", context => {
-    context.Response.Redirect("/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection");
+    context.Response.Redirect("/WasteTraceability/RegisterWasteTransportRecord/IndexRegisterWasteTransportRecord");
     return Task.CompletedTask;
 });
 
