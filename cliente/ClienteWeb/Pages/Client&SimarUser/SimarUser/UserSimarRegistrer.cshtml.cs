@@ -26,17 +26,36 @@ namespace ClienteWeb.Pages.Client_SimarUser.SimarUser
             public string Password { get; set; }
 
             // --- PASO 2: Info General y Rol ---
+            [Required(ErrorMessage = "El nombre es obligatorio")]
             public string NombreCompleto { get; set; }
+
+            public string Genero { get; set; }
+
+            [StringLength(18, MinimumLength = 18, ErrorMessage = "La CURP debe tener 18 caracteres")]
+            public string Curp { get; set; }
+
+            [StringLength(13, ErrorMessage = "El RFC no puede exceder los 13 caracteres")]
+            public string Rfc { get; set; }
+
+            public string Direccion { get; set; }
+
+            public float Salario { get; set; } // Nota: Cambié a Mayúscula 'S' por convención de C#
+
+            [DataType(DataType.Date)]
+            public string FechaNac { get; set; }
 
             [Required]
             public string RolSeleccionado { get; set; }
 
             // --- PASO 3: Campos específicos (Opcionales dependiendo del Rol) ---
-            public string LicenciaConducir { get; set; } // Para Chofer
-            public string Especialidad { get; set; }    // Para Tecnico
-            public string AreaVentas { get; set; }      // Para Vendedor
 
-            public string ZonaVentas { get; set; }
+            // ROL: Seller, Technical, Manager, Owner, Accountant
+            public string ProfessionalID { get; set; }
+
+            // ROL: Driver
+            public string NumLicencia { get; set; } 
+            public string TipoLicencia { get; set; }  
+
         }
 
         public void OnGet()
