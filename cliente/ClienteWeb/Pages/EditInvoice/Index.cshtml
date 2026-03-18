@@ -1,0 +1,295 @@
+@page
+@model ClienteWeb.Pages.EditInvoice.IndexModel
+@{
+    ViewData["Title"] = "Edit Invoice";
+}
+
+<div class="container-fluid px-4 px-md-5 mt-4" id="w_EditInvoice">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark d-flex align-items-center">
+            <i class="bi bi-pencil-square fs-4 me-2"></i>
+            <h4 class="mb-0">Find Rejected Invoices</h4>
+        </div>
+        <div class="card-body p-4">
+
+            <form method="post" asp-page-handler="Search" class="mb-5">
+                <div class="row align-items-end g-3">
+                    <div class="col-md-9">
+                        <label for="c_Search" class="form-label text-muted fw-bold">Search Rejected Invoice (RFC, Client Name or Invoice Number)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="c_Search" name="c_Search" asp-for="c_Search" placeholder="Enter RFC, name or invoice number...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-secondary btn-lg w-100 shadow-sm" id="b_Search">
+                            <i class="bi bi-search me-2"></i>Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <hr class="text-muted mb-4" />
+
+            @if (Model.IsSearchResult)
+            {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-warning text-dark fw-bold mb-0 fs-4">
+                        <i class="bi bi-funnel me-2"></i> Search Results
+                    </h5>
+                    <a href="/EditInvoice" class="btn btn-outline-secondary">Clear Search</a>
+                </div>
+            }
+            else
+            {
+                <h5 class="mt-4 mb-4 text-secondary fw-bold fs-4">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Invoices Pending Correction (Rejected)
+                </h5>
+            }
+
+            <div class="row g-4 mb-4">
+                @if (Model.DisplayedInvoices != null && Model.DisplayedInvoices.Any())
+                {
+                    foreach (var invoice in Model.DisplayedInvoices)
+                    {
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="card h-100 border-warning shadow-sm hover-shadow transition">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title text-dark fw-bold text-truncate mb-0" title="@invoice.Client">@invoice.Client</h5>
+                                        <span class="badge bg-danger text-white border">@invoice.InvoiceNumber</span>
+                                    </div>
+                                    <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong>@invoice.TaxId</strong></p>
+                                    <p class="card-text mb-2"><small class="text-muted">Reason:</small> <span class="badge bg-warning text-dark">@invoice.Reason</span></p>
+                                    <p class="card-text mb-3"><small class="text-muted">Date:</small> @invoice.Date.ToString("dd/MM/yyyy")</p>
+                                    <h4 class="card-text text-danger mt-2 mb-4">@invoice.Amount.ToString("C")</h4>
+                                    
+                                    <form method="post" asp-page-handler="PrepareEdit">
+                                        <input type="hidden" asp-for="SelectedInvoiceId" value="@invoice.Id" />
+                                        <input type="hidden" asp-for="c_Search" />
+                                        <button type="submit" class="btn btn-warning text-dark fw-bold w-100 shadow-sm btn-lg" id="b_EditInvoice_@invoice.Id">
+                                            <i class="bi bi-pencil-fill me-2"></i> Edit Invoice
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="alert alert-light border text-center text-muted py-5 shadow-sm rounded-3" role="alert">
+                            <i class="bi bi-check-circle display-3 d-block mb-3 text-success opacity-50"></i>
+                            <span class="fs-4">No rejected invoices found.</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;">
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div id="successToast" class="toast align-items-center text-white bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex p-2">
+                <div class="toast-body fs-5">
+                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
+                    @Model.SuccessMessage
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal for Editing Billing Data -->
+@if (Model.ShowEditModal)
+{
+    <!-- Modal Backdrop -->
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+    
+    <div class="modal fade show d-block" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-modal="true" role="dialog" style="z-index: 1050;">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-warning text-dark border-bottom-0 pb-4 pt-4 px-5">
+                    <h4 class="modal-title fw-bold" id="invoiceModalLabel">
+                        <i class="bi bi-pencil-square me-3"></i> Edit Billing Data
+                    </h4>
+                    <a href="/EditInvoice" class="btn-close" aria-label="Close"></a>
+                </div>
+                
+                <!-- Invoice Summary inside Modal Banner -->
+                <div class="bg-warning text-dark px-5 pb-4" style="opacity: 0.95;">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <small class="text-dark text-uppercase fw-bold ls-1">Editing Invoice: <span class="badge bg-danger text-white">@Model.SelectedInvoice?.InvoiceNumber</span></small>
+                            <h3 class="mb-0 mt-2">@Model.SelectedInvoice?.Client <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedInvoice?.TaxId)</span></h3>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <h2 class="mb-0 fw-bold">@Model.SelectedInvoice?.Amount.ToString("C")</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-body bg-light p-5 pt-4">
+                    <form method="post" asp-page-handler="Edit">
+                        <input type="hidden" asp-for="SelectedInvoiceId" />
+                        <input type="hidden" asp-for="c_Search" />
+                        
+                        <!-- Preserve Billing Name and TaxId so they post back -->
+                        <input type="hidden" asp-for="BillingName" />
+                        <input type="hidden" asp-for="TaxId" />
+
+                        <div class="row g-4">
+                            <!-- Section 1: Receiver Information -->
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body p-5">
+                                        <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-person-vcard me-3"></i>1. Receiver Information
+                                        </h5>
+                                        <div class="row g-4">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary">Tax ID (RFC)</label>
+                                                <input type="text" class="form-control form-control-lg bg-light" value="@Model.TaxId" disabled>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label class="form-label fw-bold text-secondary">Billing Name</label>
+                                                <input type="text" class="form-control form-control-lg bg-light" value="@Model.BillingName" disabled>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Postal Code *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="PostalCode" required maxlength="5" placeholder="e.g. 12345">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Fiscal Regime *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="FiscalRegime" required>
+                                                    <option value="">-- Select Regime --</option>
+                                                    <option value="601">601 - General Law for Legal Entities</option>
+                                                    <option value="603">603 - Non-Profit Legal Entities</option>
+                                                    <option value="605">605 - Salaries and Wages</option>
+                                                    <option value="606">606 - Leasing</option>
+                                                    <option value="612">612 - Individuals with Business Activities</option>
+                                                    <option value="626">626 - Simplified Trust Regime (RESICO)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">CFDI Usage *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="CfdiUsage" required>
+                                                    <option value="">-- Select Usage --</option>
+                                                    <option value="G01">G01 - Acquisition of merchandise</option>
+                                                    <option value="G03">G03 - General expenses</option>
+                                                    <option value="I01">I01 - Construction</option>
+                                                    <option value="P01">P01 - To be defined</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Payment Attributes -->
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body p-5">
+                                        <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-wallet2 me-3"></i>2. Payment Attributes
+                                        </h5>
+                                        <div class="row g-4">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-secondary text-danger">Payment Form *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="PaymentForm" required>
+                                                    <option value="">-- Select Payment Form --</option>
+                                                    <option value="01">01 - Cash</option>
+                                                    <option value="02">02 - Nominal Check</option>
+                                                    <option value="03">03 - Electronic Funds Transfer</option>
+                                                    <option value="04">04 - Credit Card</option>
+                                                    <option value="28">28 - Debit Card</option>
+                                                    <option value="99">99 - To be defined</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-secondary text-danger">Payment Method *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="PaymentMethod" required>
+                                                    <option value="">-- Select Payment Method --</option>
+                                                    <option value="PUE">PUE - Payment in a single installment</option>
+                                                    <option value="PPD">PPD - Payment in installments or deferred</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Concept Details -->
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body p-5">
+                                        <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-box-seam me-3"></i>3. Concept Details
+                                        </h5>
+                                        <div class="row g-4 align-items-start">
+                                             <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Product/Service Code *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="ProductCode" required>
+                                            </div>
+                                             <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Unit Code *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="UnitCode" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Tax Object *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="TaxObject" required>
+                                                    <option value="">-- Select Tax Object --</option>
+                                                    <option value="01">01 - Not a tax object</option>
+                                                    <option value="02">02 - Tax object</option>
+                                                    <option value="03">03 - Tax object and not required to itemize</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div> <!-- End main row -->
+
+                        <div class="modal-footer border-top-0 mt-5 px-0 pb-0">
+                            <a href="/EditInvoice" class="btn btn-outline-secondary btn-lg px-5 py-3 rounded-pill">Cancel</a>
+                            <button type="submit" class="btn btn-warning btn-lg px-5 py-3 rounded-pill shadow-lg text-dark fw-bold">
+                                <i class="bi bi-save-fill me-2 fs-5"></i> Save and Resubmit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Script to disable background scrolling when modal is open -->
+    <script>
+        document.body.style.overflow = 'hidden';
+    </script>
+}
+
+<style>
+    .transition { transition: all 0.3s ease; }
+    .hover-shadow:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.15)!important; }
+    .ls-1 { letter-spacing: 1px; }
+</style>
+
+@section Scripts {
+    <script>
+        // Initialize Bootstrap Toasts
+        document.addEventListener('DOMContentLoaded', function () {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            var toastList = toastElList.map(function (toastEl) {
+                return new bootstrap.Toast(toastEl, { delay: 6000 });
+            });
+            toastList.forEach(toast => toast.show());
+        });
+    </script>
+}
