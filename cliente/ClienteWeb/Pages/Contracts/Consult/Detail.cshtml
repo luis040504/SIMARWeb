@@ -1,0 +1,84 @@
+@page 
+@model ClienteWeb.Pages.Contracts.Consult.DetailModel
+
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        font-family: Arial;
+    }
+
+    h2 {
+        border-bottom: 2px solid black;
+        padding-bottom: 10px;
+    }
+
+    .card {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-top: 20px;
+        background-color: #f9f9f9;
+    }
+
+    .section {
+        margin-bottom: 15px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        border: 1px solid black;
+        background: white;
+        cursor: pointer;
+        text-decoration: none;
+        color: black;
+    }
+
+    .btn:hover {
+        background: #eee;
+    }
+</style>
+
+<div class="container">
+
+<h2>Detalle del Contrato</h2>
+
+<div class="card">
+
+    <div class="section">
+        <strong>Número:</strong> @Model.Contract.Id
+    </div>
+
+    <div class="section">
+        <strong>Cliente:</strong> @Model.Contract.Client
+    </div>
+
+    <div class="section">
+        <strong>Servicio:</strong> @Model.Contract.ServiceDetails
+    </div>
+
+    <div class="section">
+        <strong>Precio:</strong> $@Model.Contract.Price
+    </div>
+
+    <div class="section">
+        <strong>Forma de pago:</strong> @Model.Contract.PaymentMethod
+    </div>
+
+    <div class="section">
+        <strong>Vigencia:</strong> @Model.Contract.StartDate.ToShortDateString()
+        -
+        @Model.Contract.EndDate.ToShortDateString()
+    </div>
+
+    <div class="section">
+        <strong>Estatus:</strong> @Model.Contract.Status
+    </div>
+
+    <br />
+
+    <a class="btn" href="#">Descargar PDF</a>
+    <a class="btn" href="/Contracts/Consult">Volver</a>
+
+</div>
+
+</div>
