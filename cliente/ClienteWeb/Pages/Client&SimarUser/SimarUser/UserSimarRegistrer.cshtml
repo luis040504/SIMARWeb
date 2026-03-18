@@ -1,0 +1,200 @@
+﻿@page
+@model ClienteWeb.Pages.Client_SimarUser.SimarUser.UserSimarRegistrerModel
+@{
+    ViewData["Title"] = "Registro de Usuario SIMAR";
+}
+
+<style>
+    .registro-wizard-contenedor {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        background-color: #f4f4f4; /* Fondo gris claro como tu prototipo */
+    }
+
+    .tarjeta-registro {
+        background-color: white;
+        padding: 40px;
+        border-radius: 20px;
+        width: 380px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .titulo-signup {
+        font-weight: 300;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 35px;
+        color: #333;
+    }
+
+    .campo-entrada {
+        border: none;
+        border-bottom: 1px solid #ccc;
+        width: 100%;
+        padding: 12px 0;
+        margin-bottom: 25px;
+        outline: none;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+        .campo-entrada:focus {
+            border-bottom: 1px solid #666;
+        }
+
+    .puntos-progreso {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin: 20px 0 30px 0;
+    }
+
+    .punto {
+        width: 10px;
+        height: 10px;
+        background-color: #e0e0e0;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+        .punto.activo {
+            background-color: #a0a0a0;
+        }
+
+    .boton-siguiente {
+        background-color: #9e9e9e;
+        color: white;
+        border: none;
+        padding: 12px 45px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+
+        .boton-siguiente:hover {
+            background-color: #757575;
+        }
+
+    .boton-volver {
+        background: none;
+        border: none;
+        color: #999;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 13px;
+        margin-top: 10px;
+        display: block;
+        width: 100%;
+    }
+
+    /* Ocultar secciones por defecto */
+    .seccion-paso {
+        display: none;
+    }
+
+        .seccion-paso.activa {
+            display: block;
+        }
+</style>
+
+<div class="registro-wizard-contenedor">
+    <div class="tarjeta-registro">
+        <h2 class="titulo-signup">Sign Up</h2>
+
+        <form method="post" id="registroForm">
+
+            <div id="paso1" class="seccion-paso activa">
+                <input type="email" asp-for="Input.Email" class="campo-entrada" placeholder="E-MAIL" required />
+                <input type="text" asp-for="Input.UserName" class="campo-entrada" placeholder="USERNAME" required />
+                <input type="password" asp-for="Input.Password" class="campo-entrada" placeholder="PASSWORD" required />
+
+                <div class="puntos-progreso">
+                    <div class="punto activo"></div>
+                    <div class="punto"></div>
+                    <div class="punto"></div>
+                </div>
+
+                <button type="button" class="boton-siguiente" onclick="irAPaso(2)">Next</button>
+            </div>
+
+            <div id="paso2" class="seccion-paso">
+                <input type="text" asp-for="Input.NombreCompleto" class="campo-entrada" placeholder="NOMBRE COMPLETO" />
+
+                <select asp-for="Input.RolSeleccionado" id="selectorRol" class="campo-entrada" onchange="mostrarCamposEspecificos()">
+                    <option value="">-- SELECCIONA TU ROL --</option>
+                    <option value="Vendedor">Vendedor</option>
+                    <option value="Tecnico">Técnico</option>
+                    <option value="Chofer">Chofer</option>
+                    <option value="Admin">Administrador</option>
+                </select>
+
+                <div class="puntos-progreso">
+                    <div class="punto"></div>
+                    <div class="punto activo"></div>
+                    <div class="punto"></div>
+                </div>
+
+                <button type="button" class="boton-siguiente" onclick="irAPaso(3)">Next</button>
+                <button type="button" class="boton-volver" onclick="irAPaso(1)">Back</button>
+            </div>
+
+            <div id="paso3" class="seccion-paso">
+
+                <div id="camposChofer" style="display:none;">
+                    <input type="text" asp-for="Input.LicenciaConducir" class="campo-entrada" placeholder="ID LICENCIA DE CONDUCIR" />
+                </div>
+
+                <div id="camposTecnico" style="display:none;">
+                    <input type="text" asp-for="Input.Especialidad" class="campo-entrada" placeholder="ESPECIALIDAD TÉCNICA" />
+                </div>
+
+                <div id="camposVendedor" style="display:none;">
+                    <input type="text" asp-for="Input.ZonaVentas" class="campo-entrada" placeholder="ZONA ASIGNADA" />
+                </div>
+
+                <p id="msgAdmin" style="display:none; color: #888; font-size: 13px;">El rol Administrador no requiere datos adicionales.</p>
+
+                <div class="puntos-progreso">
+                    <div class="punto"></div>
+                    <div class="punto"></div>
+                    <div class="punto activo"></div>
+                </div>
+
+                <button type="submit" class="boton-siguiente">Finish</button>
+                <button type="button" class="boton-volver" onclick="irAPaso(2)">Back</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    function irAPaso(paso) {
+        // Quitar clase activa de todas las secciones
+        document.querySelectorAll('.seccion-paso').forEach(s => s.classList.remove('activa'));
+        // Mostrar la elegida
+        document.getElementById('paso' + paso).classList.add('activa');
+    }
+
+    function mostrarCamposEspecificos() {
+        const rol = document.getElementById('selectorRol').value;
+
+        // Ocultar todos
+        document.getElementById('camposChofer').style.display = 'none';
+        document.getElementById('camposTecnico').style.display = 'none';
+        document.getElementById('camposVendedor').style.display = 'none';
+        document.getElementById('msgAdmin').style.display = 'none';
+
+        // Mostrar según el valor
+        if (rol === "Chofer") document.getElementById('camposChofer').style.display = 'block';
+        else if (rol === "Tecnico") document.getElementById('camposTecnico').style.display = 'block';
+        else if (rol === "Vendedor") document.getElementById('camposVendedor').style.display = 'block';
+        else if (rol === "Admin") document.getElementById('msgAdmin').style.display = 'block';
+    }
+</script>
