@@ -1,42 +1,103 @@
 @page
-@model GenerateModel
+@model ClienteWeb.Pages.Contracts.Generate.GenerateModel
+
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        font-family: Arial;
+    }
+
+    h2 {
+        border-bottom: 2px solid black;
+        padding-bottom: 10px;
+    }
+
+    .card {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-top: 20px;
+        background-color: #f9f9f9;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    select, button {
+        padding: 6px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        border: 1px solid black;
+        background: white;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .btn:hover {
+        background: #eee;
+    }
+</style>
+
+<div class="container">
 
 <h2>Generar Contrato</h2>
 
 <form method="post">
 
-    <label>Seleccionar Cotización Aprobada:</label><br />
-    <select name="QuotationId">
-        <option value="">-- Selecciona una cotización --</option>
-    </select>
+    <div class="form-group">
+        <label>Seleccionar Cotización Aprobada:</label><br />
 
-    <br /><br />
+        <select name="QuotationId" @(Model.ShowPreview ? "disabled" : "")>
+            <option value="">-- Selecciona una cotización --</option>
+
+            @foreach (var q in Model.Quotations)
+            {
+                <option value="@q.Id" selected="@(q.Id == Model.QuotationId)">
+                    @q.Name
+                </option>
+            }
+        </select>
+
+        @if (Model.ShowPreview)
+        {
+            <input type="hidden" name="QuotationId" value="@Model.QuotationId" />
+        }
+    </div>
 
     @if (Model.ShowPreview)
     {
-        <h3>Vista previa del contrato</h3>
+        <div class="card">
 
-        <p><strong>Cliente:</strong> @Model.BusinessName</p>
-        <p><strong>Servicio:</strong> @Model.ServiceDetails</p>
-        <p><strong>Precio:</strong> @Model.Price</p>
-        <p><strong>Forma de pago:</strong> @Model.PaymentMethod</p>
-        <p><strong>Vigencia:</strong> @Model.Validity</p>
+            <h3>Vista previa del contrato</h3>
 
-        <br />
+            <p><strong>Cliente:</strong> @Model.BusinessName</p>
+            <p><strong>Servicio:</strong> @Model.ServiceDetails</p>
+            <p><strong>Precio:</strong> $@Model.Price</p>
+            <p><strong>Forma de pago:</strong> @Model.PaymentMethod</p>
+            <p><strong>Vigencia:</strong> @Model.Validity</p>
 
-        <button type="submit" name="action" value="confirm">
-            Confirmar
-        </button>
+            <br />
 
-        <button type="submit" name="action" value="cancel">
-            Cancelar
-        </button>
+            <button class="btn" type="submit" name="action" value="confirm">
+                Confirmar
+            </button>
+
+            <button class="btn" type="submit" name="action" value="cancel">
+                Cancelar
+            </button>
+
+        </div>
     }
     else
     {
-        <button type="submit" name="action" value="preview">
+        <button class="btn" type="submit" name="action" value="preview">
             Generar Vista Previa
         </button>
     }
 
 </form>
+
+</div>
