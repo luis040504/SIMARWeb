@@ -1,0 +1,42 @@
+@page
+@model GenerateModel
+
+<h2>Generar Contrato</h2>
+
+<form method="post">
+
+    <label>Seleccionar Cotización Aprobada:</label><br />
+    <select name="QuotationId">
+        <option value="">-- Selecciona una cotización --</option>
+    </select>
+
+    <br /><br />
+
+    @if (Model.ShowPreview)
+    {
+        <h3>Vista previa del contrato</h3>
+
+        <p><strong>Cliente:</strong> @Model.BusinessName</p>
+        <p><strong>Servicio:</strong> @Model.ServiceDetails</p>
+        <p><strong>Precio:</strong> @Model.Price</p>
+        <p><strong>Forma de pago:</strong> @Model.PaymentMethod</p>
+        <p><strong>Vigencia:</strong> @Model.Validity</p>
+
+        <br />
+
+        <button type="submit" name="action" value="confirm">
+            Confirmar
+        </button>
+
+        <button type="submit" name="action" value="cancel">
+            Cancelar
+        </button>
+    }
+    else
+    {
+        <button type="submit" name="action" value="preview">
+            Generar Vista Previa
+        </button>
+    }
+
+</form>
