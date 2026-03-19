@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ClienteWeb.Pages.Client_SimarUser.SimarUser
 {
-    // Clase de datos (Fuera de la clase principal para evitar ambigüedad)
     public class RegistroInput
     {
         public string Email { get; set; }
@@ -24,11 +23,11 @@ namespace ClienteWeb.Pages.Client_SimarUser.SimarUser
     public class EditSimarUserModel : PageModel
     {
         [BindProperty]
-        public RegistroInput DatosUsuario { get; set; } // Usamos "DatosUsuario" en lugar de "Input"
+        public RegistroInput DatosUsuario { get; set; } 
 
         public void OnGet(string id)
         {
-            // Simulamos que cargamos los datos desde una base de datos usando el ID
+            // Datos de prueba (borrarlos despues)
             DatosUsuario = new RegistroInput
             {
                 UserName = id,
@@ -36,22 +35,19 @@ namespace ClienteWeb.Pages.Client_SimarUser.SimarUser
                 NombreCompleto = "Luis Enrique López",
                 Curp = "LOAL880505HDFRR01",
                 Rfc = "LOAL880505XXX",
-                Direccion = "Av. de los Catedráticos #102",
+                Direccion = "3ra de Miguel Lerdo",
                 Salario = 18000,
                 FechaNac = "1988-05-05",
                 Genero = "Masculino",
                 RolSeleccionado = "Driver",
                 NumLicencia = "LIC-VER-9922",
-                TipoLicencia = "B"
+                TipoLicencia = "E"
             };
         }
 
         public IActionResult OnPost()
         {
             if (!ModelState.IsValid) return Page();
-
-            // Aquí procesarías la actualización en la DB
-            // return _service.Update(DatosUsuario);
 
             return RedirectToPage("/consultar");
         }
