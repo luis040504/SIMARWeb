@@ -1,0 +1,579 @@
+@page "/Manifest/Consult/Edit"
+@model ClienteWeb.Pages.Manifest.Consult.EditModel
+@{
+    ViewData["Title"] = $"Editar – {Model.Manifest.ManifestNumber}";
+    var m = Model.Manifest;
+    bool esEspecial = m.Type == "especial";
+    string hdrClass = esEspecial ? "section-header" : "section-header peligroso-hdr";
+}
+
+<style>
+    .edit-container { max-width: 1050px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    .edit-heading {
+        font-size: 1.3rem; font-weight: 700; color: #1a3a5c; margin: 0;
+        border-left: 4px solid #1a3a5c; padding-left: 0.75rem;
+    }
+    .edit-heading.peligroso { border-color: #7b2d2d; color: #7b2d2d; }
+
+    .badge-especial { background:#1a3a5c; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; }
+    .badge-peligroso { background:#7b2d2d; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; }
+
+    .section-card { border:1px solid #c8d6e3; border-radius:8px; margin-bottom:1rem; overflow:hidden; }
+
+    .section-header {
+        background:#1a3a5c; color:#fff; font-size:.8rem; font-weight:700;
+        text-transform:uppercase; letter-spacing:.07em;
+        padding:.55rem 1rem; cursor:pointer;
+        display:flex; align-items:center; justify-content:space-between;
+    }
+    .section-header.peligroso-hdr { background:#7b2d2d; }
+    .section-body { padding:1rem 1.25rem; background:#fff; }
+
+    .form-label-sm { font-size:.75rem; font-weight:600; color:#4a5568; margin-bottom:2px; display:block; }
+
+    .residue-row td { vertical-align: middle; }
+    .cretibm-check label { font-size:.72rem; margin-left:2px; }
+
+    .add-row-btn { font-size:.75rem; }
+    .del-row-btn { font-size:.72rem; padding:2px 7px; }
+</style>
+
+<form method="post">
+    <input type="hidden" asp-for="Manifest.Id" />
+    <input type="hidden" asp-for="Manifest.Type" />
+    <input type="hidden" asp-for="Manifest.ManifestNumber" />
+
+<div class="edit-container">
+
+    <!-- Encabezado -->
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <a asp-page="/Manifest/Consult/Detail"
+           asp-route-id="@m.Id"
+           class="btn btn-outline-secondary btn-sm">← Volver</a>
+        <h1 class="edit-heading @(esEspecial ? "" : "peligroso")">
+            Editar: @m.ManifestNumber
+        </h1>
+        @if (esEspecial)
+        {
+            <span class="badge-especial">Residuos Especiales</span>
+        }
+        else
+        {
+            <span class="badge-peligroso">Residuos Peligrosos</span>
+        }
+    </div>
+
+    <!-- ── GENERADOR ──────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="@hdrClass" onclick="toggleSection(this)">
+            <span>👤 Datos del Generador</span><span class="chevron">▲</span>
+        </div>
+        <div class="section-body">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label-sm">No. Registro @(esEspecial ? "SEDEMA" : "SEMARNAT")</label>
+                    <input asp-for="Manifest.EnvironmentalRegistrationNumber" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label-sm">Razón Social</label>
+                    <input asp-for="Manifest.SocialReason" class="form-control form-control-sm" />
+                </div>
+
+                @if (esEspecial)
+                {
+                    <div class="col-md-9">
+                        <label class="form-label-sm">Domicilio</label>
+                        <input asp-for="Manifest.Address" class="form-control form-control-sm" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-5">
+                        <label class="form-label-sm">Calle</label>
+                        <input asp-for="Manifest.Street" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-sm">Núm. Ext.</label>
+                        <input asp-for="Manifest.ExteriorNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-sm">Núm. Int.</label>
+                        <input asp-for="Manifest.InteriorNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-sm">Colonia</label>
+                        <input asp-for="Manifest.Colony" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-sm">Estado</label>
+                        <input asp-for="Manifest.State" class="form-control form-control-sm" />
+                    </div>
+                }
+
+                <div class="col-md-3">
+                    <label class="form-label-sm">C.P.</label>
+                    <input asp-for="Manifest.PostalCode" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Municipio</label>
+                    <input asp-for="Manifest.Municipality" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Teléfono</label>
+                    <input asp-for="Manifest.PhoneNumber" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Correo electrónico</label>
+                    <input asp-for="Manifest.Email" type="email" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Fecha</label>
+                    <input asp-for="Manifest.ManifestDate" type="date" class="form-control form-control-sm" />
+                </div>
+                @if (esEspecial)
+                {
+                    <div class="col-md-2">
+                        <label class="form-label-sm">Hora</label>
+                        <input asp-for="Manifest.ManifestTime" type="time" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label-sm">Marco regulatorio</label>
+                        <input asp-for="Manifest.RegulatoryFramework" class="form-control form-control-sm" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12">
+                        <label class="form-label-sm">Instrucciones de manejo seguro (EPP, etc.)</label>
+                        <textarea asp-for="Manifest.SafeHandlingInstructions"
+                                  class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label-sm">Marco regulatorio</label>
+                        <input asp-for="Manifest.RegulatoryFramework" class="form-control form-control-sm" />
+                    </div>
+                }
+
+                <div class="col-md-5">
+                    <label class="form-label-sm">Nombre del responsable</label>
+                    <input asp-for="Manifest.GeneratorResponsibleName" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label-sm">Observaciones del generador</label>
+                    <textarea asp-for="Manifest.GeneratorObservations"
+                              class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RESIDUOS ───────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="@hdrClass" onclick="toggleSection(this)">
+            <span>Residuos</span><span class="chevron">▲</span>
+        </div>
+        <div class="section-body p-2">
+
+            @if (esEspecial)
+            {
+                <!-- Residuos Especiales -->
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-1" id="tblSpecial">
+                        <thead>
+                            <tr style="background:#f0f4f8; font-size:.73rem;">
+                                <th>Clave</th>
+                                <th>Nombre del Residuo</th>
+                                <th>Envase</th>
+                                <th>Capacidad</th>
+                                <th>Cantidad</th>
+                                <th>Unidad</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="specialBody">
+                            @for (int i = 0; i < m.SpecialResidues.Count; i++)
+                            {
+                                <tr class="residue-row">
+                                    <td><input name="Manifest.SpecialResidues[@i].ResidueKey"      value="@m.SpecialResidues[i].ResidueKey"       class="form-control form-control-sm" style="min-width:70px" /></td>
+                                    <td><input name="Manifest.SpecialResidues[@i].ResidueName"     value="@m.SpecialResidues[i].ResidueName"       class="form-control form-control-sm" style="min-width:160px" /></td>
+                                    <td><input name="Manifest.SpecialResidues[@i].Container"       value="@m.SpecialResidues[i].Container"         class="form-control form-control-sm" style="min-width:60px" /></td>
+                                    <td><input name="Manifest.SpecialResidues[@i].ContainerCapacity" value="@m.SpecialResidues[i].ContainerCapacity" class="form-control form-control-sm" style="min-width:70px" /></td>
+                                    <td><input name="Manifest.SpecialResidues[@i].Amount"          value="@m.SpecialResidues[i].Amount"           type="number" class="form-control form-control-sm" style="min-width:70px" /></td>
+                                    <td>
+                                        <select name="Manifest.SpecialResidues[@i].Unit" class="form-select form-select-sm" style="min-width:60px">
+    @foreach (var u in new[] { "kg", "ton", "L", "m³", "piezas" })
+    {
+        if (m.SpecialResidues[i].Unit == u)
+        {
+            <option value="@u" selected>@u</option>
+        }
+        else
+        {
+            <option value="@u">@u</option>
+        }
+    }
+</select>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-outline-danger del-row-btn"
+                                                onclick="this.closest('tr').remove()">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm add-row-btn"
+                        onclick="addSpecialRow()">+ Agregar residuo</button>
+            }
+            else
+            {
+                <!-- Residuos Peligrosos -->
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-1" id="tblHazard">
+                        <thead>
+                            <tr style="background:#fdf0f0; font-size:.73rem;">
+                                <th>Nombre del Residuo</th>
+                                <th title="Corrosivo Reactivo Explosivo Tóxico Inflamable Biológico Mutagénico">CRETIBM</th>
+                                <th>Envase</th>
+                                <th>Capacidad</th>
+                                <th>Cant. (kg)</th>
+                                <th>Etiqueta</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="hazardBody">
+                            @for (int i = 0; i < m.HazardousResidues.Count; i++)
+                            {
+                                var r = m.HazardousResidues[i];
+                                <tr class="residue-row">
+                                    <td><input name="Manifest.HazardousResidues[@i].ResidueName" value="@r.ResidueName" class="form-control form-control-sm" style="min-width:160px" /></td>
+                                    <td style="min-width:170px">
+                                        <div class="d-flex flex-wrap gap-1 cretibm-check">
+                                            @foreach (var (lbl, prop, val) in new[]{
+                                                ("C","IsCorrosive", r.IsCorrosive),
+                                                ("R","IsReactive",  r.IsReactive),
+                                                ("E","IsExplosive", r.IsExplosive),
+                                                ("T","IsToxic",     r.IsToxic),
+                                                ("I","IsFlammable", r.IsFlammable),
+                                                ("B","IsBiological",r.IsBiological),
+                                                ("M","IsMutagenic", r.IsMutagenic)})
+                                            {
+                                                <div class="form-check form-check-inline m-0">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="Manifest.HazardousResidues[@i].@prop"
+                                                           value="true"
+                                                           @(val ? "checked" : "") />
+                                                    <label class="form-check-label">@lbl</label>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td><input name="Manifest.HazardousResidues[@i].Container"         value="@r.Container"         class="form-control form-control-sm" style="min-width:60px" /></td>
+                                    <td><input name="Manifest.HazardousResidues[@i].ContainerCapacity" value="@r.ContainerCapacity" class="form-control form-control-sm" style="min-width:60px" /></td>
+                                    <td><input name="Manifest.HazardousResidues[@i].AmountKg"          value="@r.AmountKg"          type="number" class="form-control form-control-sm" style="min-width:70px" /></td>
+                                    <td>
+                                        <select name="Manifest.HazardousResidues[@i].HasLabel" class="form-select form-select-sm" style="min-width:60px">
+    @if (r.HasLabel == null)
+    {
+        <option value="" selected>–</option>
+    }
+    else
+    {
+        <option value="">–</option>
+    }
+
+    @if (r.HasLabel == true)
+    {
+        <option value="true" selected>Sí</option>
+    }
+    else
+    {
+        <option value="true">Sí</option>
+    }
+
+    @if (r.HasLabel == false)
+    {
+        <option value="false" selected>No</option>
+    }
+    else
+    {
+        <option value="false">No</option>
+    }
+</select>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-outline-danger del-row-btn"
+                                                onclick="this.closest('tr').remove()">✕</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm add-row-btn"
+                        onclick="addHazardRow()">+ Agregar residuo peligroso</button>
+            }
+        </div>
+    </div>
+
+    <!-- ── TRANSPORTISTA ────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="@hdrClass" onclick="toggleSection(this)">
+            <span>Transportista</span><span class="chevron">▲</span>
+        </div>
+        <div class="section-body">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <label class="form-label-sm">No. Autorización</label>
+                    <input asp-for="Manifest.TransporterAuthorizationNumber" class="form-control form-control-sm" />
+                </div>
+                @if (!esEspecial)
+                {
+                    <div class="col-md-5">
+                        <label class="form-label-sm">No. Permiso SCT</label>
+                        <input asp-for="Manifest.TransporterSCTPermit" class="form-control form-control-sm" />
+                    </div>
+                }
+                <div class="col-md-7">
+                    <label class="form-label-sm">Razón Social</label>
+                    <input asp-for="Manifest.TransporterSocialReason" class="form-control form-control-sm" />
+                </div>
+
+                @if (esEspecial)
+                {
+                    <div class="col-md-9">
+                        <label class="form-label-sm">Domicilio</label>
+                        <input asp-for="Manifest.TransporterAddress" class="form-control form-control-sm" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-5">
+                        <label class="form-label-sm">Calle</label>
+                        <input asp-for="Manifest.TransporterStreet" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-sm">Núm. Ext.</label>
+                        <input asp-for="Manifest.TransporterExteriorNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-sm">Estado</label>
+                        <input asp-for="Manifest.TransporterState" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-sm">Correo</label>
+                        <input asp-for="Manifest.TransporterEmail" type="email" class="form-control form-control-sm" />
+                    </div>
+                }
+
+                <div class="col-md-2">
+                    <label class="form-label-sm">C.P.</label>
+                    <input asp-for="Manifest.TransporterPostalCode" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Municipio</label>
+                    <input asp-for="Manifest.TransporterMunicipality" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Teléfono</label>
+                    <input asp-for="Manifest.TransporterPhone" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Tipo de vehículo</label>
+                    <input asp-for="Manifest.VehicleType" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">No. de placa</label>
+                    <input asp-for="Manifest.VehiclePlate" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Nombre del conductor</label>
+                    <input asp-for="Manifest.DriverName" class="form-control form-control-sm" />
+                </div>
+                @if (esEspecial)
+                {
+                    <div class="col-md-3">
+                        <label class="form-label-sm">No. Licencia</label>
+                        <input asp-for="Manifest.DriverLicense" class="form-control form-control-sm" />
+                    </div>
+                }
+                <div class="col-md-6">
+                    <label class="form-label-sm">Ruta de transporte</label>
+                    <input asp-for="Manifest.TransportRoute" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Fecha de recepción</label>
+                    <input asp-for="Manifest.TransporterReceptionDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Nombre del responsable</label>
+                    <input asp-for="Manifest.TransporterResponsibleName" class="form-control form-control-sm" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label-sm">Observaciones</label>
+                    <textarea asp-for="Manifest.TransporterObservations" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── DESTINATARIO ──────────────────────────────────────────────────── -->
+    <div class="section-card">
+        <div class="@hdrClass" onclick="toggleSection(this)">
+            <span>Destinatario / Disposición Final</span><span class="chevron">▲</span>
+        </div>
+        <div class="section-body">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <label class="form-label-sm">No. Autorización</label>
+                    <input asp-for="Manifest.ReceiverAuthorizationNumber" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label-sm">Razón Social</label>
+                    <input asp-for="Manifest.ReceiverSocialReason" class="form-control form-control-sm" />
+                </div>
+
+                @if (esEspecial)
+                {
+                    <div class="col-md-9">
+                        <label class="form-label-sm">Domicilio</label>
+                        <input asp-for="Manifest.ReceiverAddress" class="form-control form-control-sm" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-5">
+                        <label class="form-label-sm">Calle</label>
+                        <input asp-for="Manifest.ReceiverStreet" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-sm">Núm. Ext.</label>
+                        <input asp-for="Manifest.ReceiverExteriorNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-sm">Núm. Int.</label>
+                        <input asp-for="Manifest.ReceiverInteriorNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-sm">Colonia</label>
+                        <input asp-for="Manifest.ReceiverColony" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-sm">Estado</label>
+                        <input asp-for="Manifest.ReceiverState" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-sm">Correo</label>
+                        <input asp-for="Manifest.ReceiverEmail" type="email" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-sm">Persona que recibe los residuos</label>
+                        <input asp-for="Manifest.ReceiverPersonName" class="form-control form-control-sm" />
+                    </div>
+                }
+
+                <div class="col-md-2">
+                    <label class="form-label-sm">C.P.</label>
+                    <input asp-for="Manifest.ReceiverPostalCode" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Municipio</label>
+                    <input asp-for="Manifest.ReceiverMunicipality" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Teléfono</label>
+                    <input asp-for="Manifest.ReceiverPhone" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Tipo de disposición</label>
+                    <input asp-for="Manifest.DisposalType" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Fecha</label>
+                    <input asp-for="Manifest.ReceiverDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Nombre del responsable</label>
+                    <input asp-for="Manifest.ReceiverResponsibleName" class="form-control form-control-sm" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label-sm">Observaciones</label>
+                    <textarea asp-for="Manifest.ReceiverObservations" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="d-flex justify-content-between mt-2 mb-4">
+        <a asp-page="/Manifest/Consult/Detail"
+           asp-route-id="@m.Id"
+           class="btn btn-outline-secondary btn-sm">Cancelar</a>
+        <button type="submit" class="btn @(esEspecial ? "btn-primary" : "btn-danger") btn-sm px-4">
+            Guardar cambios
+        </button>
+    </div>
+
+</div>
+</form>
+
+@section Scripts {
+<script>
+    function toggleSection(header) {
+        const body = header.nextElementSibling;
+        const chevron = header.querySelector('.chevron');
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : '';
+        chevron.textContent = isOpen ? '▼' : '▲';
+    }
+
+    function addSpecialRow() {
+        const body = document.getElementById('specialBody');
+        const idx  = body.querySelectorAll('tr').length;
+        const units = ['kg','ton','L','m³','piezas'].map(u =>
+            `<option value="${u}">${u}</option>`).join('');
+        body.insertAdjacentHTML('beforeend', `
+        <tr class="residue-row">
+            <td><input name="Manifest.SpecialResidues[${idx}].ResidueKey"      class="form-control form-control-sm" style="min-width:70px" /></td>
+            <td><input name="Manifest.SpecialResidues[${idx}].ResidueName"     class="form-control form-control-sm" style="min-width:160px" /></td>
+            <td><input name="Manifest.SpecialResidues[${idx}].Container"       class="form-control form-control-sm" style="min-width:60px" /></td>
+            <td><input name="Manifest.SpecialResidues[${idx}].ContainerCapacity" class="form-control form-control-sm" style="min-width:70px" /></td>
+            <td><input name="Manifest.SpecialResidues[${idx}].Amount"          type="number" class="form-control form-control-sm" style="min-width:70px" /></td>
+            <td><select name="Manifest.SpecialResidues[${idx}].Unit" class="form-select form-select-sm" style="min-width:60px">${units}</select></td>
+            <td class="text-center"><button type="button" class="btn btn-outline-danger del-row-btn" onclick="this.closest('tr').remove()">✕</button></td>
+        </tr>`);
+    }
+
+    function addHazardRow() {
+        const body = document.getElementById('hazardBody');
+        const idx  = body.querySelectorAll('tr').length;
+        const checks = [['C','IsCorrosive'],['R','IsReactive'],['E','IsExplosive'],
+                        ['T','IsToxic'],['I','IsFlammable'],['B','IsBiological'],['M','IsMutagenic']]
+            .map(([l,p]) => `
+            <div class="form-check form-check-inline m-0">
+                <input class="form-check-input" type="checkbox"
+                       name="Manifest.HazardousResidues[${idx}].${p}" value="true" />
+                <label class="form-check-label">${l}</label>
+            </div>`).join('');
+        body.insertAdjacentHTML('beforeend', `
+        <tr class="residue-row">
+            <td><input name="Manifest.HazardousResidues[${idx}].ResidueName" class="form-control form-control-sm" style="min-width:160px" /></td>
+            <td style="min-width:170px"><div class="d-flex flex-wrap gap-1 cretibm-check">${checks}</div></td>
+            <td><input name="Manifest.HazardousResidues[${idx}].Container"         class="form-control form-control-sm" style="min-width:60px" /></td>
+            <td><input name="Manifest.HazardousResidues[${idx}].ContainerCapacity" class="form-control form-control-sm" style="min-width:60px" /></td>
+            <td><input name="Manifest.HazardousResidues[${idx}].AmountKg"          type="number" class="form-control form-control-sm" style="min-width:70px" /></td>
+            <td>
+                <select name="Manifest.HazardousResidues[${idx}].HasLabel" class="form-select form-select-sm" style="min-width:60px">
+                    <option value="">–</option>
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+            </td>
+            <td class="text-center"><button type="button" class="btn btn-outline-danger del-row-btn" onclick="this.closest('tr').remove()">✕</button></td>
+        </tr>`);
+    }
+</script>
+}

@@ -1,0 +1,569 @@
+@page "/Manifest/Generate/HazardousWaste"
+@model ClienteWeb.Pages.Manifest.Generate.HazardousWasteModel
+@{
+    ViewData["Title"] = "Generate Manifest - Hazardous Waste";
+}
+
+<style>
+    .manifest-container {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .manifest-header {
+        border-bottom: 2px solid #7b2d2d;
+        padding-bottom: 0.75rem;
+    }
+
+    .brand-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #7b2d2d;
+        margin: 0;
+    }
+
+    .manifest-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #7b2d2d;
+        text-transform: uppercase;
+        line-height: 1.4;
+    }
+
+    .manifest-number-box {
+        border: 2px solid #7b2d2d;
+        padding: 4px 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #7b2d2d;
+        border-radius: 4px;
+        margin-top: 4px;
+    }
+
+    .section-card {
+        border: 1px solid #e0c4c4;
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        position: relative;
+        padding-left: 3.5rem;
+        background: #fffafa;
+    }
+
+    .section-label {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2.5rem;
+        background: #7b2d2d;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px 0 0 6px;
+    }
+
+    .subsection-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #7b2d2d;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e0c4c4;
+        padding-bottom: 4px;
+        margin-bottom: 8px;
+    }
+
+    .form-label-sm {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 2px;
+        display: block;
+    }
+
+    /* Tabla CRETIBM */
+    .cretibm-table th {
+        font-size: 0.7rem;
+        white-space: nowrap;
+        background-color: #f5e0e0;
+        color: #7b2d2d;
+        text-align: center;
+    }
+
+    .cretibm-table td {
+        vertical-align: middle;
+        padding: 3px 4px;
+        text-align: center;
+    }
+
+    .cretibm-table td.text-start {
+        text-align: left;
+    }
+
+    .cretibm-check {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #7b2d2d;
+    }
+
+    .hazard-badge {
+        display: inline-block;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        border-radius: 50%;
+        background: #7b2d2d;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .instrucciones-box {
+        background: #fff3f3;
+        border: 1px dashed #e0c4c4;
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
+    }
+</style>
+
+<div class="manifest-container">
+
+    <!-- Header -->
+    <div class="manifest-header d-flex justify-content-between align-items-start mb-3">
+        <div class="brand-block">
+            <h2 class="brand-title">SIMAR</h2>
+            <small class="text-muted" style="font-size:0.7rem;">SEMARNAT</small>
+        </div>
+        <div class="manifest-title-block text-center flex-grow-1 px-4">
+            <h5 class="manifest-title">
+                MANIFIESTO DE ENTREGA, TRANSPORTE Y RECEPCIÓN<br />
+                DE RESIDUOS PELIGROSOS
+            </h5>
+        </div>
+        <div class="manifest-num-block text-end">
+            <small class="text-muted">No. de Manifiesto</small>
+            <div class="manifest-number-box">
+                <span asp-for="ManifestNumber" class="fw-bold">@Model.ManifestNumber</span>
+            </div>
+            <div class="mt-1">
+                <small class="text-muted">Página</small>
+                <span class="fw-bold ms-1">1/1</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+
+        <!-- ===================== SECCIÓN: GENERADOR ===================== -->
+        <div class="section-card">
+            <div class="section-label">GENERADOR</div>
+
+            <!-- Reg. ambiental + Razón social -->
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label-sm">Núm. de Registro Ambiental</label>
+                    <input asp-for="EnvironmentalRegistrationNumber"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. CMORE3001711" />
+                    <span asp-validation-for="EnvironmentalRegistrationNumber" class="text-danger small"></span>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label-sm">Nombre o Razón Social del Generador</label>
+                    <input asp-for="SocialReason"
+                           class="form-control form-control-sm"
+                           placeholder="Razón social" />
+                    <span asp-validation-for="SocialReason" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Domicilio detallado -->
+            <div class="row g-2 mb-2">
+                <div class="col-md-2">
+                    <label class="form-label-sm">Código Postal</label>
+                    <input asp-for="PostalCode" class="form-control form-control-sm" placeholder="00000" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Calle</label>
+                    <input asp-for="Street" class="form-control form-control-sm" placeholder="Nombre de la calle" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Núm. Ext.</label>
+                    <input asp-for="ExteriorNumber" class="form-control form-control-sm" placeholder="S/N" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Núm. Int.</label>
+                    <input asp-for="InteriorNumber" class="form-control form-control-sm" placeholder="S/N" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Estado</label>
+                    <input asp-for="State" class="form-control form-control-sm" placeholder="Estado" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label-sm">Colonia</label>
+                    <input asp-for="Colony" class="form-control form-control-sm" placeholder="Colonia" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Municipio o Delegación</label>
+                    <input asp-for="Municipality" class="form-control form-control-sm" placeholder="Municipio" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Correo Electrónico</label>
+                    <input asp-for="Email" class="form-control form-control-sm" placeholder="correo@empresa.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label-sm">Teléfono</label>
+                    <input asp-for="PhoneNumber" class="form-control form-control-sm" placeholder="Ej. 2288326510" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Fecha</label>
+                    <input asp-for="ManifestDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Hora</label>
+                    <input asp-for="ManifestTime" type="time" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <!-- Tabla de residuos CRETIBM -->
+            <h6 class="subsection-title">
+                Identificación de los Residuos
+                <span class="ms-2">
+                    @foreach (var c in new[] { "C","R","E","T","I","B","M" })
+                    {
+                        <span class="hazard-badge me-1">@c</span>
+                    }
+                </span>
+            </h6>
+            <div class="table-responsive mb-2">
+                <table class="table table-bordered table-sm cretibm-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="text-start" style="min-width:150px;">Nombre del Residuo</th>
+                            <th colspan="7">Clasificación</th>
+                            <th colspan="2">Envase</th>
+                            <th rowspan="2">Cantidad (kg)</th>
+                            <th colspan="2">Etiqueta</th>
+                        </tr>
+                        <tr>
+                            <th title="Corrosivo">C</th>
+                            <th title="Reactivo">R</th>
+                            <th title="Explosivo">E</th>
+                            <th title="Tóxico">T</th>
+                            <th title="Inflamable">I</th>
+                            <th title="Biológico-Infeccioso">B</th>
+                            <th title="Mutagénico">M</th>
+                            <th>Tipo</th>
+                            <th>Capacidad</th>
+                            <th>Sí</th>
+                            <th>No</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hazardous-residues-body">
+                        @for (int i = 0; i < Model.Residues.Count; i++)
+                        {
+                            <tr>
+                                <td class="text-start">
+                                    <input asp-for="Residues[i].ResidueName"
+                                           class="form-control form-control-sm"
+                                           placeholder="Nombre del residuo" />
+                                </td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsCorrosive" class="cretibm-check" /></td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsReactive" class="cretibm-check" /></td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsExplosive" class="cretibm-check" /></td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsToxic" class="cretibm-check" /></td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsFlammable" class="cretibm-check" /></td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsBiological" class="cretibm-check" /></td>
+                                <td><input type="checkbox" asp-for="Residues[i].IsMutagenic" class="cretibm-check" /></td>
+                                <td><input asp-for="Residues[i].Container" class="form-control form-control-sm" placeholder="C/P" /></td>
+                                <td><input asp-for="Residues[i].ContainerCapacity" class="form-control form-control-sm" placeholder="N/A" /></td>
+                                <td><input asp-for="Residues[i].AmountKg" type="number" step="0.01"
+                                          class="form-control form-control-sm" placeholder="0.0" /></td>
+                                <td>
+                                    <input type="radio" name="Residues[@i].HasLabel" value="true"
+                                           class="cretibm-check"
+                                           @(Model.Residues[i].HasLabel == true ? "checked" : "") />
+                                </td>
+                                <td>
+                                    <input type="radio" name="Residues[@i].HasLabel" value="false"
+                                           class="cretibm-check"
+                                           @(Model.Residues[i].HasLabel == false ? "checked" : "") />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm mb-3" onclick="addHazardousResidueRow()">
+                + Agregar residuo
+            </button>
+
+            <!-- Instrucciones especiales -->
+            <div class="instrucciones-box mb-2">
+                <label class="form-label-sm">
+                    Instrucciones especiales e información adicional para el manejo seguro
+                </label>
+                <input asp-for="SafeHandlingInstructions"
+                       class="form-control form-control-sm"
+                       placeholder="Ej. Uso de EPP: Guantes, ropa de algodón, calzado de seguridad" />
+            </div>
+
+            <!-- Marco regulatorio -->
+            <div class="mb-2">
+                <label class="form-label-sm">Marco Regulatorio / Descripción</label>
+                <textarea asp-for="RegulatoryFramework" class="form-control form-control-sm" rows="2"
+                          placeholder="Marco regulatorio aplicable..."></textarea>
+            </div>
+
+            <!-- Responsable generador -->
+            <div class="row g-2 mt-1">
+                <div class="col-md-5">
+                    <label class="form-label-sm">Nombre y Firma del Responsable</label>
+                    <input asp-for="GeneratorResponsibleName" class="form-control form-control-sm" placeholder="Nombre completo" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Firma (imagen / PDF)</label>
+                    <input type="file" name="SignedManifestFile" accept="image/*,.pdf"
+                           class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Fecha de Entrega</label>
+                    <input asp-for="GeneratorSignDate" type="date" class="form-control form-control-sm" />
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== SECCIÓN: TRANSPORTISTA ===================== -->
+        <div class="section-card mt-3">
+            <div class="section-label">TRANSPORTISTA</div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label-sm">Nombre o Razón Social del Transportista</label>
+                    <input asp-for="TransporterSocialReason" class="form-control form-control-sm" placeholder="Razón social" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">No. Autorización SEMARNAT</label>
+                    <input asp-for="TransporterAuthorizationNumber" class="form-control form-control-sm" placeholder="30-087-PS-I-07D-17" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">No. Permiso SCT</label>
+                    <input asp-for="TransporterSCTPermit" class="form-control form-control-sm" placeholder="3063SMA1005..." />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-2">
+                    <label class="form-label-sm">Código Postal</label>
+                    <input asp-for="TransporterPostalCode" class="form-control form-control-sm" placeholder="00000" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Calle</label>
+                    <input asp-for="TransporterStreet" class="form-control form-control-sm" placeholder="Nombre de la calle" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Núm. Ext.</label>
+                    <input asp-for="TransporterExteriorNumber" class="form-control form-control-sm" placeholder="S/N" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Municipio</label>
+                    <input asp-for="TransporterMunicipality" class="form-control form-control-sm" placeholder="Municipio" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Estado</label>
+                    <input asp-for="TransporterState" class="form-control form-control-sm" placeholder="Estado" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-3">
+                    <label class="form-label-sm">Teléfono</label>
+                    <input asp-for="TransporterPhone" class="form-control form-control-sm" placeholder="Teléfono" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label-sm">Correo Electrónico</label>
+                    <input asp-for="TransporterEmail" class="form-control form-control-sm" placeholder="operaciones@empresa.com" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Tipo de Vehículo</label>
+                    <input asp-for="VehicleType" class="form-control form-control-sm" placeholder="Ej. Camión Caja Seca 4.5 Ton." />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label-sm">No. de Placa</label>
+                    <input asp-for="VehiclePlate" class="form-control form-control-sm" placeholder="Placa" />
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label-sm">Ruta de la Empresa Generadora hasta su Entrega</label>
+                    <input asp-for="TransportRoute" class="form-control form-control-sm"
+                           placeholder="Ej. De Apazapan, Ver. A Xalapa, Ver." />
+                </div>
+            </div>
+
+            <div class="row g-2 mt-1">
+                <div class="col-md-5">
+                    <label class="form-label-sm">Nombre y Firma del Responsable (Transportista)</label>
+                    <input asp-for="TransporterResponsibleName" class="form-control form-control-sm" placeholder="Nombre completo" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Nombre del Conductor</label>
+                    <input asp-for="DriverName" class="form-control form-control-sm" placeholder="Nombre del conductor" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Fecha de Recepción</label>
+                    <input asp-for="TransporterReceptionDate" type="date" class="form-control form-control-sm" />
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== SECCIÓN: DESTINATARIO ===================== -->
+        <div class="section-card mt-3">
+            <div class="section-label">DESTINATARIO</div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label-sm">Nombre o Razón Social del Destinatario</label>
+                    <input asp-for="ReceiverSocialReason" class="form-control form-control-sm" placeholder="Razón social" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label-sm">No. Autorización SEMARNAT</label>
+                    <input asp-for="ReceiverAuthorizationNumber" class="form-control form-control-sm" placeholder="21-V-23-20" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-2">
+                    <label class="form-label-sm">Código Postal</label>
+                    <input asp-for="ReceiverPostalCode" class="form-control form-control-sm" placeholder="00000" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Calle</label>
+                    <input asp-for="ReceiverStreet" class="form-control form-control-sm" placeholder="Nombre de la calle" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Núm. Ext.</label>
+                    <input asp-for="ReceiverExteriorNumber" class="form-control form-control-sm" placeholder="S/N" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Núm. Int.</label>
+                    <input asp-for="ReceiverInteriorNumber" class="form-control form-control-sm" placeholder="S/N" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-sm">Estado</label>
+                    <input asp-for="ReceiverState" class="form-control form-control-sm" placeholder="Estado" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label-sm">Colonia</label>
+                    <input asp-for="ReceiverColony" class="form-control form-control-sm" placeholder="Colonia" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Municipio o Delegación</label>
+                    <input asp-for="ReceiverMunicipality" class="form-control form-control-sm" placeholder="Municipio" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Correo Electrónico</label>
+                    <input asp-for="ReceiverEmail" class="form-control form-control-sm" placeholder="captura@empresa.mx" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label-sm">Teléfono</label>
+                    <input asp-for="ReceiverPhone" class="form-control form-control-sm" placeholder="Teléfono" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Tipo de Disposición</label>
+                    <input asp-for="DisposalType" class="form-control form-control-sm" placeholder="Ej. Almacén Temporal" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Fecha de Recepción</label>
+                    <input asp-for="ReceiverDate" type="date" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label-sm">Observaciones</label>
+                <textarea asp-for="ReceiverObservations" class="form-control form-control-sm" rows="2"
+                          placeholder="Observaciones del destinatario..."></textarea>
+            </div>
+
+            <!-- Nombre y cargo del receptor -->
+            <div class="row g-2 mt-1">
+                <div class="col-md-5">
+                    <label class="form-label-sm">Nombre y Cargo de la Persona que Recibe los Residuos</label>
+                    <input asp-for="ReceiverPersonName" class="form-control form-control-sm" placeholder="Nombre completo y cargo" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Nombre del Responsable (Firmante)</label>
+                    <input asp-for="ReceiverResponsibleName" class="form-control form-control-sm" placeholder="Nombre completo" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-sm">Sello</label>
+                    <input type="file" name="ReceiverSealFile" accept="image/*"
+                           class="form-control form-control-sm" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-end gap-2 mt-4 mb-4">
+            <a asp-page="/Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-danger">
+                Generar Manifiesto
+            </button>
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let hazardousIndex = @Model.Residues.Count;
+
+        function addHazardousResidueRow() {
+            const tbody = document.getElementById('hazardous-residues-body');
+            const i = hazardousIndex++;
+            const cretibm = ['IsCorrosive','IsReactive','IsExplosive','IsToxic','IsFlammable','IsBiological','IsMutagenic'];
+            let checkboxes = cretibm.map(prop =>
+                `<td><input type="checkbox" name="Residues[${i}].${prop}" value="true" class="cretibm-check" /></td>`
+            ).join('');
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-start">
+                    <input name="Residues[${i}].ResidueName" class="form-control form-control-sm" placeholder="Nombre del residuo" />
+                </td>
+                ${checkboxes}
+                <td><input name="Residues[${i}].Container" class="form-control form-control-sm" placeholder="C/P" /></td>
+                <td><input name="Residues[${i}].ContainerCapacity" class="form-control form-control-sm" placeholder="N/A" /></td>
+                <td><input name="Residues[${i}].AmountKg" type="number" step="0.01" class="form-control form-control-sm" placeholder="0.0" /></td>
+                <td><input type="radio" name="Residues[${i}].HasLabel" value="true" class="cretibm-check" /></td>
+                <td><input type="radio" name="Residues[${i}].HasLabel" value="false" class="cretibm-check" /></td>
+            `;
+            tbody.appendChild(row);
+        }
+    </script>
+}
