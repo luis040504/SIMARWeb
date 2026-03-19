@@ -14,7 +14,7 @@
         justify-content: center;
         align-items: center;
         min-height: 80vh;
-        background-color: #f4f4f4; /* Fondo gris claro como tu prototipo */
+        background-color: #f4f4f4; /* Fondo gris claro */
     }
 
     .tarjeta-registro {
@@ -114,9 +114,9 @@
         <form method="post" id="registroForm">
 
             <div id="paso1" class="seccion-paso activa">
-                <input type="email" asp-for="Input.Email" class="campo-entrada" placeholder="E-MAIL" required />
-                <input type="text" asp-for="Input.UserName" class="campo-entrada" placeholder="USERNAME" required />
-                <input type="password" asp-for="Input.Password" class="campo-entrada" placeholder="PASSWORD" required />
+                <input type="email" asp-for="Input.Email" class="campo-entrada" placeholder="Correo" required />
+                <input type="text" asp-for="Input.UserName" class="campo-entrada" placeholder="Nombre de usuario" required />
+                <input type="password" asp-for="Input.Password" class="campo-entrada" placeholder="Contraseña" required />
 
                 <div class="puntos-progreso">
                     <div class="punto activo"></div>
@@ -128,29 +128,29 @@
             </div>
 
             <div id="paso2" class="seccion-paso">
-                <input type="text" asp-for="Input.NombreCompleto" class="campo-entrada" placeholder="NOMBRE COMPLETO" />
+                <input type="text" asp-for="Input.NombreCompleto" class="campo-entrada" placeholder="Nombre Completo" />
 
                 <div style="display: flex; gap: 10px;">
                     <input type="text" asp-for="Input.Curp" class="campo-entrada" placeholder="CURP" style="width: 50%;" />
                     <input type="text" asp-for="Input.Rfc" class="campo-entrada" placeholder="RFC" style="width: 50%;" />
                 </div>
 
-                <input type="text" asp-for="Input.Direccion" class="campo-entrada" placeholder="DIRECCIÓN COMPLETA" />
+                <input type="text" asp-for="Input.Direccion" class="campo-entrada" placeholder="Domicilio" />
 
                 <div style="display: flex; gap: 10px;">
-                    <input type="number" asp-for="Input.Salario" class="campo-entrada" placeholder="SALARIO MENSUAL" style="width: 50%;" />
+                    <input type="number" asp-for="Input.Salario" class="campo-entrada" placeholder="Salario mensual" style="width: 50%;" />
                     <input type="date" asp-for="Input.FechaNac" class="campo-entrada" style="width: 50%; color: #999;" />
                 </div>
 
                 <select asp-for="Input.Genero" class="campo-entrada">
-                    <option value="">-- SELECCIONA GÉNERO --</option>
+                    <option value="">-- Selecciona Género --</option>
                     <option value="Masculino">Masculino</option>
                     <option value="Femenino">Femenino</option>
                     <option value="Otro">Otro</option>
                 </select>
 
                 <select asp-for="Input.RolSeleccionado" id="selectorRol" class="campo-entrada" onchange="mostrarCamposEspecificos()">
-                    <option value="">-- SELECCIONA TU ROL --</option>
+                    <option value="">-- Selecciona Rol --</option>
                     <option value="Seller">Seller</option>
                     <option value="Technical">Technical</option>
                     <option value="Manager">Manager</option>
@@ -173,17 +173,19 @@
 
                 <div id="camposProfesionales" style="display:none;">
                     <p style="font-size: 12px; color: #666;">DATOS REQUERIDOS PARA SU PUESTO</p>
-                    <input type="text" asp-for="Input.ProfessionalID" class="campo-entrada" placeholder="PROFESSIONAL ID (CÉDULA)" />
+                    <input type="text" asp-for="Input.ProfessionalID" class="campo-entrada" placeholder="Profesional ID (Cédula))" />
                 </div>
 
                 <div id="camposDriver" style="display:none;">
                     <p style="font-size: 12px; color: #666;">DATOS DE CONDUCCIÓN</p>
-                    <input type="text" asp-for="Input.NumLicencia" class="campo-entrada" placeholder="NÚMERO DE LICENCIA" />
+                    <input type="text" asp-for="Input.NumLicencia" class="campo-entrada" placeholder="Número de licencia" />
                     <select asp-for="Input.TipoLicencia" class="campo-entrada">
-                        <option value="">-- TIPO DE LICENCIA --</option>
-                        <option value="A">Tipo A (Particular)</option>
-                        <option value="B">Tipo B (Carga)</option>
-                        <option value="C">Tipo C (Público)</option>
+                        <option value="">-- Tipo de Licencia --</option>
+                        <option value="A">Tipo A</option>
+                        <option value="B">Tipo B</option>
+                        <option value="C">Tipo C</option>
+                        <option value="D">Tipo D</option>
+                        <option value="E">Tipo E</option>
                     </select>
                 </div>
 
@@ -203,9 +205,7 @@
 
 <script>
     function irAPaso(paso) {
-        // Quitar clase activa de todas las secciones
         document.querySelectorAll('.seccion-paso').forEach(s => s.classList.remove('activa'));
-        // Mostrar la elegida
         document.getElementById('paso' + paso).classList.add('activa');
     }
 
@@ -226,17 +226,13 @@
     }
 
         function mostrarCamposEspecificos() {
-        // 1. Obtenemos el valor del rol seleccionado
         const rol = document.getElementById('selectorRol').value;
 
-        // 2. Definimos quiénes necesitan el Professional ID
         const listaProfesionales = ["Seller", "Technical", "Manager", "Owner", "Accountant"];
 
-        // 3. Referencias a los contenedores
         const divProf = document.getElementById('camposProfesionales');
         const divDriver = document.getElementById('camposDriver');
 
-        // 4. Lógica de visibilidad
         if (listaProfesionales.includes(rol)) {
             divProf.style.display = 'block';  // Mostrar ID Profesional
             divDriver.style.display = 'none'; // Ocultar Licencia
@@ -246,7 +242,6 @@
             divDriver.style.display = 'block';// Mostrar Licencia
         }
         else {
-            // Si no hay nada seleccionado, ocultamos todo
             divProf.style.display = 'none';
             divDriver.style.display = 'none';
         }

@@ -1,7 +1,7 @@
 ﻿@page "/consultar"
 @model ClienteWeb.Pages.Client_SimarUser.SimarUser.ConsultSimarUserModel
 @{
-    ViewData["Title"] = "Consulta de Usuarios";
+    ViewData["Title"] = "Consulta de Usuarios SIMAR";
 }
 
 <div class="container mt-4">
@@ -40,44 +40,51 @@
                         <th>CURP</th>
                         <th>RFC</th>
                         <th>Salario</th>
-                        <th>Acciones</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
-                @*<tbody>
-                    @* Datos de prueba para verificar el filtro 
+                <tbody>
+                    @* Ejemplo 1 *@
                     <tr>
                         <td>Admin_Simar</td>
-                        <td>Luis López</td>
+                        <td>Luis Enrique López</td>
                         <td><span class="badge bg-primary">Owner</span></td>
                         <td><small>LOAL8805...</small></td>
+                        <td><small>RFC-9988</small></td>
                         <td>$25,000</td>
-                        <td>
-                            <button class="btn btn-warning btn-sm">Editar</button>
+                        <td class="text-center">
+                            <a href="/editar/Admin_Simar" class="btn btn-warning btn-sm">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
                             <button class="btn btn-danger btn-sm" onclick="confirmarBaja('Admin_Simar')">Baja</button>
                         </td>
                     </tr>
+                    @* Ejemplo 2 *@
                     <tr>
                         <td>Vendedor_01</td>
                         <td>Ana García</td>
                         <td><span class="badge bg-info text-dark">Seller</span></td>
                         <td><small>GANA9201...</small></td>
+                        <td><small>RFC-1122</small></td>
                         <td>$15,000</td>
-                        <td>
-                            <button class="btn btn-warning btn-sm">Editar</button>
+                        <td class="text-center">
+                            <a href="/editar/Vendedor_01" class="btn btn-warning btn-sm">Editar</a>
                             <button class="btn btn-danger btn-sm" onclick="confirmarBaja('Vendedor_01')">Baja</button>
                         </td>
                     </tr>
+                    @* Ejemplo 3 *@
                     <tr>
                         <td>Chofer_01</td>
                         <td>Juan Pérez</td>
                         <td><span class="badge bg-secondary">Driver</span></td>
                         <td><small>PEJU9012...</small></td>
+                        <td><small>RFC-4455</small></td>
                         <td>$12,000</td>
-                        <td>
-                            <button class="btn btn-warning btn-sm">Editar</button>
+                        <td class="text-center">
+                            <a href="/editar/Chofer_01" class="btn btn-warning btn-sm">Editar</a>
                             <button class="btn btn-danger btn-sm" onclick="confirmarBaja('Chofer_01')">Baja</button>
                         </td>
-                    </tr>*@
+                    </tr>
                 </tbody>
             </table>
         </div>
