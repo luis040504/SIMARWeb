@@ -1,10 +1,110 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Inicio - SIMAR";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="bg-light border-bottom py-2">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <div class="mb-2 mb-md-0">
+            <span class="fw-semibold">Sistemas en Manejo y Administración de Residuos</span>
+        </div>
+        <div class="d-flex gap-4">
+            <span class="d-flex align-items-center">
+                <i class="bi bi-telephone me-2"></i>
+                01 (228) 834.31.49
+            </span>
+            <span class="d-flex align-items-center">
+                <i class="bi bi-envelope me-2"></i>
+                ventas@gruposimar.com.mx
+            </span>
+        </div>
+    </div>
 </div>
+
+
+<div class="container my-5">
+    <div class="text-center">
+        <h1 class="display-4 fw-normal">Bienvenido</h1>
+        <p class="lead text-secondary">Sistemas en Manejo y Administración de Residuos</p>
+    </div>
+</div>
+
+
+<div class="position-relative w-100" style="height: 400px; background-color: #e9ecef;">
+    
+    <div class="w-100 h-100" style="background-image: url('/images/MenuPrincipal.png'); background-size: cover; background-position: center; background-color: #dee2e6;">
+        
+        <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: rgba(255,255,255,0.1);">
+            <span class="text-white fs-1 fw-light" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.3);"></span>
+        </div>
+    </div>
+</div>
+
+
+<div class="container my-5 py-4">
+    <h2 class="text-center mb-5 fw-normal">Servicios</h2>
+    
+    <div class="row g-4">
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 bg-light text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-truck display-1 text-secondary mb-3"></i>
+                    <h5 class="card-title fw-semibold">Recolección de residuos</h5>
+                    <p class="card-text text-secondary small">Manejo profesional de residuos industriales, peligrosos y biológicos</p>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 bg-light text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-droplet display-1 text-secondary mb-3"></i>
+                    <h5 class="card-title fw-semibold">Limpiezas ecológicas</h5>
+                    <p class="card-text text-secondary small">Soluciones sostenibles y amigables con el medio ambiente</p>
+                </div>
+            </div>
+        </div>
+        
+    
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 bg-light text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-clipboard-data display-1 text-secondary mb-3"></i>
+                    <h5 class="card-title fw-semibold">Estudios y proyectos</h5>
+                    <p class="card-text text-secondary small">Consultoría especializada en gestión ambiental</p>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 bg-light text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-mortarboard display-1 text-secondary mb-3"></i>
+                    <h5 class="card-title fw-semibold">Capacitación</h5>
+                    <p class="card-text text-secondary small">Programas de formación en manejo de residuos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<footer class="bg-light border-top py-4 mt-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8 text-center text-md-start mb-3 mb-md-0">
+                <p class="mb-0 text-secondary small">
+                    © 2026 Copyright – Sistemas en Manejo y Administración de Residuos S.A de C.V – Todos los Derechos Reservados
+                </p>
+            </div>
+            <div class="col-md-4 text-center text-md-end">
+                <a href="#" class="text-decoration-none text-secondary small border-end pe-3 me-2">Aviso de Privacidad</a>
+                <a href="#" class="text-decoration-none text-secondary small">Términos y condiciones</a>
+            </div>
+        </div>
+    </div>
+</footer>

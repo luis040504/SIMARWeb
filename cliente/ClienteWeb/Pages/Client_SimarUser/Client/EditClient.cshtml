@@ -1,0 +1,179 @@
+﻿@page "{id:int}"
+@model ClienteWeb.Pages.Client_SimarUser.Client.EditClientModel
+@{
+    ViewData["Title"] = "Editar Cliente";
+}
+
+<style>
+    .contenedor-form {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        background-color: #f4f4f4;
+    }
+
+    .tarjeta {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        width: 700px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .titulo {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .campo {
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid #ccc;
+        padding: 10px 0;
+        margin-bottom: 20px;
+        outline: none;
+    }
+
+    .file-box {
+        border: 1px dashed #ccc;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+        color: #777;
+    }
+
+    .botones {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: none;
+        background-color: #9e9e9e;
+        color: white;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background-color: #757575;
+    }
+
+    label {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+        text-align: left;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 columnas */
+        gap: 20px;
+    }
+</style>
+
+<div id="modalConfirmacion" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+
+    <div style="background:white; padding:20px; border-radius:10px; text-align:center;">
+        <p>¿Deseas guardar los cambios?</p>
+        <button onclick="enviarForm()" class="btn">Sí</button>
+        <button onclick="cerrarModal()" class="btn">No</button>
+    </div>
+
+</div>
+
+<div class="contenedor-form">
+    <div class="tarjeta">
+
+        <h2 class="titulo">Editar Cliente</h2>
+
+        <form method="post" enctype="multipart/form-data">
+
+            <div class="form-grid">
+
+                <!-- USER -->
+                <div>
+                    <label>Nombre de usuario</label>
+                    <input asp-for="Cliente.UserName" class="campo" placeholder="USERNAME" />
+                </div>
+
+                <div>
+                    <label>Correo Electronico</label>
+                    <input asp-for="Cliente.Email" class="campo" placeholder="EMAIL" />
+                </div>
+
+                <div>
+                    <label>Contraseña</label>
+                    <input asp-for="Cliente.Password" class="campo" placeholder="PASSWORD" />
+                </div>
+
+                <!-- CLIENT -->
+                <div>
+                    <label>Nombre completo</label>
+                    <input asp-for="Cliente.Name" class="campo" placeholder="NAME" />
+                </div>
+
+                <div>
+                    <label>Dirección</label>
+                    <input asp-for="Cliente.Address" class="campo" placeholder="ADDRESS" />
+                </div>
+
+                <div>
+                    <label>Número telefónico</label>
+                    <input asp-for="Cliente.PhoneNumber" class="campo" placeholder="PHONENUMBER" />
+                </div>
+
+                <div>
+                    <label>RFC</label>
+                    <input asp-for="Cliente.RFC" class="campo" placeholder="RFC" />
+                </div>
+
+                <div>
+                    <label>Número generado por SEMARNAT</label>
+                    <input asp-for="Cliente.SemarnatGeneratedNumber" class="campo" placeholder="SEMARNAT NUMBER" />
+                </div>
+
+            </div>
+
+            <!-- Archivo SAT -->
+            <div style="margin-top:20px;">
+                <label>Certificado SAT</label>
+                <label class="file-box">
+                    Subir Archivo
+                    <input type="file" asp-for="CertificadoSAT" style="display:none;" />
+                </label>
+            </div>
+
+            <!-- Botones -->
+            <div class="botones" style="margin-top:20px;">
+                <button type="button" class="btn" onclick="abrirModal()">Guardar Cambios</button>
+
+                <a asp-page="ClientList" class="btn" style="text-decoration:none; display:flex; align-items:center;">
+                    Descartar Cambios
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    function abrirModal() {
+        document.getElementById("modalConfirmacion").style.display = "flex";
+    }
+
+    function cerrarModal() {
+        document.getElementById("modalConfirmacion").style.display = "none";
+    }
+
+    function enviarForm() {
+        document.querySelector("form").submit();
+    }
+</script>

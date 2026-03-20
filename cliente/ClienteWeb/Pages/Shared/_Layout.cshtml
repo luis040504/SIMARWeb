@@ -1,52 +1,114 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ClienteWeb</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - SIMAR</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/ClienteWeb.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">ClienteWeb</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+    
+    @{
+        var usuarioNombre = "Luis López";
+    }
+
+    
+    <header class="navbar navbar-expand navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+            
+            <button class="btn btn-outline-secondary me-2" type="button" id="sidebarToggle">
+                <i class="bi bi-list"></i> <!-- Icono de hamburguesa de Bootstrap Icons -->
+            </button>
+
+            
+            <a class="navbar-brand p-0" asp-page="/Index">
+                <img src="~/images/logosimar.png" alt="SIMAR" height="40" class="d-inline-block align-text-top">
+                
+            </a>
+
+            
+            <div class="dropdown ms-auto">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle me-1"></i> @usuarioNombre
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li>
+                        <a class="dropdown-item" href="/editar/@usuarioNombre">
+                            <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    
+    <div class="d-flex">
+        
+        <nav class="sidebar bg-light border-end" id="sidebar">
+            <div class="list-group list-group-flush">
+                
+                <a asp-page="/Contracts/Consult/Index" class="list-group-item list-group-item-action">
+                    <i class="bi bi-file-text me-2"></i>Contratos
+                </a>
+                <a asp-page="/Cotizaciones/Index" class="list-group-item list-group-item-action">
+                    <i class="bi bi-calculator me-2"></i>Cotizaciones
+                </a>
+                <a asp-page="/Manifiestos/Index" class="list-group-item list-group-item-action">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Manifiestos
+                </a>
+                <a asp-page="/Vehiculos/Index" class="list-group-item list-group-item-action">
+                    <i class="bi bi-truck-front me-2"></i>Vehículos
+                </a>
+                <a asp-page="/Recolecciones/Index" class="list-group-item list-group-item-action">
+                    <i class="bi bi-truck me-2"></i>Programación de recolecciones
+                </a>
+
+                
+                <div class="list-group-item">
+                    <a class="d-flex justify-content-between align-items-center text-decoration-none text-dark" data-bs-toggle="collapse" href="#submenuUsuarios" role="button" aria-expanded="false" aria-controls="submenuUsuarios">
+                        <span><i class="bi bi-people me-2"></i>Usuarios</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </a>
+                    <div class="collapse mt-2" id="submenuUsuarios">
+                        <div class="list-group ms-3">
+                            <a asp-page="/Client_SimarUser/Client/ClientList" class="list-group-item list-group-item-action py-2">
+                                <i class="bi bi-person-badge me-2"></i>Clientes
+                            </a>
+                            <a asp-page="/Client_SimarUser/SimarUser/ConsultSimarUser" class="list-group-item list-group-item-action py-2">
+                                <i class="bi bi-person-workspace me-2"></i>Personal SIMAR
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+        
+        <main class="flex-grow-1 p-3" id="mainContent">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - ClienteWeb - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
-
+    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    
+    <script>
+        $(document).ready(function() {
+            $('#sidebarToggle').on('click', function() {
+                $('#sidebar').toggleClass('sidebar-hidden');
+                $('#mainContent').toggleClass('main-expanded');
+            });
+        });
+    </script>
 </body>
 </html>
