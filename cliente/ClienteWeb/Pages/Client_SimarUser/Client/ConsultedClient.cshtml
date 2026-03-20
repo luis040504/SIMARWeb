@@ -1,0 +1,85 @@
+﻿@page "{id:int}"
+@model ClienteWeb.Pages.Client_SimarUser.Client.ConsultedClientModel
+@{
+    ViewData["Title"] = "Detalle del Cliente";
+}
+
+<style>
+    .contenedor-detalle {
+        max-width: 700px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .titulo {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .campo {
+        margin-bottom: 12px;
+    }
+
+        .campo strong {
+            display: inline-block;
+            width: 200px;
+            color: #555;
+        }
+
+    .botones {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: none;
+        background-color: #9e9e9e;
+        color: white;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+        .btn:hover {
+            background-color: #757575;
+        }
+
+    .seccion-servicios {
+        margin-top: 30px;
+    }
+</style>
+
+<div class="contenedor-detalle">
+
+    <h2 class="titulo">Detalle del Cliente</h2>
+
+    <!-- Información del cliente -->
+    <div class="campo"><strong>Email:</strong> @Model.Cliente.Email</div>
+    <div class="campo"><strong>Password:</strong> @Model.Cliente.Password</div>
+    <div class="campo"><strong>Username:</strong> @Model.Cliente.UserName</div>
+    <div class="campo"><strong>Nombre:</strong> @Model.Cliente.Name</div>
+    <div class="campo"><strong>Dirección:</strong> @Model.Cliente.Address</div>
+    <div class="campo"><strong>Teléfono:</strong> @Model.Cliente.PhoneNumber</div>
+    <div class="campo"><strong>Fecha Registro:</strong> @Model.Cliente.RegisterDate</div>
+    <div class="campo"><strong>RFC:</strong> @Model.Cliente.RFC</div>
+    <div class="campo"><strong>Certificado SAT:</strong> @Model.Cliente.SatCertificate</div>
+    <div class="campo"><strong>NUMERO SEMARNAT:</strong> @Model.Cliente.SemarnatGeneratedNumber</div>
+    <div class="campo"><strong>Status:</strong> @Model.Cliente.Status</div>
+
+    <!-- Botones -->
+    <div class="botones">
+        <a asp-page="ClientList" class="btn">Regresar</a>
+
+        <a asp-page="ServicesHistory"
+           asp-route-id="@Model.Cliente.Id"
+           class="btn">
+            Consultar Historial de Servicios
+        </a>
+    </div>
+
+</div>
