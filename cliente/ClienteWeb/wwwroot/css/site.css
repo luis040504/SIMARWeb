@@ -1,31 +1,52 @@
-html {
-  font-size: 14px;
+/* Estilos para el Sidebar (menú de hamburguesa) */
+.sidebar {
+    width: 260px;
+    min-height: calc(100vh - 56px); /* 56px es la altura típica del navbar superior */
+    transition: width 0.3s ease, margin-left 0.3s ease;
+    overflow-y: auto;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+/* Clase que oculta el sidebar (se usa con JavaScript) */
+.sidebar-hidden {
+    margin-left: -260px; /* Lo desplaza fuera de la pantalla */
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+/* El contenido principal ocupa el espacio restante */
+#mainContent {
+    transition: margin-left 0.3s ease;
+    width: 100%;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+/* Cuando el sidebar está oculto, el contenido ocupa todo el ancho */
+.main-expanded {
+    margin-left: 0;
+    width: 100%;
 }
 
-body {
-  margin-bottom: 60px;
+/* Ajustes para el submenú de Usuarios */
+.collapse .list-group-item {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    padding-left: 2rem;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.collapse .list-group-item:hover {
+    background-color: #e9ecef; /* Un gris suave para el hover, sin color */
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* Hover para los items del menú principal */
+.list-group-item-action:hover {
+    background-color: #f8f9fa; /* Gris muy clarito */
+    border-left: 3px solid #6c757d; /* Detalle sutil en gris */
+}
+
+/* Botones con estilo básico (sin colores, solo bordes) */
+.btn-outline-secondary {
+    border: 1px solid #ced4da;
+    background-color: transparent;
+}
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
 }
