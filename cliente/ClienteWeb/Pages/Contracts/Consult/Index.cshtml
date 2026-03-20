@@ -36,7 +36,7 @@
         margin-bottom: 20px;
     }
 
-    .filters input, 
+    .filters input,
     .filters select {
         padding: 8px;
         border: 1px solid #ccc;
@@ -72,7 +72,7 @@
     .card {
         background-color: white;
         border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         overflow: hidden;
     }
 
@@ -142,8 +142,7 @@
     </div>
 
     <form method="get" class="filters">
-        <input type="text" name="Search" placeholder="Buscar cliente o número..."
-               value="@Model.Search" />
+        <input type="text" name="Search" placeholder="Buscar cliente o número..." value="@Model.Search" />
 
         <select name="Status">
             <option value="">Todos</option>
@@ -188,6 +187,10 @@
                             </td>
                             <td class="actions">
                                 <a class="btn" href="/Contracts/Consult/Detail/@contract.Id">Ver</a>
+                                @if (contract.Status == "Activo" || contract.Status == "Pendiente de firma")
+                                {
+                                    <a class="btn" href="/Contracts/Update?id=@contract.Id">Actualizar</a>
+                                }
                                 <a class="btn" href="#">PDF</a>
                             </td>
                         </tr>
