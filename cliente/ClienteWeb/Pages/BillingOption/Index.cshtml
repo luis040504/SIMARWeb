@@ -1,0 +1,56 @@
+@page
+@model ClienteWeb.Pages.BillingOption.IndexModel
+@{
+    ViewData["Title"] = "Opciones de Facturación";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Opciones de Facturación</h1>
+        <p class="lead text-muted">Seleccione la operación que desea realizar en el sistema de facturación.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Generate Invoice -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-primary text-center">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-plus display-4 text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Generar Factura</h4>
+                    <p class="card-text text-muted flex-grow-1">Crea nuevas facturas a partir de los servicios prestados.</p>
+                    <a asp-page="/GenerateInvoice/Index" class="btn btn-primary mt-auto">Ir a Generar</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Invoice -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-warning text-center">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-pencil-square display-4 text-warning"></i>
+                    </div>
+                    <h4 class="card-title">Editar Factura</h4>
+                    <p class="card-text text-muted flex-grow-1">Modifica facturas que han sido rechazadas o necesitan corrección.</p>
+                    <a asp-page="/EditInvoice/Index" class="btn btn-warning mt-auto">Ir a Editar</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consult Invoices -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-info text-center">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-search display-4 text-info"></i>
+                    </div>
+                    <h4 class="card-title">Consultar Facturas</h4>
+                    <p class="card-text text-muted flex-grow-1">Vista de cliente para aceptar, rechazar o descargar facturas.</p>
+                    <a asp-page="/ClientInvoices/Index" class="btn btn-info text-dark mt-auto">Ir a Consultar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

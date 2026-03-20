@@ -1,0 +1,560 @@
+@page "/Manifest/Consult/Detail"
+@model ClienteWeb.Pages.Manifest.Consult.DetailModel
+@{
+    ViewData["Title"] = $"Detalle – {Model.Manifest.ManifestNumber}";
+    var m = Model.Manifest;
+    bool esEspecial = m.Type == "especial";
+}
+
+<style>
+    .detail-container { max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    .detail-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .detail-heading {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1a3a5c;
+        margin: 0;
+    }
+
+    .badge-especial {
+        background: #1a3a5c; color: #fff;
+        font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
+    }
+
+    .badge-peligroso {
+        background: #7b2d2d; color: #fff;
+        font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
+    }
+
+    .badge-borrador   { background:#6c757d; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
+    .badge-impreso    { background:#0d6efd; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
+    .badge-transito   { background:#fd7e14; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
+    .badge-completado { background:#198754; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
+
+    .section-card {
+        border: 1px solid #c8d6e3;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: #1a3a5c;
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        padding: 0.55rem 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        user-select: none;
+    }
+
+    .section-header.peligroso-hdr { background: #7b2d2d; }
+    .section-body { padding: 1rem 1.25rem; background: #fff; }
+
+    .detail-dl {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 0.3rem 1rem;
+        margin: 0;
+    }
+
+    .detail-dl dt {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #4a5568;
+        padding-top: 0.15rem;
+    }
+
+    .detail-dl dd {
+        font-size: 0.85rem;
+        color: #1a202c;
+        margin: 0;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid #eef0f3;
+    }
+
+    .residue-table th {
+        font-size: 0.72rem;
+        background: #f0f4f8;
+        color: #1a3a5c;
+        font-weight: 700;
+    }
+
+    .residue-table td { font-size: 0.82rem; vertical-align: middle; }
+
+    .cretibm-tag {
+        display: inline-block;
+        background: #7b2d2d;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin: 1px;
+    }
+
+    @@media (max-width: 600px) {
+        .detail-dl { grid-template-columns: 1fr; }
+        .detail-dl dt { font-weight: 700; margin-top: 0.4rem; }
+        .detail-dl dd { border-bottom: none; padding-bottom: 0; }
+    }
+</style>
+
+<div class="detail-container">
+
+    <div class="detail-header">
+        <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver</a>
+        <h1 class="detail-heading">@m.ManifestNumber</h1>
+
+        @if (esEspecial)
+        {
+            <span class="badge-especial">Residuos Especiales</span>
+        }
+        else
+        {
+            <span class="badge-peligroso">Residuos Peligrosos</span>
+        }
+
+        @switch (m.Status)
+        {
+            case ManifestStatus.Completado:
+                <span class="badge-completado">Completado</span>
+                break;
+            case ManifestStatus.EnTransito:
+                <span class="badge-transito">En tránsito</span>
+                break;
+            case ManifestStatus.Impreso:
+                <span class="badge-impreso">Impreso</span>
+                break;
+            default:
+                <span class="badge-borrador">Borrador</span>
+                break;
+        }
+
+        <div class="ms-auto d-flex gap-2">
+            @if (m.Status != ManifestStatus.Completado)
+            {
+                <a asp-page="/Manifest/Consult/Register"
+                   asp-route-id="@m.Id"
+                   class="btn btn-success btn-sm px-3">
+                    Registrar Firma
+                </a>
+            }
+            <a asp-page="/Manifest/Consult/Edit"
+               asp-route-id="@m.Id"
+               class="btn btn-warning btn-sm px-3">Editar Manifiesto</a>
+        </div>
+    </div>
+
+    @if (m.Status == ManifestStatus.Completado && !string.IsNullOrEmpty(m.SignedManifestFileName))
+    {
+        <div class="section-card">
+            <div class="section-header bg-success text-white" onclick="toggleSection(this)">
+                <span>Manifiesto Firmado</span>
+                <span class="chevron">▲</span>
+            </div>
+            <div class="section-body">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <strong>Archivo:</strong> @m.SignedManifestFileName<br />
+                        <strong>Fecha de Registro:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
+                    </div>
+                    <div class="ms-auto">
+                        <button type="button" class="btn btn-outline-primary btn-sm">Descargar PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- GENERADOR -->
+    <div class="section-card">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+            <span>Datos del Generador</span>
+            <span class="chevron">▲</span>
+        </div>
+        <div class="section-body">
+            <dl class="detail-dl">
+                <dt>No. Registro @(esEspecial ? "SEDEMA" : "SEMARNAT")</dt>
+                <dd>@D(m.EnvironmentalRegistrationNumber)</dd>
+
+                <dt>No. Manifiesto</dt>
+                <dd>@D(m.ManifestNumber)</dd>
+
+                <dt>Razón Social</dt>
+                <dd>@D(m.SocialReason)</dd>
+
+                @if (esEspecial)
+                {
+                    <dt>Domicilio</dt>
+                    <dd>@D(m.Address)</dd>
+                }
+                else
+                {
+                    <dt>Calle</dt>
+                    <dd>@D(m.Street)</dd>
+
+                    <dt>Núm. Ext / Int</dt>
+                    <dd>@($"{D(m.ExteriorNumber)} / {D(m.InteriorNumber)}")</dd>
+
+                    <dt>Colonia</dt>
+                    <dd>@D(m.Colony)</dd>
+                }
+
+                <dt>C.P.</dt>
+                <dd>@D(m.PostalCode)</dd>
+
+                <dt>Municipio</dt>
+                <dd>@D(m.Municipality)</dd>
+
+                @if (!esEspecial)
+                {
+                    <dt>Estado</dt>
+                    <dd>@D(m.State)</dd>
+                }
+
+                <dt>Teléfono</dt>
+                <dd>@D(m.PhoneNumber)</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.Email))
+                {
+                    <dt>Correo</dt>
+                    <dd>@m.Email</dd>
+                }
+
+                @if (esEspecial && m.ManifestDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.ManifestDate.Value.ToString("dd/MM/yyyy") @(m.ManifestTime.HasValue ? m.ManifestTime.Value.ToString("HH:mm") : "")</dd>
+                }
+
+                @if (!esEspecial && m.GeneratorSignDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.GeneratorSignDate.Value.ToString("dd/MM/yyyy")</dd>
+                }
+
+                @if (!esEspecial && !string.IsNullOrWhiteSpace(m.SafeHandlingInstructions))
+                {
+                    <dt>Instrucciones de manejo seguro</dt>
+                    <dd>@m.SafeHandlingInstructions</dd>
+                }
+
+                <dt>Nombre del responsable</dt>
+                <dd>@D(m.GeneratorResponsibleName)</dd>
+
+                @if (esEspecial && !string.IsNullOrWhiteSpace(m.GeneratorObservations))
+                {
+                    <dt>Observaciones</dt>
+                    <dd>@m.GeneratorObservations</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <!-- RESIDUOS -->
+    <div class="section-card">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+            <span>Residuos</span>
+            <span class="chevron">▲</span>
+        </div>
+        <div class="section-body p-0">
+            @if (esEspecial)
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered residue-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Clave</th>
+                                <th>Nombre del Residuo</th>
+                                <th>Envase</th>
+                                <th>Capacidad</th>
+                                <th>Peso</th>
+                                <th>Unidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in m.SpecialResidues)
+                            {
+                                <tr>
+                                    <td>@r.ResidueKey</td>
+                                    <td>@r.ResidueName</td>
+                                    <td>@r.ContainerType</td>
+                                    <td>@r.ContainerCapacity</td>
+                                    <td class="fw-bold">@r.Weight</td>
+                                    <td>@r.Unit</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered residue-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Residuo</th>
+                                <th>Clasificación CRETIBM</th>
+                                <th>Envase</th>
+                                <th>Capacidad</th>
+                                <th>Cantidad (kg)</th>
+                                <th>Etiqueta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in m.HazardousResidues)
+                            {
+                                <tr>
+                                    <td>@r.ResidueName</td>
+                                    <td>
+                                        @if (r.IsCorrosive)  { <span class="cretibm-tag">C</span> }
+                                        @if (r.IsReactive)   { <span class="cretibm-tag">R</span> }
+                                        @if (r.IsExplosive)  { <span class="cretibm-tag">E</span> }
+                                        @if (r.IsToxic)      { <span class="cretibm-tag">T</span> }
+                                        @if (r.IsFlammable)  { <span class="cretibm-tag">I</span> }
+                                        @if (r.IsBiological) { <span class="cretibm-tag">B</span> }
+                                        @if (r.IsMutagenic)  { <span class="cretibm-tag">M</span> }
+                                    </td>
+                                    <td>@r.ContainerType</td>
+                                    <td>@r.ContainerCapacity</td>
+                                    <td class="fw-bold">@r.AmountKg</td>
+                                    <td>
+                                        @if (r.HasLabel == true)
+                                        {
+                                            <span class="text-success fw-bold">Sí</span>
+                                        }
+                                        else if (r.HasLabel == false)
+                                        {
+                                            <span class="text-danger">No</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">–</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- TRANSPORTISTA -->
+    <div class="section-card">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+            <span>Transportista</span>
+            <span class="chevron">▲</span>
+        </div>
+        <div class="section-body">
+            <dl class="detail-dl">
+                <dt>No. Autorización</dt>
+                <dd>@D(m.TransporterAuthorizationNumber)</dd>
+
+                @if (!esEspecial && !string.IsNullOrWhiteSpace(m.TransporterSCTPermit))
+                {
+                    <dt>No. Permiso SCT</dt>
+                    <dd>@m.TransporterSCTPermit</dd>
+                }
+
+                <dt>Razón Social</dt>
+                <dd>@D(m.TransporterSocialReason)</dd>
+
+                @if (esEspecial)
+                {
+                    <dt>Domicilio</dt>
+                    <dd>@D(m.TransporterAddress)</dd>
+                }
+                else
+                {
+                    <dt>Calle</dt>
+                    <dd>@($"{D(m.TransporterStreet)} {D(m.TransporterExteriorNumber)} {D(m.TransporterInteriorNumber)}")</dd>
+
+                    <dt>Colonia</dt>
+                    <dd>@D(m.TransporterColony)</dd>
+                }
+
+                <dt>C.P. / Municipio</dt>
+                <dd>@($"{D(m.TransporterPostalCode)} – {D(m.TransporterMunicipality)}")</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.TransporterState))
+                {
+                    <dt>Estado</dt>
+                    <dd>@m.TransporterState</dd>
+                }
+
+                <dt>Teléfono</dt>
+                <dd>@D(m.TransporterPhone)</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.TransporterEmail))
+                {
+                    <dt>Correo</dt>
+                    <dd>@m.TransporterEmail</dd>
+                }
+
+                <dt>Tipo de vehículo</dt>
+                <dd>@D(m.VehicleType)</dd>
+
+                <dt>No. de placa</dt>
+                <dd>@D(m.VehiclePlate)</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.DriverLicense))
+                {
+                    <dt>Licencia</dt>
+                    <dd>@m.DriverLicense</dd>
+                }
+
+                <dt>Ruta</dt>
+                <dd>@D(m.TransportRoute)</dd>
+
+                @if (esEspecial && m.TransporterDate.HasValue)
+                {
+                    <dt>Fecha de recepción</dt>
+                    <dd>@m.TransporterDate.Value.ToString("dd/MM/yyyy") @(m.TransporterTime.HasValue ? m.TransporterTime.Value.ToString("HH:mm") : "")</dd>
+                }
+
+                @if (!esEspecial && m.TransporterSignDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.TransporterSignDate.Value.ToString("dd/MM/yyyy")</dd>
+                }
+
+                <dt>Nombre del responsable</dt>
+                <dd>@D(m.TransporterResponsibleName)</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.TransporterObservations))
+                {
+                    <dt>Observaciones</dt>
+                    <dd>@m.TransporterObservations</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <!-- DESTINATARIO -->
+    <div class="section-card">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+            <span>Destinatario / Disposición Final</span>
+            <span class="chevron">▲</span>
+        </div>
+        <div class="section-body">
+            <dl class="detail-dl">
+                @if (!string.IsNullOrWhiteSpace(m.ReceiverAuthorizationNumber))
+                {
+                    <dt>No. Autorización</dt>
+                    <dd>@m.ReceiverAuthorizationNumber</dd>
+                }
+
+                <dt>Razón Social</dt>
+                <dd>@D(m.ReceiverSocialReason)</dd>
+
+                @if (esEspecial)
+                {
+                    <dt>Domicilio</dt>
+                    <dd>@D(m.ReceiverAddress)</dd>
+                }
+                else
+                {
+                    <dt>Calle</dt>
+                    <dd>@($"{D(m.ReceiverStreet)} {D(m.ReceiverExteriorNumber)} {D(m.ReceiverInteriorNumber)}")</dd>
+
+                    <dt>Colonia</dt>
+                    <dd>@D(m.ReceiverColony)</dd>
+                }
+
+                <dt>C.P. / Municipio</dt>
+                <dd>@($"{D(m.ReceiverPostalCode)} – {D(m.ReceiverMunicipality)}")</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.ReceiverState))
+                {
+                    <dt>Estado</dt>
+                    <dd>@m.ReceiverState</dd>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(m.ReceiverPhone))
+                {
+                    <dt>Teléfono</dt>
+                    <dd>@m.ReceiverPhone</dd>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(m.ReceiverEmail))
+                {
+                    <dt>Correo</dt>
+                    <dd>@m.ReceiverEmail</dd>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(m.DisposalType))
+                {
+                    <dt>Tipo de disposición</dt>
+                    <dd>@m.DisposalType</dd>
+                }
+
+                @if (esEspecial && m.ReceiverDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.ReceiverDate.Value.ToString("dd/MM/yyyy")</dd>
+                }
+
+                @if (!esEspecial && m.ReceiverSignDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.ReceiverSignDate.Value.ToString("dd/MM/yyyy")</dd>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(m.ReceiverPersonName))
+                {
+                    <dt>Persona que recibe</dt>
+                    <dd>@m.ReceiverPersonName</dd>
+                }
+
+                <dt>Nombre del responsable</dt>
+                <dd>@D(m.ReceiverResponsibleName)</dd>
+
+                @if (!string.IsNullOrWhiteSpace(m.ReceiverObservations))
+                {
+                    <dt>Observaciones</dt>
+                    <dd>@m.ReceiverObservations</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-3">
+        <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver a la lista</a>
+        <a asp-page="/Manifest/Consult/Edit"
+           asp-route-id="@m.Id"
+           class="btn btn-warning btn-sm px-4">Editar este manifiesto</a>
+    </div>
+</div>
+
+@functions {
+    static string D(string? s) => string.IsNullOrWhiteSpace(s) ? "–" : s;
+}
+
+@section Scripts {
+<script>
+    function toggleSection(header) {
+        const body = header.nextElementSibling;
+        const chevron = header.querySelector('.chevron');
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : '';
+        chevron.textContent = isOpen ? '▼' : '▲';
+    }
+</script>
+}
