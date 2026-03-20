@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 {
@@ -20,6 +19,8 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
         public string Observaciones { get; set; }
         public string TipoResiduo { get; set; }
         public double CantidadEstimada { get; set; }
+        public string Manifiesto { get; set; } // Nuevo campo
+        public string OperadorAsignado { get; set; } // Nuevo campo
     }
 
     public class IndexModel : PageModel
@@ -28,7 +29,6 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 
         public void OnGet()
         {
-            // Hardcodeamos algunos servicios de ejemplo
             Servicios = new List<ServicioRecoleccion>
             {
                 new ServicioRecoleccion
@@ -40,11 +40,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                     Conductor = "Juan Pérez",
                     Vehiculo = "Camión ABC-123",
                     Tecnico = "Carlos López",
+                    OperadorAsignado = "Pedro Ramírez",
                     FechaServicio = DateTime.Today,
-                    Estado = "Asignado",
+                    Estado = "En curso",
                     Observaciones = "Residuos industriales no peligrosos",
                     TipoResiduo = "Plásticos",
-                    CantidadEstimada = 500.5
+                    CantidadEstimada = 500.5,
+                    Manifiesto = "MAN-2024-001"
                 },
                 new ServicioRecoleccion
                 {
@@ -55,11 +57,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                     Conductor = "María García",
                     Vehiculo = "Camión DEF-456",
                     Tecnico = "Roberto Sánchez",
+                    OperadorAsignado = "Ana Torres",
                     FechaServicio = DateTime.Today,
-                    Estado = "Asignado",
+                    Estado = "En curso",
                     Observaciones = "Recolección semanal de residuos orgánicos",
                     TipoResiduo = "Orgánicos",
-                    CantidadEstimada = 300.0
+                    CantidadEstimada = 300.0,
+                    Manifiesto = "MAN-2024-045"
                 },
                 new ServicioRecoleccion
                 {
@@ -70,11 +74,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                     Conductor = "Ana Martínez",
                     Vehiculo = "Camión GHI-789",
                     Tecnico = "José Ramírez",
+                    OperadorAsignado = "Laura Méndez",
                     FechaServicio = DateTime.Today.AddDays(1),
-                    Estado = "Asignado",
+                    Estado = "En curso",
                     Observaciones = "Residuos biológicos - Manejo especial",
                     TipoResiduo = "Biológicos",
-                    CantidadEstimada = 150.75
+                    CantidadEstimada = 150.75,
+                    Manifiesto = "MAN-2024-089"
                 },
                 new ServicioRecoleccion
                 {
@@ -85,11 +91,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                     Conductor = "Pedro González",
                     Vehiculo = "Camión JKL-012",
                     Tecnico = "Miguel Ángel",
+                    OperadorAsignado = "Carlos Ruiz",
                     FechaServicio = DateTime.Today,
-                    Estado = "En Proceso",
+                    Estado = "Concluido",
                     Observaciones = "Aceites y grasas",
                     TipoResiduo = "Aceites",
-                    CantidadEstimada = 50.0
+                    CantidadEstimada = 50.0,
+                    Manifiesto = "MAN-2024-112"
                 },
                 new ServicioRecoleccion
                 {
@@ -100,11 +108,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                     Conductor = "Luis Hernández",
                     Vehiculo = "Camión MNO-345",
                     Tecnico = "Fernando Díaz",
+                    OperadorAsignado = "Roberto Méndez",
                     FechaServicio = DateTime.Today,
-                    Estado = "Completado",
+                    Estado = "Concluido",
                     Observaciones = "Escombros y materiales de construcción",
                     TipoResiduo = "Escombros",
-                    CantidadEstimada = 1000.0
+                    CantidadEstimada = 1000.0,
+                    Manifiesto = "MAN-2024-078"
                 }
             };
 
@@ -120,8 +130,6 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
             }
         }
 
-        
-
         public IActionResult OnPostIniciarRecoleccion(int id)
         {
             return RedirectToPage("Confirm", new { id });
@@ -130,6 +138,12 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
         public IActionResult OnPostIniciarTransporte(int id)
         {
             return RedirectToPage("../RegisterWasteTransportRecord/TransportConfirm", new { id });
+        }
+        
+        // Nuevo método para abrir historial
+        public IActionResult OnPostVerHistorial(int id)
+        {
+            return RedirectToPage("/WasteTraceability/ConsultWasteHistory/ServiceHistory", new { id });
         }
     }
 }
