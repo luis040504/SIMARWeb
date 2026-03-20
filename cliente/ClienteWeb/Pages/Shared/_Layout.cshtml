@@ -34,7 +34,11 @@
                     <i class="bi bi-person-circle me-1"></i> @usuarioNombre
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-pencil-square me-2"></i>Editar Perfil</a></li>
+                    <li>
+                        <a class="dropdown-item" href="/editar/@usuarioNombre">
+                            <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+                        </a>
+                    </li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
                 </ul>
@@ -75,7 +79,7 @@
                             <a asp-page="/Usuarios/Clientes/Index" class="list-group-item list-group-item-action py-2">
                                 <i class="bi bi-person-badge me-2"></i>Clientes
                             </a>
-                            <a asp-page="/Usuarios/Personal/Index" class="list-group-item list-group-item-action py-2">
+                            <a asp-page="/Client_SimarUser/SimarUser/ConsultSimarUser" class="list-group-item list-group-item-action py-2">
                                 <i class="bi bi-person-workspace me-2"></i>Personal SIMAR
                             </a>
                         </div>
