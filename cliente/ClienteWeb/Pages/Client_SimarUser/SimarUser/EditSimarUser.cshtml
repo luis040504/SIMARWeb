@@ -25,14 +25,14 @@
 
                     <div class="row">
                         <div class="col-md-12 mb-4">
-                            <h5 style="border-bottom: 2px solid #f4f4f4; padding-bottom: 10px;">Información de Cuenta</h5>
+                            <h5 style="border-bottom: 2px solid #f4f4f4; padding-bottom: 10px;">Información de Usuario</h5>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="small text-muted fw-bold">Username (ID)</label>
+                            <label class="small text-muted fw-bold">Nombre de usuario</label>
                             <input type="text" asp-for="DatosUsuario.UserName" class="form-control" readonly style="background-color: #f8f9fa;" />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="small text-muted fw-bold">Email Corporativo</label>
+                            <label class="small text-muted fw-bold">Correo Electrónico</label>
                             <input type="email" asp-for="DatosUsuario.Email" class="form-control" />
                         </div>
 
@@ -60,12 +60,12 @@
                             <input type="text" asp-for="DatosUsuario.Rfc" class="form-control" />
                         </div>
                         <div class="col-md-12 mb-3">
-                            <label class="small text-muted fw-bold">Domicilio Completo</label>
+                            <label class="small text-muted fw-bold">Domicilio</label>
                             <input type="text" asp-for="DatosUsuario.Direccion" class="form-control" />
                         </div>
 
                         <div class="col-md-12 mt-3 mb-4">
-                            <h5 style="border-bottom: 2px solid #f4f4f4; padding-bottom: 10px;">Detalles del Puesto</h5>
+                            <h5 style="border-bottom: 2px solid #f4f4f4; padding-bottom: 10px;">Información Especifica</h5>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="small text-muted fw-bold">Rol en SIMAR</label>
@@ -79,7 +79,7 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="small text-muted fw-bold">Salario Mensual ($)</label>
+                            <label class="small text-muted fw-bold">Salario Mensual ($ MXN)</label>
                             <input type="number" asp-for="DatosUsuario.Salario" class="form-control" />
                         </div>
 
@@ -96,7 +96,7 @@
                     <div id="zonaGuardar" class="text-end mt-4" style="display:none;">
                         <hr />
                         <button type="submit" class="btn btn-success btn-lg px-5 shadow">
-                            Guardar Cambios en Expediente
+                            Guardar Cambios en el Expediente
                         </button>
                     </div>
 
