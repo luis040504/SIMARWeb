@@ -1,4 +1,4 @@
-@page "{id}"
+@page
 @model ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.ConfirmModel
 @{
     ViewData["Title"] = "Confirmar Inicio de Recolección";
@@ -108,10 +108,27 @@
         color: #666;
         margin-top: 5px;
     }
+    
+    .btn-regresar {
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-regresar:hover {
+        background-color: #f0f0f0;
+    }
 </style>
 
 <div class="page-content">
     <div class="full-width-container">
+        <button class="btn-regresar" onclick="window.location.href='/WasteTraceability/ConsultWasteHistory/ServiceHistory?cliente=Industrias ABC'">
+            ← Regresar al historial
+        </button>
+        
         <h2>Confirmar Inicio de Recolección</h2>
         
         <div class="mensaje-confirmacion">
@@ -177,7 +194,6 @@
         
         <div class="acciones">
             <form method="post" asp-page-handler="Confirmar">
-                <input type="hidden" name="id" value="@Model.Servicio?.Id" />
                 <button type="submit" class="btn btn-primary">Registrar recolección</button>
             </form>
             
