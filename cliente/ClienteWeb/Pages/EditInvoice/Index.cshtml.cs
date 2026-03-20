@@ -54,9 +54,9 @@ namespace ClienteWeb.Pages.EditInvoice
         // Simulated Database for Invoices
         private static readonly List<SimulatedInvoice> _simulatedDb = new List<SimulatedInvoice>
         {
-            new SimulatedInvoice { Id = 101, InvoiceNumber = "F-1001", Client = "Juan Pérez", TaxId = "PEPJ800101XYZ", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m, Status = "Rejected", Reason = "Invalid Postal Code" },
+            new SimulatedInvoice { Id = 101, InvoiceNumber = "F-1001", Client = "Juan Pérez", TaxId = "PEPJ800101XYZ", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m, Status = "Rejected", Reason = "Código Postal Inválido" },
             new SimulatedInvoice { Id = 102, InvoiceNumber = "F-1002", Client = "Empresa SA de CV", TaxId = "EMP120304QWE", Date = DateTime.Now.AddDays(-5), Amount = 5000.00m, Status = "Paid", Reason = "" },
-            new SimulatedInvoice { Id = 103, InvoiceNumber = "F-1003", Client = "María López", TaxId = "LOMM901212ABC", Date = DateTime.Now.AddDays(-1), Amount = 3200.00m, Status = "Rejected", Reason = "Wrong Fiscal Regime" },
+            new SimulatedInvoice { Id = 103, InvoiceNumber = "F-1003", Client = "María López", TaxId = "LOMM901212ABC", Date = DateTime.Now.AddDays(-1), Amount = 3200.00m, Status = "Rejected", Reason = "Régimen Fiscal Incorrecto" },
             new SimulatedInvoice { Id = 104, InvoiceNumber = "F-1004", Client = "Servicios Integrales", TaxId = "SIN080808DEF", Date = DateTime.Now.AddDays(-8), Amount = 4500.00m, Status = "Pending", Reason = "" }
         };
 
@@ -127,7 +127,7 @@ namespace ClienteWeb.Pages.EditInvoice
 
         public IActionResult OnPostEdit()
         {
-            SuccessMessage = $"Invoice {TaxId} ({BillingName}) has been successfully updated and resubmitted!";
+            SuccessMessage = $"¡La factura de {TaxId} ({BillingName}) ha sido actualizada y reenviada exitosamente!";
             
             // In a real scenario, you would update the database record and change status
             var invoiceToUpdate = _simulatedDb.FirstOrDefault(i => i.Id == SelectedInvoiceId);

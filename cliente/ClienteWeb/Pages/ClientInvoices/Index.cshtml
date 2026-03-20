@@ -1,0 +1,180 @@
+@page
+@model ClienteWeb.Pages.ClientInvoices.IndexModel
+@{
+    ViewData["Title"] = "Consulta de Facturas";
+}
+
+<div class="container mt-4">
+    <h2>Consulta de Facturas</h2>
+    <p class="text-muted">Gestiona tus facturas: acepta o rechaza las pendientes, y descarga las ya aceptadas.</p>
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Model.StatusMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="mb-4">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link @(Model.Filter == "Pending" ? "active" : "")" asp-page="./Index" asp-route-Filter="Pending">Pendientes</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.Filter == "Accepted" ? "active" : "")" asp-page="./Index" asp-route-Filter="Accepted">Aceptadas</a>
+            </li>
+        </ul>
+    </div>
+
+    @if (Model.Invoices != null && Model.Invoices.Any())
+    {
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Número de Factura</th>
+                        <th>Descripción</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in Model.Invoices)
+                    {
+                        <tr>
+                            <td class="fw-bold">@invoice.InvoiceNumber</td>
+                            <td>@invoice.Description</td>
+                            <td>@invoice.Date.ToString("dd/MM/yyyy")</td>
+                            <td>@invoice.Amount.ToString("C")</td>
+                            <td>
+                                @if (invoice.Status == "Pending")
+                                {
+                                    <span class="badge bg-warning text-dark px-2 py-1">Pendiente</span>
+                                }
+                                else if (invoice.Status == "Accepted")
+                                {
+                                    <span class="badge bg-success px-2 py-1">Aceptada</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-ViewId="@invoice.Id" class="btn btn-sm btn-info me-1 text-white">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                <form method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@invoice.Id" />
+                                    @if (invoice.Status == "Pending")
+                                    {
+                                        <button type="submit" asp-page-handler="Accept" class="btn btn-sm btn-success me-1">
+                                            <i class="bi bi-check-circle"></i> Aceptar
+                                        </button>
+                                        <button type="submit" asp-page-handler="Reject" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de que deseas rechazar esta factura?');">
+                                            <i class="bi bi-x-circle"></i> Rechazar
+                                        </button>
+                                    }
+                                    else if (invoice.Status == "Accepted")
+                                    {
+                                        <button type="submit" asp-page-handler="Download" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-download"></i> Descargar
+                                        </button>
+                                    }
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> No se encontraron facturas en esta categoría.
+        </div>
+    }
+</div>
+
+@if (Model.SelectedInvoice != null)
+{
+    <div class="modal fade" id="invoiceDetailsModal" tabindex="-1" aria-labelledby="invoiceDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="invoiceDetailsModalLabel">
+                        Detalles de Factura: @Model.SelectedInvoice.InvoiceNumber
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Emisor/Receptor</strong><br/>
+                            RFC: @Model.SelectedInvoice.TaxId<br/>
+                            Nombre: @Model.SelectedInvoice.BillingName<br/>
+                            CP: @Model.SelectedInvoice.PostalCode<br/>
+                            Régimen: @Model.SelectedInvoice.FiscalRegime
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <strong>Datos Fiscales</strong><br/>
+                            Uso CFDI: @Model.SelectedInvoice.CfdiUsage<br/>
+                            Forma de Pago: @Model.SelectedInvoice.PaymentForm<br/>
+                            Método de Pago: @Model.SelectedInvoice.PaymentMethod<br/>
+                            Fecha: @Model.SelectedInvoice.Date.ToString("dd/MM/yyyy")
+                        </div>
+                    </div>
+                    
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Clave Prod.</th>
+                                <th>Clave Unid.</th>
+                                <th>Objeto Imp.</th>
+                                <th>Descripción</th>
+                                <th class="text-end">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>@Model.SelectedInvoice.ProductCode</td>
+                                <td>@Model.SelectedInvoice.UnitCode</td>
+                                <td>@Model.SelectedInvoice.TaxObject</td>
+                                <td>@Model.SelectedInvoice.Description</td>
+                                <td class="text-end">@Model.SelectedInvoice.Amount.ToString("C")</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="4" class="text-end">Total</th>
+                                <th class="text-end">@Model.SelectedInvoice.Amount.ToString("C")</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <div>
+                        <span class="badge @(Model.SelectedInvoice.Status == "Accepted" ? "bg-success" : (Model.SelectedInvoice.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")) fs-6 px-3 py-2">
+                            Estado: @(Model.SelectedInvoice.Status == "Accepted" ? "Aceptada" : (Model.SelectedInvoice.Status == "Rejected" ? "Rechazada" : "Pendiente"))
+                        </span>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <a asp-page="./Index" asp-route-Filter="@Model.Filter" class="btn btn-outline-primary d-none">Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script to auto-show modal when ViewId is present -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var invoiceModal = new bootstrap.Modal(document.getElementById('invoiceDetailsModal'));
+            invoiceModal.show();
+            
+            // Clean up the URL when modal is closed
+            document.getElementById('invoiceDetailsModal').addEventListener('hidden.bs.modal', function () {
+                window.location.href = '?Filter=@Model.Filter';
+            });
+        });
+    </script>
+}

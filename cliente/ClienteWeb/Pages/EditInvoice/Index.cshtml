@@ -1,29 +1,29 @@
 @page
 @model ClienteWeb.Pages.EditInvoice.IndexModel
 @{
-    ViewData["Title"] = "Edit Invoice";
+    ViewData["Title"] = "Editar Factura";
 }
 
 <div class="container-fluid px-4 px-md-5 mt-4" id="w_EditInvoice">
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-warning text-dark d-flex align-items-center">
             <i class="bi bi-pencil-square fs-4 me-2"></i>
-            <h4 class="mb-0">Find Rejected Invoices</h4>
+            <h4 class="mb-0">Buscar Facturas Rechazadas</h4>
         </div>
         <div class="card-body p-4">
 
             <form method="post" asp-page-handler="Search" class="mb-5">
                 <div class="row align-items-end g-3">
                     <div class="col-md-9">
-                        <label for="c_Search" class="form-label text-muted fw-bold">Search Rejected Invoice (RFC, Client Name or Invoice Number)</label>
+                        <label for="c_Search" class="form-label text-muted fw-bold">Buscar Factura Rechazada (RFC, Nombre del Cliente o Número de Factura)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control form-control-lg" id="c_Search" name="c_Search" asp-for="c_Search" placeholder="Enter RFC, name or invoice number...">
+                            <input type="text" class="form-control form-control-lg" id="c_Search" name="c_Search" asp-for="c_Search" placeholder="Ingrese RFC, nombre o número de factura...">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <button type="submit" class="btn btn-secondary btn-lg w-100 shadow-sm" id="b_Search">
-                            <i class="bi bi-search me-2"></i>Search
+                            <i class="bi bi-search me-2"></i>Buscar
                         </button>
                     </div>
                 </div>
@@ -35,15 +35,15 @@
             {
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="text-warning text-dark fw-bold mb-0 fs-4">
-                        <i class="bi bi-funnel me-2"></i> Search Results
+                        <i class="bi bi-funnel me-2"></i> Resultados de Búsqueda
                     </h5>
-                    <a href="/EditInvoice" class="btn btn-outline-secondary">Clear Search</a>
+                    <a href="/EditInvoice" class="btn btn-outline-secondary">Limpiar Búsqueda</a>
                 </div>
             }
             else
             {
                 <h5 class="mt-4 mb-4 text-secondary fw-bold fs-4">
-                    <i class="bi bi-exclamation-triangle me-2"></i> Invoices Pending Correction (Rejected)
+                    <i class="bi bi-exclamation-triangle me-2"></i> Facturas Pendientes de Corrección (Rechazadas)
                 </h5>
             }
 
@@ -60,15 +60,15 @@
                                         <span class="badge bg-danger text-white border">@invoice.InvoiceNumber</span>
                                     </div>
                                     <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong>@invoice.TaxId</strong></p>
-                                    <p class="card-text mb-2"><small class="text-muted">Reason:</small> <span class="badge bg-warning text-dark">@invoice.Reason</span></p>
-                                    <p class="card-text mb-3"><small class="text-muted">Date:</small> @invoice.Date.ToString("dd/MM/yyyy")</p>
+                                    <p class="card-text mb-2"><small class="text-muted">Motivo:</small> <span class="badge bg-warning text-dark">@invoice.Reason</span></p>
+                                    <p class="card-text mb-3"><small class="text-muted">Fecha:</small> @invoice.Date.ToString("dd/MM/yyyy")</p>
                                     <h4 class="card-text text-danger mt-2 mb-4">@invoice.Amount.ToString("C")</h4>
                                     
                                     <form method="post" asp-page-handler="PrepareEdit">
                                         <input type="hidden" asp-for="SelectedInvoiceId" value="@invoice.Id" />
                                         <input type="hidden" asp-for="c_Search" />
                                         <button type="submit" class="btn btn-warning text-dark fw-bold w-100 shadow-sm btn-lg" id="b_EditInvoice_@invoice.Id">
-                                            <i class="bi bi-pencil-fill me-2"></i> Edit Invoice
+                                            <i class="bi bi-pencil-fill me-2"></i> Editar Factura
                                         </button>
                                     </form>
                                 </div>
@@ -81,7 +81,7 @@
                     <div class="col-12">
                         <div class="alert alert-light border text-center text-muted py-5 shadow-sm rounded-3" role="alert">
                             <i class="bi bi-check-circle display-3 d-block mb-3 text-success opacity-50"></i>
-                            <span class="fs-4">No rejected invoices found.</span>
+                            <span class="fs-4">No se encontraron facturas rechazadas.</span>
                         </div>
                     </div>
                 }
@@ -118,7 +118,7 @@
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-warning text-dark border-bottom-0 pb-4 pt-4 px-5">
                     <h4 class="modal-title fw-bold" id="invoiceModalLabel">
-                        <i class="bi bi-pencil-square me-3"></i> Edit Billing Data
+                        <i class="bi bi-pencil-square me-3"></i> Editar Datos de Facturación
                     </h4>
                     <a href="/EditInvoice" class="btn-close" aria-label="Close"></a>
                 </div>
@@ -127,7 +127,7 @@
                 <div class="bg-warning text-dark px-5 pb-4" style="opacity: 0.95;">
                     <div class="row align-items-end">
                         <div class="col-md-8">
-                            <small class="text-dark text-uppercase fw-bold ls-1">Editing Invoice: <span class="badge bg-danger text-white">@Model.SelectedInvoice?.InvoiceNumber</span></small>
+                            <small class="text-dark text-uppercase fw-bold ls-1">Editando Factura: <span class="badge bg-danger text-white">@Model.SelectedInvoice?.InvoiceNumber</span></small>
                             <h3 class="mb-0 mt-2">@Model.SelectedInvoice?.Client <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedInvoice?.TaxId)</span></h3>
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -151,41 +151,41 @@
                                 <div class="card border-0 shadow-sm rounded-4">
                                     <div class="card-body p-5">
                                         <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
-                                            <i class="bi bi-person-vcard me-3"></i>1. Receiver Information
+                                            <i class="bi bi-person-vcard me-3"></i>1. Información del Receptor
                                         </h5>
                                         <div class="row g-4">
                                             <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary">Tax ID (RFC)</label>
+                                                <label class="form-label fw-bold text-secondary">RFC</label>
                                                 <input type="text" class="form-control form-control-lg bg-light" value="@Model.TaxId" disabled>
                                             </div>
                                             <div class="col-md-8">
-                                                <label class="form-label fw-bold text-secondary">Billing Name</label>
+                                                <label class="form-label fw-bold text-secondary">Razón Social</label>
                                                 <input type="text" class="form-control form-control-lg bg-light" value="@Model.BillingName" disabled>
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary text-danger">Postal Code *</label>
-                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="PostalCode" required maxlength="5" placeholder="e.g. 12345">
+                                                <label class="form-label fw-bold text-secondary text-danger">Código Postal *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="PostalCode" required maxlength="5" placeholder="ej. 12345">
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary text-danger">Fiscal Regime *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Régimen Fiscal *</label>
                                                 <select class="form-select form-select-lg border-secondary" asp-for="FiscalRegime" required>
-                                                    <option value="">-- Select Regime --</option>
-                                                    <option value="601">601 - General Law for Legal Entities</option>
-                                                    <option value="603">603 - Non-Profit Legal Entities</option>
-                                                    <option value="605">605 - Salaries and Wages</option>
-                                                    <option value="606">606 - Leasing</option>
-                                                    <option value="612">612 - Individuals with Business Activities</option>
-                                                    <option value="626">626 - Simplified Trust Regime (RESICO)</option>
+                                                    <option value="">-- Seleccionar Régimen --</option>
+                                                    <option value="601">601 - General de Ley Personas Morales</option>
+                                                    <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
+                                                    <option value="605">605 - Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
+                                                    <option value="606">606 - Arrendamiento</option>
+                                                    <option value="612">612 - Personas Físicas con Actividades Empresariales y Profesionales</option>
+                                                    <option value="626">626 - Régimen Simplificado de Confianza</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary text-danger">CFDI Usage *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Uso de CFDI *</label>
                                                 <select class="form-select form-select-lg border-secondary" asp-for="CfdiUsage" required>
-                                                    <option value="">-- Select Usage --</option>
-                                                    <option value="G01">G01 - Acquisition of merchandise</option>
-                                                    <option value="G03">G03 - General expenses</option>
-                                                    <option value="I01">I01 - Construction</option>
-                                                    <option value="P01">P01 - To be defined</option>
+                                                    <option value="">-- Seleccionar Uso --</option>
+                                                    <option value="G01">G01 - Adquisición de mercancías</option>
+                                                    <option value="G03">G03 - Gastos en general</option>
+                                                    <option value="I01">I01 - Construcciones</option>
+                                                    <option value="P01">P01 - Por definir</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -198,27 +198,27 @@
                                 <div class="card border-0 shadow-sm rounded-4">
                                     <div class="card-body p-5">
                                         <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
-                                            <i class="bi bi-wallet2 me-3"></i>2. Payment Attributes
+                                            <i class="bi bi-wallet2 me-3"></i>2. Atributos de Pago
                                         </h5>
                                         <div class="row g-4">
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold text-secondary text-danger">Payment Form *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Forma de Pago *</label>
                                                 <select class="form-select form-select-lg border-secondary" asp-for="PaymentForm" required>
-                                                    <option value="">-- Select Payment Form --</option>
-                                                    <option value="01">01 - Cash</option>
-                                                    <option value="02">02 - Nominal Check</option>
-                                                    <option value="03">03 - Electronic Funds Transfer</option>
-                                                    <option value="04">04 - Credit Card</option>
-                                                    <option value="28">28 - Debit Card</option>
-                                                    <option value="99">99 - To be defined</option>
+                                                    <option value="">-- Seleccionar Forma de Pago --</option>
+                                                    <option value="01">01 - Efectivo</option>
+                                                    <option value="02">02 - Cheque nominativo</option>
+                                                    <option value="03">03 - Transferencia electrónica de fondos</option>
+                                                    <option value="04">04 - Tarjeta de crédito</option>
+                                                    <option value="28">28 - Tarjeta de débito</option>
+                                                    <option value="99">99 - Por definir</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold text-secondary text-danger">Payment Method *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Método de Pago *</label>
                                                 <select class="form-select form-select-lg border-secondary" asp-for="PaymentMethod" required>
-                                                    <option value="">-- Select Payment Method --</option>
-                                                    <option value="PUE">PUE - Payment in a single installment</option>
-                                                    <option value="PPD">PPD - Payment in installments or deferred</option>
+                                                    <option value="">-- Seleccionar Método de Pago --</option>
+                                                    <option value="PUE">PUE - Pago en una sola exhibición</option>
+                                                    <option value="PPD">PPD - Pago en parcialidades o diferido</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -231,24 +231,24 @@
                                 <div class="card border-0 shadow-sm rounded-4">
                                     <div class="card-body p-5">
                                         <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
-                                            <i class="bi bi-box-seam me-3"></i>3. Concept Details
+                                            <i class="bi bi-box-seam me-3"></i>3. Detalles del Concepto
                                         </h5>
                                         <div class="row g-4 align-items-start">
                                              <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary text-danger">Product/Service Code *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Código de Producto/Servicio *</label>
                                                 <input type="text" class="form-control form-control-lg border-secondary" asp-for="ProductCode" required>
                                             </div>
                                              <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary text-danger">Unit Code *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Código de Unidad *</label>
                                                 <input type="text" class="form-control form-control-lg border-secondary" asp-for="UnitCode" required>
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label fw-bold text-secondary text-danger">Tax Object *</label>
+                                                <label class="form-label fw-bold text-secondary text-danger">Objeto de Impuesto *</label>
                                                 <select class="form-select form-select-lg border-secondary" asp-for="TaxObject" required>
-                                                    <option value="">-- Select Tax Object --</option>
-                                                    <option value="01">01 - Not a tax object</option>
-                                                    <option value="02">02 - Tax object</option>
-                                                    <option value="03">03 - Tax object and not required to itemize</option>
+                                                    <option value="">-- Seleccionar Objeto de Impuesto --</option>
+                                                    <option value="01">01 - No objeto de impuesto</option>
+                                                    <option value="02">02 - Sí objeto de impuesto</option>
+                                                    <option value="03">03 - Sí objeto del impuesto y no obligado al desglose</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -259,9 +259,9 @@
                         </div> <!-- End main row -->
 
                         <div class="modal-footer border-top-0 mt-5 px-0 pb-0">
-                            <a href="/EditInvoice" class="btn btn-outline-secondary btn-lg px-5 py-3 rounded-pill">Cancel</a>
+                            <a href="/EditInvoice" class="btn btn-outline-secondary btn-lg px-5 py-3 rounded-pill">Cancelar</a>
                             <button type="submit" class="btn btn-warning btn-lg px-5 py-3 rounded-pill shadow-lg text-dark fw-bold">
-                                <i class="bi bi-save-fill me-2 fs-5"></i> Save and Resubmit
+                                <i class="bi bi-save-fill me-2 fs-5"></i> Guardar y Reenviar
                             </button>
                         </div>
                     </form>
