@@ -15,11 +15,40 @@
 
 <style>
     .btn-accion {
-        padding: 6px 12px;
+        padding: 6px 22px;
         border-radius: 5px;
-        background-color: #9e9e9e;
+        background-color: green;
         color: white;
         text-decoration: none;
+        font-size: 12px;
+    }
+
+    .btn-desactivate {
+        padding: 6px 12px;
+        border-radius: 5px;
+        background-color: red;
+        color: white;
+        text-decoration: wavy;
+        font-size: 12px;
+        margin-left: 35px;
+    }
+
+    .btn-activate {
+        padding: 6px 12px;
+        border-radius: 5px;
+        background-color: greenyellow;
+        color: black;
+        text-decoration: wavy;
+        font-size: 12px;
+        margin-left: 35px;
+    }
+
+    .btn-edit {
+        padding: 6px 12px;
+        border-radius: 5px;
+        background-color: yellow;
+        color: black;
+        text-decoration: wavy;
         font-size: 12px;
     }
 
@@ -35,12 +64,17 @@
         margin-bottom: 15px;
         text-align: center;
     }
+
+    .buscador {
+        flex: 1;
+        min-width: 250px;
+    }
 </style>
 
-<div style="margin-bottom:20px; display:flex; gap:10px;">
-
+<div style="margin-bottom:20px; display:flex; gap:10px;"> 
+    
     <!-- Barra de búsqueda -->
-    <input type="text" placeholder="Buscar cliente..." class="campo-entrada" />
+    <input type="text" placeholder="Buscar cliente..." class="campo-entrada buscador" />
 
     <!-- Combo de orden -->
     <select class="campo-entrada">
@@ -49,6 +83,9 @@
         <option>Fecha de registro</option>
         <option>Status</option>
     </select>
+
+    <!-- Boton registrar cliente -->
+    <a class="btn-accion" asp-page="ClientRegister">+ Nuevo Registro</a> |
 
 </div>
 
@@ -60,7 +97,7 @@
             <th>Email</th>
             <th>Teléfono</th>
             <th>Fecha Registro</th>
-            <th>Status</th>
+            <th>Estatus</th>
             <th>Acciones</th>
         </tr>
     </thead>
@@ -77,9 +114,27 @@
                 <td class="status">@cliente.Status</td>
 
                 <td>
-                    <a class="btn-accion" asp-page="EditClient" asp-route-id="@cliente.Id">Editar</a> |
-                    <button class="btn-accion" type="button" onclick="confirmarDesactivacion(@cliente.Id)">Desactivar</button>
-                    <a class="btn-accion" asp-page="ConsultedClient" asp-route-id="@cliente.Id">Ver más</a>
+                    <a class="btn-edit" asp-page="EditClient" asp-route-id="@cliente.Id">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a> |
+
+                    
+                    <a class="btn-accion" asp-page="ConsultedClient" asp-route-id="@cliente.Id">
+                        <i class="bi-eye"></i> Ver más
+                    </a>
+
+                    @if (cliente.Status == "Activo")
+                    {
+                        <button class="btn-desactivate" type="button" onclick="confirmarAccion(@cliente.Id, 'desactivar')">
+                            <i class="bi bi-person-x"></i> Desactivar
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-activate" type="button" onclick="confirmarAccion(@cliente.Id, 'activar')">
+                            <i class="bi bi-person-check"></i> Activar
+                        </button>
+                    }
                 </td>
             </tr>
         }
@@ -89,9 +144,9 @@
 <div id="modalDesactivar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
 
     <div style="background:white; padding:25px; border-radius:10px; text-align:center; width:300px;">
-        <p>¿Está seguro de desactivar al cliente seleccionado?</p>
+        <p id="mensajeModal"></p>
 
-        <button onclick="desactivarCliente()" class="btn">Confirmar</button>
+        <button onclick="ejecutarAccion()" class="btn">Confirmar</button>
         <button onclick="cerrarModal()" class="btn">Cancelar</button>
     </div>
 
@@ -100,9 +155,17 @@
 <!-- simulacion desactivacion -->
 <script>
     let clienteSeleccionado = null;
+    let tipoAccion = null;
 
-    function confirmarDesactivacion(id) {
+    function confirmarAccion(id, accion) {
         clienteSeleccionado = id;
+        tipoAccion = accion;
+
+        let mensaje = accion === "desactivar"
+            ? "¿Está seguro de desactivar al cliente seleccionado?"
+            : "¿Está seguro de activar al cliente seleccionado?";
+
+        document.getElementById("mensajeModal").innerText = mensaje;
         document.getElementById("modalDesactivar").style.display = "flex";
     }
 
@@ -110,20 +173,32 @@
         document.getElementById("modalDesactivar").style.display = "none";
     }
 
-    function desactivarCliente() {
+    function ejecutarAccion() {
         if (clienteSeleccionado != null) {
 
-            // Cambiar status en la tabla (simulación)
             let fila = document.getElementById("cliente-" + clienteSeleccionado);
             let statusCell = fila.querySelector(".status");
+            let boton = fila.querySelector("button");
 
-            statusCell.innerText = "Inactivo";
+            if (tipoAccion === "desactivar") {
+                statusCell.innerText = "Inactivo";
 
-            // Cerrar modal
+                boton.className = "btn-activate";
+                boton.innerHTML = '<i class="bi bi-person-check"></i> Activar';
+                boton.setAttribute("onclick", `confirmarAccion(${clienteSeleccionado}, 'activar')`);
+
+                alert("El cliente ha sido dado de baja");
+            } else {
+                statusCell.innerText = "Activo";
+
+                boton.className = "btn-desactivate";
+                boton.innerHTML = '<i class="bi bi-person-x"></i> Desactivar';
+                boton.setAttribute("onclick", `confirmarAccion(${clienteSeleccionado}, 'desactivar')`);
+
+                alert("El cliente ha sido activado");
+            }
+
             cerrarModal();
-
-            // Mostrar mensaje
-            alert("El cliente ha sido dado de baja");
         }
     }
 </script>
