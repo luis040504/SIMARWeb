@@ -67,9 +67,19 @@
                                     <form method="post" asp-page-handler="PrepareInvoice">
                                         <input type="hidden" asp-for="SelectedServiceId" value="@service.Id" />
                                         <input type="hidden" asp-for="c_Search" />
-                                        <button type="submit" class="btn btn-primary w-100 shadow-sm btn-lg" id="b_GenerateInvoice_@service.Id">
+                                        <button type="submit" class="btn btn-primary w-100 shadow-sm btn-lg mb-2" id="b_GenerateInvoice_@service.Id">
                                             <i class="bi bi-receipt me-2"></i> Generar Factura
                                         </button>
+                                    </form>
+                                    <form method="post" asp-page-handler="UploadPhysicalInvoice" enctype="multipart/form-data">
+                                        <input type="hidden" asp-for="SelectedServiceId" value="@service.Id" />
+                                        <input type="hidden" asp-for="c_Search" />
+                                        <div class="d-grid">
+                                            <label class="btn btn-outline-secondary w-100 shadow-sm btn-lg mb-0" style="cursor: pointer;" for="upload_@service.Id">
+                                                <i class="bi bi-upload me-2"></i> Subir Factura Física
+                                            </label>
+                                            <input type="file" id="upload_@service.Id" name="PhysicalInvoice" accept=".pdf" class="d-none" onchange="this.form.submit()" />
+                                        </div>
                                     </form>
                                 </div>
                             </div>

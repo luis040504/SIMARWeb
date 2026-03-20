@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -126,6 +127,37 @@ namespace ClienteWeb.Pages.GenerateInvoice
         public IActionResult OnPostGenerate()
         {
             SuccessMessage = $"¡La factura para el RFC {TaxId} ({BillingName}) ha sido generada exitosamente! Se ha enviado una notificación automática al CLIENTE.";
+            return RedirectToPage();
+        }
+
+        public IActionResult OnPostUploadPhysicalInvoice(IFormFile PhysicalInvoice)
+        {
+            if (PhysicalInvoice != null && PhysicalInvoice.Length > 0)
+            {
+                if (PhysicalInvoice.ContentType != "application/pdf")
+                {
+                    SuccessMessage = "Error: El archivo debe ser un PDF.";
+                }
+                else
+                {
+                    SuccessMessage = $"¡La factura física '{PhysicalInvoice.FileName}' se ha subido correctamente!";
+                }
+            }
+            else
+            {
+                SuccessMessage = "Error: No se seleccionó ningún archivo o el archivo está vacío.";
+            }
+
+            if (!string.IsNullOrEmpty(c_Search))
+            {
+                OnPostSearch();
+            }
+            else
+            {
+                LoadRecentServices();
+                IsSearchResult = false;
+            }
+
             return RedirectToPage();
         }
 
