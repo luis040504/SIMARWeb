@@ -159,6 +159,13 @@
     <label>Seleccionar Cotización Aprobada:</label><br />
     <select name="QuotationId" @(Model.ShowPreview ? "disabled" : "")>
         <option value="">-- Selecciona una cotización --</option>
+
+        @foreach (var q in Model.Quotations)
+        {
+            <option value="@q.Id" selected="@(q.Id == Model.QuotationId)">
+                @q.Name
+            </option>
+        }
     </select>
 
     @if (Model.ShowPreview)
