@@ -27,9 +27,12 @@ namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
     {
         public List<ServicioHistorial> ServiciosHistorial { get; set; }
         public string ClienteSeleccionado { get; set; }
+        public string Rol { get; set; }
 
-        public void OnGet(int? id, string cliente)
+        public void OnGet(int? id, string cliente, string rol = "empresa")
         {
+            Rol = rol;
+            ViewData["Rol"] = rol;
             ClienteSeleccionado = cliente ?? "Cliente no especificado";
             
             ServiciosHistorial = new List<ServicioHistorial>();
@@ -123,8 +126,25 @@ namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
                         Vehiculo = "Camión DEF-456",
                         TipoResiduo = "Orgánicos",
                         CantidadEstimada = 280.0,
-                        Estado = "Concluido",
+                        Estado = "En curso",
                         FechaServicio = DateTime.Today.AddDays(-7),
+                        Direccion = "Calle Comercio 456, Centro",
+                        Contrato = "CON-2024-045",
+                        Conductor = "María García"
+                    },
+                    new ServicioHistorial
+                    {
+                        Id = 1010,
+                        Cliente = "Comercial XYZ",
+                        Observaciones = "Recolección de residuos orgánicos - Semana 3",
+                        Manifiesto = "MAN-2024-050",
+                        TecnicoAsignado = "Roberto Sánchez",
+                        OperadorAsignado = "Ana Torres",
+                        Vehiculo = "Camión DEF-456",
+                        TipoResiduo = "Orgánicos",
+                        CantidadEstimada = 290.0,
+                        Estado = "Concluido",
+                        FechaServicio = DateTime.Today.AddDays(-14),
                         Direccion = "Calle Comercio 456, Centro",
                         Contrato = "CON-2024-045",
                         Conductor = "María García"
@@ -133,7 +153,6 @@ namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
             }
             else
             {
-                // Datos de ejemplo para otros clientes
                 ServiciosHistorial = new List<ServicioHistorial>
                 {
                     new ServicioHistorial
@@ -163,6 +182,22 @@ namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
                         Vehiculo = "Camión ABC-122",
                         TipoResiduo = "Residuos generales",
                         CantidadEstimada = 100.0,
+                        Estado = "Recolectado",
+                        FechaServicio = DateTime.Today,
+                        Direccion = "Dirección del servicio",
+                        Contrato = "CON-2024-XXX"
+                    },
+                    new ServicioHistorial
+                    {
+                        Id = 3,
+                        Cliente = cliente ?? "Cliente",
+                        Observaciones = "Servicio de recolección de residuos",
+                        Manifiesto = "MAN-2024-231",
+                        TecnicoAsignado = "Juan Torres",
+                        OperadorAsignado = "Bruno Villegas",
+                        Vehiculo = "Camión SFC-873",
+                        TipoResiduo = "Residuos generales",
+                        CantidadEstimada = 200.0,
                         Estado = "En curso",
                         FechaServicio = DateTime.Today,
                         Direccion = "Dirección del servicio",

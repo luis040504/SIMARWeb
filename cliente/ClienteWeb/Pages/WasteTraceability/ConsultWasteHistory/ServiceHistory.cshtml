@@ -32,6 +32,9 @@
         cursor: pointer;
         font-size: 14px;
         margin-bottom: 20px;
+        display: inline-block;
+        text-decoration: none;
+        color: black;
     }
     
     .btn-regresar:hover {
@@ -88,6 +91,12 @@
         background-color: #fff3cd;
         border: 1px solid #ffc107;
         color: #856404;
+    }
+    
+    .estado-recolectado {
+        background-color: #cce5ff;
+        border: 1px solid #0066cc;
+        color: #004085;
     }
     
     .estado-en-curso {
@@ -207,6 +216,8 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        text-decoration: none;
+        border-radius: 4px;
     }
     
     .btn-accion:hover {
@@ -222,21 +233,85 @@
     .btn-primary:hover {
         background-color: #0052a3;
     }
+    
+    .btn-warning {
+        background-color: #ffc107;
+        color: black;
+        border: 1px solid #d39e00;
+    }
+    
+    .btn-warning:hover {
+        background-color: #d39e00;
+    }
+    
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+        border: 1px solid #1e7e34;
+    }
+    
+    .btn-success:hover {
+        background-color: #1e7e34;
+    }
+    
+    .botones-vista {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .btn-vista {
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+    
+    .btn-vista:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .btn-vista-activo {
+        background-color: #0066cc;
+        color: white;
+        border: 1px solid #0052a3;
+    }
+    
+    .btn-vista-activo:hover {
+        background-color: #0052a3;
+    }
 </style>
 
 <div class="container">
-    <button class="btn-regresar" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection'">
-        ← Regresar a consulta de servicios
-    </button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <a href="/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection?rol=@ViewData["Rol"]" class="btn-regresar">
+            ← Regresar a consulta de servicios
+        </a>
+        
+        <div class="botones-vista" style="margin-bottom: 0;">
+            <a href="?rol=empresa&cliente=@Model.ClienteSeleccionado" class="btn-vista @(ViewData["Rol"]?.ToString() == "empresa" ? "btn-vista-activo" : "")">
+                Vista Empresarial
+            </a>
+            <a href="?rol=cliente&cliente=@Model.ClienteSeleccionado" class="btn-vista @(ViewData["Rol"]?.ToString() == "cliente" ? "btn-vista-activo" : "")">
+                Vista Cliente
+            </a>
+        </div>
+    </div>
     
     <h1>Historial de Servicios - @Model.ClienteSeleccionado</h1>
     
     <div class="mensaje-info">
-        <strong>Instrucciones:</strong> Haga clic en cualquier fila de la tabla para ver los detalles completos del servicio y las acciones disponibles.
+        <strong>Instrucciones:</strong> Haga clic en cualquier fila de la tabla para ver los detalles completos del servicio.
         Total de servicios en historial: @Model.ServiciosHistorial.Count
     </div>
     
-    <!-- Tabla de historial de servicios -->
     <table id="tablaHistorial">
         <thead>
             <tr>
@@ -244,8 +319,11 @@
                 <th>Manifiesto</th>
                 <th>Fecha</th>
                 <th>Estado</th>
-                <th>Técnico</th>
-                <th>Vehículo</th>
+                @if (ViewData["Rol"]?.ToString() != "cliente")
+                {
+                    <th>Técnico</th>
+                    <th>Vehículo</th>
+                }
                 <th>Tipo Residuo</th>
                 <th>Cantidad (kg)</th>
             </tr>
@@ -260,14 +338,18 @@
                     <td>
                         @{
                             var estadoClass = servicio.Estado == "Asignado" ? "estado-asignado" : 
-                                              (servicio.Estado == "En curso" ? "estado-en-curso" : "estado-concluido");
+                                              (servicio.Estado == "Recolectado" ? "estado-recolectado" :
+                                              (servicio.Estado == "En curso" ? "estado-en-curso" : "estado-concluido"));
                         }
                         <span class="badge-estado @estadoClass">
                             @servicio.Estado
                         </span>
                     </td>
-                    <td>@servicio.TecnicoAsignado</td>
-                    <td>@servicio.Vehiculo</td>
+                    @if (ViewData["Rol"]?.ToString() != "cliente")
+                    {
+                        <td>@servicio.TecnicoAsignado</td>
+                        <td>@servicio.Vehiculo</td>
+                    }
                     <td>@servicio.TipoResiduo</td>
                     <td>@servicio.CantidadEstimada</td>
                 </tr>
@@ -276,7 +358,7 @@
     </table>
 </div>
 
-<!-- Modal de detalles del servicio -->
+
 <div id="servicioModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -284,46 +366,45 @@
             <span class="close" onclick="cerrarModal()">&times;</span>
         </div>
         <div class="modal-body" id="modalBody">
-            <!-- Contenido cargado dinámicamente con JavaScript -->
+  
         </div>
     </div>
 </div>
 
 <script>
-    // Datos de servicios (pasados desde el modelo)
     var servicios = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiciosHistorial));
+    var rol = '@ViewData["Rol"]';
     
     function getBotonesAccion(servicio) {
         var estado = servicio.estado || servicio.Estado;
         var botones = '';
         
-        // Botón para REGISTRAR RECOLECCIÓN - Navega a Confirm sin ID
-        if (estado === 'Asignado') {
-            botones += `<button class="btn-accion btn-primary" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/Confirm'">
-                            Registrar recolección
-                        </button>`;
-        }
+        if (rol !== 'cliente') {
+            if (estado === 'Asignado') {
+                botones += `<button class="btn-accion btn-primary" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/Confirm'">
+                                Registrar recolección
+                            </button>`;
+            }
 
-        // Botón para REGISTRAR INICIO DE RUTA (estado "Recolectado")
-        if (estado === 'Recolectado') {
-            botones += `<button class="btn-accion btn-warning" onclick="window.location.href='/WasteTraceability/RegisterWasteTransportRecord/TransportConfirm'">
-                            Registrar inicio de ruta
-                        </button>`;
+            if (estado === 'Recolectado') {
+                botones += `<button class="btn-accion btn-warning" onclick="window.location.href='/WasteTraceability/RegisterWasteTransportRecord/TransportConfirm'">
+                                Registrar inicio de ruta
+                            </button>`;
+            }
+
+            if (estado === 'En curso') {
+                botones += `<button class="btn-accion btn-success" onclick="window.location.href='/WasteTraceability/RegisterWasteDestinationRecord/DestinationConfirm'">
+                                Registrar llegada a destino
+                            </button>`;
+            }
         }
-        
-        // Botón de seguimiento
-        botones += `<button class="btn-accion" onclick="alert('Consultar seguimiento - Servicio ${servicio.id || servicio.Id}')">
-                        Consultar seguimiento
-                    </button>`;
         
         return botones;
     }
 
     function abrirModalDetalle(id) {
-        // Convertir a número
         var idBuscado = typeof id === 'string' ? parseInt(id) : id;
         
-        // Buscar servicio por ID
         var servicio = servicios.find(s => s.id === idBuscado || s.Id === idBuscado);
         
         if (!servicio) {
@@ -333,12 +414,13 @@
         
         var modalBody = document.getElementById('modalBody');
         
-        // Obtener el estado para la clase CSS
         var estado = servicio.estado || servicio.Estado;
         var estadoClass = estado === 'Asignado' ? 'estado-asignado' : 
-                         (estado === 'En curso' ? 'estado-en-curso' : 'estado-concluido');
+                         (estado === 'Recolectado' ? 'estado-recolectado' :
+                         (estado === 'En curso' ? 'estado-en-curso' : 'estado-concluido'));
         
-        // Crear contenido del modal con todos los datos
+        var esCliente = (rol === 'cliente');
+        
         var contenidoHtml = `
             <div class="detalles-servicio">
                 <div class="detalle-fila">
@@ -348,15 +430,24 @@
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Cliente:</div>
                     <div class="detalle-valor">${servicio.cliente || servicio.Cliente}</div>
-                </div>
+                </div>`;
+        
+        if (!esCliente) {
+            contenidoHtml += `
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Observaciones:</div>
                     <div class="detalle-valor">${servicio.observaciones || servicio.Observaciones || 'Sin observaciones'}</div>
-                </div>
+                </div>`;
+        }
+        
+        contenidoHtml += `
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Manifiesto:</div>
                     <div class="detalle-valor">${servicio.manifiesto || servicio.Manifiesto}</div>
-                </div>
+                </div>`;
+        
+        if (!esCliente) {
+            contenidoHtml += `
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Técnico Asignado:</div>
                     <div class="detalle-valor">${servicio.tecnicoAsignado || servicio.TecnicoAsignado}</div>
@@ -368,7 +459,10 @@
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Vehículo:</div>
                     <div class="detalle-valor">${servicio.vehiculo || servicio.Vehiculo}</div>
-                </div>
+                </div>`;
+        }
+        
+        contenidoHtml += `
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Tipo de Residuo:</div>
                     <div class="detalle-valor">${servicio.tipoResiduo || servicio.TipoResiduo}</div>
@@ -392,11 +486,17 @@
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Dirección:</div>
                     <div class="detalle-valor">${servicio.direccion || servicio.Direccion}</div>
-                </div>
+                </div>`;
+        
+        if (!esCliente) {
+            contenidoHtml += `
                 <div class="detalle-fila">
                     <div class="detalle-etiqueta">Contrato:</div>
                     <div class="detalle-valor">${servicio.contrato || servicio.Contrato}</div>
-                </div>
+                </div>`;
+        }
+        
+        contenidoHtml += `
             </div>
             
             <div class="seccion-acciones">
@@ -415,7 +515,6 @@
         document.getElementById('servicioModal').style.display = 'none';
     }
     
-    // Cerrar modal si se hace clic fuera de él
     window.onclick = function(event) {
         var modal = document.getElementById('servicioModal');
         if (event.target == modal) {

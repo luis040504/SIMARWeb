@@ -19,16 +19,20 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
         public string Observaciones { get; set; }
         public string TipoResiduo { get; set; }
         public double CantidadEstimada { get; set; }
-        public string Manifiesto { get; set; } // Nuevo campo
-        public string OperadorAsignado { get; set; } // Nuevo campo
+        public string Manifiesto { get; set; }
+        public string OperadorAsignado { get; set; }
     }
 
     public class IndexModel : PageModel
     {
         public List<ServicioRecoleccion> Servicios { get; set; }
+        public string Rol { get; set; } = "empresa";
 
-        public void OnGet()
+        public void OnGet(string rol = "empresa")
         {
+            Rol = rol;
+            ViewData["Rol"] = rol;
+            
             Servicios = new List<ServicioRecoleccion>
             {
                 new ServicioRecoleccion
@@ -128,22 +132,6 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                 ViewData["MensajeError"] = TempData["MensajeError"];
                 ViewData["TipoError"] = TempData["TipoError"];
             }
-        }
-
-        public IActionResult OnPostIniciarRecoleccion(int id)
-        {
-            return RedirectToPage("Confirm", new { id });
-        }
-
-        public IActionResult OnPostIniciarTransporte(int id)
-        {
-            return RedirectToPage("../RegisterWasteTransportRecord/TransportConfirm", new { id });
-        }
-        
-        // Nuevo método para abrir historial
-        public IActionResult OnPostVerHistorial(int id)
-        {
-            return RedirectToPage("/WasteTraceability/ConsultWasteHistory/ServiceHistory", new { id });
         }
     }
 }

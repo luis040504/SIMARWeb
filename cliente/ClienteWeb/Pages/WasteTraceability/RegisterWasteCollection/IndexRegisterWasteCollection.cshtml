@@ -94,7 +94,6 @@
         margin: 20px 0;
     }
     
-    /* Estilos para el modal */
     .modal {
         display: none;
         position: fixed;
@@ -204,6 +203,7 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        text-decoration: none;
     }
     
     .btn-accion:hover {
@@ -245,7 +245,6 @@
         background-color: #d39e00;
     }
     
-    /* Nuevos estilos para los badges de estado */
     .badge-estado {
         display: inline-block;
         padding: 3px 8px;
@@ -265,22 +264,65 @@
         border: 1px solid #28a745;
         color: #155724;
     }
+    
+    .botones-vista {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .btn-vista {
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+    
+    .btn-vista:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .btn-vista-activo {
+        background-color: #0066cc;
+        color: white;
+        border: 1px solid #0052a3;
+    }
+    
+    .btn-vista-activo:hover {
+        background-color: #0052a3;
+    }
 </style>
 
 <div class="container">
     <h1>Consulta de Servicios</h1>
     
+    <div class="botones-vista">
+        <a href="?rol=empresa" class="btn-vista @(ViewData["Rol"]?.ToString() == "empresa" ? "btn-vista-activo" : "")">
+            Vista Empresarial
+        </a>
+        <a href="?rol=cliente" class="btn-vista @(ViewData["Rol"]?.ToString() == "cliente" ? "btn-vista-activo" : "")">
+            Vista Cliente
+        </a>
+    </div>
+    
     @if (ViewData["MensajeExito"] != null)
     {
         <div style="padding: 15px; border: 2px solid #28a745; background-color: #d4edda; color: #155724; margin-bottom: 20px;">
-            ✅ @ViewData["MensajeExito"]
+            @ViewData["MensajeExito"]
         </div>
     }
 
     @if (ViewData["MensajeError"] != null)
     {
         <div style="padding: 15px; border: 2px solid #dc3545; background-color: #f8d7da; color: #721c24; margin-bottom: 20px;">
-            ❌ @ViewData["MensajeError"]
+            @ViewData["MensajeError"]
             @if (ViewData["TipoError"] != null)
             {
                 <div style="margin-top: 5px; font-size: 12px;">Código de error: @ViewData["TipoError"]</div>
@@ -288,7 +330,6 @@
         </div>
     }
     
-    <!-- Filtros actualizados con los nuevos estados -->
     <div class="filtros">
         <label>Filtrar por estado:</label>
         <select id="filtroEstado">
@@ -303,14 +344,16 @@
         <button class="btn-filtrar" type="button" onclick="aplicarFiltros()">Aplicar filtros</button>
     </div>
     
-    <!-- Tabla de servicios (clickeable) -->
     <table id="tablaServicios">
         <thead>
             <tr>
                 <th>Cliente</th>
                 <th>Descripción</th>
                 <th>Dirección</th>
-                <th>Contrato</th>
+                @if (ViewData["Rol"]?.ToString() != "cliente")
+                {
+                    <th>Contrato</th>
+                }
                 <th>Fecha</th>
             </tr>
         </thead>
@@ -348,14 +391,16 @@
                             <span>@servicio.Observaciones</span>
                         }
                         <div class="info-adicional">
-                            <!-- Badge de estado actualizado con los nuevos estados -->
                             <span class="badge-estado @(servicio.Estado == "En curso" ? "estado-en-curso" : "estado-concluido")">
                                 @servicio.Estado
                             </span>
                         </div>
                     </td>
                     <td>@servicio.Direccion</td>
-                    <td>@servicio.Contrato</td>
+                    @if (ViewData["Rol"]?.ToString() != "cliente")
+                    {
+                        <td>@servicio.Contrato</td>
+                    }
                     <td>@servicio.FechaServicio.ToString("dd/MM/yyyy HH:mm")</td>
                 </tr>
             }
@@ -363,12 +408,11 @@
     </table>
     
     <div class="mensaje-info">
-        <strong>Instrucciones:</strong> Haga clic en cualquier fila de la tabla para ver los detalles completos del servicio y las acciones disponibles.
+        <strong>Instrucciones:</strong> Haga clic en cualquier fila de la tabla para ver los detalles completos del servicio.
         Total de servicios: @Model.Servicios.Count
     </div>
 </div>
 
-<!-- Modal de detalles del servicio -->
 <div id="servicioModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -381,7 +425,6 @@
     </div>
 </div>
 
-<!-- Template para el contenido del modal (oculto) -->
 <template id="modalTemplate">
     <div class="detalles-servicio" id="detalleServicio">
         <div class="detalle-fila">
@@ -392,15 +435,15 @@
             <div class="detalle-etiqueta">Cliente:</div>
             <div class="detalle-valor" id="detalleCliente"></div>
         </div>
-        <div class="detalle-fila">
-            <div class="detalle-etiqueta">Descripción:</div>
-            <div class="detalle-valor" id="detalleDescripcion"></div>
+        <div class="detalle-fila" id="filaObservaciones" style="display: none;">
+            <div class="detalle-etiqueta">Observaciones:</div>
+            <div class="detalle-valor" id="detalleObservaciones"></div>
         </div>
         <div class="detalle-fila">
             <div class="detalle-etiqueta">Dirección:</div>
             <div class="detalle-valor" id="detalleDireccion"></div>
         </div>
-        <div class="detalle-fila">
+        <div class="detalle-fila" id="filaContrato" style="display: none;">
             <div class="detalle-etiqueta">Contrato:</div>
             <div class="detalle-valor" id="detalleContrato"></div>
         </div>
@@ -412,15 +455,15 @@
             <div class="detalle-etiqueta">Estado Actual:</div>
             <div class="detalle-valor" id="detalleEstado"></div>
         </div>
-        <div class="detalle-fila">
+        <div class="detalle-fila" id="filaConductor" style="display: none;">
             <div class="detalle-etiqueta">Conductor Asignado:</div>
             <div class="detalle-valor" id="detalleConductor"></div>
         </div>
-        <div class="detalle-fila">
+        <div class="detalle-fila" id="filaVehiculo" style="display: none;">
             <div class="detalle-etiqueta">Vehículo:</div>
             <div class="detalle-valor" id="detalleVehiculo"></div>
         </div>
-        <div class="detalle-fila">
+        <div class="detalle-fila" id="filaTecnico" style="display: none;">
             <div class="detalle-etiqueta">Técnico:</div>
             <div class="detalle-valor" id="detalleTecnico"></div>
         </div>
@@ -432,32 +475,26 @@
             <div class="detalle-etiqueta">Cantidad Estimada:</div>
             <div class="detalle-valor" id="detalleCantidad"></div>
         </div>
-        <div class="detalle-fila">
-            <div class="detalle-etiqueta">Observaciones:</div>
-            <div class="detalle-valor" id="detalleObservaciones"></div>
-        </div>
     </div>
     
     <div class="seccion-acciones">
         <h3>Acciones disponibles</h3>
         <div class="botones-accion" id="botonesAccion">
-            <!-- Los botones se generarán dinámicamente con JavaScript -->
         </div>
     </div>
 </template>
 
 <script>
-    // Datos de servicios (pasados desde el modelo)
     var servicios = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Servicios));
-    console.log('Servicios cargados:', servicios); // Para debug
+    var rol = '@ViewData["Rol"]';
+    var esCliente = (rol === 'cliente');
+    console.log('Servicios cargados:', servicios);
     
     function abrirModal(id) {
         console.log('Abriendo modal para servicio:', id, 'Tipo:', typeof id);
         
-        // Convertir a número
         var idBuscado = typeof id === 'string' ? parseInt(id) : id;
         
-        // Buscar por Id (con mayúscula) porque así viene del servidor
         var servicio = servicios.find(s => s.Id === idBuscado);
         
         if (!servicio) {
@@ -469,16 +506,40 @@
         var template = document.getElementById('modalTemplate').content.cloneNode(true);
         var modalBody = document.getElementById('modalBody');
         
-        // Limpiar contenido anterior
         modalBody.innerHTML = '';
         
-        // Llenar datos básicos (usando las propiedades con mayúscula)
+        var filaObservaciones = template.getElementById('filaObservaciones');
+        var filaContrato = template.getElementById('filaContrato');
+        var filaConductor = template.getElementById('filaConductor');
+        var filaVehiculo = template.getElementById('filaVehiculo');
+        var filaTecnico = template.getElementById('filaTecnico');
+        
+        if (!esCliente) {
+            filaObservaciones.style.display = 'flex';
+            filaContrato.style.display = 'flex';
+            filaConductor.style.display = 'flex';
+            filaVehiculo.style.display = 'flex';
+            filaTecnico.style.display = 'flex';
+        } else {
+            filaObservaciones.style.display = 'none';
+            filaContrato.style.display = 'none';
+            filaConductor.style.display = 'none';
+            filaVehiculo.style.display = 'none';
+            filaTecnico.style.display = 'none';
+        }
+        
         template.getElementById('detalleId').textContent = servicio.Id;
         template.getElementById('detalleCliente').textContent = servicio.Cliente || 'N/A';
         template.getElementById('detalleDireccion').textContent = servicio.Direccion || 'N/A';
-        template.getElementById('detalleContrato').textContent = servicio.Contrato || 'N/A';
         
-        // Formatear fecha
+        if (!esCliente) {
+            template.getElementById('detalleContrato').textContent = servicio.Contrato || 'N/A';
+            template.getElementById('detalleConductor').textContent = servicio.Conductor || 'No asignado';
+            template.getElementById('detalleVehiculo').textContent = servicio.Vehiculo || 'No asignado';
+            template.getElementById('detalleTecnico').textContent = servicio.Tecnico || 'No asignado';
+            template.getElementById('detalleObservaciones').textContent = servicio.Observaciones || 'Sin observaciones';
+        }
+        
         try {
             var fecha = new Date(servicio.FechaServicio);
             template.getElementById('detalleFecha').textContent = fecha.toLocaleDateString('es-MX') + ' ' + 
@@ -488,46 +549,32 @@
         }
         
         template.getElementById('detalleEstado').innerHTML = `<span class="badge-estado ${getEstadoClass(servicio.Estado)}">${servicio.Estado || 'N/A'}</span>`;
-        template.getElementById('detalleConductor').textContent = servicio.Conductor || 'No asignado';
-        template.getElementById('detalleVehiculo').textContent = servicio.Vehiculo || 'No asignado';
-        template.getElementById('detalleTecnico').textContent = servicio.Tecnico || 'No asignado';
         template.getElementById('detalleTipoResiduo').textContent = servicio.TipoResiduo || 'No especificado';
         template.getElementById('detalleCantidad').textContent = (servicio.CantidadEstimada || 0) + ' kg';
-        template.getElementById('detalleObservaciones').textContent = servicio.Observaciones || 'Sin observaciones';
         
-        // Generar descripción según cliente
-        var descripcion = '';
-        if (servicio.Cliente && servicio.Cliente.includes('Industrias')) {
-            descripcion = 'Recolección de residuos industriales - Plásticos';
-        } else if (servicio.Cliente && servicio.Cliente.includes('Comercial')) {
-            descripcion = 'Servicio semanal de recolección de orgánicos';
-        } else if (servicio.Cliente && servicio.Cliente.includes('Hospital')) {
-            descripcion = 'Recolección de residuos biológicos peligrosos';
-        } else if (servicio.Cliente && servicio.Cliente.includes('Restaurante')) {
-            descripcion = 'Recolección de aceites y grasas usadas';
-        } else if (servicio.Cliente && servicio.Cliente.includes('Constructora')) {
-            descripcion = 'Retiro de escombros y materiales de construcción';
-        } else {
-            descripcion = servicio.Observaciones || 'Servicio de recolección';
-        }
-        template.getElementById('detalleDescripcion').textContent = descripcion;
-        
-        // Generar botones de acción según el estado
         var botonesDiv = template.getElementById('botonesAccion');
         botonesDiv.innerHTML = '';
 
-        var btnHistorial = document.createElement('button');
-        btnHistorial.className = 'btn-accion';
-        btnHistorial.innerHTML = 'Ver historial de servicios';
-        btnHistorial.onclick = function() {
-            window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente);
-        };
-        botonesDiv.appendChild(btnHistorial);
+        if (esCliente) {
+            var btnHistorial = document.createElement('button');
+            btnHistorial.className = 'btn-accion';
+            btnHistorial.innerHTML = 'Ver historial de servicios';
+            btnHistorial.onclick = function() {
+                window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
+            };
+            botonesDiv.appendChild(btnHistorial);
+        } else {
+            var btnHistorial = document.createElement('button');
+            btnHistorial.className = 'btn-accion';
+            btnHistorial.innerHTML = 'Ver historial de servicios';
+            btnHistorial.onclick = function() {
+                window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
+            };
+            botonesDiv.appendChild(btnHistorial);
+        }
         
-        // Agregar template al modal
         modalBody.appendChild(template);
         
-        // Mostrar modal
         var modal = document.getElementById('servicioModal');
         modal.style.display = 'block';
         console.log('Modal mostrado correctamente');
@@ -545,7 +592,6 @@
         }
     }
     
-    // Cerrar modal si se hace clic fuera de él
     window.onclick = function(event) {
         var modal = document.getElementById('servicioModal');
         if (event.target == modal) {
@@ -553,7 +599,6 @@
         }
     }
     
-    // Función para filtrar
     function aplicarFiltros() {
         var filtroEstado = document.getElementById('filtroEstado').value;
         var busqueda = document.getElementById('busqueda').value.toLowerCase();
