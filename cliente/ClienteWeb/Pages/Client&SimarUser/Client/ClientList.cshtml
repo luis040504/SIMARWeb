@@ -1,0 +1,129 @@
+﻿@page
+@model ClienteWeb.Pages.Client_SimarUser.Client.ClientListModel
+@{
+    ViewData["Title"] = "Listado de Clientes";
+}
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alerta-exito">
+        @TempData["Mensaje"]
+    </div>
+}
+
+<h2>Clientes Registrados</h2>
+
+<style>
+    .btn-accion {
+        padding: 6px 12px;
+        border-radius: 5px;
+        background-color: #9e9e9e;
+        color: white;
+        text-decoration: none;
+        font-size: 12px;
+    }
+
+    .btn-accion:hover {
+        background-color: #757575;
+    }
+
+    .alerta-exito {
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+</style>
+
+<div style="margin-bottom:20px; display:flex; gap:10px;">
+
+    <!-- Barra de búsqueda -->
+    <input type="text" placeholder="Buscar cliente..." class="campo-entrada" />
+
+    <!-- Combo de orden -->
+    <select class="campo-entrada">
+        <option>Ordenar por</option>
+        <option>Nombre</option>
+        <option>Fecha de registro</option>
+        <option>Status</option>
+    </select>
+
+</div>
+
+<table style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr style="background-color:#f0f0f0;">
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Fecha Registro</th>
+            <th>Status</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var cliente in Model.Clientes)
+        {
+            <tr id="cliente-@cliente.Id">
+                <td>@cliente.Id</td>
+                <td>@cliente.Name</td>
+                <td>@cliente.Email</td>
+                <td>@cliente.PhoneNumber</td>
+                <td>@cliente.RegisterDate.ToShortDateString()</td>
+                <td class="status">@cliente.Status</td>
+
+                <td>
+                    <a class="btn-accion" asp-page="EditClient" asp-route-id="@cliente.Id">Editar</a> |
+                    <button class="btn-accion" type="button" onclick="confirmarDesactivacion(@cliente.Id)">Desactivar</button>
+                    <a class="btn-accion" asp-page="ConsultedClient" asp-route-id="@cliente.Id">Ver más</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div id="modalDesactivar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+
+    <div style="background:white; padding:25px; border-radius:10px; text-align:center; width:300px;">
+        <p>¿Está seguro de desactivar al cliente seleccionado?</p>
+
+        <button onclick="desactivarCliente()" class="btn">Confirmar</button>
+        <button onclick="cerrarModal()" class="btn">Cancelar</button>
+    </div>
+
+</div>
+
+<!-- simulacion desactivacion -->
+<script>
+    let clienteSeleccionado = null;
+
+    function confirmarDesactivacion(id) {
+        clienteSeleccionado = id;
+        document.getElementById("modalDesactivar").style.display = "flex";
+    }
+
+    function cerrarModal() {
+        document.getElementById("modalDesactivar").style.display = "none";
+    }
+
+    function desactivarCliente() {
+        if (clienteSeleccionado != null) {
+
+            // Cambiar status en la tabla (simulación)
+            let fila = document.getElementById("cliente-" + clienteSeleccionado);
+            let statusCell = fila.querySelector(".status");
+
+            statusCell.innerText = "Inactivo";
+
+            // Cerrar modal
+            cerrarModal();
+
+            // Mostrar mensaje
+            alert("El cliente ha sido dado de baja");
+        }
+    }
+</script>
