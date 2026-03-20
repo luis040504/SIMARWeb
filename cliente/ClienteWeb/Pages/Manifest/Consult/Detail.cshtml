@@ -2,7 +2,7 @@
 @model ClienteWeb.Pages.Manifest.Consult.DetailModel
 @{
     ViewData["Title"] = $"Detalle – {Model.Manifest.ManifestNumber}";
-    var m  = Model.Manifest;
+    var m = Model.Manifest;
     bool esEspecial = m.Type == "especial";
 }
 
@@ -34,7 +34,6 @@
         font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
     }
 
-    /* Badge de estado */
     .badge-borrador   { background:#6c757d; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
     .badge-impreso    { background:#0d6efd; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
     .badge-transito   { background:#fd7e14; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
@@ -63,7 +62,6 @@
     }
 
     .section-header.peligroso-hdr { background: #7b2d2d; }
-
     .section-body { padding: 1rem 1.25rem; background: #fff; }
 
     .detail-dl {
@@ -117,10 +115,10 @@
 
 <div class="detail-container">
 
-    <!-- Encabezado -->
     <div class="detail-header">
         <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver</a>
         <h1 class="detail-heading">@m.ManifestNumber</h1>
+
         @if (esEspecial)
         {
             <span class="badge-especial">Residuos Especiales</span>
@@ -157,11 +155,10 @@
             }
             <a asp-page="/Manifest/Consult/Edit"
                asp-route-id="@m.Id"
-               class="btn btn-warning btn-sm px-3">✏️ Editar</a>
+               class="btn btn-warning btn-sm px-3">Editar Manifiesto</a>
         </div>
     </div>
 
-    <!-- ESTADO Y DOCUMENTO FIRMADO -->
     @if (m.Status == ManifestStatus.Completado && !string.IsNullOrEmpty(m.SignedManifestFileName))
     {
         <div class="section-card">
@@ -171,7 +168,6 @@
             </div>
             <div class="section-body">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="fs-1"></div>
                     <div>
                         <strong>Archivo:</strong> @m.SignedManifestFileName<br />
                         <strong>Fecha de Registro:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
@@ -186,51 +182,52 @@
 
     <!-- GENERADOR -->
     <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")"
-             onclick="toggleSection(this)">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
             <span>Datos del Generador</span>
             <span class="chevron">▲</span>
         </div>
         <div class="section-body">
             <dl class="detail-dl">
                 <dt>No. Registro @(esEspecial ? "SEDEMA" : "SEMARNAT")</dt>
-                <dd>@(m.EnvironmentalRegistrationNumber)</dd>
+                <dd>@D(m.EnvironmentalRegistrationNumber)</dd>
 
                 <dt>No. Manifiesto</dt>
-                <dd>@m.ManifestNumber</dd>
+                <dd>@D(m.ManifestNumber)</dd>
 
                 <dt>Razón Social</dt>
-                <dd>@m.SocialReason</dd>
+                <dd>@D(m.SocialReason)</dd>
 
                 @if (esEspecial)
                 {
                     <dt>Domicilio</dt>
-                    <dd>@(m.Address)</dd>
+                    <dd>@D(m.Address)</dd>
                 }
                 else
                 {
                     <dt>Calle</dt>
-                    <dd>@(m.Street)</dd>
+                    <dd>@D(m.Street)</dd>
+
                     <dt>Núm. Ext / Int</dt>
-                    <dd>@(m.ExteriorNumber) / @(m.InteriorNumber)</dd>
+                    <dd>@($"{D(m.ExteriorNumber)} / {D(m.InteriorNumber)}")</dd>
+
                     <dt>Colonia</dt>
-                    <dd>@(m.Colony)</dd>
+                    <dd>@D(m.Colony)</dd>
                 }
 
                 <dt>C.P.</dt>
-                <dd>@(m.PostalCode)</dd>
+                <dd>@D(m.PostalCode)</dd>
 
                 <dt>Municipio</dt>
-                <dd>@(m.Municipality)</dd>
+                <dd>@D(m.Municipality)</dd>
 
                 @if (!esEspecial)
                 {
                     <dt>Estado</dt>
-                    <dd>@(m.State)</dd>
+                    <dd>@D(m.State)</dd>
                 }
 
                 <dt>Teléfono</dt>
-                <dd>@(m.PhoneNumber)</dd>
+                <dd>@D(m.PhoneNumber)</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.Email))
                 {
@@ -238,8 +235,17 @@
                     <dd>@m.Email</dd>
                 }
 
-                <dt>Fecha</dt>
-                <dd>@m.ManifestDate.ToString("dd/MM/yyyy") @(m.ManifestTime.HasValue ? m.ManifestTime.Value.ToString("HH:mm") : "")</dd>
+                @if (esEspecial && m.ManifestDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.ManifestDate.Value.ToString("dd/MM/yyyy") @(m.ManifestTime.HasValue ? m.ManifestTime.Value.ToString("HH:mm") : "")</dd>
+                }
+
+                @if (!esEspecial && m.GeneratorSignDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.GeneratorSignDate.Value.ToString("dd/MM/yyyy")</dd>
+                }
 
                 @if (!esEspecial && !string.IsNullOrWhiteSpace(m.SafeHandlingInstructions))
                 {
@@ -247,16 +253,10 @@
                     <dd>@m.SafeHandlingInstructions</dd>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(m.RegulatoryFramework))
-                {
-                    <dt>Marco regulatorio</dt>
-                    <dd>@m.RegulatoryFramework</dd>
-                }
-
                 <dt>Nombre del responsable</dt>
-                <dd>@(m.GeneratorResponsibleName)</dd>
+                <dd>@D(m.GeneratorResponsibleName)</dd>
 
-                @if (!string.IsNullOrWhiteSpace(m.GeneratorObservations))
+                @if (esEspecial && !string.IsNullOrWhiteSpace(m.GeneratorObservations))
                 {
                     <dt>Observaciones</dt>
                     <dd>@m.GeneratorObservations</dd>
@@ -267,8 +267,7 @@
 
     <!-- RESIDUOS -->
     <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")"
-             onclick="toggleSection(this)">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
             <span>Residuos</span>
             <span class="chevron">▲</span>
         </div>
@@ -283,7 +282,7 @@
                                 <th>Nombre del Residuo</th>
                                 <th>Envase</th>
                                 <th>Capacidad</th>
-                                <th>Cantidad</th>
+                                <th>Peso</th>
                                 <th>Unidad</th>
                             </tr>
                         </thead>
@@ -293,9 +292,9 @@
                                 <tr>
                                     <td>@r.ResidueKey</td>
                                     <td>@r.ResidueName</td>
-                                    <td>@r.Container</td>
+                                    <td>@r.ContainerType</td>
                                     <td>@r.ContainerCapacity</td>
-                                    <td class="fw-bold">@r.Amount</td>
+                                    <td class="fw-bold">@r.Weight</td>
                                     <td>@r.Unit</td>
                                 </tr>
                             }
@@ -331,13 +330,22 @@
                                         @if (r.IsBiological) { <span class="cretibm-tag">B</span> }
                                         @if (r.IsMutagenic)  { <span class="cretibm-tag">M</span> }
                                     </td>
-                                    <td>@r.Container</td>
+                                    <td>@r.ContainerType</td>
                                     <td>@r.ContainerCapacity</td>
                                     <td class="fw-bold">@r.AmountKg</td>
                                     <td>
-                                        @if (r.HasLabel == true)       { <span class="text-success fw-bold">Sí</span> }
-                                        else if (r.HasLabel == false)  { <span class="text-danger">No</span> }
-                                        else                           { <span class="text-muted">–</span> }
+                                        @if (r.HasLabel == true)
+                                        {
+                                            <span class="text-success fw-bold">Sí</span>
+                                        }
+                                        else if (r.HasLabel == false)
+                                        {
+                                            <span class="text-danger">No</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">–</span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -350,15 +358,14 @@
 
     <!-- TRANSPORTISTA -->
     <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")"
-             onclick="toggleSection(this)">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
             <span>Transportista</span>
             <span class="chevron">▲</span>
         </div>
         <div class="section-body">
             <dl class="detail-dl">
                 <dt>No. Autorización</dt>
-                <dd>@(m.TransporterAuthorizationNumber)</dd>
+                <dd>@D(m.TransporterAuthorizationNumber)</dd>
 
                 @if (!esEspecial && !string.IsNullOrWhiteSpace(m.TransporterSCTPermit))
                 {
@@ -367,21 +374,24 @@
                 }
 
                 <dt>Razón Social</dt>
-                <dd>@(m.TransporterSocialReason)</dd>
+                <dd>@D(m.TransporterSocialReason)</dd>
 
                 @if (esEspecial)
                 {
                     <dt>Domicilio</dt>
-                    <dd>@(m.TransporterAddress)</dd>
+                    <dd>@D(m.TransporterAddress)</dd>
                 }
                 else
                 {
                     <dt>Calle</dt>
-                    <dd>@(m.TransporterStreet) @m.TransporterExteriorNumber</dd>
+                    <dd>@($"{D(m.TransporterStreet)} {D(m.TransporterExteriorNumber)} {D(m.TransporterInteriorNumber)}")</dd>
+
+                    <dt>Colonia</dt>
+                    <dd>@D(m.TransporterColony)</dd>
                 }
 
                 <dt>C.P. / Municipio</dt>
-                <dd>@(m.TransporterPostalCode) – @(m.TransporterMunicipality)</dd>
+                <dd>@($"{D(m.TransporterPostalCode)} – {D(m.TransporterMunicipality)}")</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.TransporterState))
                 {
@@ -390,7 +400,7 @@
                 }
 
                 <dt>Teléfono</dt>
-                <dd>@(m.TransporterPhone)</dd>
+                <dd>@D(m.TransporterPhone)</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.TransporterEmail))
                 {
@@ -399,13 +409,10 @@
                 }
 
                 <dt>Tipo de vehículo</dt>
-                <dd>@(m.VehicleType)</dd>
+                <dd>@D(m.VehicleType)</dd>
 
                 <dt>No. de placa</dt>
-                <dd>@(m.VehiclePlate)</dd>
-
-                <dt>Conductor</dt>
-                <dd>@(m.DriverName)</dd>
+                <dd>@D(m.VehiclePlate)</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.DriverLicense))
                 {
@@ -414,16 +421,22 @@
                 }
 
                 <dt>Ruta</dt>
-                <dd>@(m.TransportRoute)</dd>
+                <dd>@D(m.TransportRoute)</dd>
 
-                @if (m.TransporterReceptionDate.HasValue)
+                @if (esEspecial && m.TransporterDate.HasValue)
                 {
                     <dt>Fecha de recepción</dt>
-                    <dd>@m.TransporterReceptionDate.Value.ToString("dd/MM/yyyy")</dd>
+                    <dd>@m.TransporterDate.Value.ToString("dd/MM/yyyy") @(m.TransporterTime.HasValue ? m.TransporterTime.Value.ToString("HH:mm") : "")</dd>
+                }
+
+                @if (!esEspecial && m.TransporterSignDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.TransporterSignDate.Value.ToString("dd/MM/yyyy")</dd>
                 }
 
                 <dt>Nombre del responsable</dt>
-                <dd>@(m.TransporterResponsibleName)</dd>
+                <dd>@D(m.TransporterResponsibleName)</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.TransporterObservations))
                 {
@@ -436,8 +449,7 @@
 
     <!-- DESTINATARIO -->
     <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")"
-             onclick="toggleSection(this)">
+        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
             <span>Destinatario / Disposición Final</span>
             <span class="chevron">▲</span>
         </div>
@@ -450,23 +462,24 @@
                 }
 
                 <dt>Razón Social</dt>
-                <dd>@(m.ReceiverSocialReason)</dd>
+                <dd>@D(m.ReceiverSocialReason)</dd>
 
                 @if (esEspecial)
                 {
                     <dt>Domicilio</dt>
-                    <dd>@(m.ReceiverAddress)</dd>
+                    <dd>@D(m.ReceiverAddress)</dd>
                 }
                 else
                 {
                     <dt>Calle</dt>
-                    <dd>@(m.ReceiverStreet) @m.ReceiverExteriorNumber @m.ReceiverInteriorNumber</dd>
+                    <dd>@($"{D(m.ReceiverStreet)} {D(m.ReceiverExteriorNumber)} {D(m.ReceiverInteriorNumber)}")</dd>
+
                     <dt>Colonia</dt>
-                    <dd>@(m.ReceiverColony)</dd>
+                    <dd>@D(m.ReceiverColony)</dd>
                 }
 
                 <dt>C.P. / Municipio</dt>
-                <dd>@(m.ReceiverPostalCode) – @(m.ReceiverMunicipality)</dd>
+                <dd>@($"{D(m.ReceiverPostalCode)} – {D(m.ReceiverMunicipality)}")</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.ReceiverState))
                 {
@@ -492,10 +505,16 @@
                     <dd>@m.DisposalType</dd>
                 }
 
-                @if (m.ReceiverDate.HasValue)
+                @if (esEspecial && m.ReceiverDate.HasValue)
                 {
                     <dt>Fecha</dt>
                     <dd>@m.ReceiverDate.Value.ToString("dd/MM/yyyy")</dd>
+                }
+
+                @if (!esEspecial && m.ReceiverSignDate.HasValue)
+                {
+                    <dt>Fecha</dt>
+                    <dd>@m.ReceiverSignDate.Value.ToString("dd/MM/yyyy")</dd>
                 }
 
                 @if (!string.IsNullOrWhiteSpace(m.ReceiverPersonName))
@@ -505,7 +524,7 @@
                 }
 
                 <dt>Nombre del responsable</dt>
-                <dd>@(m.ReceiverResponsibleName)</dd>
+                <dd>@D(m.ReceiverResponsibleName)</dd>
 
                 @if (!string.IsNullOrWhiteSpace(m.ReceiverObservations))
                 {
@@ -516,14 +535,12 @@
         </div>
     </div>
 
-    <!-- Pie -->
     <div class="d-flex justify-content-between mt-3">
         <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver a la lista</a>
         <a asp-page="/Manifest/Consult/Edit"
            asp-route-id="@m.Id"
            class="btn btn-warning btn-sm px-4">Editar este manifiesto</a>
     </div>
-
 </div>
 
 @functions {

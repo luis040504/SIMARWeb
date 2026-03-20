@@ -15,47 +15,51 @@ public class RegisterModel : PageModel
     public IActionResult OnGet(string id)
     {
         var found = DetailModel.SampleData.FirstOrDefault(m => m.Id == id);
-        if (found == null) return NotFound();
+        if (found is null)
+            return NotFound();
 
         ManifestInfo = found;
-        
+
         Input.Id = found.Id;
         Input.Status = found.Status;
         Input.SignedDate = found.SignedDate ?? DateOnly.FromDateTime(DateTime.Today);
-        
+
         return Page();
     }
 
     public IActionResult OnPost()
-{
-    var found = DetailModel.SampleData.FirstOrDefault(m => m.Id == Input.Id);
-    if (found == null) return NotFound();
-
-    if (!ModelState.IsValid)
     {
-        ManifestInfo = found;
-        return Page();
-    }
+        var found = DetailModel.SampleData.FirstOrDefault(m => m.Id == Input.Id);
+        if (found is null)
+            return NotFound();
 
-    found.Status = Input.Status;
-
-    if (Input.Status == ManifestStatus.Completado)
-    {
-        found.SignedDate = Input.SignedDate;
-
-        if (Input.SignedFile != null)
+        if (!ModelState.IsValid)
         {
-            found.SignedManifestFileName = Input.SignedFile.FileName;
+            ManifestInfo = found;
+            return Page();
         }
-        else if (string.IsNullOrEmpty(found.SignedManifestFileName))
-        {
-            found.SignedManifestFileName = $"{found.ManifestNumber}_firmado.pdf";
-        }
-    }
 
-    TempData["SuccessMessage"] = $"El estado del manifiesto {found.ManifestNumber} ha sido actualizado correctamente a {Input.Status}.";
-    return RedirectToPage("/Manifest/Consult/Index");
-}
+        found.Status = Input.Status;
+
+        if (Input.Status == ManifestStatus.Completado)
+        {
+            found.SignedDate = Input.SignedDate;
+
+            if (Input.SignedFile is not null)
+            {
+                found.SignedManifestFileName = Input.SignedFile.FileName;
+            }
+            else if (string.IsNullOrWhiteSpace(found.SignedManifestFileName))
+            {
+                found.SignedManifestFileName = $"{found.ManifestNumber}_firmado.pdf";
+            }
+        }
+
+        TempData["SuccessMessage"] =
+            $"El estado del manifiesto {found.ManifestNumber} ha sido actualizado correctamente a {Input.Status}.";
+
+        return RedirectToPage("/Manifest/Consult/Index");
+    }
 }
 
 public class RegisterViewModel

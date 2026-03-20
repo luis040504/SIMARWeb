@@ -4,11 +4,16 @@
     ViewData["Title"] = $"Registrar Firma – {Model.ManifestInfo.ManifestNumber}";
     var m = Model.ManifestInfo;
     bool esEspecial = m.Type == "especial";
+
+    var fechaEmision =
+        esEspecial
+            ? (m.ManifestDate?.ToString("dd/MM/yyyy") ?? "–")
+            : (m.GeneratorSignDate?.ToString("dd/MM/yyyy") ?? "–");
 }
 
 <style>
     .register-container { max-width: 600px; margin: 2rem auto; }
-    
+
     .register-card {
         background: #fff;
         border: 1px solid #c8d6e3;
@@ -26,8 +31,16 @@
         align-items: center;
     }
 
-    .register-header h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
-    .register-header .badge { font-size: 0.75rem; background: rgba(255,255,255,0.2); }
+    .register-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .register-header .badge {
+        font-size: 0.75rem;
+        background: rgba(255,255,255,0.2);
+    }
 
     .register-body { padding: 1.5rem; }
 
@@ -42,8 +55,17 @@
 
     .info-summary strong { color: #4a5568; }
 
-    .form-label { font-size: 0.85rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem; }
-    .form-text { font-size: 0.75rem; color: #6c757d; }
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.25rem;
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
 
     .file-drop-area {
         border: 2px dashed #c8d6e3;
@@ -54,32 +76,42 @@
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    
-    .file-drop-area:hover, .file-drop-area.dragover {
+
+    .file-drop-area:hover,
+    .file-drop-area.dragover {
         border-color: #0d6efd;
         background: #e9f2ff;
     }
 
-    .file-drop-icon { font-size: 2.5rem; color: #6c757d; margin-bottom: 0.5rem; }
-    
+    .file-drop-icon {
+        font-size: 2.5rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+
     #file-name-display {
         font-weight: 600;
         color: #0d6efd;
         margin-top: 0.5rem;
+        word-break: break-word;
     }
 </style>
 
 <div class="register-container">
     <div class="mb-3">
-        <a asp-page="/Manifest/Consult/Detail" asp-route-id="@m.Id" class="btn btn-outline-secondary btn-sm">← Volver al Manifiesto</a>
+        <a asp-page="/Manifest/Consult/Detail"
+           asp-route-id="@m.Id"
+           class="btn btn-outline-secondary btn-sm">
+            ← Volver al manifiesto
+        </a>
     </div>
 
     <div class="register-card">
         <div class="register-header">
-            <h2>Registrar Avance / Firma</h2>
+            <h2>Registrar avance / firma</h2>
             <span class="badge">@(esEspecial ? "Especial" : "Peligroso")</span>
         </div>
-        
+
         <div class="register-body">
             <div class="info-summary">
                 <div class="row">
@@ -87,7 +119,7 @@
                         <strong>Folio:</strong><br />@m.ManifestNumber
                     </div>
                     <div class="col-sm-6 mb-2">
-                        <strong>Fecha Emisión:</strong><br />@m.ManifestDate.ToString("dd/MM/yyyy")
+                        <strong>Fecha base:</strong><br />@fechaEmision
                     </div>
                     <div class="col-sm-12">
                         <strong>Generador:</strong><br />@m.SocialReason
@@ -97,44 +129,53 @@
 
             <form method="post" enctype="multipart/form-data">
                 <input type="hidden" asp-for="Input.Id" value="@m.Id" />
-                
+
                 <div class="mb-3">
-                    <label class="form-label">Estado Actual</label>
+                    <label asp-for="Input.Status" class="form-label">Estado actual</label>
                     <select asp-for="Input.Status" class="form-select status-select">
-                        <option value="Borrador">Borrador (Generado)</option>
-                        <option value="Impreso">Impreso (Listo para recolección)</option>
-                        <option value="EnTransito">En Tránsito (Recolectado)</option>
-                        <option value="Completado">Completado (Firmado y Recibido)</option>
+                        <option value="Borrador">Borrador (captura inicial)</option>
+                        <option value="Impreso">Impreso (listo para proceso)</option>
+                        <option value="EnTransito">En tránsito</option>
+                        <option value="Completado">Completado (firmado y sellado)</option>
                     </select>
                 </div>
-                
-                <div id="firma-container" style="display: @(m.Status == ManifestStatus.Completado ? "block" : "none");">
+
+                <div id="firma-container" style="display: @(Model.Input.Status == ManifestStatus.Completado ? "block" : "none");">
                     <div class="mb-3">
-                        <label class="form-label">Fecha de Firma (Recepción)</label>
+                        <label asp-for="Input.SignedDate" class="form-label">Fecha de firma / recepción final</label>
                         <input asp-for="Input.SignedDate" type="date" class="form-control" />
                     </div>
-                    
+
                     <div class="mb-4">
-                        <label class="form-label">Manifiesto Firmado (PDF/Imagen)</label>
+                        <label asp-for="Input.SignedFile" class="form-label">Manifiesto firmado y sellado</label>
+
                         <div class="file-drop-area" onclick="document.getElementById('file-upload').click()">
                             <div class="file-drop-icon">📥</div>
                             <div>Haz clic para seleccionar el archivo escaneado</div>
-                            <div class="form-text mt-1">Formatos soportados: PDF, JPG, PNG (Max. 5MB)</div>
+                            <div class="form-text mt-1">
+                                Formatos soportados: PDF, JPG, PNG (máx. 5 MB)
+                            </div>
+
                             <div id="file-name-display">
-                                @if(!string.IsNullOrEmpty(m.SignedManifestFileName))
+                                @if (!string.IsNullOrWhiteSpace(m.SignedManifestFileName))
                                 {
                                     <span>Ya subido: @m.SignedManifestFileName</span>
                                 }
                             </div>
                         </div>
-                        <input type="file" asp-for="Input.SignedFile" id="file-upload" class="d-none" accept=".pdf,.jpg,.jpeg,.png"
+
+                        <input type="file"
+                               asp-for="Input.SignedFile"
+                               id="file-upload"
+                               class="d-none"
+                               accept=".pdf,.jpg,.jpeg,.png"
                                onchange="document.getElementById('file-name-display').innerText = this.files[0] ? this.files[0].name : ''" />
                     </div>
                 </div>
 
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-success fw-bold py-2">
-                        Guardar Registro
+                        Guardar registro
                     </button>
                 </div>
             </form>
@@ -147,18 +188,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             const select = document.querySelector('.status-select');
             const firmaContainer = document.getElementById('firma-container');
-            
-            select.addEventListener('change', (e) => {
-                if(e.target.value === 'Completado') {
+
+            function syncSignedSection() {
+                if (select.value === 'Completado') {
                     firmaContainer.style.display = 'block';
                 } else {
                     firmaContainer.style.display = 'none';
                 }
-            });
-            
-            if(select.value === 'Completado') {
-                firmaContainer.style.display = 'block';
             }
+
+            select.addEventListener('change', syncSignedSection);
+            syncSignedSection();
         });
     </script>
 }

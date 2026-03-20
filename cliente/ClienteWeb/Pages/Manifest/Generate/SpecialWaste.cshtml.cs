@@ -6,21 +6,23 @@ namespace ClienteWeb.Pages.Manifest.Generate;
 
 public class SpecialWasteModel : PageModel
 {
+    [BindProperty]
+    public string ManifestSerial { get; set; } = GenerateManifestSerial(); // OS-990226
 
     [BindProperty]
-    public string ManifestNumber { get; set; } = GenerateManifestNumber();
+    public string ManifestNumber { get; set; } = GenerateManifestNumber(); // 009/2026
 
-
+    // ===================== GENERADOR =====================
     [BindProperty]
-    [Required(ErrorMessage = "El número de registro SEDEMA es obligatorio.")]
+    [Required]
     public string EnvironmentalRegistrationNumber { get; set; } = string.Empty;
 
     [BindProperty]
-    [Required(ErrorMessage = "La razón social es obligatoria.")]
+    [Required]
     public string SocialReason { get; set; } = string.Empty;
 
     [BindProperty]
-    [Required(ErrorMessage = "El domicilio es obligatorio.")]
+    [Required]
     public string Address { get; set; } = string.Empty;
 
     [BindProperty]
@@ -30,7 +32,6 @@ public class SpecialWasteModel : PageModel
     public string Municipality { get; set; } = string.Empty;
 
     [BindProperty]
-    [Required(ErrorMessage = "El teléfono es obligatorio.")]
     public string PhoneNumber { get; set; } = string.Empty;
 
     [BindProperty]
@@ -43,23 +44,15 @@ public class SpecialWasteModel : PageModel
     public string GeneratorObservations { get; set; } = string.Empty;
 
     [BindProperty]
-    public string RegulatoryFramework { get; set; } = string.Empty;
-
-    [BindProperty]
     public string GeneratorResponsibleName { get; set; } = string.Empty;
-
-    [BindProperty]
-    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
-    public string Email { get; set; } = string.Empty;
-
 
     [BindProperty]
     public List<ResidueItem> Residues { get; set; } = new()
     {
-        new ResidueItem() // primera fila vacía por defecto
+        new ResidueItem()
     };
 
-
+    // ===================== TRANSPORTISTA =====================
     [BindProperty]
     public string TransporterAuthorizationNumber { get; set; } = string.Empty;
 
@@ -77,6 +70,12 @@ public class SpecialWasteModel : PageModel
 
     [BindProperty]
     public string TransporterPhone { get; set; } = string.Empty;
+
+    [BindProperty]
+    public DateOnly? TransporterDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    [BindProperty]
+    public TimeOnly? TransporterTime { get; set; }
 
     [BindProperty]
     public string VehicleType { get; set; } = string.Empty;
@@ -99,9 +98,7 @@ public class SpecialWasteModel : PageModel
     [BindProperty]
     public string TransporterResponsibleName { get; set; } = string.Empty;
 
-    [BindProperty]
-    public DateOnly? TransporterReceptionDate { get; set; }
-
+    // ===================== DESTINATARIO =====================
     [BindProperty]
     public string ReceiverAuthorizationNumber { get; set; } = string.Empty;
 
@@ -121,20 +118,19 @@ public class SpecialWasteModel : PageModel
     public string ReceiverPhone { get; set; } = string.Empty;
 
     [BindProperty]
-    public string DisposalType { get; set; } = string.Empty;
+    public DateOnly? ReceiverDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     [BindProperty]
-    public DateOnly? ReceiverDate { get; set; }
+    public TimeOnly? ReceiverTime { get; set; }
+
+    [BindProperty]
+    public string DisposalType { get; set; } = string.Empty;
 
     [BindProperty]
     public string ReceiverObservations { get; set; } = string.Empty;
 
     [BindProperty]
     public string ReceiverResponsibleName { get; set; } = string.Empty;
-
-
-    public IFormFile? SignedManifestFile { get; set; }
-
 
     public void OnGet()
     {
@@ -145,28 +141,29 @@ public class SpecialWasteModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        // TODO: Enviar datos al backend / API de SIMAR
-
         TempData["SuccessMessage"] = $"Manifiesto {ManifestNumber} generado correctamente.";
         return RedirectToPage("/Index");
     }
 
+    private static string GenerateManifestSerial()
+    {
+        return $"OS-{Random.Shared.Next(1, 999999):D6}";
+    }
 
     private static string GenerateManifestNumber()
     {
+        int seq = Random.Shared.Next(1, 999);
         int year = DateTime.Today.Year;
-        int seq  = Random.Shared.Next(1, 9999);
-        return $"OS-{seq:D6}";
+        return $"{seq:D3}/{year}";
     }
 }
 
-/// <summary>Representa un renglón de residuo dentro del manifiesto de manejo especial.</summary>
 public class ResidueItem
 {
-    public string ResidueKey         { get; set; } = string.Empty;
-    public string ResidueName        { get; set; } = string.Empty;
-    public string Container          { get; set; } = string.Empty;
-    public string ContainerCapacity  { get; set; } = string.Empty;
-    public float  Amount             { get; set; }
-    public string Unit               { get; set; } = "kg";
+    public string ResidueKey { get; set; } = string.Empty;
+    public string ResidueName { get; set; } = string.Empty;
+    public string ContainerType { get; set; } = string.Empty;
+    public string ContainerCapacity { get; set; } = string.Empty;
+    public decimal Weight { get; set; }
+    public string Unit { get; set; } = "kg";
 }

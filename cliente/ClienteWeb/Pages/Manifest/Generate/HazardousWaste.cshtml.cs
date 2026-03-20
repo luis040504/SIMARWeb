@@ -6,12 +6,18 @@ namespace ClienteWeb.Pages.Manifest.Generate;
 
 public class HazardousWasteModel : PageModel
 {
-    // ── Datos generales ────────────────────────────────────────────────────
+    // ===================== ENCABEZADO =====================
 
     [BindProperty]
-    public string ManifestNumber { get; set; } = GenerateManifestNumber();
+    public string ManifestRegistrationNumber { get; set; } = string.Empty; // Núm. de registro ambiental
 
-    // ── Generador ──────────────────────────────────────────────────────────
+    [BindProperty]
+    public string ManifestNumber { get; set; } = GenerateManifestNumber(); // 002/2026
+
+    [BindProperty]
+    public string ManifestPage { get; set; } = "1/1";
+
+    // ===================== GENERADOR =====================
 
     [BindProperty]
     [Required(ErrorMessage = "El número de registro ambiental es obligatorio.")]
@@ -51,24 +57,15 @@ public class HazardousWasteModel : PageModel
     public string Email { get; set; } = string.Empty;
 
     [BindProperty]
-    public DateOnly ManifestDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-
-    [BindProperty]
-    public TimeOnly ManifestTime { get; set; } = TimeOnly.FromDateTime(DateTime.Now);
-
-    [BindProperty]
     public string SafeHandlingInstructions { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string RegulatoryFramework { get; set; } = string.Empty;
 
     [BindProperty]
     public string GeneratorResponsibleName { get; set; } = string.Empty;
 
     [BindProperty]
-    public DateOnly? GeneratorSignDate { get; set; }
+    public DateOnly? GeneratorSignDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    // ── Lista de residuos peligrosos ───────────────────────────────────────
+    // ===================== RESIDUOS =====================
 
     [BindProperty]
     public List<HazardousResidueItem> Residues { get; set; } = new()
@@ -76,16 +73,10 @@ public class HazardousWasteModel : PageModel
         new HazardousResidueItem()
     };
 
-    // ── Transportista ──────────────────────────────────────────────────────
+    // ===================== TRANSPORTISTA =====================
 
     [BindProperty]
     public string TransporterSocialReason { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string TransporterAuthorizationNumber { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string TransporterSCTPermit { get; set; } = string.Empty;
 
     [BindProperty]
     public string TransporterPostalCode { get; set; } = string.Empty;
@@ -97,6 +88,12 @@ public class HazardousWasteModel : PageModel
     public string TransporterExteriorNumber { get; set; } = string.Empty;
 
     [BindProperty]
+    public string TransporterInteriorNumber { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string TransporterColony { get; set; } = string.Empty;
+
+    [BindProperty]
     public string TransporterMunicipality { get; set; } = string.Empty;
 
     [BindProperty]
@@ -106,7 +103,14 @@ public class HazardousWasteModel : PageModel
     public string TransporterPhone { get; set; } = string.Empty;
 
     [BindProperty]
+    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
     public string TransporterEmail { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string TransporterAuthorizationNumber { get; set; } = string.Empty;
+
+    [BindProperty]
+    public string TransporterSCTPermit { get; set; } = string.Empty;
 
     [BindProperty]
     public string VehicleType { get; set; } = string.Empty;
@@ -121,18 +125,12 @@ public class HazardousWasteModel : PageModel
     public string TransporterResponsibleName { get; set; } = string.Empty;
 
     [BindProperty]
-    public string DriverName { get; set; } = string.Empty;
+    public DateOnly? TransporterSignDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    [BindProperty]
-    public DateOnly? TransporterReceptionDate { get; set; }
-
-    // ── Destinatario ───────────────────────────────────────────────────────
+    // ===================== DESTINATARIO =====================
 
     [BindProperty]
     public string ReceiverSocialReason { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string ReceiverAuthorizationNumber { get; set; } = string.Empty;
 
     [BindProperty]
     public string ReceiverPostalCode { get; set; } = string.Empty;
@@ -159,38 +157,32 @@ public class HazardousWasteModel : PageModel
     public string ReceiverPhone { get; set; } = string.Empty;
 
     [BindProperty]
+    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
     public string ReceiverEmail { get; set; } = string.Empty;
 
     [BindProperty]
-    public string DisposalType { get; set; } = string.Empty;
-
-    [BindProperty]
-    public DateOnly? ReceiverDate { get; set; }
-
-    [BindProperty]
-    public string ReceiverObservations { get; set; } = string.Empty;
+    public string ReceiverAuthorizationNumber { get; set; } = string.Empty;
 
     [BindProperty]
     public string ReceiverPersonName { get; set; } = string.Empty;
 
     [BindProperty]
+    public string ReceiverObservations { get; set; } = string.Empty;
+
+    [BindProperty]
     public string ReceiverResponsibleName { get; set; } = string.Empty;
 
-    // ── Archivos ───────────────────────────────────────────────────────────
+    [BindProperty]
+    public DateOnly? ReceiverSignDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    public IFormFile? SignedManifestFile { get; set; }
-    public IFormFile? ReceiverSealFile { get; set; }
-
-    // ── Handlers ──────────────────────────────────────────────────────────
-
-    public void OnGet() { }
+    public void OnGet()
+    {
+    }
 
     public IActionResult OnPost()
     {
         if (!ModelState.IsValid)
             return Page();
-
-        // TODO: Enviar datos al backend / API de SIMAR
 
         TempData["SuccessMessage"] = $"Manifiesto {ManifestNumber} generado correctamente.";
         return RedirectToPage("/Index");
@@ -199,30 +191,32 @@ public class HazardousWasteModel : PageModel
     private static string GenerateManifestNumber()
     {
         int year = DateTime.Today.Year;
-        int seq  = Random.Shared.Next(1, 9999);
+        int seq = Random.Shared.Next(1, 999);
         return $"{seq:D3}/{year}";
     }
 }
 
-/// <summary>Residuo peligroso con clasificación CRETIBM.</summary>
 public class HazardousResidueItem
 {
-    public string ResidueName       { get; set; } = string.Empty;
+    [Display(Name = "Nombre del residuo")]
+    public string ResidueName { get; set; } = string.Empty;
 
-    // Clasificación CRETIBM
-    public bool IsCorrosive         { get; set; }
-    public bool IsReactive          { get; set; }
-    public bool IsExplosive         { get; set; }
-    public bool IsToxic             { get; set; }
-    public bool IsFlammable         { get; set; }
-    public bool IsBiological        { get; set; }
-    public bool IsMutagenic         { get; set; }
+    // CRETIBM
+    public bool IsCorrosive { get; set; }
+    public bool IsReactive { get; set; }
+    public bool IsExplosive { get; set; }
+    public bool IsToxic { get; set; }
+    public bool IsFlammable { get; set; }
+    public bool IsBiological { get; set; }
+    public bool IsMutagenic { get; set; }
 
     // Envase
-    public string Container         { get; set; } = string.Empty;
+    public string ContainerType { get; set; } = string.Empty;
     public string ContainerCapacity { get; set; } = string.Empty;
 
-    // Cantidad y etiqueta
-    public float  AmountKg          { get; set; }
-    public bool?  HasLabel          { get; set; }
+    // Cantidad
+    public decimal AmountKg { get; set; }
+
+    // Etiqueta
+    public bool? HasLabel { get; set; }
 }

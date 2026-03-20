@@ -11,7 +11,8 @@ public class EditModel : PageModel
     public IActionResult OnGet(string id)
     {
         var found = DetailModel.SampleData.FirstOrDefault(m => m.Id == id);
-        if (found is null) return NotFound();
+        if (found is null)
+            return NotFound();
 
         Manifest = found;
         return Page();
@@ -22,7 +23,7 @@ public class EditModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        // TODO: Llamar a la API de SIMAR para actualizar el manifiesto
+        // TODO: Llamar a la API para actualizar el manifiesto
 
         TempData["SuccessMessage"] = $"Manifiesto {Manifest.ManifestNumber} actualizado correctamente.";
         return RedirectToPage("/Manifest/Consult/Index");
