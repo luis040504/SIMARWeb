@@ -1,0 +1,632 @@
+@page "/Manifest/Generate/SpecialWaste"
+@model ClienteWeb.Pages.Manifest.Generate.SpecialWasteModel
+@{
+    ViewData["Title"] = "Generate Manifest - Special Waste";
+}
+
+<style>
+    .manifest-container {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+    }
+
+    .manifest-header {
+        border-bottom: 2px solid #1a3a5c;
+        padding-bottom: 0.75rem;
+    }
+
+    .brand-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a3a5c;
+        margin: 0;
+    }
+
+    .brand-logo {
+        height: 48px;
+    }
+
+    .manifest-title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #1a3a5c;
+        text-transform: uppercase;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    .manifest-folio-top {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1a3a5c;
+        text-align: right;
+    }
+
+    .manifest-number-box {
+        border: 2px solid #1a3a5c;
+        padding: 6px 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1a3a5c;
+        border-radius: 4px;
+        margin-top: 4px;
+        min-width: 130px;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .section-card {
+        border: 1px solid #c8d6e3;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        position: relative;
+        padding-left: 3.5rem;
+        background: #fafcff;
+        box-shadow: 0 2px 10px rgba(26, 58, 92, 0.04);
+    }
+
+    .section-label {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2.5rem;
+        background: #1a3a5c;
+        color: #fff;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .subsection-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #1a3a5c;
+        text-transform: uppercase;
+        border-bottom: 1px solid #c8d6e3;
+        padding-bottom: 4px;
+        margin-bottom: 10px;
+    }
+
+    .form-label-sm {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 2px;
+        display: block;
+    }
+
+    .form-hint {
+        font-size: 0.68rem;
+        color: #718096;
+        margin-top: 2px;
+    }
+
+    .manifest-table th {
+        font-size: 0.72rem;
+        white-space: nowrap;
+        background-color: #e8f0f8;
+        color: #1a3a5c;
+        vertical-align: middle;
+    }
+
+    .manifest-table td {
+        vertical-align: middle;
+        padding: 4px;
+    }
+
+    .manifest-table input,
+    .manifest-table select {
+        min-width: 0;
+    }
+
+    .form-control::placeholder,
+    .form-select::placeholder,
+    textarea.form-control::placeholder {
+        color: #98a2b3;
+        font-style: italic;
+    }
+
+    .declaration-box {
+        font-size: 0.73rem;
+        color: #4a5568;
+        background: #f5f9fd;
+        border: 1px dashed #c8d6e3;
+        border-radius: 6px;
+        padding: 0.65rem 0.75rem;
+        line-height: 1.45;
+    }
+
+    .signature-placeholder {
+        height: 31px;
+        border: 1px dashed #c8d6e3;
+        border-radius: 4px;
+        background: #fff;
+    }
+
+    @@media (max-width: 767.98px) {
+        .manifest-container {
+            padding: 1rem 0.5rem 1.5rem;
+        }
+
+        .manifest-title-block {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+    }
+</style>
+
+<div class="manifest-container">
+
+    <div class="manifest-header d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+        <div class="brand-block">
+            <img src="~/images/simar-logo.png" alt="SIMAR" class="brand-logo" onerror="this.style.display='none'" />
+            <h2 class="brand-title">SIMAR</h2>
+        </div>
+
+        <div class="manifest-title-block text-center flex-grow-1 px-4">
+            <h5 class="manifest-title">
+                MANIFIESTO DE GENERADOR, TRANSPORTE Y DISPOSICIÓN FINAL,<br />
+                TRATAMIENTO O REUTILIZACIÓN DE RESIDUOS DE MANEJO ESPECIAL
+            </h5>
+        </div>
+
+        <div class="text-end">
+            <div class="manifest-folio-top">@Model.ManifestSerial</div>
+            <small class="text-muted">No. de Manifiesto</small>
+            <div class="manifest-number-box">@Model.ManifestNumber</div>
+        </div>
+    </div>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <!-- GENERADOR -->
+        <div class="section-card mb-3">
+            <div class="section-label">GENERADOR</div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label asp-for="EnvironmentalRegistrationNumber" class="form-label-sm">No. de Registro SEDEMA</label>
+                    <input asp-for="EnvironmentalRegistrationNumber"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. SEDEMA/DRME-CH09987205XB-17/182" />
+                    <span asp-validation-for="EnvironmentalRegistrationNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="SocialReason" class="form-label-sm">Razón social</label>
+                    <input asp-for="SocialReason"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. CEMENTOS MOCTEZUMA S.A. DE C.V." />
+                    <span asp-validation-for="SocialReason" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label asp-for="Address" class="form-label-sm">Domicilio</label>
+                    <input asp-for="Address"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Camino vecinal, predio Los Gallineros, Cerro Colorado" />
+                    <span asp-validation-for="Address" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="PostalCode" class="form-label-sm">C.P.</label>
+                    <input asp-for="PostalCode"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. 91645" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="Municipality" class="form-label-sm">Municipio</label>
+                    <input asp-for="Municipality"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Apazapan" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label asp-for="PhoneNumber" class="form-label-sm">Teléfono</label>
+                    <input asp-for="PhoneNumber"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. 2288323510" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ManifestDate" class="form-label-sm">Fecha</label>
+                    <input asp-for="ManifestDate" type="date" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ManifestTime" class="form-label-sm">Hora</label>
+                    <input asp-for="ManifestTime" type="time" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <h6 class="subsection-title">Identificación de los residuos</h6>
+
+            <div class="table-responsive mb-2">
+                <table class="table table-bordered table-sm manifest-table align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 14%;">Clave de residuo</th>
+                            <th style="width: 36%;">Tipo de residuo</th>
+                            <th style="width: 12%;">Envase tipo</th>
+                            <th style="width: 12%;">Capacidad</th>
+                            <th style="width: 12%;">Peso</th>
+                            <th style="width: 14%;">Unidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="residues-body">
+                        @for (int i = 0; i < Model.Residues.Count; i++)
+                        {
+                            <tr>
+                                <td>
+                                    <input asp-for="Residues[i].ResidueKey"
+                                           class="form-control form-control-sm"
+                                           placeholder="Ej. RI-001" />
+                                </td>
+                                <td>
+                                    <input asp-for="Residues[i].ResidueName"
+                                           class="form-control form-control-sm"
+                                           placeholder="Ej. Otros residuos inorgánicos (RSU)" />
+                                </td>
+                                <td>
+                                    <input asp-for="Residues[i].ContainerType"
+                                           class="form-control form-control-sm"
+                                           placeholder="Ej. OF" />
+                                </td>
+                                <td>
+                                    <input asp-for="Residues[i].ContainerCapacity"
+                                           class="form-control form-control-sm"
+                                           placeholder="Ej. N/A" />
+                                </td>
+                                <td>
+                                    <input asp-for="Residues[i].Weight"
+                                           class="form-control form-control-sm"
+                                           placeholder="Ej. 680" />
+                                </td>
+                                <td>
+                                    <select asp-for="Residues[i].Unit" class="form-select form-select-sm">
+                                        <option value="kg">kg</option>
+                                        <option value="ton">ton</option>
+                                        <option value="lt">lt</option>
+                                        <option value="m3">m3</option>
+                                        <option value="pza">pza</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" onclick="addResidueRow()">
+                + Agregar residuo
+            </button>
+
+            <div class="mb-3">
+                <label asp-for="GeneratorObservations" class="form-label-sm">Observaciones</label>
+                <textarea asp-for="GeneratorObservations"
+                          class="form-control form-control-sm"
+                          rows="2"
+                          placeholder="Ej. Sin observaciones."></textarea>
+            </div>
+
+            <div class="declaration-box mb-3">
+                DECLARO BAJO PROTESTA DE DECIR VERDAD, que el contenido de este lote está total y correctamente descrito mediante el número de manifiesto, nombre del residuo, debidamente envasado y etiquetado y que se han previsto las condiciones de seguridad para su transporte por vía terrestre, de acuerdo con la legislación vigente.
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label asp-for="GeneratorResponsibleName" class="form-label-sm">Nombre del responsable</label>
+                    <input asp-for="GeneratorResponsibleName"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Juan Pérez López" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Firma</label>
+                    <div class="signature-placeholder"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Sello</label>
+                    <div class="signature-placeholder"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSPORTISTA -->
+        <div class="section-card mb-3">
+            <div class="section-label">TRANSPORTISTA</div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label asp-for="TransporterAuthorizationNumber" class="form-label-sm">No. de Autorización SEDEMA</label>
+                    <input asp-for="TransporterAuthorizationNumber"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. SEDEMA/TRME-SMA0810239G-2025/073" />
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="TransporterSocialReason" class="form-label-sm">Razón social</label>
+                    <input asp-for="TransporterSocialReason"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Sistemas en Manejo y Administración de Residuos S.A. de C.V." />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label asp-for="TransporterAddress" class="form-label-sm">Domicilio</label>
+                    <input asp-for="TransporterAddress"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Av. Pípila No. 126, Col. José Cardel" />
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="TransporterPostalCode" class="form-label-sm">C.P.</label>
+                    <input asp-for="TransporterPostalCode"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. 91030" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="TransporterMunicipality" class="form-label-sm">Municipio</label>
+                    <input asp-for="TransporterMunicipality"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Xalapa" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label asp-for="TransporterPhone" class="form-label-sm">Teléfono</label>
+                    <input asp-for="TransporterPhone"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. 2288343149" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="TransporterDate" class="form-label-sm">Fecha</label>
+                    <input asp-for="TransporterDate" type="date" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="TransporterTime" class="form-label-sm">Hora</label>
+                    <input asp-for="TransporterTime" type="time" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label asp-for="VehicleType" class="form-label-sm">Tipo de vehículo</label>
+                    <input asp-for="VehicleType"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Camión caja seca 3.5 ton." />
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="VehiclePlate" class="form-label-sm">No. de placa</label>
+                    <input asp-for="VehiclePlate"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. YJ-9638-A" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label asp-for="DriverName" class="form-label-sm">Nombre del conductor</label>
+                    <input asp-for="DriverName"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Fernando López Sánchez" />
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="DriverLicense" class="form-label-sm">No. de licencia de conducir</label>
+                    <input asp-for="DriverLicense"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. UB0030UNC" />
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label asp-for="TransportRoute" class="form-label-sm">Ruta de transporte</label>
+                <input asp-for="TransportRoute"
+                       class="form-control form-control-sm"
+                       placeholder="Ej. De Apazapan, Ver. a Xalapa, Ver." />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="TransporterObservations" class="form-label-sm">Observaciones</label>
+                <textarea asp-for="TransporterObservations"
+                          class="form-control form-control-sm"
+                          rows="2"
+                          placeholder="Ej. Sin observaciones."></textarea>
+            </div>
+
+            <div class="declaration-box mb-3">
+                DECLARO BAJO PROTESTA DE DECIR VERDAD, que recibí los residuos descritos en el manifiesto para su transporte al establecimiento destinado señalado por el generador.
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label asp-for="TransporterResponsibleName" class="form-label-sm">Nombre del responsable</label>
+                    <input asp-for="TransporterResponsibleName"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Fernando López Sánchez" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Firma</label>
+                    <div class="signature-placeholder"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Sello</label>
+                    <div class="signature-placeholder"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DESTINATARIO -->
+        <div class="section-card mb-4">
+            <div class="section-label">DESTINATARIO</div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label asp-for="ReceiverAuthorizationNumber" class="form-label-sm">No. de autorización SEDEMA</label>
+                    <input asp-for="ReceiverAuthorizationNumber"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. SEDEMA/AATRME-SMA0810239L9-2024/36" />
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="ReceiverSocialReason" class="form-label-sm">Razón social</label>
+                    <input asp-for="ReceiverSocialReason"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Sistemas en Manejo y Administración de Residuos S.A. de C.V." />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label asp-for="ReceiverAddress" class="form-label-sm">Domicilio</label>
+                    <input asp-for="ReceiverAddress"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Félix Licona #209, Col. Rafael Lucio" />
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="ReceiverPostalCode" class="form-label-sm">C.P.</label>
+                    <input asp-for="ReceiverPostalCode"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. 91110" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ReceiverMunicipality" class="form-label-sm">Municipio</label>
+                    <input asp-for="ReceiverMunicipality"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Xalapa" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label asp-for="ReceiverPhone" class="form-label-sm">Teléfono</label>
+                    <input asp-for="ReceiverPhone"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. 2288190044" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ReceiverDate" class="form-label-sm">Fecha</label>
+                    <input asp-for="ReceiverDate" type="date" class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ReceiverTime" class="form-label-sm">Hora</label>
+                    <input asp-for="ReceiverTime" type="time" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label asp-for="DisposalType" class="form-label-sm">Tipo de disposición</label>
+                <input asp-for="DisposalType"
+                       class="form-control form-control-sm"
+                       placeholder="Ej. Almacén temporal" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ReceiverObservations" class="form-label-sm">Observaciones</label>
+                <textarea asp-for="ReceiverObservations"
+                          class="form-control form-control-sm"
+                          rows="2"
+                          placeholder="Ej. Sin observaciones."></textarea>
+            </div>
+
+            <div class="declaration-box mb-3">
+                DECLARO BAJO PROTESTA DE DECIR VERDAD, que recibí los residuos descritos en el manifiesto para su manejo adecuado conforme a la legislación vigente.
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label asp-for="ReceiverResponsibleName" class="form-label-sm">Nombre del responsable</label>
+                    <input asp-for="ReceiverResponsibleName"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Gustavo Cruz Torres" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Firma</label>
+                    <div class="signature-placeholder"></div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Sello</label>
+                    <div class="signature-placeholder"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a asp-page="/Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Generar manifiesto</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let residueIndex = @Model.Residues.Count;
+
+        function addResidueRow() {
+            const tbody = document.getElementById('residues-body');
+            const i = residueIndex++;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input name="Residues[${i}].ResidueKey" class="form-control form-control-sm" placeholder="Ej. RI-001" />
+                </td>
+                <td>
+                    <input name="Residues[${i}].ResidueName" class="form-control form-control-sm" placeholder="Ej. Otros residuos inorgánicos (RSU)" />
+                </td>
+                <td>
+                    <input name="Residues[${i}].ContainerType" class="form-control form-control-sm" placeholder="Ej. OF" />
+                </td>
+                <td>
+                    <input name="Residues[${i}].ContainerCapacity" class="form-control form-control-sm" placeholder="Ej. N/A" />
+                </td>
+                <td>
+                    <input name="Residues[${i}].Weight" class="form-control form-control-sm" placeholder="Ej. 680" />
+                </td>
+                <td>
+                    <select name="Residues[${i}].Unit" class="form-select form-select-sm">
+                        <option value="kg">kg</option>
+                        <option value="ton">ton</option>
+                        <option value="lt">lt</option>
+                        <option value="m3">m3</option>
+                        <option value="pza">pza</option>
+                    </select>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+    </script>
+}

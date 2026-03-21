@@ -1,0 +1,308 @@
+@page
+@model ClienteWeb.Pages.GenerateInvoice.IndexModel
+@{
+    ViewData["Title"] = "Generar Factura";
+}
+
+<div class="container-fluid px-4 px-md-5 mt-4" id="w_GenerarFactura">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+            <i class="bi bi-file-earmark-text fs-4 me-2"></i>
+            <h4 class="mb-0">Buscar Servicio</h4>
+        </div>
+        <div class="card-body p-4">
+
+            <form method="post" asp-page-handler="Search" class="mb-5">
+                <div class="row align-items-end g-3">
+                    <div class="col-md-9">
+                        <label for="c_Search" class="form-label text-muted fw-bold">Buscar servicio (RFC, Nombre de Cliente o Tipo)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="c_Search" name="c_Search" asp-for="c_Search" placeholder="Ingrese RFC, nombre o tipo de servicio...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-secondary btn-lg w-100 shadow-sm" id="b_Search">
+                            <i class="bi bi-search me-2"></i>Buscar
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <hr class="text-muted mb-4" />
+
+            @if (Model.IsSearchResult)
+            {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-primary fw-bold mb-0 fs-4">
+                        <i class="bi bi-funnel me-2"></i> Resultados de la Búsqueda
+                    </h5>
+                    <a href="/GenerateInvoice" class="btn btn-outline-secondary">Limpiar Búsqueda</a>
+                </div>
+            }
+            else
+            {
+                <h5 class="mt-4 mb-4 text-secondary fw-bold fs-4">
+                    <i class="bi bi-clock-history me-2"></i> Servicios realizados en los últimos 7 días
+                </h5>
+            }
+
+            <div class="row g-4 mb-4">
+                @if (Model.DisplayedServices != null && Model.DisplayedServices.Any())
+                {
+                    foreach (var service in Model.DisplayedServices)
+                    {
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="card h-100 border-light shadow-sm hover-shadow transition">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title text-primary fw-bold text-truncate mb-0" title="@service.Client">@service.Client</h5>
+                                        <span class="badge bg-light text-dark border">ID: @service.Id</span>
+                                    </div>
+                                    <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong>@service.TaxId</strong></p>
+                                    <p class="card-text mb-2"><small class="text-muted">Tipo:</small> <span class="badge bg-secondary">@service.Type</span></p>
+                                    <p class="card-text mb-3"><small class="text-muted">Fecha:</small> @service.Date.ToString("dd/MM/yyyy")</p>
+                                    <h4 class="card-text text-success mt-2 mb-4">@service.Amount.ToString("C")</h4>
+                                    
+                                    <form method="post" asp-page-handler="PrepareInvoice">
+                                        <input type="hidden" asp-for="SelectedServiceId" value="@service.Id" />
+                                        <input type="hidden" asp-for="c_Search" />
+                                        <button type="submit" class="btn btn-primary w-100 shadow-sm btn-lg mb-2" id="b_GenerateInvoice_@service.Id">
+                                            <i class="bi bi-receipt me-2"></i> Generar Factura
+                                        </button>
+                                    </form>
+                                    <form method="post" asp-page-handler="UploadPhysicalInvoice" enctype="multipart/form-data">
+                                        <input type="hidden" asp-for="SelectedServiceId" value="@service.Id" />
+                                        <input type="hidden" asp-for="c_Search" />
+                                        <div class="d-grid">
+                                            <label class="btn btn-outline-secondary w-100 shadow-sm btn-lg mb-0" style="cursor: pointer;" for="upload_@service.Id">
+                                                <i class="bi bi-upload me-2"></i> Subir Factura Física
+                                            </label>
+                                            <input type="file" id="upload_@service.Id" name="PhysicalInvoice" accept=".pdf" class="d-none" onchange="this.form.submit()" />
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="alert alert-light border text-center text-muted py-5 shadow-sm rounded-3" role="alert">
+                            <i class="bi bi-info-circle display-3 d-block mb-3 text-secondary opacity-50"></i>
+                            <span class="fs-4">No se encontraron servicios.</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;">
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div id="successToast" class="toast align-items-center text-white bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex p-2">
+                <div class="toast-body fs-5">
+                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
+                    @Model.SuccessMessage
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal for Billing Data -->
+@if (Model.ShowInvoiceModal)
+{
+    <!-- Modal Backdrop -->
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+    
+    <div class="modal fade show d-block" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-modal="true" role="dialog" style="z-index: 1050;">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-bottom-0 pb-4 pt-4 px-5">
+                    <h4 class="modal-title fw-bold" id="invoiceModalLabel">
+                        <i class="bi bi-clipboard-data me-3"></i> Datos Detallados de Facturación
+                    </h4>
+                    <a href="/GenerateInvoice" class="btn-close btn-close-white" aria-label="Close"></a>
+                </div>
+                
+                <!-- Service Summary inside Modal Banner -->
+                <div class="bg-success text-white px-5 pb-4" style="opacity: 0.95;">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <small class="text-white-50 text-uppercase fw-bold ls-1">Generando factura para:</small>
+                            <h3 class="mb-0 mt-2">@Model.SelectedService?.Client <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedService?.TaxId)</span></h3>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <h2 class="mb-0 fw-bold">@Model.SelectedService?.Amount.ToString("C")</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-body bg-light p-5 pt-4">
+                    <form method="post" asp-page-handler="Generate">
+                        <input type="hidden" asp-for="SelectedServiceId" />
+                        <input type="hidden" asp-for="c_Search" />
+                        <!-- Preserve Billing Name and TaxId so they post back -->
+                        <input type="hidden" asp-for="BillingName" />
+                        <input type="hidden" asp-for="TaxId" />
+
+                        <div class="row g-4">
+                            <!-- Section 1: Receiver Information -->
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body p-5">
+                                        <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-person-vcard me-3"></i>1. Información del Receptor
+                                        </h5>
+                                        <div class="row g-4">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary">Registro Federal de Contribuyentes (RFC)</label>
+                                                <input type="text" class="form-control form-control-lg bg-light" value="@Model.TaxId" disabled>
+                                                <div class="form-text mt-2">12 caracteres para Morales, 13 para Físicas.</div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label class="form-label fw-bold text-secondary">Nombre o Razón Social</label>
+                                                <input type="text" class="form-control form-control-lg bg-light" value="@Model.BillingName" disabled>
+                                                <div class="form-text mt-2">No se incluye el régimen de capital (ej. omitir "S.A. de C.V.").</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Código Postal *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="PostalCode" required maxlength="5" placeholder="Ej. 12345">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Régimen Fiscal *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="FiscalRegime" required>
+                                                    <option value="">-- Seleccione Régimen --</option>
+                                                    <option value="601">601 - General de Ley Personas Morales</option>
+                                                    <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
+                                                    <option value="605">605 - Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
+                                                    <option value="606">606 - Arrendamiento</option>
+                                                    <option value="612">612 - Personas Físicas con Activ. Empresariales</option>
+                                                    <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Uso de CFDI *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="CfdiUsage" required>
+                                                    <option value="">-- Seleccione Uso --</option>
+                                                    <option value="G01">G01 - Adquisición de mercancías</option>
+                                                    <option value="G03">G03 - Gastos en general</option>
+                                                    <option value="I01">I01 - Construcciones</option>
+                                                    <option value="P01">P01 - Por definir</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Payment Attributes -->
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body p-5">
+                                        <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-wallet2 me-3"></i>2. Atributos de Pago
+                                        </h5>
+                                        <div class="row g-4">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-secondary text-danger">Forma de Pago *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="PaymentForm" required>
+                                                    <option value="">-- Seleccione Forma de Pago --</option>
+                                                    <option value="01">01 - Efectivo</option>
+                                                    <option value="02">02 - Cheque nominativo</option>
+                                                    <option value="03">03 - Transferencia electrónica de fondos</option>
+                                                    <option value="04">04 - Tarjeta de crédito</option>
+                                                    <option value="28">28 - Tarjeta de débito</option>
+                                                    <option value="99">99 - Por definir</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-secondary text-danger">Método de Pago *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="PaymentMethod" required>
+                                                    <option value="">-- Seleccione Método de Pago --</option>
+                                                    <option value="PUE">PUE - Pago en una sola exhibición</option>
+                                                    <option value="PPD">PPD - Pago en parcialidades o diferido</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Concept Details -->
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body p-5">
+                                        <h5 class="card-subtitle mb-4 text-primary fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-box-seam me-3"></i>3. Información de Conceptos
+                                        </h5>
+                                        <div class="row g-4 align-items-start">
+                                             <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Clave de Producto/Servicio *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="ProductCode" required>
+                                                <div class="form-text mt-2">Ej. 80141600 (Ventas o Servicios)</div>
+                                            </div>
+                                             <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Clave de Unidad *</label>
+                                                <input type="text" class="form-control form-control-lg border-secondary" asp-for="UnitCode" required>
+                                                <div class="form-text mt-2">Ej. H87 (Pieza), E48 (Unidad de Servicio)</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold text-secondary text-danger">Objeto de Impuesto *</label>
+                                                <select class="form-select form-select-lg border-secondary" asp-for="TaxObject" required>
+                                                    <option value="">-- Seleccione Objeto de Impuesto --</option>
+                                                    <option value="01">01 - No objeto de impuesto</option>
+                                                    <option value="02">02 - Sí objeto de impuesto</option>
+                                                    <option value="03">03 - Sí objeto y no obligado al desglose</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div> <!-- End main row -->
+
+                        <div class="modal-footer border-top-0 mt-5 px-0 pb-0">
+                            <a href="/GenerateInvoice" class="btn btn-outline-secondary btn-lg px-5 py-3 rounded-pill">Cancelar</a>
+                            <button type="submit" class="btn btn-success btn-lg px-5 py-3 rounded-pill shadow-lg">
+                                <i class="bi bi-check-circle-fill me-2 fs-5"></i> Confirmar y Generar Factura
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Script to disable background scrolling when modal is open -->
+    <script>
+        document.body.style.overflow = 'hidden';
+    </script>
+}
+
+<style>
+    .transition { transition: all 0.3s ease; }
+    .hover-shadow:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.15)!important; }
+    .ls-1 { letter-spacing: 1px; }
+</style>
+
+@section Scripts {
+    <script>
+        // Initialize Bootstrap Toasts
+        document.addEventListener('DOMContentLoaded', function () {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            var toastList = toastElList.map(function (toastEl) {
+                return new bootstrap.Toast(toastEl, { delay: 6000 });
+            });
+            toastList.forEach(toast => toast.show());
+        });
+    </script>
+}

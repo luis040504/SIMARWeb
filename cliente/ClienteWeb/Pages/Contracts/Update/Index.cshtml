@@ -1,0 +1,207 @@
+@page
+@model ClienteWeb.Pages.Contracts.Update.UpdateModel
+
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 30px auto;
+    }
+
+    h2 {
+        margin-bottom: 20px;
+        border-bottom: 3px solid #333;
+        padding-bottom: 10px;
+    }
+
+    .card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group textarea,
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .form-group input[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: 1px solid #333;
+        background: white;
+        cursor: pointer;
+        text-decoration: none;
+        color: black;
+        font-size: 14px;
+        transition: 0.2s;
+        margin-right: 10px;
+        display: inline-block;
+    }
+
+    .btn:hover {
+        background: #eee;
+    }
+
+    .btn-primary {
+        background-color: #333;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: black;
+        color: white;
+    }
+
+    .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .audit-trail {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .audit-trail strong {
+        display: block;
+        margin-bottom: 10px;
+    }
+</style>
+
+<div class="container">
+    <h2>Actualizar Información del Contrato</h2>
+
+    @if (Model.ShowSuccessMessage)
+
+    {
+        <div class="alert alert-success">
+            <strong>¡Éxito!</strong> El contrato ha sido actualizado correctamente.
+
+            <div class="audit-trail">
+                <strong>Registro de Auditoría (Trazabilidad):</strong>
+                <ul>
+                    @foreach (var log in Model.AuditTrail)
+                    {
+                        <li>@log</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <a href="/Contracts/Consult" class="btn btn-primary">Volver a consultar contratos</a>
+        </div>
+    }
+
+    else
+
+    {
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+
+        {
+            <div class="alert alert-danger">
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <div class="card">
+            <form method="post" enctype="multipart/form-data">
+
+                <!-- Sólo lectura: ID único del contrato -->
+                <div class="form-group" style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label>Número de Contrato</label>
+                        <input type="text" asp-for="Id" readonly />
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Cliente</label>
+                        <input type="text" asp-for="Client" readonly />
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Estatus</label>
+                        <input type="text" value="@Model.Status" readonly />
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label>Fecha de Inicio</label>
+                        <input type="date" asp-format="{0:yyyy-MM-dd}" asp-for="StartDate" readonly />
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Nueva Fecha de Término (Renovación)</label>
+                        <input type="date" asp-format="{0:yyyy-MM-dd}" asp-for="EndDate" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Condiciones del servicio</label>
+                    <textarea asp-for="ServiceConditions" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Observaciones administrativas</label>
+                    <textarea asp-for="AdminObservations" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Adjuntar nueva versión firmada (PDF) - Opcional</label>
+                    <input type="file" asp-for="PdfFile" accept=".pdf" />
+                    <small style="color: grey;">Solo archivos en formato PDF, útil si hay una modificación formal
+                        firmada.</small>
+                </div>
+
+                <div style="text-align: right; margin-top: 30px;">
+                    <a href="/Contracts/Consult" class="btn">Cancelar / Volver</a>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
