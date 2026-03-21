@@ -23,10 +23,10 @@ app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
 
-// Redirigir la raíz a tu página específica
+/* Redirigir la raíz a tu página específica
 app.MapGet("/", context => {
     context.Response.Redirect("/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection");
     return Task.CompletedTask;
-});
+});*/
 
 app.Run();
