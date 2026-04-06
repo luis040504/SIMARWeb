@@ -50,3 +50,78 @@
     background-color: #f8f9fa;
     border-color: #adb5bd;
 }
+
+
+/*GENERATE INVOICE*/
+
+#w_GenerateInvoice .card {
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+}
+
+#w_GenerateInvoice .card-header {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    padding: 1.5rem;
+}
+
+#w_GenerateInvoice .card-header h4 {
+    color: #333;
+    font-weight: 400;
+}
+
+#w_GenerateInvoice .form-control-lg,
+#w_GenerateInvoice .form-select-lg {
+    border: 1px solid #e0e0e0;
+    font-size: 1rem;
+    border-radius: 6px;
+}
+
+#w_GenerateInvoice .form-control:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.1);
+}
+
+#w_GenerateInvoice .btn-success, 
+#w_GenerateInvoice .bg-success {
+    background-color: #4CAF50 I !important;
+    border-color: #4CAF50 I !important;
+}
+
+#w_GenerateInvoice .btn-outline-secondary {
+    color: #777;
+    border-color: #ddd;
+}
+
+#w_GenerateInvoice .btn-outline-secondary:hover {
+    background-color: #f9f9f9;
+    border-color: #ccc;
+    color: #333;
+}
+
+#w_GenerateInvoice .hover-shadow:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    border-color: #4CAF50 !important;
+}
+
+#invoiceModal .modal-content {
+    border-radius: 12px;
+}
+
+#invoiceModal .modal-header {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    border-bottom: 1px solid #eee !important;
+    
+}
+
+#invoiceModal .bg-success {
+    background-color: #f8fdf8 !important;
+    color: #2e7d32 !important;
+}
+
+
+#invoiceModal .text-white-50 {
+    color: #81c784 !important;
+}
