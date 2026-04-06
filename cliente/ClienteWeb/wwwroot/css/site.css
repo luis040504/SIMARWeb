@@ -1,29 +1,29 @@
-/* Estilos para el Sidebar (menú de hamburguesa) */
+
 .sidebar {
     width: 260px;
-    min-height: calc(100vh - 56px); /* 56px es la altura típica del navbar superior */
+    min-height: calc(100vh - 56px); 
     transition: width 0.3s ease, margin-left 0.3s ease;
     overflow-y: auto;
 }
 
-/* Clase que oculta el sidebar (se usa con JavaScript) */
+
 .sidebar-hidden {
-    margin-left: -260px; /* Lo desplaza fuera de la pantalla */
+    margin-left: -260px; 
 }
 
-/* El contenido principal ocupa el espacio restante */
+
 #mainContent {
     transition: margin-left 0.3s ease;
     width: 100%;
 }
 
-/* Cuando el sidebar está oculto, el contenido ocupa todo el ancho */
+
 .main-expanded {
     margin-left: 0;
     width: 100%;
 }
 
-/* Ajustes para el submenú de Usuarios */
+
 .collapse .list-group-item {
     border: none;
     border-radius: 0;
@@ -32,16 +32,16 @@
 }
 
 .collapse .list-group-item:hover {
-    background-color: #e9ecef; /* Un gris suave para el hover, sin color */
+    background-color: #e9ecef; 
 }
 
-/* Hover para los items del menú principal */
+
 .list-group-item-action:hover {
-    background-color: #f8f9fa; /* Gris muy clarito */
-    border-left: 3px solid #6c757d; /* Detalle sutil en gris */
+    background-color: #f8f9fa; 
+    border-left: 3px solid #6c757d; 
 }
 
-/* Botones con estilo básico (sin colores, solo bordes) */
+
 .btn-outline-secondary {
     border: 1px solid #ced4da;
     background-color: transparent;
@@ -49,4 +49,510 @@
 .btn-outline-secondary:hover {
     background-color: #f8f9fa;
     border-color: #adb5bd;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+
+
+:root {
+    --simar-green: #5aad31;
+    --simar-green-dark: #3d7a1f;
+    --simar-green-light: rgba(90, 173, 49, 0.1);
+    --simar-dark: #4a4a4a;
+    --simar-dark-light: #6c757d;
+    --simar-gray-light: #f8f9fa;
+    --simar-border: #e9ecef;
+    --simar-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    --simar-shadow-hover: 0 15px 30px rgba(90, 173, 49, 0.12);
+    --simar-transition: all 0.3s ease;
+}
+
+
+* {
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #f5f7fb;
+    overflow-x: hidden;
+}
+
+
+.container-fluid-simar {
+    width: 100%;
+    padding-right: 1rem;
+    padding-left: 1rem;
+}
+
+
+.btn-simar-primary {
+    background: var(--simar-green);
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 0.5rem 1.2rem;
+    transition: var(--simar-transition);
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-simar-primary:hover {
+    background: var(--simar-green-dark);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-simar-primary:active {
+    transform: translateY(0);
+}
+
+
+.btn-simar-secondary {
+    background: var(--simar-dark);
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 0.5rem 1.2rem;
+    transition: var(--simar-transition);
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-simar-secondary:hover {
+    background: #3a3a3a;
+    transform: translateY(-2px);
+    color: white;
+}
+
+
+.btn-simar-outline {
+    background: transparent;
+    border: 1px solid var(--simar-green);
+    color: var(--simar-green);
+    border-radius: 10px;
+    padding: 0.5rem 1.2rem;
+    transition: var(--simar-transition);
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-simar-outline:hover {
+    background: var(--simar-green);
+    color: white;
+    transform: translateY(-2px);
+}
+
+
+.btn-simar-outline-gray {
+    background: transparent;
+    border: 1px solid var(--simar-border);
+    color: var(--simar-dark);
+    border-radius: 10px;
+    padding: 0.5rem 1.2rem;
+    transition: var(--simar-transition);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.btn-simar-outline-gray:hover {
+    background: var(--simar-gray-light);
+    border-color: var(--simar-green);
+    color: var(--simar-green);
+}
+
+
+.btn-simar-icon {
+    background: transparent;
+    border: 1px solid var(--simar-border);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--simar-transition);
+    color: var(--simar-dark);
+}
+
+.btn-simar-icon:hover {
+    border-color: var(--simar-green);
+    color: var(--simar-green);
+    background: var(--simar-green-light);
+}
+
+
+.card-simar {
+    background: white;
+    border-radius: 20px;
+    transition: var(--simar-transition);
+    box-shadow: var(--simar-shadow);
+    border: 1px solid var(--simar-border);
+    overflow: hidden;
+}
+
+.card-simar:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--simar-shadow-hover);
+    border-color: rgba(90, 173, 49, 0.2);
+}
+
+
+.card-simar-subtle {
+    background: white;
+    border-radius: 20px;
+    transition: var(--simar-transition);
+    box-shadow: var(--simar-shadow);
+    border: 1px solid var(--simar-border);
+}
+
+.card-simar-subtle:hover {
+    box-shadow: var(--simar-shadow-hover);
+}
+
+
+.card-simar-header {
+    border-bottom: 2px solid var(--simar-green);
+    padding: 1rem 1.25rem;
+    background: white;
+    font-weight: 600;
+    color: var(--simar-dark);
+}
+
+
+.form-label-simar {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--simar-dark);
+    margin-bottom: 0.3rem;
+}
+
+
+.form-control-simar,
+.form-select-simar {
+    border-radius: 10px;
+    border: 1px solid var(--simar-border);
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    transition: var(--simar-transition);
+    width: 100%;
+}
+
+.form-control-simar:focus,
+.form-select-simar:focus {
+    border-color: var(--simar-green);
+    box-shadow: 0 0 0 2px rgba(90, 173, 49, 0.2);
+    outline: none;
+}
+
+
+.form-control-simar[readonly] {
+    background-color: var(--simar-gray-light);
+    cursor: not-allowed;
+}
+
+
+.table-simar {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--simar-shadow);
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-simar thead th {
+    background: var(--simar-gray-light);
+    color: var(--simar-dark);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--simar-green);
+    padding: 1rem;
+}
+
+.table-simar tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--simar-border);
+}
+
+.table-simar tbody tr:hover {
+    background: rgba(90, 173, 49, 0.03);
+}
+
+.table-simar tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+.table-responsive-simar {
+    overflow-x: auto;
+    border-radius: 16px;
+}
+
+
+.badge-simar {
+    padding: 0.35rem 0.85rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+
+.badge-simar-programada {
+    background: rgba(108, 117, 125, 0.15);
+    color: #6c757d;
+    border-left: 3px solid #6c757d;
+}
+
+
+.badge-simar-completada {
+    background: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+    border-left: 3px solid #28a745;
+}
+
+
+.badge-simar-cancelada {
+    background: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+    border-left: 3px solid #dc3545;
+}
+
+
+.badge-simar-enruta {
+    background: rgba(255, 193, 7, 0.15);
+    color: #e6a700;
+    border-left: 3px solid #ffc107;
+}
+
+
+.badge-simar-vehiculo {
+    background: var(--simar-green);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 30px;
+    font-weight: 500;
+}
+
+
+.modal-simar .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.modal-simar .modal-header {
+    border-bottom: 2px solid var(--simar-green);
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 1.2rem 1.5rem;
+}
+
+.modal-simar .modal-header .modal-title {
+    color: var(--simar-dark);
+    font-weight: 600;
+}
+
+.modal-simar .modal-header .modal-title i {
+    color: var(--simar-green);
+}
+
+.modal-simar .modal-footer {
+    border-top: 1px solid var(--simar-border);
+    padding: 1rem 1.5rem;
+}
+
+
+.modal-scrollable-simar {
+    max-height: 65vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.modal-scrollable-simar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.modal-scrollable-simar::-webkit-scrollbar-track {
+    background: var(--simar-border);
+    border-radius: 4px;
+}
+
+.modal-scrollable-simar::-webkit-scrollbar-thumb {
+    background: var(--simar-green);
+    border-radius: 4px;
+}
+
+
+.filter-section-simar {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--simar-border);
+    box-shadow: var(--simar-shadow);
+}
+
+.filter-section-simar h6 {
+    color: var(--simar-dark);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+
+.empty-state-simar {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--simar-shadow);
+    border: 1px solid var(--simar-border);
+}
+
+.empty-state-simar i {
+    font-size: 4rem;
+    color: var(--simar-green);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+}
+
+.empty-state-simar h4 {
+    color: var(--simar-dark);
+    margin-bottom: 0.5rem;
+}
+
+
+.dropdown-menu-simar {
+    border-radius: 12px;
+    border: 1px solid var(--simar-border);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 0;
+}
+
+.dropdown-item-simar {
+    padding: 0.5rem 1rem;
+    transition: var(--simar-transition);
+    cursor: pointer;
+}
+
+.dropdown-item-simar:hover {
+    background: var(--simar-green-light);
+    color: var(--simar-green);
+}
+
+.dropdown-item-simar-danger {
+    color: #dc3545;
+}
+
+.dropdown-item-simar-danger:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+
+.scrollbar-simar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.scrollbar-simar::-webkit-scrollbar-track {
+    background: var(--simar-border);
+    border-radius: 4px;
+}
+
+.scrollbar-simar::-webkit-scrollbar-thumb {
+    background: var(--simar-green);
+    border-radius: 4px;
+}
+
+
+.text-simar-green {
+    color: var(--simar-green);
+}
+
+
+.text-simar-dark {
+    color: var(--simar-dark);
+}
+
+
+.bg-simar-light {
+    background: var(--simar-green-light);
+}
+
+
+.border-bottom-simar {
+    border-bottom: 2px solid var(--simar-green);
+}
+
+
+.hover-shadow-simar {
+    transition: var(--simar-transition);
+}
+
+.hover-shadow-simar:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--simar-shadow-hover);
+}
+
+
+.img-preview-simar {
+    max-height: 120px;
+    border-radius: 10px;
+    border: 2px solid var(--simar-border);
+    padding: 5px;
+    background: white;
+}
+
+
+.divider-simar {
+    height: 1px;
+    background: var(--simar-border);
+    margin: 1rem 0;
+}
+
+
+@media (max-width: 768px) {
+    .btn-simar-primary,
+    .btn-simar-secondary,
+    .btn-simar-outline {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .card-simar {
+        margin-bottom: 1rem;
+    }
+    
+    .filter-section-simar {
+        padding: 1rem;
+    }
+    
+    .empty-state-simar {
+        padding: 2rem 1rem;
+    }
+    
+    .empty-state-simar i {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid-simar {
+        padding-right: 0.75rem;
+        padding-left: 0.75rem;
+    }
 }
