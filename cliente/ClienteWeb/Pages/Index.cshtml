@@ -1,10 +1,468 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Inicio - SIMAR";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+    /* Info bar superior con los colores de la empresa */
+    .info-bar-simar {
+        background: var(--simar-green, #5aad31);
+        color: white;
+        padding: 0.75rem 0;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .info-bar-simar a, 
+    .info-bar-simar span {
+        color: white;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    
+    .info-bar-simar i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Contenedor de la imagen principal - integración orgánica */
+    .hero-image-container {
+        width: 100%;
+        background: linear-gradient(135deg, #f5f7fb 0%, #e9ecef 100%);
+        padding: 2rem 0;
+    }
+    
+    .hero-main-image {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        display: block;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* Tarjetas de servicios mejoradas */
+    .service-card {
+        background: white;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        cursor: default;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .service-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(90, 173, 49, 0.15);
+    }
+    
+    .service-icon {
+        font-size: 3.5rem;
+        color: var(--simar-green, #5aad31);
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+    
+    .service-title {
+        font-weight: 600;
+        font-size: 1.2rem;
+        color: var(--simar-dark, #4a4a4a);
+        margin-bottom: 0.75rem;
+    }
+    
+    .service-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    /* Nueva sección: Giros comerciales */
+    .giros-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        padding: 3rem 0;
+    }
+    
+    .giros-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .giros-header h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--simar-dark, #4a4a4a);
+        margin-bottom: 1rem;
+    }
+    
+    .giros-header h2 span {
+        color: var(--simar-green, #5aad31);
+    }
+    
+    .giros-header p {
+        font-size: 1.1rem;
+        color: #6c757d;
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+    
+    /* Tarjeta de giro comercial */
+    .giro-card {
+        background: white;
+        border-radius: 24px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        cursor: default;
+        border: 1px solid rgba(90, 173, 49, 0.1);
+    }
+    
+    .giro-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(90, 173, 49, 0.12);
+        border-color: rgba(90, 173, 49, 0.3);
+    }
+    
+    .giro-icon {
+        width: 70px;
+        height: 70px;
+        background: rgba(90, 173, 49, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .giro-card:hover .giro-icon {
+        background: var(--simar-green, #5aad31);
+        transform: scale(1.05);
+    }
+    
+    .giro-card:hover .giro-icon i {
+        color: white;
+    }
+    
+    .giro-icon i {
+        font-size: 2rem;
+        color: var(--simar-green, #5aad31);
+        transition: all 0.3s ease;
+    }
+    
+    .giro-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--simar-dark, #4a4a4a);
+        margin-bottom: 0.75rem;
+    }
+    
+    .giro-services {
+        font-size: 0.8rem;
+        color: #6c757d;
+        line-height: 1.4;
+        margin-top: 0.5rem;
+    }
+    
+    .giro-services span {
+        display: inline-block;
+        background: rgba(90, 173, 49, 0.08);
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        margin: 0.2rem;
+        font-size: 0.7rem;
+    }
+    
+    /* Footer mejorado */
+    .footer-simar-custom {
+        background: var(--simar-dark, #4a4a4a);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 2rem 0 1rem;
+        margin-top: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .footer-simar-custom a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .footer-simar-custom a:hover {
+        color: var(--simar-green, #5aad31);
+    }
+    
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .info-bar-simar .container > div {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+        
+        .hero-image-container {
+            padding: 1rem 0;
+        }
+        
+        .service-card {
+            margin-bottom: 1rem;
+        }
+        
+        .giros-header h2 {
+            font-size: 1.6rem;
+        }
+        
+        .giros-header p {
+            font-size: 0.95rem;
+            padding: 0 1rem;
+        }
+        
+        .giro-card {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @@media (max-width: 992px) {
+        .giro-card {
+            margin-bottom: 1.5rem;
+        }
+    }
+</style>
+
+<!-- Barra superior con datos de contacto -->
+<div class="info-bar-simar">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <div class="mb-2 mb-md-0">
+                <i class="bi bi-building me-2"></i>
+                <span class="fw-semibold">Sistemas en Manejo y Administración de Residuos</span>
+            </div>
+            <div class="d-flex gap-4">
+                <span class="d-flex align-items-center">
+                    <i class="bi bi-telephone-fill"></i>
+                    01 (228) 834.31.49
+                </span>
+                <span class="d-flex align-items-center">
+                    <i class="bi bi-envelope-fill"></i>
+                    ventas@gruposimar.com.mx
+                </span>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Contenedor de la imagen principal - Integrada orgánicamente -->
+<div class="hero-image-container">
+    <img src="/images/MenuPrincipal.png" 
+         alt="SIMAR - Manejo de residuos para todos los giros comerciales" 
+         class="hero-main-image">
+</div>
+
+<!-- Sección de Servicios -->
+<div class="container my-5 py-4">
+    <h2 class="text-center mb-5 fw-semibold" style="color: var(--simar-dark, #4a4a4a);">
+        Nuestros <span style="color: var(--simar-green, #5aad31);">Servicios</span>
+    </h2>
+    
+    <div class="row g-4">
+        <!-- Servicio 1 -->
+        <div class="col-md-6 col-lg-3">
+            <div class="service-card h-100 text-center p-4">
+                <div class="card-body p-0">
+                    <i class="bi bi-truck service-icon"></i>
+                    <h5 class="service-title">Recolección de residuos</h5>
+                    <p class="service-description">Manejo profesional de residuos industriales, peligrosos y biológicos</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Servicio 2 -->
+        <div class="col-md-6 col-lg-3">
+            <div class="service-card h-100 text-center p-4">
+                <div class="card-body p-0">
+                    <i class="bi bi-droplet service-icon"></i>
+                    <h5 class="service-title">Limpiezas ecológicas</h5>
+                    <p class="service-description">Soluciones sostenibles y amigables con el medio ambiente</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Servicio 3 -->
+        <div class="col-md-6 col-lg-3">
+            <div class="service-card h-100 text-center p-4">
+                <div class="card-body p-0">
+                    <i class="bi bi-clipboard-data service-icon"></i>
+                    <h5 class="service-title">Estudios y proyectos</h5>
+                    <p class="service-description">Consultoría especializada en gestión ambiental</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Servicio 4 -->
+        <div class="col-md-6 col-lg-3">
+            <div class="service-card h-100 text-center p-4">
+                <div class="card-body p-0">
+                    <i class="bi bi-mortarboard service-icon"></i>
+                    <h5 class="service-title">Capacitación</h5>
+                    <p class="service-description">Programas de formación en manejo de residuos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nueva Sección: Disposición de residuos para todos los giros comerciales -->
+<div class="giros-section">
+    <div class="container">
+        <div class="giros-header">
+            <h2>Disposición de residuos para <span>todos los giros comerciales</span></h2>
+            <p>Ofrecemos servicios programados para negocios facilitando la disposición de sus residuos conforme a la norma de su giro comercial y apoyándoles con la organización de su papeleo.</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Agencias Automotrices -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-car-front"></i>
+                    </div>
+                    <div class="giro-name">Agencias Automotrices</div>
+                    <div class="giro-services">
+                        <span>Aceites usados</span>
+                        <span>Baterías</span>
+                        <span>Llantas</span>
+                        <span>Filtros</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Constructoras -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="giro-name">Constructoras</div>
+                    <div class="giro-services">
+                        <span>Escombros</span>
+                        <span>Tierra contaminada</span>
+                        <span>Materiales de demolición</span>
+                        <span>Residuos de construcción</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dentistas y consultorios -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-hospital"></i>
+                    </div>
+                    <div class="giro-name">Dentistas y consultorios</div>
+                    <div class="giro-services">
+                        <span>Residuos biológicos</span>
+                        <span>Material punzocortante</span>
+                        <span>Rayos X</span>
+                        <span>Mercurio dental</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hospitales -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                    <div class="giro-name">Hospitales</div>
+                    <div class="giro-services">
+                        <span>Residuos peligrosos biológico-infecciosos</span>
+                        <span>Desechos farmacéuticos</span>
+                        <span>Material quirúrgico</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Industrias -->
+<div class="col-lg-3 col-md-4 col-sm-6">
+    <div class="giro-card">
+        <div class="giro-icon">
+            <i class="bi bi-building-gear"></i>
+        </div>
+        <div class="giro-name">Industrias</div>
+        <div class="giro-services">
+            <span>Residuos peligrosos</span>
+            <span>Líquidos industriales</span>
+            <span>Lodos</span>
+            <span>Envases contaminados</span>
+        </div>
+    </div>
+</div>
+            
+            <!-- Gasolineras -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-fuel-pump"></i>
+                    </div>
+                    <div class="giro-name">Gasolineras</div>
+                    <div class="giro-services">
+                        <span>Hidrocarburos</span>
+                        <span>Agua aceitosa</span>
+                        <span>Trapos contaminados</span>
+                        <span>Filtros usados</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Laboratorios clínicos -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-motherboard"></i>
+                    </div>
+                    <div class="giro-name">Laboratorios clínicos</div>
+                    <div class="giro-services">
+                        <span>Residuos biológicos</span>
+                        <span>Reactivos químicos</span>
+                        <span>Muestras biológicas</span>
+                        <span>Material de vidrio contaminado</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Plazas comerciales -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="giro-card">
+                    <div class="giro-icon">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <div class="giro-name">Plazas comerciales</div>
+                    <div class="giro-services">
+                        <span>Residuos sólidos urbanos</span>
+                        <span>Residuos de comida</span>
+                        <span>Cartón y papel</span>
+                        <span>Plásticos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer unificado con el layout -->
+<footer class="footer-simar-custom">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8 text-center text-md-start mb-3 mb-md-0">
+                <p class="mb-0 small">
+                    © 2026 Copyright – Sistemas en Manejo y Administración de Residuos S.A de C.V – Todos los Derechos Reservados
+                </p>
+            </div>
+            <div class="col-md-4 text-center text-md-end">
+                <a href="#" class="small me-3">Aviso de Privacidad</a>
+                <a href="#" class="small">Términos y condiciones</a>
+            </div>
+        </div>
+    </div>
+</footer>

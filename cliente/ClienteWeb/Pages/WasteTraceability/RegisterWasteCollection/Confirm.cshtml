@@ -1,0 +1,205 @@
+@page
+@model ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.ConfirmModel
+@{
+    ViewData["Title"] = "Confirmar Inicio de Recolección";
+}
+
+<style>
+    .page-content {
+        width: 100%;
+        max-width: none;
+        padding: 20px;
+        margin: 0;
+    }
+    
+    .full-width-container {
+        width: 100%;
+        max-width: 1200px;  
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #999;
+        background-color: #fff;
+    }
+    
+    h2 {
+        font-size: 22px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid black;
+        padding-bottom: 10px;
+    }
+    
+    .detalles-servicio {
+        margin: 25px 0;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        width: 100%;
+    }
+    
+    .detalle-fila {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .detalle-fila:last-child {
+        border-bottom: none;
+    }
+    
+    .detalle-etiqueta {
+        width: 180px;
+        padding: 12px;
+        background-color: #eaeaea;
+        font-weight: bold;
+        border-right: 1px solid #ccc;
+    }
+    
+    .detalle-valor {
+        flex: 1;
+        padding: 12px;
+        word-break: break-word;
+    }
+    
+    .mensaje-confirmacion {
+        background-color: #fff3cd;
+        border: 1px solid #856404;
+        color: #856404;
+        padding: 15px;
+        margin: 20px 0;
+        font-weight: bold;
+        width: 100%;
+    }
+    
+    .acciones {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        cursor: pointer;
+        border: 1px solid black;
+        background-color: white;
+        min-width: 150px;
+    }
+    
+    .btn-primary {
+        background-color: #333;
+        color: white;
+        border: 1px solid black;
+    }
+    
+    .btn-primary:hover {
+        background-color: #555;
+    }
+
+    .btn-secondary {
+        color: black;
+    }
+
+    .btn-secondary:hover {
+        background-color: #f0f0f0;
+        color: black;
+    }
+    
+    .info-adicional {
+        font-size: 13px;
+        color: #666;
+        margin-top: 5px;
+    }
+    
+    .btn-regresar {
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-regresar:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+
+<div class="page-content">
+    <div class="full-width-container">
+        <button class="btn-regresar" onclick="window.location.href='/WasteTraceability/ConsultWasteHistory/ServiceHistory?cliente=Industrias ABC'">
+            ← Regresar al historial
+        </button>
+        
+        <h2>Confirmar Inicio de Recolección</h2>
+        
+        <div class="mensaje-confirmacion">
+            ¿Está seguro de que desea iniciar este servicio de recolección?
+        </div>
+        
+        @if (Model.Servicio != null)
+        {
+            <div class="detalles-servicio">
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">ID del Servicio:</div>
+                    <div class="detalle-valor">@Model.Servicio.Id</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Cliente:</div>
+                    <div class="detalle-valor">@Model.Servicio.Cliente</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Contrato:</div>
+                    <div class="detalle-valor">@Model.Servicio.Contrato</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Dirección:</div>
+                    <div class="detalle-valor">@Model.Servicio.Direccion</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Conductor:</div>
+                    <div class="detalle-valor">@Model.Servicio.Conductor</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Vehículo:</div>
+                    <div class="detalle-valor">@Model.Servicio.Vehiculo</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Técnico:</div>
+                    <div class="detalle-valor">@Model.Servicio.Tecnico</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Fecha del Servicio:</div>
+                    <div class="detalle-valor">@Model.Servicio.FechaServicio.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Estado Actual:</div>
+                    <div class="detalle-valor">
+                        <strong>@Model.Servicio.Estado</strong>
+                        <div class="info-adicional">El servicio debe estar en estado "Asignado" para poder iniciarlo</div>
+                    </div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Tipo de Residuo:</div>
+                    <div class="detalle-valor">@Model.Servicio.TipoResiduo</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Cantidad Estimada:</div>
+                    <div class="detalle-valor">@Model.Servicio.CantidadEstimada kg</div>
+                </div>
+                <div class="detalle-fila">
+                    <div class="detalle-etiqueta">Observaciones:</div>
+                    <div class="detalle-valor">@Model.Servicio.Observaciones</div>
+                </div>
+            </div>
+        }
+        
+        <div class="acciones">
+            <form method="post" asp-page-handler="Confirmar">
+                <button type="submit" class="btn btn-primary">Registrar recolección</button>
+            </form>
+            
+            <form method="post" asp-page-handler="Cancelar">
+                <button type="submit" class="btn btn-secondary">Cancelar</button>
+            </form>
+        </div>
+    </div>
+</div>

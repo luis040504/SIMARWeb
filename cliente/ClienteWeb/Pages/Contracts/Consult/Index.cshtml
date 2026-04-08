@@ -1,0 +1,422 @@
+@page
+@model ClienteWeb.Pages.Contracts.Consult.ConsultModel
+
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: 30px auto;
+    }
+
+    h2 {
+        margin-bottom: 20px;
+        border-bottom: 3px solid #333;
+        padding-bottom: 10px;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 15px;
+        border: 1px solid #ddd;
+        background-color: white;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .filters input,
+    .filters select {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: 1px solid #333;
+        background: white;
+        cursor: pointer;
+        text-decoration: none;
+        color: black;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .btn:hover {
+        background: #333;
+        color: white;
+    }
+
+    .btn-primary {
+        background-color: #333;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: black;
+    }
+
+    .card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        background-color: #333;
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+    }
+
+    tr:hover {
+        background-color: #f9f9f9;
+    }
+
+    .status {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .activo {
+        background-color: #e6f4ea;
+        color: #2e7d32;
+    }
+
+    .pendiente {
+        background-color: #fff3e0;
+        color: #ef6c00;
+    }
+
+    .vencido {
+        background-color: #fdecea;
+        color: #c62828;
+    }
+
+    .actions a {
+        margin-right: 5px;
+    }
+
+    .no-data {
+        padding: 20px;
+        text-align: center;
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    /* Modales mejorados tipo Vehículos */
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-header {
+        border-bottom: 2px solid #5aad31;
+        background: white;
+        border-radius: 20px 20px 0 0;
+        padding: 1.2rem 1.5rem;
+    }
+    
+    .modal-header .modal-title {
+        color: #4a4a4a;
+        font-weight: 600;
+    }
+    
+    .modal-header .modal-title i {
+        color: #5aad31;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #e9ecef;
+        padding: 1rem 1.5rem;
+    }
+    
+    .btn-simar-primary {
+        background: #5aad31;
+        border: none;
+        color: white;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    
+    .btn-simar-primary:hover {
+        background: #3d7a1f;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .btn-simar-outline {
+        background: transparent;
+        border: 1px solid #5aad31;
+        color: #5aad31;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    
+    .btn-simar-outline:hover {
+        background: #5aad31;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .form-label {
+        font-weight: 500;
+        font-size: 0.85rem;
+        color: #4a4a4a;
+        margin-bottom: 0.3rem;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .form-control:focus {
+        border-color: #5aad31;
+        box-shadow: 0 0 0 2px rgba(90, 173, 49, 0.2);
+    }
+</style>
+
+<div class="container">
+
+    @if (Model.ShowSuccessMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert" style="background-color: #d4edda; color: #155724; border-radius: 6px; padding: 15px; margin-bottom: 20px; position: relative;">
+            <strong>¡Éxito!</strong> El contrato ha sido actualizado correctamente.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar" style="position: absolute; right: 10px; top: 10px; font-size: 0.6rem;"></button>
+            <div style="margin-top: 15px; padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 6px;">
+                <strong>Registro de Auditoría (Trazabilidad):</strong>
+                <ul class="mb-0">
+                    @foreach (var log in Model.AuditTrail)
+                    {
+                        <li>@log</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert" style="background-color: #f8d7da; color: #721c24; border-radius: 6px; padding: 15px; margin-bottom: 20px; position: relative;">
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar" style="position: absolute; right: 10px; top: 10px; font-size: 0.6rem;"></button>
+        </div>
+    }
+
+    <div class="top-bar">
+        <h2>Consultar Contratos</h2>
+        <a class="btn btn-primary" href="/Contracts/Generate">
+            + Generar contrato
+        </a>
+    </div>
+
+    <form method="get" class="filters">
+        <input type="text" name="Search" placeholder="Buscar cliente o número..." value="@Model.Search" />
+
+        <select name="Status">
+            <option value="">Todos</option>
+            <option value="Activo" selected="@(Model.Status == "Activo")">Activo</option>
+            <option value="Vencido" selected="@(Model.Status == "Vencido")">Vencido</option>
+            <option value="Pendiente de firma" selected="@(Model.Status == "Pendiente de firma")">
+                Pendiente
+            </option>
+        </select>
+
+        <button class="btn">Buscar</button>
+    </form>
+
+    @if (Model.Contracts.Any())
+    {
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Cliente</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Estatus</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var contract in Model.Contracts)
+                    {
+                        <tr>
+                            <td>@contract.Id</td>
+                            <td>@contract.Client</td>
+                            <td>@contract.StartDate.ToShortDateString()</td>
+                            <td>@contract.EndDate.ToShortDateString()</td>
+                            <td>
+                                <span class="status 
+                                    @(contract.Status == "Activo" ? "activo" :
+                                      contract.Status == "Vencido" ? "vencido" : "pendiente")">
+                                    @contract.Status
+                                </span>
+                            </td>
+                            <td class="actions">
+                                <a class="btn" href="/Contracts/Consult/Detail/@contract.Id">Ver</a>
+                                @if (contract.Status == "Activo" || contract.Status == "Pendiente de firma")
+                                {
+                                    <button type="button" class="btn" onclick="openUpdateModal('@contract.Id', '@contract.Client', '@contract.StartDate.ToString("yyyy-MM-dd")', '@contract.EndDate.ToString("yyyy-MM-dd")', '@contract.Status')">Actualizar</button>
+                                }
+                                <a class="btn" href="#">PDF</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="no-data">
+            No se encontraron contratos con los filtros aplicados.
+        </div>
+    }
+
+</div>
+
+<!-- Modal Update Contract -->
+<div class="modal fade" id="modalUpdate" tabindex="-1" aria-labelledby="modalUpdateLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUpdateLabel">
+                    <i class="bi bi-pencil-square me-2"></i>Actualizar Información del Contrato
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formUpdate" asp-page-handler="Update" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div id="modalUpdateError" class="alert alert-danger d-none mb-3" role="alert">
+                        La nueva fecha de término debe ser posterior a la fecha de inicio.
+                    </div>
+                    <div class="row g-3">
+                        <!-- Sólo lectura: ID único del contrato -->
+                        <div class="col-md-4">
+                            <label class="form-label">Número de Contrato</label>
+                            <input type="text" asp-for="UpdateId" class="form-control" id="updateId" readonly style="background-color: #e9ecef;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cliente</label>
+                            <input type="text" asp-for="UpdateClient" class="form-control" id="updateClient" readonly style="background-color: #e9ecef;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Estatus</label>
+                            <input type="text" asp-for="UpdateStatus" class="form-control" id="updateStatus" readonly style="background-color: #e9ecef;">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha de Inicio</label>
+                            <input type="date" asp-for="UpdateStartDate" class="form-control" id="updateStartDate" readonly style="background-color: #e9ecef;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nueva Fecha de Término (Renovación)</label>
+                            <input type="date" asp-for="UpdateEndDate" class="form-control" id="updateEndDate" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Condiciones del servicio</label>
+                            <textarea asp-for="ServiceConditions" id="updateServiceConditions" class="form-control" rows="3" required></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Observaciones administrativas</label>
+                            <textarea asp-for="AdminObservations" id="updateAdminObservations" class="form-control" rows="2" required></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Adjuntar nueva versión firmada (PDF) - Opcional</label>
+                            <input type="file" asp-for="PdfFile" accept=".pdf" class="form-control" id="updatePdfFile">
+                            <small class="text-muted">Solo archivos en formato PDF, útil si hay una modificación formal firmada.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-simar-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn-simar-primary" onclick="submitUpdateForm()">
+                        <i class="bi bi-check-lg"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openUpdateModal(id, client, startDate, endDate, status) {
+            // Ocultar errores previos
+            document.getElementById('modalUpdateError').classList.add('d-none');
+
+            document.getElementById('updateId').value = id;
+            document.getElementById('updateClient').value = client;
+            document.getElementById('updateStartDate').value = startDate;
+            document.getElementById('updateEndDate').value = endDate;
+            document.getElementById('updateStatus').value = status;
+            
+            // Establecer propiedad 'min' dinámica para HTML5 validation
+            var startDateObj = new Date(startDate);
+            startDateObj.setDate(startDateObj.getDate() + 1); // Al menos 1 día después
+            var minIso = startDateObj.toISOString().split('T')[0];
+            document.getElementById('updateEndDate').setAttribute('min', minIso);
+            
+            // Valores simulados de BD
+            document.getElementById('updateServiceConditions').value = "Condiciones originales del servicio establecidas en la cláusula segunda...";
+            document.getElementById('updateAdminObservations').value = "Ninguna observación inicial registrada.";
+
+            var updateModal = new bootstrap.Modal(document.getElementById('modalUpdate'));
+            updateModal.show();
+        }
+
+        function submitUpdateForm() {
+            const startDateStr = document.getElementById('updateStartDate').value;
+            const endDateStr = document.getElementById('updateEndDate').value;
+
+            if (startDateStr && endDateStr) {
+                // Al comparar como strings (YYYY-MM-DD), es totalmente seguro y evita problemas de TimeZones en JS
+                if (endDateStr <= startDateStr) {
+                    document.getElementById('modalUpdateError').classList.remove('d-none');
+                    return; // Previene el envío del formulario nativamente deteniendo la ejecución aquí
+                }
+            }
+            
+            // Si todo está bien, enviamos el formulario programáticamente
+            document.getElementById('formUpdate').submit();
+        }
+    </script>
+}

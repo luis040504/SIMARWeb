@@ -1,0 +1,204 @@
+﻿@page
+@model ClienteWeb.Pages.Client_SimarUser.Client.ClientRegisterModel
+@{
+    ViewData["Title"] = "Registro de Cliente";
+}
+
+<style>
+    .registro-wizard-contenedor {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        background-color: #f4f4f4; /* Fondo gris claro como tu prototipo */
+    }
+
+    .tarjeta-registro {
+        background-color: white;
+        padding: 40px;
+        border-radius: 20px;
+        width: 380px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .titulo-signup {
+        font-weight: 300;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 35px;
+        color: #333;
+    }
+
+    .campo-entrada {
+        border: none;
+        border-bottom: 1px solid #ccc;
+        width: 100%;
+        padding: 12px 0;
+        margin-bottom: 25px;
+        outline: none;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+        .campo-entrada:focus {
+            border-bottom: 1px solid #666;
+        }
+
+    .puntos-progreso {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin: 20px 0 30px 0;
+    }
+
+    .punto {
+        width: 10px;
+        height: 10px;
+        background-color: #e0e0e0;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+        .punto.activo {
+            background-color: #a0a0a0;
+        }
+
+    .boton-siguiente {
+        background-color: #9e9e9e;
+        color: white;
+        border: none;
+        padding: 12px 45px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+
+        .boton-siguiente:hover {
+            background-color: #757575;
+        }
+
+    .boton-volver {
+        background: none;
+        border: none;
+        color: #999;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 13px;
+        margin-top: 10px;
+        display: block;
+        width: 100%;
+    }
+
+    /* Ocultar secciones por defecto */
+    .seccion-paso {
+        display: none;
+    }
+
+    .seccion-paso.activa {
+        display: block;
+    }
+
+
+    .input-file-custom {
+        border: 1px dashed #ccc;
+        padding: 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+        color: #777;
+        margin-bottom: 20px;
+    }
+
+    .input-file-custom:hover {
+       border-color: #999;
+    }
+
+    label {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+        text-align: left;
+    }
+</style>
+
+<div class="registro-wizard-contenedor">
+    <div class="tarjeta-registro">
+        <h2 class="titulo-signup">REGISTRAR CLIENTE</h2>
+
+        <form method="post" id="registroForm">
+
+            <div id="paso1" class="seccion-paso activa">
+                <input type="email" asp-for="Input.Email" class="campo-entrada" placeholder="E-MAIL" required />
+                <input type="text" asp-for="Input.UserName" class="campo-entrada" placeholder="USERNAME" required />
+                <input type="password" asp-for="Input.Password" class="campo-entrada" placeholder="PASSWORD" required />
+
+                <div class="puntos-progreso">
+                    <div class="punto activo"></div>
+                    <div class="punto"></div>
+                    <div class="punto"></div>
+                </div>
+
+                <button type="button" class="boton-siguiente" onclick="irAPaso(2)">Siguiente</button>
+            </div>
+
+            <div id="paso2" class="seccion-paso">
+                <input type="text" asp-for="Input.Name" class="campo-entrada" placeholder="NOMBRE COMPLETO" />
+                <input type="text" asp-for="Input.Address" class="campo-entrada" placeholder="DIRECCION" />
+                <input type="text" asp-for="Input.PhoneNumber" class="campo-entrada" placeholder="TELEFONO" />
+                <input type="text" asp-for="Input.RFC" class="campo-entrada" placeholder="RFC" />
+                <input type="text" asp-for="Input.SemarnatGeneratedNumber" class="campo-entrada" placeholder="NUMERO DE SEMARNAT" />
+
+                <div class="puntos-progreso">
+                    <div class="punto"></div>
+                    <div class="punto activo"></div>
+                    <div class="punto"></div>
+                </div>
+
+                <button type="button" class="boton-siguiente" onclick="irAPaso(3)">Siguiente</button>
+                <button type="button" class="boton-volver" onclick="irAPaso(1)">Regresar</button>
+            </div>
+
+            <div id="paso3" class="seccion-paso">
+
+                <label style="display:block; margin-bottom:10px; color:#666; font-size:14px;">
+                    Subir Certificado del SAT
+                </label>
+
+                <label class="input-file-custom">
+                    Haz clic para subir tu certificado
+                    <input type="file" style="display:none;" accept=".pdf,.cer,.key" />
+                </label>
+
+                <small style="color:#999; display:block; margin-bottom:20px;">
+                    Formatos permitidos: PDF, CER, KEY
+                </small>
+
+
+                <div class="puntos-progreso">
+                    <div class="punto"></div>
+                    <div class="punto"></div>
+                    <div class="punto activo"></div>
+                </div>
+
+                <button type="submit" class="boton-siguiente">Finalizar</button>
+                <button type="button" class="boton-volver" onclick="irAPaso(2)">Regresar</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    function irAPaso(paso) {
+        // Quitar clase activa de todas las secciones
+        document.querySelectorAll('.seccion-paso').forEach(s => s.classList.remove('activa'));
+        // Mostrar la elegida
+        document.getElementById('paso' + paso).classList.add('activa');
+    }
+
+</script>

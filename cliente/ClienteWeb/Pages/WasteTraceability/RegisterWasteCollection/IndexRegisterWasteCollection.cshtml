@@ -1,0 +1,617 @@
+@page
+@model ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel
+@{
+    ViewData["Title"] = "Consulta de Servicios";
+}
+
+<style>
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: white;
+        color: black;
+        margin: 0;
+    }
+    
+    h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid black;
+        padding-bottom: 10px;
+    }
+    
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .filtros {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+    }
+    
+    .filtros select, .filtros input {
+        padding: 8px;
+        margin-right: 10px;
+        border: 1px solid #999;
+        background-color: white;
+    }
+    
+    .btn-filtrar {
+        padding: 8px 15px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+    }
+    
+    .btn-filtrar:hover {
+        background-color: #f0f0f0;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+    
+    th {
+        text-align: left;
+        padding: 12px;
+        background-color: #333;
+        color: white;
+        font-weight: bold;
+        border: 1px solid black;
+    }
+    
+    td {
+        padding: 12px;
+        border: 1px solid #999;
+        vertical-align: middle;
+    }
+    
+    tr {
+        transition: background-color 0.2s;
+    }
+    
+    tr:hover {
+        background-color: #e6f7ff;
+        cursor: pointer;
+    }
+    
+    .info-adicional {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+    
+    .mensaje-info {
+        padding: 15px;
+        border: 1px solid #999;
+        background-color: #f9f9f9;
+        margin: 20px 0;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 50px auto;
+        padding: 0;
+        border: 2px solid black;
+        width: 80%;
+        max-width: 900px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .modal-header {
+        padding: 15px 20px;
+        background-color: #333;
+        color: white;
+        border-bottom: 2px solid black;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover {
+        color: #ccc;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .detalles-servicio {
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+    }
+    
+    .detalle-fila {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .detalle-fila:last-child {
+        border-bottom: none;
+    }
+    
+    .detalle-etiqueta {
+        width: 200px;
+        padding: 12px;
+        background-color: #eaeaea;
+        font-weight: bold;
+        border-right: 1px solid #ccc;
+    }
+    
+    .detalle-valor {
+        flex: 1;
+        padding: 12px;
+        word-break: break-word;
+    }
+    
+    .seccion-acciones {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #ccc;
+    }
+    
+    .seccion-acciones h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+    
+    .botones-accion {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-accion {
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+    }
+    
+    .btn-accion:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .btn-accion:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn-primary {
+        background-color: #0066cc;
+        color: white;
+        border: 1px solid #0052a3;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0052a3;
+    }
+    
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+        border: 1px solid #1e7e34;
+    }
+    
+    .btn-success:hover {
+        background-color: #1e7e34;
+    }
+    
+    .btn-warning {
+        background-color: #ffc107;
+        color: black;
+        border: 1px solid #d39e00;
+    }
+    
+    .btn-warning:hover {
+        background-color: #d39e00;
+    }
+    
+    .badge-estado {
+        display: inline-block;
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        border-radius: 3px;
+    }
+    
+    .estado-en-curso {
+        background-color: #cce5ff;
+        border: 1px solid #0066cc;
+        color: #004085;
+    }
+    
+    .estado-concluido {
+        background-color: #d4edda;
+        border: 1px solid #28a745;
+        color: #155724;
+    }
+    
+    .botones-vista {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .btn-vista {
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid black;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+    
+    .btn-vista:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .btn-vista-activo {
+        background-color: #0066cc;
+        color: white;
+        border: 1px solid #0052a3;
+    }
+    
+    .btn-vista-activo:hover {
+        background-color: #0052a3;
+    }
+</style>
+
+<div class="container">
+    <h1>Consulta de Servicios</h1>
+    
+    <div class="botones-vista">
+        <a href="?rol=empresa" class="btn-vista @(ViewData["Rol"]?.ToString() == "empresa" ? "btn-vista-activo" : "")">
+            Vista Empresarial
+        </a>
+        <a href="?rol=cliente" class="btn-vista @(ViewData["Rol"]?.ToString() == "cliente" ? "btn-vista-activo" : "")">
+            Vista Cliente
+        </a>
+    </div>
+    
+    @if (ViewData["MensajeExito"] != null)
+    {
+        <div style="padding: 15px; border: 2px solid #28a745; background-color: #d4edda; color: #155724; margin-bottom: 20px;">
+            @ViewData["MensajeExito"]
+        </div>
+    }
+
+    @if (ViewData["MensajeError"] != null)
+    {
+        <div style="padding: 15px; border: 2px solid #dc3545; background-color: #f8d7da; color: #721c24; margin-bottom: 20px;">
+            @ViewData["MensajeError"]
+            @if (ViewData["TipoError"] != null)
+            {
+                <div style="margin-top: 5px; font-size: 12px;">Código de error: @ViewData["TipoError"]</div>
+            }
+        </div>
+    }
+    
+    <div class="filtros">
+        <label>Filtrar por estado:</label>
+        <select id="filtroEstado">
+            <option value="todos">Todos los estados</option>
+            <option value="En curso">En curso</option>
+            <option value="Concluido">Concluido</option>
+        </select>
+        
+        <label>Buscar:</label>
+        <input type="text" id="busqueda" placeholder="Cliente, dirección o contrato" />
+        
+        <button class="btn-filtrar" type="button" onclick="aplicarFiltros()">Aplicar filtros</button>
+    </div>
+    
+    <table id="tablaServicios">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Descripción</th>
+                <th>Dirección</th>
+                @if (ViewData["Rol"]?.ToString() != "cliente")
+                {
+                    <th>Contrato</th>
+                }
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var servicio in Model.Servicios)
+            {
+                <tr data-id="@servicio.Id" onclick="abrirModal(this.dataset.id)">
+                    <td>
+                        @servicio.Cliente
+                        <div class="info-adicional">ID: @servicio.Id</div>
+                    </td>
+                    <td>
+                        @if (servicio.Cliente.Contains("Industrias"))
+                        {
+                            <span>Recolección de residuos industriales - Plásticos</span>
+                        }
+                        else if (servicio.Cliente.Contains("Comercial"))
+                        {
+                            <span>Servicio semanal de recolección de orgánicos</span>
+                        }
+                        else if (servicio.Cliente.Contains("Hospital"))
+                        {
+                            <span>Recolección de residuos biológicos peligrosos</span>
+                        }
+                        else if (servicio.Cliente.Contains("Restaurante"))
+                        {
+                            <span>Recolección de aceites y grasas usadas</span>
+                        }
+                        else if (servicio.Cliente.Contains("Constructora"))
+                        {
+                            <span>Retiro de escombros y materiales de construcción</span>
+                        }
+                        else
+                        {
+                            <span>@servicio.Observaciones</span>
+                        }
+                        <div class="info-adicional">
+                            <span class="badge-estado @(servicio.Estado == "En curso" ? "estado-en-curso" : "estado-concluido")">
+                                @servicio.Estado
+                            </span>
+                        </div>
+                    </td>
+                    <td>@servicio.Direccion</td>
+                    @if (ViewData["Rol"]?.ToString() != "cliente")
+                    {
+                        <td>@servicio.Contrato</td>
+                    }
+                    <td>@servicio.FechaServicio.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+    <div class="mensaje-info">
+        <strong>Instrucciones:</strong> Haga clic en cualquier fila de la tabla para ver los detalles completos del servicio.
+        Total de servicios: @Model.Servicios.Count
+    </div>
+</div>
+
+<div id="servicioModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitulo">Detalles del Servicio</h2>
+            <span class="close" onclick="cerrarModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Contenido cargado dinámicamente con JavaScript -->
+        </div>
+    </div>
+</div>
+
+<template id="modalTemplate">
+    <div class="detalles-servicio" id="detalleServicio">
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">ID del Servicio:</div>
+            <div class="detalle-valor" id="detalleId"></div>
+        </div>
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">Cliente:</div>
+            <div class="detalle-valor" id="detalleCliente"></div>
+        </div>
+        <div class="detalle-fila" id="filaObservaciones" style="display: none;">
+            <div class="detalle-etiqueta">Observaciones:</div>
+            <div class="detalle-valor" id="detalleObservaciones"></div>
+        </div>
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">Dirección:</div>
+            <div class="detalle-valor" id="detalleDireccion"></div>
+        </div>
+        <div class="detalle-fila" id="filaContrato" style="display: none;">
+            <div class="detalle-etiqueta">Contrato:</div>
+            <div class="detalle-valor" id="detalleContrato"></div>
+        </div>
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">Fecha del Servicio:</div>
+            <div class="detalle-valor" id="detalleFecha"></div>
+        </div>
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">Estado Actual:</div>
+            <div class="detalle-valor" id="detalleEstado"></div>
+        </div>
+        <div class="detalle-fila" id="filaConductor" style="display: none;">
+            <div class="detalle-etiqueta">Conductor Asignado:</div>
+            <div class="detalle-valor" id="detalleConductor"></div>
+        </div>
+        <div class="detalle-fila" id="filaVehiculo" style="display: none;">
+            <div class="detalle-etiqueta">Vehículo:</div>
+            <div class="detalle-valor" id="detalleVehiculo"></div>
+        </div>
+        <div class="detalle-fila" id="filaTecnico" style="display: none;">
+            <div class="detalle-etiqueta">Técnico:</div>
+            <div class="detalle-valor" id="detalleTecnico"></div>
+        </div>
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">Tipo de Residuo:</div>
+            <div class="detalle-valor" id="detalleTipoResiduo"></div>
+        </div>
+        <div class="detalle-fila">
+            <div class="detalle-etiqueta">Cantidad Estimada:</div>
+            <div class="detalle-valor" id="detalleCantidad"></div>
+        </div>
+    </div>
+    
+    <div class="seccion-acciones">
+        <h3>Acciones disponibles</h3>
+        <div class="botones-accion" id="botonesAccion">
+        </div>
+    </div>
+</template>
+
+<script>
+    var servicios = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Servicios));
+    var rol = '@ViewData["Rol"]';
+    var esCliente = (rol === 'cliente');
+    console.log('Servicios cargados:', servicios);
+    
+    function abrirModal(id) {
+        console.log('Abriendo modal para servicio:', id, 'Tipo:', typeof id);
+        
+        var idBuscado = typeof id === 'string' ? parseInt(id) : id;
+        
+        var servicio = servicios.find(s => s.Id === idBuscado);
+        
+        if (!servicio) {
+            console.error('Servicio no encontrado. ID buscado:', idBuscado, 'Servicios disponibles:', servicios);
+            alert('Error: No se encontró el servicio solicitado');
+            return;
+        }
+        
+        var template = document.getElementById('modalTemplate').content.cloneNode(true);
+        var modalBody = document.getElementById('modalBody');
+        
+        modalBody.innerHTML = '';
+        
+        var filaObservaciones = template.getElementById('filaObservaciones');
+        var filaContrato = template.getElementById('filaContrato');
+        var filaConductor = template.getElementById('filaConductor');
+        var filaVehiculo = template.getElementById('filaVehiculo');
+        var filaTecnico = template.getElementById('filaTecnico');
+        
+        if (!esCliente) {
+            filaObservaciones.style.display = 'flex';
+            filaContrato.style.display = 'flex';
+            filaConductor.style.display = 'flex';
+            filaVehiculo.style.display = 'flex';
+            filaTecnico.style.display = 'flex';
+        } else {
+            filaObservaciones.style.display = 'none';
+            filaContrato.style.display = 'none';
+            filaConductor.style.display = 'none';
+            filaVehiculo.style.display = 'none';
+            filaTecnico.style.display = 'none';
+        }
+        
+        template.getElementById('detalleId').textContent = servicio.Id;
+        template.getElementById('detalleCliente').textContent = servicio.Cliente || 'N/A';
+        template.getElementById('detalleDireccion').textContent = servicio.Direccion || 'N/A';
+        
+        if (!esCliente) {
+            template.getElementById('detalleContrato').textContent = servicio.Contrato || 'N/A';
+            template.getElementById('detalleConductor').textContent = servicio.Conductor || 'No asignado';
+            template.getElementById('detalleVehiculo').textContent = servicio.Vehiculo || 'No asignado';
+            template.getElementById('detalleTecnico').textContent = servicio.Tecnico || 'No asignado';
+            template.getElementById('detalleObservaciones').textContent = servicio.Observaciones || 'Sin observaciones';
+        }
+        
+        try {
+            var fecha = new Date(servicio.FechaServicio);
+            template.getElementById('detalleFecha').textContent = fecha.toLocaleDateString('es-MX') + ' ' + 
+                                                                  fecha.toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
+        } catch (e) {
+            template.getElementById('detalleFecha').textContent = servicio.FechaServicio || 'N/A';
+        }
+        
+        template.getElementById('detalleEstado').innerHTML = `<span class="badge-estado ${getEstadoClass(servicio.Estado)}">${servicio.Estado || 'N/A'}</span>`;
+        template.getElementById('detalleTipoResiduo').textContent = servicio.TipoResiduo || 'No especificado';
+        template.getElementById('detalleCantidad').textContent = (servicio.CantidadEstimada || 0) + ' kg';
+        
+        var botonesDiv = template.getElementById('botonesAccion');
+        botonesDiv.innerHTML = '';
+
+        if (esCliente) {
+            var btnHistorial = document.createElement('button');
+            btnHistorial.className = 'btn-accion';
+            btnHistorial.innerHTML = 'Ver historial de servicios';
+            btnHistorial.onclick = function() {
+                window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
+            };
+            botonesDiv.appendChild(btnHistorial);
+        } else {
+            var btnHistorial = document.createElement('button');
+            btnHistorial.className = 'btn-accion';
+            btnHistorial.innerHTML = 'Ver historial de servicios';
+            btnHistorial.onclick = function() {
+                window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
+            };
+            botonesDiv.appendChild(btnHistorial);
+        }
+        
+        modalBody.appendChild(template);
+        
+        var modal = document.getElementById('servicioModal');
+        modal.style.display = 'block';
+        console.log('Modal mostrado correctamente');
+    }
+    
+    function cerrarModal() {
+        document.getElementById('servicioModal').style.display = 'none';
+    }
+    
+    function getEstadoClass(estado) {
+        switch(estado) {
+            case 'En curso': return 'estado-en-curso';
+            case 'Concluido': return 'estado-concluido';
+            default: return '';
+        }
+    }
+    
+    window.onclick = function(event) {
+        var modal = document.getElementById('servicioModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    function aplicarFiltros() {
+        var filtroEstado = document.getElementById('filtroEstado').value;
+        var busqueda = document.getElementById('busqueda').value.toLowerCase();
+        var filas = document.querySelectorAll('#tablaServicios tbody tr');
+        
+        filas.forEach(function(fila) {
+            var textoFila = fila.textContent.toLowerCase();
+            var estadoBadge = fila.querySelector('.badge-estado');
+            var estado = estadoBadge ? estadoBadge.textContent.trim() : '';
+            
+            var coincideEstado = (filtroEstado === 'todos' || estado === filtroEstado);
+            var coincideBusqueda = busqueda === '' || textoFila.includes(busqueda);
+            
+            fila.style.display = (coincideEstado && coincideBusqueda) ? '' : 'none';
+        });
+    }
+</script>

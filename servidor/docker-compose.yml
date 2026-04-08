@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # API GATEWAY - NGINX
+  # ============================================
+  api_gateway:
+    image: nginx:1.25.5
+    container_name: simar_api_gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - auth_api
+      - usuarios_api
+      - vehiculos_api
+      - recolecciones_api
+      - clientes_api
+      - contratos_api
+      - manifiestos_api
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: AUTENTICACIÓN
+  # ============================================
+  auth_api:
+    build:
+      context: ./servicios/auth_api
+      dockerfile: Dockerfile
+    container_name: simar_auth_api
+    ports:
+      - "8001:8001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8001
+      - JWT__Key=${JWT_KEY}
+      - JWT__Issuer=${JWT_ISSUER}
+      - JWT__Audience=${JWT_AUDIENCE}
+      - JWT__ExpiresInMinutes=60
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: USUARIOS
+  # ============================================
+  usuarios_api:
+    build:
+      context: ./servicios/usuarios_api
+      dockerfile: Dockerfile
+    container_name: simar_usuarios_api
+    ports:
+      - "8002:8002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8002
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: VEHÍCULOS
+  # ============================================
+  vehiculos_api:
+    build:
+      context: ./servicios/vehiculos_api
+      dockerfile: Dockerfile
+    container_name: simar_vehiculos_api
+    ports:
+      - "8003:8003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8003
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: RECOLECCIONES
+  # ============================================
+  recolecciones_api:
+    build:
+      context: ./servicios/recolecciones_api
+      dockerfile: Dockerfile
+    container_name: simar_recolecciones_api
+    ports:
+      - "8004:8004"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8004
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: CLIENTES
+  # ============================================
+  clientes_api:
+    build:
+      context: ./servicios/clientes_api
+      dockerfile: Dockerfile
+    container_name: simar_clientes_api
+    ports:
+      - "8005:8005"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8005
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: CONTRATOS
+  # ============================================
+  contratos_api:
+    build:
+      context: ./servicios/contratos_api
+      dockerfile: Dockerfile
+    container_name: simar_contratos_api
+    ports:
+      - "8006:8006"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8006
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: MANIFIESTOS
+  # ============================================
+  manifiestos_api:
+    build:
+      context: ./servicios/manifiestos_api
+      dockerfile: Dockerfile
+    container_name: simar_manifiestos_api
+    ports:
+      - "8007:8007"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8007
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+# ============================================
+# REDES
+# ============================================
+networks:
+  simar_network:
+    driver: bridge
