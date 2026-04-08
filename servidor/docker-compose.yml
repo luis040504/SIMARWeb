@@ -72,8 +72,15 @@ services:
     ports:
       - "8003:8003"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8003
+      - NODE_ENV=production
+      - PORT=8003
+      - DB_HOST=mysql_vehiculos
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=Simar123!
+      - DB_NAME=simar_vehiculos_db
+    depends_on:
+      - mysql_vehiculos
     networks:
       - simar_network
     restart: unless-stopped
@@ -83,14 +90,20 @@ services:
   # ============================================
   recolecciones_api:
     build:
-      context: ./servicios/recolecciones_api
+      context: ../servicios/recolecciones_api
       dockerfile: Dockerfile
     container_name: simar_recolecciones_api
     ports:
       - "8004:8004"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8004
+      - PORT=8004
+      - MONGODB_HOST=mongo_recolecciones
+      - MONGODB_PORT=27017
+      - MONGODB_USER=root
+      - MONGODB_PASSWORD=Simar123!
+      - MONGODB_DB=simar_recolecciones_db
+    depends_on:
+      - mongo_recolecciones
     networks:
       - simar_network
     restart: unless-stopped
@@ -145,6 +158,61 @@ services:
     networks:
       - simar_network
     restart: unless-stopped
+
+
+# ============================================
+  # BASES DE DATOS - MySQL
+  # ============================================  
+
+  mysql_vehiculos:
+    image: mysql:8.0
+    container_name: simar_mysql_vehiculos
+    environment:
+      - MYSQL_ROOT_PASSWORD=Simar123!
+      - MYSQL_DATABASE=simar_vehiculos_db
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_vehiculos_data:/var/lib/mysql
+      - ./servicios/vehiculos_api/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+# ============================================
+  # MONGODB - RECOLECCIONES
+  # ============================================
+  mongo_recolecciones:
+    image: mongo:7
+    container_name: simar_mongo_recolecciones
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
+      - MONGO_INITDB_DATABASE=simar_recolecciones_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_recolecciones_data:/data/db
+      - ../servicios/recolecciones_api/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# ============================================
+# VOLÚMENES
+# ============================================
+volumes:
+  mysql_vehiculos_data:
+  mongo_recolecciones_data:
 
 # ============================================
 # REDES
