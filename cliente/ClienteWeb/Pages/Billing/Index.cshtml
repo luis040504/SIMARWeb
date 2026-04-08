@@ -258,8 +258,8 @@
                     </div>
                 </div>
 
-                <div class="modal-body modal-scrollable-simar p-5 pt-4">
-                    <form method="post" asp-page-handler="@handler">
+                <form method="post" asp-page-handler="@handler">
+                    <div class="modal-body modal-scrollable-simar p-5 pt-4">
                         <input type="hidden" asp-for="SelectedRecordId" />
                         <input type="hidden" asp-for="Role" />
                         <input type="hidden" asp-for="ActiveTab" />
@@ -338,13 +338,13 @@
                             </div>
                         </div>
                     </div>
-                <div class="modal-footer">
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
-                    <button type="submit" class="btn btn-simar-primary">
-                        <i class="bi @iconClass"></i> Confirmar
-                    </button>
-                    </form>
-                </div>
+                    <div class="modal-footer">
+                        <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
+                        <button type="submit" class="btn btn-simar-primary">
+                            <i class="bi @iconClass"></i> Confirmar
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
