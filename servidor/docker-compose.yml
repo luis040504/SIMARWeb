@@ -19,6 +19,7 @@ services:
       - clientes_api
       - contratos_api
       - manifiestos_api
+      - facturacion_api
     networks:
       - simar_network
     restart: unless-stopped

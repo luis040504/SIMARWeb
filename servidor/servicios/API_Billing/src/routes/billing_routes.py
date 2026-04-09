@@ -1,0 +1,31 @@
+from fastapi import APIRouter, Depends, status
+from typing import List
+from ..schemas.billing_schema import BillingCreateSchema, BillingUpdateSchema, BillingResponseSchema, BillingFilterSchema
+from ..controller.billing_controller import BillingController
+
+router = APIRouter(prefix="/billing", tags=["Billing"])
+
+@router.get("/", response_model=List[BillingResponseSchema])
+async def get_all_billing(filtro: BillingFilterSchema = Depends()):
+    """Obtener todas las facturas, opcionalmente incluyendo las inactivas usando filtros"""
+    return await BillingController.get_all(filtro)
+
+@router.get("/{billing_id}", response_model=BillingResponseSchema)
+async def get_billing(billing_id: str):
+    """Obtener una factura específica por su ID"""
+    return await BillingController.get_by_id(billing_id)
+
+@router.post("/", response_model=BillingResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_billing(billing_data: BillingCreateSchema):
+    """Generar/Crear una nueva factura"""
+    return await BillingController.create(billing_data)
+
+@router.put("/{billing_id}", response_model=BillingResponseSchema)
+async def update_billing(billing_id: str, billing_data: BillingUpdateSchema):
+    """Actualizar datos de una factura existente"""
+    return await BillingController.update(billing_id, billing_data)
+
+@router.delete("/{billing_id}", status_code=status.HTTP_200_OK)
+async def delete_billing(billing_id: str):
+    """Soft-delete de una factura dejándola como inactiva y estado CANCELLED"""
+    return await BillingController.delete(billing_id)
