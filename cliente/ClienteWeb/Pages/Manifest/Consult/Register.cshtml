@@ -11,109 +11,23 @@
             : (m.GeneratorSignDate?.ToString("dd/MM/yyyy") ?? "–");
 }
 
-<style>
-    .register-container { max-width: 600px; margin: 2rem auto; }
-
-    .register-card {
-        background: #fff;
-        border: 1px solid #c8d6e3;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-
-    .register-header {
-        background: @(esEspecial ? "#1a3a5c" : "#7b2d2d");
-        color: #fff;
-        padding: 1rem 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .register-header h2 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-
-    .register-header .badge {
-        font-size: 0.75rem;
-        background: rgba(255,255,255,0.2);
-    }
-
-    .register-body { padding: 1.5rem; }
-
-    .info-summary {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 1.5rem;
-        font-size: 0.85rem;
-        border-left: 4px solid @(esEspecial ? "#1a3a5c" : "#7b2d2d");
-    }
-
-    .info-summary strong { color: #4a5568; }
-
-    .form-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #4a5568;
-        margin-bottom: 0.25rem;
-    }
-
-    .form-text {
-        font-size: 0.75rem;
-        color: #6c757d;
-    }
-
-    .file-drop-area {
-        border: 2px dashed #c8d6e3;
-        border-radius: 8px;
-        padding: 2rem;
-        text-align: center;
-        background: #f8f9fa;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .file-drop-area:hover,
-    .file-drop-area.dragover {
-        border-color: #0d6efd;
-        background: #e9f2ff;
-    }
-
-    .file-drop-icon {
-        font-size: 2.5rem;
-        color: #6c757d;
-        margin-bottom: 0.5rem;
-    }
-
-    #file-name-display {
-        font-weight: 600;
-        color: #0d6efd;
-        margin-top: 0.5rem;
-        word-break: break-word;
-    }
-</style>
-
 <div class="register-container">
     <div class="mb-3">
         <a asp-page="/Manifest/Consult/Detail"
            asp-route-id="@m.Id"
-           class="btn btn-outline-secondary btn-sm">
+           class="btn-simar-outline-gray">
             ← Volver al manifiesto
         </a>
     </div>
 
-    <div class="register-card">
-        <div class="register-header">
+    <div class="register-card-simar">
+        <div class="register-card-header @(esEspecial ? "especial" : "peligroso")">
             <h2>Registrar avance / firma</h2>
             <span class="badge">@(esEspecial ? "Especial" : "Peligroso")</span>
         </div>
 
-        <div class="register-body">
-            <div class="info-summary">
+        <div class="register-card-body">
+            <div class="info-summary @(esEspecial ? "especial" : "peligroso")">
                 <div class="row">
                     <div class="col-sm-6 mb-2">
                         <strong>Folio:</strong><br />@m.ManifestNumber
@@ -131,7 +45,7 @@
                 <input type="hidden" asp-for="Input.Id" value="@m.Id" />
 
                 <div class="mb-3">
-                    <label asp-for="Input.Status" class="form-label">Estado actual</label>
+                    <label asp-for="Input.Status" class="form-label-sm">Estado actual</label>
                     <select asp-for="Input.Status" class="form-select status-select">
                         <option value="Borrador">Borrador (captura inicial)</option>
                         <option value="Impreso">Impreso (listo para proceso)</option>
@@ -142,17 +56,17 @@
 
                 <div id="firma-container" style="display: @(Model.Input.Status == ManifestStatus.Completado ? "block" : "none");">
                     <div class="mb-3">
-                        <label asp-for="Input.SignedDate" class="form-label">Fecha de firma / recepción final</label>
+                        <label asp-for="Input.SignedDate" class="form-label-sm">Fecha de firma / recepción final</label>
                         <input asp-for="Input.SignedDate" type="date" class="form-control" />
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Input.SignedFile" class="form-label">Manifiesto firmado y sellado</label>
+                        <label asp-for="Input.SignedFile" class="form-label-sm">Manifiesto firmado y sellado</label>
 
                         <div class="file-drop-area" onclick="document.getElementById('file-upload').click()">
                             <div class="file-drop-icon">📥</div>
                             <div>Haz clic para seleccionar el archivo escaneado</div>
-                            <div class="form-text mt-1">
+                            <div class="form-hint mt-1">
                                 Formatos soportados: PDF, JPG, PNG (máx. 5 MB)
                             </div>
 
@@ -174,7 +88,7 @@
                 </div>
 
                 <div class="d-grid mt-4">
-                    <button type="submit" class="btn btn-success fw-bold py-2">
+                    <button type="submit" class="btn-simar-primary justify-content-center py-2 fw-bold">
                         Guardar registro
                     </button>
                 </div>
