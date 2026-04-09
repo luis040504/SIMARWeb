@@ -96,20 +96,16 @@ namespace ClienteWeb.Pages.Contracts.Consult
 
         public IActionResult OnPostUpdate()
         {
-            // Cargar contratos de nuevo
             LoadContracts();
 
-            // Validar que la fecha de término sea posterior
             if (UpdateEndDate <= UpdateStartDate)
             {
                 ErrorMessage = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
                 return Page();
             }
 
-            // Simular guardado
             ShowSuccessMessage = true;
 
-            // Generar registro de auditoría
             AuditTrail.Add($"Usuario: Administrador | Fecha de modificación: {DateTime.Now}");
             AuditTrail.Add($"Campos modificados: Fecha de término, Condiciones del servicio, Observaciones administrativas.");
 
