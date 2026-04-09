@@ -147,14 +147,24 @@ services:
   # ============================================
   manifiestos_api:
     build:
-      context: ./servicios/manifiestos_api
+      context: ./servicios/API_MANIFEST
       dockerfile: Dockerfile
     container_name: simar_manifiestos_api
     ports:
       - "8007:8007"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8007
+      - NODE_ENV=production
+      - PORT=8007
+      - DB_HOST=mysql_manifiestos
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=Simar123!
+      - DB_NAME=simar_manifiestos_db
+    depends_on:
+      mysql_manifiestos:
+        condition: service_healthy
+    volumes:
+      - manifiestos_uploads:/app/uploads/manifiestos
     networks:
       - simar_network
     restart: unless-stopped
@@ -171,7 +181,7 @@ services:
       - MYSQL_ROOT_PASSWORD=Simar123!
       - MYSQL_DATABASE=simar_vehiculos_db
     ports:
-      - "3308:3306"
+      - "8010:3306"
     volumes:
       - mysql_vehiculos_data:/var/lib/mysql
       - ./servicios/vehiculos_api/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -183,7 +193,29 @@ services:
       timeout: 20s
       retries: 10
 
-# ============================================
+  # ============================================
+  # BASE DE DATOS: MANIFIESTOS - MySQL
+  # ============================================
+  mysql_manifiestos:
+    image: mysql:8.0
+    container_name: simar_mysql_manifiestos
+    environment:
+      - MYSQL_ROOT_PASSWORD=Simar123!
+      - MYSQL_DATABASE=simar_manifiestos_db
+    ports:
+      - "8011:3306"
+    volumes:
+      - mysql_manifiestos_data:/var/lib/mysql
+      - ./servicios/API_MANIFEST/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # ============================================
   # MONGODB - RECOLECCIONES
   # ============================================
   mongo_recolecciones:
@@ -194,7 +226,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=Simar123!
       - MONGO_INITDB_DATABASE=simar_recolecciones_db
     ports:
-      - "27017:27017"
+      - "8012:27017"
     volumes:
       - mongo_recolecciones_data:/data/db
       - ../servicios/recolecciones_api/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
@@ -212,7 +244,9 @@ services:
 # ============================================
 volumes:
   mysql_vehiculos_data:
+  mysql_manifiestos_data:
   mongo_recolecciones_data:
+  manifiestos_uploads:
 
 # ============================================
 # REDES
