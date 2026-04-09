@@ -4,143 +4,37 @@
     ViewData["Title"] = $"Detalle – {Model.Manifest.ManifestNumber}";
     var m = Model.Manifest;
     bool esEspecial = m.Type == "especial";
+    string sHdr = esEspecial ? "consult-section-header especial" : "consult-section-header peligroso";
 }
 
-<style>
-    .detail-container { max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem; }
+<div class="consult-container">
 
-    .detail-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .detail-heading {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        margin: 0;
-    }
-
-    .badge-especial {
-        background: #1a3a5c; color: #fff;
-        font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
-    }
-
-    .badge-peligroso {
-        background: #7b2d2d; color: #fff;
-        font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
-    }
-
-    .badge-borrador   { background:#6c757d; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-    .badge-impreso    { background:#0d6efd; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-    .badge-transito   { background:#fd7e14; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-    .badge-completado { background:#198754; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-
-    .section-card {
-        border: 1px solid #c8d6e3;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        overflow: hidden;
-    }
-
-    .section-header {
-        background: #1a3a5c;
-        color: #fff;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        padding: 0.55rem 1rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        user-select: none;
-    }
-
-    .section-header.peligroso-hdr { background: #7b2d2d; }
-    .section-body { padding: 1rem 1.25rem; background: #fff; }
-
-    .detail-dl {
-        display: grid;
-        grid-template-columns: 200px 1fr;
-        gap: 0.3rem 1rem;
-        margin: 0;
-    }
-
-    .detail-dl dt {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #4a5568;
-        padding-top: 0.15rem;
-    }
-
-    .detail-dl dd {
-        font-size: 0.85rem;
-        color: #1a202c;
-        margin: 0;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid #eef0f3;
-    }
-
-    .residue-table th {
-        font-size: 0.72rem;
-        background: #f0f4f8;
-        color: #1a3a5c;
-        font-weight: 700;
-    }
-
-    .residue-table td { font-size: 0.82rem; vertical-align: middle; }
-
-    .cretibm-tag {
-        display: inline-block;
-        background: #7b2d2d;
-        color: #fff;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 10px;
-        margin: 1px;
-    }
-
-    @@media (max-width: 600px) {
-        .detail-dl { grid-template-columns: 1fr; }
-        .detail-dl dt { font-weight: 700; margin-top: 0.4rem; }
-        .detail-dl dd { border-bottom: none; padding-bottom: 0; }
-    }
-</style>
-
-<div class="detail-container">
-
-    <div class="detail-header">
-        <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver</a>
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">← Volver</a>
         <h1 class="detail-heading">@m.ManifestNumber</h1>
 
         @if (esEspecial)
         {
-            <span class="badge-especial">Residuos Especiales</span>
+            <span class="badge-manifest especial">Residuos Especiales</span>
         }
         else
         {
-            <span class="badge-peligroso">Residuos Peligrosos</span>
+            <span class="badge-manifest peligroso">Residuos Peligrosos</span>
         }
 
         @switch (m.Status)
         {
             case ManifestStatus.Completado:
-                <span class="badge-completado">Completado</span>
+                <span class="badge-manifest completado">Completado</span>
                 break;
             case ManifestStatus.EnTransito:
-                <span class="badge-transito">En tránsito</span>
+                <span class="badge-manifest transito">En tránsito</span>
                 break;
             case ManifestStatus.Impreso:
-                <span class="badge-impreso">Impreso</span>
+                <span class="badge-manifest impreso">Impreso</span>
                 break;
             default:
-                <span class="badge-borrador">Borrador</span>
+                <span class="badge-manifest borrador">Borrador</span>
                 break;
         }
 
@@ -149,31 +43,31 @@
             {
                 <a asp-page="/Manifest/Consult/Register"
                    asp-route-id="@m.Id"
-                   class="btn btn-success btn-sm px-3">
+                   class="btn-simar-primary">
                     Registrar Firma
                 </a>
             }
             <a asp-page="/Manifest/Consult/Edit"
                asp-route-id="@m.Id"
-               class="btn btn-warning btn-sm px-3">Editar Manifiesto</a>
+               class="btn-manifest-@(esEspecial ? "especial" : "peligroso")">Editar Manifiesto</a>
         </div>
     </div>
 
     @if (m.Status == ManifestStatus.Completado && !string.IsNullOrEmpty(m.SignedManifestFileName))
     {
-        <div class="section-card">
-            <div class="section-header bg-success text-white" onclick="toggleSection(this)">
+        <div class="consult-section-card">
+            <div class="consult-section-header completado" style="background:#198754;" onclick="toggleSection(this)">
                 <span>Manifiesto Firmado</span>
                 <span class="chevron">▲</span>
             </div>
-            <div class="section-body">
+            <div class="consult-section-body">
                 <div class="d-flex align-items-center gap-3">
                     <div>
                         <strong>Archivo:</strong> @m.SignedManifestFileName<br />
                         <strong>Fecha de Registro:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
                     </div>
                     <div class="ms-auto">
-                        <button type="button" class="btn btn-outline-primary btn-sm">Descargar PDF</button>
+                        <button type="button" class="btn-simar-outline">Descargar PDF</button>
                     </div>
                 </div>
             </div>
@@ -181,12 +75,12 @@
     }
 
     <!-- GENERADOR -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Datos del Generador</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body">
+        <div class="consult-section-body">
             <dl class="detail-dl">
                 <dt>No. Registro @(esEspecial ? "SEDEMA" : "SEMARNAT")</dt>
                 <dd>@D(m.EnvironmentalRegistrationNumber)</dd>
@@ -266,12 +160,12 @@
     </div>
 
     <!-- RESIDUOS -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Residuos</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body p-0">
+        <div class="consult-section-body p-0">
             @if (esEspecial)
             {
                 <div class="table-responsive">
@@ -305,7 +199,7 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-sm table-bordered residue-table mb-0">
+                    <table class="table table-sm table-bordered residue-table peligroso mb-0">
                         <thead>
                             <tr>
                                 <th>Nombre del Residuo</th>
@@ -357,12 +251,12 @@
     </div>
 
     <!-- TRANSPORTISTA -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Transportista</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body">
+        <div class="consult-section-body">
             <dl class="detail-dl">
                 <dt>No. Autorización</dt>
                 <dd>@D(m.TransporterAuthorizationNumber)</dd>
@@ -448,12 +342,12 @@
     </div>
 
     <!-- DESTINATARIO -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Destinatario / Disposición Final</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body">
+        <div class="consult-section-body">
             <dl class="detail-dl">
                 @if (!string.IsNullOrWhiteSpace(m.ReceiverAuthorizationNumber))
                 {
@@ -536,10 +430,10 @@
     </div>
 
     <div class="d-flex justify-content-between mt-3">
-        <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver a la lista</a>
+        <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">← Volver a la lista</a>
         <a asp-page="/Manifest/Consult/Edit"
            asp-route-id="@m.Id"
-           class="btn btn-warning btn-sm px-4">Editar este manifiesto</a>
+           class="btn-manifest-@(esEspecial ? "especial" : "peligroso")">Editar este manifiesto</a>
     </div>
 </div>
 
