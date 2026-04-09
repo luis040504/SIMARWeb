@@ -121,6 +121,7 @@
                             <th colspan="2">Envase</th>
                             <th rowspan="2" style="min-width:110px;">Cantidad (kg)</th>
                             <th colspan="2">Etiqueta</th>
+                            <th rowspan="2" style="width:36px;"></th>
                         </tr>
                         <tr>
                             <th>C</th>
@@ -183,13 +184,18 @@
                                            class="cretibm-check"
                                            @(Model.Residues[i].HasLabel == false ? "checked" : null) />
                                 </td>
+                                <td class="text-center">
+                                    <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Eliminar fila">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
 
-            <button type="button" class="btn-manifest-peligroso-outline add-row-btn mb-3" onclick="addHazardousResidueRow()">
+            <button type="button" class="btn-simar-outline add-row-btn mb-3" onclick="addHazardousResidueRow()">
                 + Agregar residuo
             </button>
 
@@ -454,8 +460,10 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">
-            <a asp-page="/Index" class="btn-simar-outline-gray">Cancelar</a>
-            <button type="submit" class="btn-manifest-peligroso">Generar manifiesto</button>
+            <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">Cancelar</a>
+            <button type="submit" class="btn-simar-primary">
+                <i class="bi bi-check2-circle"></i> Generar manifiesto
+            </button>
         </div>
     </form>
 </div>
@@ -464,6 +472,13 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         let hazardousIndex = @Model.Residues.Count;
+
+        function deleteRow(btn) {
+            const tbody = btn.closest('tbody');
+            if (tbody.rows.length > 1) {
+                btn.closest('tr').remove();
+            }
+        }
 
         function addHazardousResidueRow() {
             const tbody = document.getElementById('hazardous-residues-body');
@@ -505,6 +520,11 @@
                 </td>
                 <td>
                     <input type="radio" name="Residues[${i}].HasLabel" value="false" class="cretibm-check" />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Eliminar fila">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 </td>
             `;
 

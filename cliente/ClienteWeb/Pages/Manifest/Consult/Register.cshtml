@@ -1,7 +1,7 @@
-@page "/Manifest/Consult/Register"
+@page "/Manifest/Consult/Register/{id}"
 @model ClienteWeb.Pages.Manifest.Consult.RegisterModel
 @{
-    ViewData["Title"] = $"Registrar Firma – {Model.ManifestInfo.ManifestNumber}";
+    ViewData["Title"] = $"Subir firma – {Model.ManifestInfo.ManifestNumber}";
     var m = Model.ManifestInfo;
     bool esEspecial = m.Type == "especial";
 
@@ -22,8 +22,10 @@
 
     <div class="register-card-simar">
         <div class="register-card-header @(esEspecial ? "especial" : "peligroso")">
-            <h2>Registrar avance / firma</h2>
-            <span class="badge">@(esEspecial ? "Especial" : "Peligroso")</span>
+            <h2>Subir manifiesto firmado</h2>
+            <span class="badge-simar @(esEspecial ? "badge-simar-especial" : "badge-simar-peligroso")">
+                @(esEspecial ? "Especial" : "Peligroso")
+            </span>
         </div>
 
         <div class="register-card-body">
@@ -45,51 +47,47 @@
                 <input type="hidden" asp-for="Input.Id" value="@m.Id" />
 
                 <div class="mb-3">
-                    <label asp-for="Input.Status" class="form-label-sm">Estado actual</label>
-                    <select asp-for="Input.Status" class="form-select status-select">
-                        <option value="Borrador">Borrador (captura inicial)</option>
-                        <option value="Impreso">Impreso (listo para proceso)</option>
-                        <option value="EnTransito">En tránsito</option>
-                        <option value="Completado">Completado (firmado y sellado)</option>
-                    </select>
+                    <label asp-for="Input.SignedDate" class="form-label-sm">Fecha de firma / recepción final</label>
+                    <input asp-for="Input.SignedDate" type="date" class="form-control" />
                 </div>
 
-                <div id="firma-container" style="display: @(Model.Input.Status == ManifestStatus.Completado ? "block" : "none");">
-                    <div class="mb-3">
-                        <label asp-for="Input.SignedDate" class="form-label-sm">Fecha de firma / recepción final</label>
-                        <input asp-for="Input.SignedDate" type="date" class="form-control" />
-                    </div>
+                <div class="mb-3">
+                    <label asp-for="Input.SignedFile" class="form-label-sm">Manifiesto firmado y sellado (PDF)</label>
 
-                    <div class="mb-4">
-                        <label asp-for="Input.SignedFile" class="form-label-sm">Manifiesto firmado y sellado</label>
-
-                        <div class="file-drop-area" onclick="document.getElementById('file-upload').click()">
-                            <div class="file-drop-icon">📥</div>
-                            <div>Haz clic para seleccionar el archivo escaneado</div>
-                            <div class="form-hint mt-1">
-                                Formatos soportados: PDF, JPG, PNG (máx. 5 MB)
-                            </div>
-
-                            <div id="file-name-display">
-                                @if (!string.IsNullOrWhiteSpace(m.SignedManifestFileName))
-                                {
-                                    <span>Ya subido: @m.SignedManifestFileName</span>
-                                }
-                            </div>
+                    <div class="file-drop-area" onclick="document.getElementById('file-upload').click()"
+                         ondragover="event.preventDefault(); this.classList.add('dragover')"
+                         ondragleave="this.classList.remove('dragover')"
+                         ondrop="handleDrop(event)">
+                        <div class="file-drop-icon">📄</div>
+                        <div>Haz clic o arrastra aquí el PDF firmado</div>
+                        <div class="form-hint mt-1">Solo PDF · máx. 10 MB</div>
+                        <div id="file-name-display">
+                            @if (!string.IsNullOrWhiteSpace(m.SignedManifestFileName))
+                            {
+                                <span>Archivo actual: <strong>@m.SignedManifestFileName</strong></span>
+                            }
                         </div>
-
-                        <input type="file"
-                               asp-for="Input.SignedFile"
-                               id="file-upload"
-                               class="d-none"
-                               accept=".pdf,.jpg,.jpeg,.png"
-                               onchange="document.getElementById('file-name-display').innerText = this.files[0] ? this.files[0].name : ''" />
                     </div>
+
+                    <input type="file"
+                           asp-for="Input.SignedFile"
+                           id="file-upload"
+                           class="d-none"
+                           accept=".pdf"
+                           onchange="onFileSelected(this)" />
+                </div>
+
+                <div id="pdf-preview-new" style="display:none;" class="mb-3">
+                    <span class="form-label-sm">Vista previa del archivo seleccionado</span>
+                    <iframe id="pdf-preview-frame"
+                            style="width:100%; height:480px; border:1px solid #c8d6e3; border-radius:8px; margin-top:0.4rem;"
+                            title="Vista previa">
+                    </iframe>
                 </div>
 
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn-simar-primary justify-content-center py-2 fw-bold">
-                        Guardar registro
+                        <i class="bi bi-check2-circle"></i> Guardar firma y marcar como completado
                     </button>
                 </div>
             </form>
@@ -99,20 +97,38 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const select = document.querySelector('.status-select');
-            const firmaContainer = document.getElementById('firma-container');
-
-            function syncSignedSection() {
-                if (select.value === 'Completado') {
-                    firmaContainer.style.display = 'block';
-                } else {
-                    firmaContainer.style.display = 'none';
-                }
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            const file = event.dataTransfer.files[0];
+            if (!file) return;
+            if (file.type !== 'application/pdf') {
+                alert('Solo se permiten archivos PDF.');
+                return;
             }
+            const input = document.getElementById('file-upload');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            showPreview(file);
+        }
 
-            select.addEventListener('change', syncSignedSection);
-            syncSignedSection();
-        });
+        function onFileSelected(input) {
+            const file = input.files[0];
+            if (!file) return;
+            showPreview(file);
+        }
+
+        function showPreview(file) {
+            const display = document.getElementById('file-name-display');
+            if (display) display.textContent = file.name;
+
+            const preview = document.getElementById('pdf-preview-new');
+            const frame = document.getElementById('pdf-preview-frame');
+            if (preview && frame) {
+                frame.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            }
+        }
     </script>
 }

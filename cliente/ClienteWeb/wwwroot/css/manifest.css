@@ -89,7 +89,7 @@
 .section-label.especial { background: #1a3a5c; }
 
 .subsection-title {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 1px solid #c8d6e3;
@@ -100,7 +100,7 @@
 .subsection-title.especial { color: #1a3a5c; }
 
 .form-label-sm {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #4a5568;
     margin-bottom: 2px;
@@ -108,13 +108,13 @@
 }
 
 .form-hint {
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     color: #718096;
     margin-top: 2px;
 }
 
 .manifest-table th {
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     white-space: nowrap;
     background-color: #e8f0f8;
     color: #1a3a5c;
@@ -136,7 +136,7 @@
 }
 
 .declaration-box {
-    font-size: 0.73rem;
+    font-size: 0.85rem;
     color: #4a5568;
     background: #f5f9fd;
     border: 1px dashed #c8d6e3;
@@ -163,7 +163,7 @@
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1.5rem;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     border-left: 5px solid #c8d6e3;
 }
 .info-summary.peligroso { border-left-color: #7b2d2d; }
@@ -172,7 +172,7 @@
 .info-summary strong {
     color: #2d3748;
     text-transform: uppercase;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     letter-spacing: 0.05em;
 }
 
@@ -211,9 +211,23 @@
 }
 
 .residue-row td { vertical-align: middle; }
-.cretibm-check label { font-size: 0.72rem; margin-left: 2px; }
-.add-row-btn { font-size: 0.75rem; }
-.del-row-btn { font-size: 0.72rem; padding: 2px 7px; }
+.cretibm-check label { font-size: 0.82rem; margin-left: 2px; }
+.add-row-btn { font-size: 0.85rem; }
+.del-row-btn {
+    font-size: 0.82rem;
+    padding: 2px 7px;
+    background: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+.del-row-btn:hover {
+    background: #dc3545;
+    color: #fff;
+}
 
 /* SPINNER PARA MODALES */
 .loader-simar-modal {
@@ -227,7 +241,7 @@
 }
 /* TABLAS DE CLASIFICACIÓN (GENERACIÓN) */
 .cretibm-table th {
-    font-size: 0.7rem;
+    font-size: 0.82rem;
     white-space: nowrap;
     background-color: #f8e7e7;
     color: #7b2d2d;
@@ -261,7 +275,7 @@
 }
 
 .brand-subtitle {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: #718096;
     font-weight: 600;
     letter-spacing: .04em;
@@ -285,7 +299,7 @@
    ÍNDICE: Botones de acción en tabla
    ============================================================ */
 .action-btn {
-    font-size: 0.73rem;
+    font-size: 0.82rem;
     padding: 3px 10px;
     border-radius: 8px;
     font-weight: 500;
@@ -305,23 +319,10 @@
 }
 .action-btn.ver:hover { background: #5aad31; color: #fff; }
 
-.action-btn.peligroso {
-    color: #7b2d2d;
-    border-color: #7b2d2d;
-    background: transparent;
-}
-.action-btn.peligroso:hover { background: #7b2d2d; color: #fff; }
-
-.action-btn.especial {
-    color: #1a3a5c;
-    border-color: #1a3a5c;
-    background: transparent;
-}
-.action-btn.especial:hover { background: #1a3a5c; color: #fff; }
 
 /* Barra de resumen */
 .results-summary {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: #6c757d;
     margin-bottom: 0.75rem;
 }
@@ -364,7 +365,7 @@
 
 .consult-section-header {
     color: #fff;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -380,20 +381,18 @@
 
 .consult-section-body { padding: 1rem 1.25rem; background: #fff; }
 
-/* Badges de estado y tipo */
-.badge-manifest {
-    font-size: 0.72rem;
-    padding: 4px 10px;
-    border-radius: 20px;
-    color: #fff;
-    display: inline-block;
+/* Extensiones de badge-simar para tipos de manifiesto */
+.badge-simar-especial {
+    background: rgba(26, 58, 92, 0.12);
+    color: #1a3a5c;
+    border-left: 3px solid #1a3a5c;
 }
-.badge-manifest.especial   { background: #1a3a5c; }
-.badge-manifest.peligroso  { background: #7b2d2d; }
-.badge-manifest.borrador   { background: #6c757d; }
-.badge-manifest.impreso    { background: #0d6efd; }
-.badge-manifest.transito   { background: #fd7e14; }
-.badge-manifest.completado { background: #198754; }
+
+.badge-simar-peligroso {
+    background: rgba(123, 45, 45, 0.12);
+    color: #7b2d2d;
+    border-left: 3px solid #7b2d2d;
+}
 
 /* Definición detallada */
 .detail-dl {
@@ -403,13 +402,13 @@
     margin: 0;
 }
 .detail-dl dt {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: #4a5568;
     padding-top: 0.15rem;
 }
 .detail-dl dd {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: #1a202c;
     margin: 0;
     padding-bottom: 0.25rem;
@@ -423,13 +422,13 @@
 
 /* Tabla de residuos en consulta */
 .residue-table th {
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     background: #f0f4f8;
     color: #1a3a5c;
     font-weight: 700;
 }
 .residue-table.peligroso th { background: #fdf0f0; color: #7b2d2d; }
-.residue-table td { font-size: 0.82rem; vertical-align: middle; }
+.residue-table td { font-size: 0.9rem; vertical-align: middle; }
 
 /* Tag CRETIBM en detalle */
 .cretibm-tag {
@@ -443,74 +442,6 @@
     margin: 1px;
 }
 
-/* ============================================================
-   BOTONES CON COLORES DE MANIFIESTO
-   ============================================================ */
-.btn-manifest-peligroso {
-    background: #7b2d2d;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 0.5rem 1.2rem;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-}
-.btn-manifest-peligroso:hover { background: #5e2222; color: #fff; transform: translateY(-2px); }
-.btn-manifest-peligroso:active { transform: translateY(0); }
-
-.btn-manifest-especial {
-    background: #1a3a5c;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 0.5rem 1.2rem;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-}
-.btn-manifest-especial:hover { background: #122a44; color: #fff; transform: translateY(-2px); }
-.btn-manifest-especial:active { transform: translateY(0); }
-
-.btn-manifest-peligroso-outline {
-    background: transparent;
-    color: #7b2d2d;
-    border: 1px solid #7b2d2d;
-    border-radius: 10px;
-    padding: 0.35rem 0.9rem;
-    font-weight: 500;
-    font-size: 0.8rem;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    cursor: pointer;
-}
-.btn-manifest-peligroso-outline:hover { background: #7b2d2d; color: #fff; }
-
-.btn-manifest-especial-outline {
-    background: transparent;
-    color: #1a3a5c;
-    border: 1px solid #1a3a5c;
-    border-radius: 10px;
-    padding: 0.35rem 0.9rem;
-    font-weight: 500;
-    font-size: 0.8rem;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    cursor: pointer;
-}
-.btn-manifest-especial-outline:hover { background: #1a3a5c; color: #fff; }
 
 /* ============================================================
    CARD DE REGISTRO (Register.cshtml)

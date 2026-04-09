@@ -16,6 +16,22 @@ public class DetailModel : PageModel
         return Page();
     }
 
+    public IActionResult OnPostTransitar(string id)
+    {
+        var found = SampleData.FirstOrDefault(m => m.Id == id);
+        if (found is null) return NotFound();
+
+        if (found.Status != ManifestStatus.Borrador)
+            return RedirectToPage(new { id });
+
+        found.Status = ManifestStatus.EnTransito;
+
+        TempData["SuccessMessage"] =
+            $"El manifiesto {found.ManifestNumber} fue enviado a tránsito.";
+
+        return RedirectToPage(new { id });
+    }
+
     public static List<ManifestDetailViewModel> SampleData { get; } = BuildSampleData();
 
     private static List<ManifestDetailViewModel> BuildSampleData() =>
@@ -164,7 +180,7 @@ public class DetailModel : PageModel
         {
             Id = "3",
             Type = "especial",
-            Status = ManifestStatus.Impreso,
+            Status = ManifestStatus.EnTransito,
             ManifestNumber = "015/2026",
             ManifestDate = new DateOnly(2026, 1, 15),
             ManifestTime = new TimeOnly(9, 30),
@@ -241,7 +257,6 @@ public class DetailModel : PageModel
 public enum ManifestStatus
 {
     Borrador,
-    Impreso,
     EnTransito,
     Completado
 }

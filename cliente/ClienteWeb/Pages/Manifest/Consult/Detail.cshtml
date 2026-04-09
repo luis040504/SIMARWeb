@@ -1,4 +1,4 @@
-@page "/Manifest/Consult/Detail"
+@page "/Manifest/Consult/Detail/{id}"
 @model ClienteWeb.Pages.Manifest.Consult.DetailModel
 @{
     ViewData["Title"] = $"Detalle – {Model.Manifest.ManifestNumber}";
@@ -15,31 +15,28 @@
 
         @if (esEspecial)
         {
-            <span class="badge-manifest especial">Residuos Especiales</span>
+            <span class="badge-simar badge-simar-especial">Residuos Especiales</span>
         }
         else
         {
-            <span class="badge-manifest peligroso">Residuos Peligrosos</span>
+            <span class="badge-simar badge-simar-peligroso">Residuos Peligrosos</span>
         }
 
         @switch (m.Status)
         {
             case ManifestStatus.Completado:
-                <span class="badge-manifest completado">Completado</span>
+                <span class="badge-simar badge-simar-completada">Completado</span>
                 break;
             case ManifestStatus.EnTransito:
-                <span class="badge-manifest transito">En tránsito</span>
-                break;
-            case ManifestStatus.Impreso:
-                <span class="badge-manifest impreso">Impreso</span>
+                <span class="badge-simar badge-simar-enruta">En tránsito</span>
                 break;
             default:
-                <span class="badge-manifest borrador">Borrador</span>
+                <span class="badge-simar badge-simar-programada">Borrador</span>
                 break;
         }
 
         <div class="ms-auto d-flex gap-2">
-            @if (m.Status != ManifestStatus.Completado)
+            @if (m.Status == ManifestStatus.EnTransito)
             {
                 <a asp-page="/Manifest/Consult/Register"
                    asp-route-id="@m.Id"
@@ -47,9 +44,20 @@
                     Registrar Firma
                 </a>
             }
-            <a asp-page="/Manifest/Consult/Edit"
-               asp-route-id="@m.Id"
-               class="btn-manifest-@(esEspecial ? "especial" : "peligroso")">Editar Manifiesto</a>
+            @if (m.Status == ManifestStatus.Borrador)
+            {
+                <form method="post" asp-page-handler="Transitar" class="d-inline">
+                    <input type="hidden" name="id" value="@m.Id" />
+                    <button type="submit" class="btn-simar-primary">
+                        <i class="bi bi-arrow-right-circle"></i> Enviar a tránsito
+                    </button>
+                </form>
+                <a asp-page="/Manifest/Consult/Edit"
+                   asp-route-id="@m.Id"
+                   class="btn-simar-secondary">
+                    <i class="bi bi-pencil"></i> Editar Manifiesto
+                </a>
+            }
         </div>
     </div>
 
@@ -64,10 +72,14 @@
                 <div class="d-flex align-items-center gap-3">
                     <div>
                         <strong>Archivo:</strong> @m.SignedManifestFileName<br />
-                        <strong>Fecha de Registro:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
+                        <strong>Fecha de firma:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
                     </div>
                     <div class="ms-auto">
-                        <button type="button" class="btn-simar-outline">Descargar PDF</button>
+                        <a href="/api/manifiestos/@m.Id/firma"
+                           target="_blank"
+                           class="btn-simar-outline">
+                            <i class="bi bi-file-earmark-pdf"></i> Ver manifiesto firmado
+                        </a>
                     </div>
                 </div>
             </div>
@@ -431,9 +443,22 @@
 
     <div class="d-flex justify-content-between mt-3">
         <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">← Volver a la lista</a>
-        <a asp-page="/Manifest/Consult/Edit"
-           asp-route-id="@m.Id"
-           class="btn-manifest-@(esEspecial ? "especial" : "peligroso")">Editar este manifiesto</a>
+        @if (m.Status == ManifestStatus.Borrador)
+        {
+            <div class="d-flex gap-2">
+                <a asp-page="/Manifest/Consult/Edit"
+                   asp-route-id="@m.Id"
+                   class="btn-simar-secondary">
+                    <i class="bi bi-pencil"></i> Editar este manifiesto
+                </a>
+                <form method="post" asp-page-handler="Transitar">
+                    <input type="hidden" name="id" value="@m.Id" />
+                    <button type="submit" class="btn-simar-primary">
+                        <i class="bi bi-arrow-right-circle"></i> Enviar a tránsito
+                    </button>
+                </form>
+            </div>
+        }
     </div>
 </div>
 

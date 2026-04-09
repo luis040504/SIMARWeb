@@ -102,11 +102,12 @@
                     <thead>
                         <tr>
                             <th style="width: 14%;">Clave de residuo</th>
-                            <th style="width: 36%;">Tipo de residuo</th>
+                            <th style="width: 34%;">Tipo de residuo</th>
                             <th style="width: 12%;">Envase tipo</th>
                             <th style="width: 12%;">Capacidad</th>
                             <th style="width: 12%;">Peso</th>
-                            <th style="width: 14%;">Unidad</th>
+                            <th style="width: 12%;">Unidad</th>
+                            <th style="width: 36px;"></th>
                         </tr>
                     </thead>
                     <tbody id="residues-body">
@@ -147,13 +148,18 @@
                                         <option value="pza">pza</option>
                                     </select>
                                 </td>
+                                <td class="text-center">
+                                    <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Eliminar fila">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
 
-            <button type="button" class="btn-manifest-especial-outline add-row-btn mb-3" onclick="addResidueRow()">
+            <button type="button" class="btn-simar-outline add-row-btn mb-3" onclick="addResidueRow()">
                 + Agregar residuo
             </button>
 
@@ -424,8 +430,10 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">
-            <a asp-page="/Index" class="btn-simar-outline-gray">Cancelar</a>
-            <button type="submit" class="btn-manifest-especial">Generar manifiesto</button>
+            <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">Cancelar</a>
+            <button type="submit" class="btn-simar-primary">
+                <i class="bi bi-check2-circle"></i> Generar manifiesto
+            </button>
         </div>
     </form>
 </div>
@@ -434,6 +442,13 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         let residueIndex = @Model.Residues.Count;
+
+        function deleteRow(btn) {
+            const tbody = btn.closest('tbody');
+            if (tbody.rows.length > 1) {
+                btn.closest('tr').remove();
+            }
+        }
 
         function addResidueRow() {
             const tbody = document.getElementById('residues-body');
@@ -464,6 +479,11 @@
                         <option value="m3">m3</option>
                         <option value="pza">pza</option>
                     </select>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Eliminar fila">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 </td>
             `;
             tbody.appendChild(row);

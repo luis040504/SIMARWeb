@@ -7,15 +7,21 @@
 <div class="consult-container">
 
     <!-- Encabezado -->
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-        <h1 class="consult-heading especial mb-0">Consulta de Manifiestos</h1>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-semibold mb-0" style="color: var(--simar-dark);">
+                <i class="bi bi-file-earmark-text me-2" style="color: var(--simar-green);"></i>
+                Consulta de Manifiestos
+            </h2>
+            <p class="text-muted small mb-0">Gestión y seguimiento de manifiestos de residuos</p>
+        </div>
 
         <div class="d-flex gap-2 flex-wrap">
-            <a asp-page="/Manifest/Generate/SpecialWaste" class="btn-manifest-especial">
-                + Nuevo especial
+            <a asp-page="/Manifest/Generate/SpecialWaste" class="btn-simar-primary">
+                <i class="bi bi-plus-lg"></i> Nuevo especial
             </a>
-            <a asp-page="/Manifest/Generate/HazardousWaste" class="btn-manifest-peligroso">
-                + Nuevo peligroso
+            <a asp-page="/Manifest/Generate/HazardousWaste" class="btn-simar-primary">
+                <i class="bi bi-plus-lg"></i> Nuevo peligroso
             </a>
         </div>
     </div>
@@ -62,7 +68,6 @@
                     <select asp-for="FilterStatus" class="form-select form-select-sm">
                         <option value="">Todos</option>
                         <option value="borrador">Borrador</option>
-                        <option value="impreso">Impreso</option>
                         <option value="en_transito">En tránsito</option>
                         <option value="completado">Completado</option>
                     </select>
@@ -119,27 +124,24 @@
                             <td>
                                 @if (m.Type == "peligroso")
                                 {
-                                    <span class="badge-manifest peligroso">Peligrosos</span>
+                                    <span class="badge-simar badge-simar-peligroso">Peligrosos</span>
                                 }
                                 else
                                 {
-                                    <span class="badge-manifest especial">Especiales</span>
+                                    <span class="badge-simar badge-simar-especial">Especiales</span>
                                 }
                             </td>
                             <td>
                                 @switch (m.Status)
                                 {
                                     case "completado":
-                                        <span class="badge-manifest completado">Completado</span>
+                                        <span class="badge-simar badge-simar-completada">Completado</span>
                                         break;
                                     case "en_transito":
-                                        <span class="badge-manifest transito">En tránsito</span>
-                                        break;
-                                    case "impreso":
-                                        <span class="badge-manifest impreso">Impreso</span>
+                                        <span class="badge-simar badge-simar-enruta">En tránsito</span>
                                         break;
                                     default:
-                                        <span class="badge-manifest borrador">Borrador</span>
+                                        <span class="badge-simar badge-simar-programada">Borrador</span>
                                         break;
                                 }
                             </td>
@@ -160,7 +162,7 @@
                                     {
                                         <a asp-page="/Manifest/Print/HazardousWaste"
                                            asp-route-id="@m.Id"
-                                           class="action-btn peligroso">
+                                           class="action-btn ver">
                                             <i class="bi bi-printer"></i> Imprimir
                                         </a>
                                     }
@@ -168,7 +170,7 @@
                                     {
                                         <a asp-page="/Manifest/Print/SpecialWaste"
                                            asp-route-id="@m.Id"
-                                           class="action-btn especial">
+                                           class="action-btn ver">
                                             <i class="bi bi-printer"></i> Imprimir
                                         </a>
                                     }
@@ -187,10 +189,10 @@
             <h4>No se encontraron manifiestos</h4>
             <p class="text-muted mb-3">Ajusta los filtros o genera un nuevo manifiesto.</p>
             <div class="d-flex gap-2 justify-content-center flex-wrap">
-                <a asp-page="/Manifest/Generate/SpecialWaste" class="btn-manifest-especial-outline">
+                <a asp-page="/Manifest/Generate/SpecialWaste" class="btn-simar-outline">
                     Nuevo especial
                 </a>
-                <a asp-page="/Manifest/Generate/HazardousWaste" class="btn-manifest-peligroso-outline">
+                <a asp-page="/Manifest/Generate/HazardousWaste" class="btn-simar-outline">
                     Nuevo peligroso
                 </a>
             </div>

@@ -1,4 +1,4 @@
-@page "/Manifest/Consult/Edit"
+@page "/Manifest/Consult/Edit/{id}"
 @model ClienteWeb.Pages.Manifest.Consult.EditModel
 @{
     ViewData["Title"] = $"Editar – {Model.Manifest.ManifestNumber}";
@@ -25,11 +25,11 @@
 
             @if (esEspecial)
             {
-                <span class="badge-manifest especial">Residuos Especiales</span>
+                <span class="badge-simar badge-simar-especial">Residuos Especiales</span>
             }
             else
             {
-                <span class="badge-manifest peligroso">Residuos Peligrosos</span>
+                <span class="badge-simar badge-simar-peligroso">Residuos Peligrosos</span>
             }
         </div>
 
@@ -199,7 +199,7 @@
                         </table>
                     </div>
 
-                    <button type="button" class="btn-manifest-especial-outline add-row-btn"
+                    <button type="button" class="btn-simar-outline add-row-btn"
                             onclick="addSpecialRow()">+ Agregar residuo</button>
                 }
                 else
@@ -288,7 +288,7 @@
                         </table>
                     </div>
 
-                    <button type="button" class="btn-manifest-peligroso-outline add-row-btn"
+                    <button type="button" class="btn-simar-outline add-row-btn"
                             onclick="addHazardRow()">+ Agregar residuo peligroso</button>
                 }
             </div>
@@ -532,8 +532,8 @@
                asp-route-id="@m.Id"
                class="btn-simar-outline-gray">Cancelar</a>
 
-            <button type="submit" class="btn-manifest-@(esEspecial ? "especial" : "peligroso")">
-                Guardar cambios
+            <button type="submit" class="btn-simar-primary">
+                <i class="bi bi-check2-circle"></i> Guardar cambios
             </button>
         </div>
     </div>
