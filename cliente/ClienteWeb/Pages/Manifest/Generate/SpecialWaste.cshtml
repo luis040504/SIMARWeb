@@ -4,166 +4,6 @@
     ViewData["Title"] = "Generate Manifest - Special Waste";
 }
 
-<style>
-    .manifest-container {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 1.5rem 1rem 2rem;
-    }
-
-    .manifest-header {
-        border-bottom: 2px solid #1a3a5c;
-        padding-bottom: 0.75rem;
-    }
-
-    .brand-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        margin: 0;
-    }
-
-    .brand-logo {
-        height: 48px;
-    }
-
-    .manifest-title {
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        text-transform: uppercase;
-        line-height: 1.4;
-        margin: 0;
-    }
-
-    .manifest-folio-top {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        text-align: right;
-    }
-
-    .manifest-number-box {
-        border: 2px solid #1a3a5c;
-        padding: 6px 12px;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        border-radius: 4px;
-        margin-top: 4px;
-        min-width: 130px;
-        display: inline-block;
-        text-align: center;
-    }
-
-    .section-card {
-        border: 1px solid #c8d6e3;
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        position: relative;
-        padding-left: 3.5rem;
-        background: #fafcff;
-        box-shadow: 0 2px 10px rgba(26, 58, 92, 0.04);
-    }
-
-    .section-label {
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 2.5rem;
-        background: #1a3a5c;
-        color: #fff;
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        transform: rotate(180deg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px 0 0 8px;
-    }
-
-    .subsection-title {
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        text-transform: uppercase;
-        border-bottom: 1px solid #c8d6e3;
-        padding-bottom: 4px;
-        margin-bottom: 10px;
-    }
-
-    .form-label-sm {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #4a5568;
-        margin-bottom: 2px;
-        display: block;
-    }
-
-    .form-hint {
-        font-size: 0.68rem;
-        color: #718096;
-        margin-top: 2px;
-    }
-
-    .manifest-table th {
-        font-size: 0.72rem;
-        white-space: nowrap;
-        background-color: #e8f0f8;
-        color: #1a3a5c;
-        vertical-align: middle;
-    }
-
-    .manifest-table td {
-        vertical-align: middle;
-        padding: 4px;
-    }
-
-    .manifest-table input,
-    .manifest-table select {
-        min-width: 0;
-    }
-
-    .form-control::placeholder,
-    .form-select::placeholder,
-    textarea.form-control::placeholder {
-        color: #98a2b3;
-        font-style: italic;
-    }
-
-    .declaration-box {
-        font-size: 0.73rem;
-        color: #4a5568;
-        background: #f5f9fd;
-        border: 1px dashed #c8d6e3;
-        border-radius: 6px;
-        padding: 0.65rem 0.75rem;
-        line-height: 1.45;
-    }
-
-    .signature-placeholder {
-        height: 31px;
-        border: 1px dashed #c8d6e3;
-        border-radius: 4px;
-        background: #fff;
-    }
-
-    @@media (max-width: 767.98px) {
-        .manifest-container {
-            padding: 1rem 0.5rem 1.5rem;
-        }
-
-        .manifest-title-block {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-    }
-</style>
-
 <div class="manifest-container">
 
     <div class="manifest-header d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
@@ -313,7 +153,7 @@
                 </table>
             </div>
 
-            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" onclick="addResidueRow()">
+            <button type="button" class="btn-manifest-especial-outline add-row-btn mb-3" onclick="addResidueRow()">
                 + Agregar residuo
             </button>
 
@@ -584,8 +424,8 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">
-            <a asp-page="/Index" class="btn btn-outline-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Generar manifiesto</button>
+            <a asp-page="/Index" class="btn-simar-outline-gray">Cancelar</a>
+            <button type="submit" class="btn-manifest-especial">Generar manifiesto</button>
         </div>
     </form>
 </div>
