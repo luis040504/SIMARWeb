@@ -113,14 +113,27 @@ services:
   # ============================================
   clientes_api:
     build:
-      context: ./servicios/clientes_api
+      context: ./servicios/API_Clientes
       dockerfile: Dockerfile
     container_name: simar_clientes_api
     ports:
       - "8005:8005"
+    env_file:
+      - .env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8005
+      - DATABASE_CLIENT_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_client_db:5432/${POSTGRES_CLIENT_DB}
+    command: >
+      sh -c "
+        echo 'Esperando a PostgreSQL...';
+        until pg_isready -h postgres_client_db -U ${POSTGRES_USER}; do
+          sleep 2;
+        done;
+        echo 'Ejecutando migraciones...';
+        alembic upgrade head;
+        echo 'Iniciando servidor...';
+        uvicorn app.main:app --host 0.0.0.0 --port 8005"
+    depends_on:
+      - postgres_client_db
     networks:
       - simar_network
     restart: unless-stopped
@@ -208,11 +221,37 @@ services:
       retries: 5
 
 # ============================================
+  # POSTGRESQL - CLIENTES
+  # ============================================
+  postgres_client_db:
+    image: postgres:15-alpine
+    container_name: simar_postgres_clientes
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${POSTGRES_CLIENT_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_clientes_data:/var/lib/postgresql/data
+    networks:
+      - simar_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+# ============================================
 # VOLÚMENES
 # ============================================
 volumes:
   mysql_vehiculos_data:
   mongo_recolecciones_data:
+  postgres_clientes_data:
 
 # ============================================
 # REDES
