@@ -138,6 +138,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8006
+      - ConnectionStrings__DefaultConnection=Server=sqlserver_contratos;Database=ContractsDB;User=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
+    depends_on:
+      - sqlserver_contratos
     networks:
       - simar_network
     restart: unless-stopped
@@ -207,12 +210,30 @@ services:
       timeout: 10s
       retries: 5
 
+  # ============================================
+  # SQL SERVER - CONTRATOS
+  # ============================================
+  sqlserver_contratos:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: simar_sqlserver_contratos
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserver_contratos_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
+
 # ============================================
 # VOLÚMENES
 # ============================================
 volumes:
   mysql_vehiculos_data:
   mongo_recolecciones_data:
+  sqlserver_contratos_data:
 
 # ============================================
 # REDES
