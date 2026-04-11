@@ -2,255 +2,264 @@
 @model ClienteWeb.Pages.Contracts.Generate.GenerateModel
 
 <style>
-    .container {
-        max-width: 800px;
+    /* Estilos específicos para PDF (No están en site.css) */
+    @@page { margin: 0; }
+    .contract-container { background-color: #f8f9fa; padding: 40px 0; min-height: 100vh; }
+    .pdf-page {
+        background: white;
+        width: 21.59cm;
+        min-height: 27.94cm;
+        padding: 1.8cm 2.2cm;
         margin: 0 auto;
-        font-family: Arial;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        page-break-after: always;
     }
 
-    h2 {
-        border-bottom: 2px solid black;
-        padding-bottom: 10px;
+    /* FIX: Buscador Seleccionable - Forzando visibilidad */
+    .searchable-select {
+        position: relative;
+        /* Esto es vital para que la lista no se corte por el overflow de la card-simar */
+        overflow: visible !important; 
     }
 
-    .card {
-        border: 1px solid #ccc;
-        padding: 20px;
-        margin-top: 20px;
-        background-color: #f9f9f9;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    select, button {
-        padding: 6px;
-    }
-
-    .btn {
-        padding: 6px 12px;
-        border: 1px solid black;
+    .options-list {
+        position: absolute;
         background: white;
-        cursor: pointer;
-        margin-right: 10px;
-    }
-
-    .btn:hover {
-        background: #eee;
-    }
-
-    .document {
-        width: 800px;
-        margin: 20px auto;
-        padding: 30px;
-        border: 2px solid black;
-        background: white;
-    }
-
-    .header {
-        text-align: center;
-        border-bottom: 2px solid black;
-        margin-bottom: 20px;
-    }
-
-    .section {
-        margin-bottom: 20px;
-    }
-
-    table {
+        border: 1px solid var(--simar-border);
+        border-radius: 10px;
+        max-height: 250px;
+        overflow-y: auto;
+        /* z-index muy alto para sobrepasar cualquier elemento */
+        z-index: 9999 !important; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        display: none;
         width: 100%;
-        border-collapse: collapse;
+        top: 100%; 
+        left: 0;
+        margin-top: 5px;
     }
 
-    td {
-        border: 1px solid #000;
-        padding: 8px;
-    }
+    .options-list.show { display: block; }
 
-    h4 {
-        margin-bottom: 5px;
-    }
-
-    .signatures {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 40px;
-    }
-</style>
-
-<div class="container">
-
-<style>
-    body {
-        background-color: #f4f6f9;
-        font-family: "Times New Roman", serif;
-    }
-
-    .container {
-        max-width: 900px;
-        margin: 30px auto;
-    }
-
-    h2 {
-        margin-bottom: 20px;
-        border-bottom: 3px solid #333;
-        padding-bottom: 10px;
-        font-family: Arial, sans-serif;
-    }
-
-    select {
-        padding: 8px;
-        margin-top: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-    }
-
-    .btn {
-        padding: 8px 14px;
-        border-radius: 6px;
-        border: 1px solid #333;
-        background: white;
+    .option-item {
+        padding: 12px 16px;
         cursor: pointer;
-        margin-right: 10px;
+        transition: all 0.2s;
+        border-bottom: 1px solid #f1f1f1;
+        color: #333;
+        text-align: left;
     }
 
-    .btn:hover {
-        background: #333;
+    .option-item:hover {
+        background: var(--simar-green-light);
+        color: var(--simar-green);
+    }
+
+    .option-item.selected {
+        background: var(--simar-green);
         color: white;
     }
 
-    .document {
-        background: white;
-        padding: 50px;
-        border: 1px solid #ccc;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        margin-top: 20px;
-        line-height: 1.8;
-        text-align: justify;
-    }
+    .no-results { padding: 12px; color: #666; font-style: italic; }
 
-    .title {
-        text-align: center;
-        font-weight: bold;
-        font-size: 20px;
-        margin-bottom: 30px;
-        text-transform: uppercase;
-    }
+    /* Formato legal del contrato */
+    .table-legal { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9.5pt; }
+    .table-legal td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }
+    .bg-gray-simar { background-color: #E6E6E6; font-weight: bold; }
+    .section-header { background: #000; color: #fff; padding: 7px 10px; font-weight: bold; font-size: 10.5pt; text-align: center; margin: 20px 0 12px 0; }
+    .legal-body { font-size: 9.5pt; text-align: justify; line-height: 1.45; color: #222; }
+    .sig-line { border-top: 1px solid #000; width: 80%; margin: 45px auto 8px auto; text-align: center; font-weight: bold; }
 
-    .actions {
-        margin-top: 30px;
-        text-align: right;
-    }
-
-    .firma {
-        margin-top: 60px;
-        display: flex;
-        justify-content: space-between;
+    @@media print {
+        body * { visibility: hidden; }
+        #contract-wrapper, #contract-wrapper * { visibility: visible; }
+        #contract-wrapper { position: absolute; left: 0; top: 0; width: 100%; }
+        .contract-container { background-color: transparent !important; padding: 0; }
+        .pdf-page { box-shadow: none; border: none; margin: 0; width: 100%; min-height: 100%; border-radius: 0; }
     }
 </style>
 
-<div class="container">
-
-<h2>Generar Contrato</h2>
-
 <form method="post">
+    <div class="container-fluid-simar d-print-none">
+        
+        <div class="mb-3">
+            <a href="/Contracts/Consult" class="btn-simar-outline-gray" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                <i class="bi bi-arrow-left"></i> Regresar a Consulta
+            </a>
+        </div>
 
-    <label>Seleccionar Cotización Aprobada:</label><br />
-    <select name="QuotationId" @(Model.ShowPreview ? "disabled" : "")>
-        <option value="">-- Selecciona una cotización --</option>
+        <div class="card-simar p-4 mb-4" style="overflow: visible !important;">
+            <div class="row align-items-end g-3">
+                <div class="col-lg-6">
+                    <label class="form-label-simar">Seleccionar Cotización</label>
+                    <div class="searchable-select" id="selectContainer">
+                        <input type="text"
+                               id="searchInput"
+                               class="form-control-simar"
+                               placeholder="Buscar cotización..."
+                               autocomplete="off"
+                               @(Model.ShowPreview ? "disabled" : "") />
 
-        @foreach (var q in Model.Quotations)
-        {
-            <option value="@q.Id" selected="@(q.Id == Model.QuotationId)">
-                @q.Name
-            </option>
-        }
-    </select>
+                        <input type="hidden"
+                               name="QuotationId"
+                               id="selectedQuotationId"
+                               value="@Model.QuotationId" />
+
+                        <div id="optionsList" class="options-list"></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    @if (!Model.ShowPreview)
+                    {
+                        <button type="submit" name="action" value="preview" id="previewBtn" class="btn-simar-primary w-100" disabled>
+                            <i class="bi bi-eye me-2"></i>Generar Vista Previa
+                        </button>
+                    }
+                </div>
+
+                @if (Model.ShowPreview)
+                {
+                    <div class="col-lg-3">
+                        <button type="submit" name="action" value="cancel" class="btn-simar-outline-gray w-100 mb-2">
+                            Cambiar Cotización
+                        </button>
+                        <button type="button" onclick="downloadPDF()" class="btn-simar-primary w-100">
+                            <i class="bi bi-download me-2"></i>Descargar PDF
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 
     @if (Model.ShowPreview)
     {
-        <input type="hidden" name="QuotationId" value="@Model.QuotationId" />
+        <div id="contract-wrapper" class="contract-container">
+            <div class="pdf-page">
+                <div style="text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 25px;">
+                    CONTRATO DE PRESTACIÓN DE SERVICIOS
+                </div>
+                
+                <table class="table-legal">
+                    <tr>
+                        <td class="bg-gray-simar">EL PRESTADOR</td>
+                        <td>ADMINISTRACIÓN DE RESIDUOS S.A. DE C.V.</td>
+                        <td class="bg-gray-simar">FECHA</td>
+                        <td>@DateTime.Now.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar">RAZÓN SOCIAL CLIENTE</td>
+                        <td colspan="3">@Model.BusinessName</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar">RFC</td>
+                        <td>@Model.RFC</td>
+                        <td class="bg-gray-simar">VIGENCIA</td>
+                        <td>@Model.Validity</td>
+                    </tr>
+                </table>
 
-        <div class="document">
-
-            <div class="title">
-                CONTRATO DE PRESTACIÓN DE SERVICIOS
-            </div>
-
-            <p>
-                En la ciudad de <strong>Xalapa, Veracruz</strong>, a la fecha de generación del presente documento,
-                se celebra el contrato de prestación de servicios entre la empresa 
-                <strong>SIMAR S.A. de C.V.</strong>, en lo sucesivo “EL PRESTADOR”, 
-                y <strong>@Model.BusinessName</strong>, en lo sucesivo “EL CLIENTE”, 
-                al tenor de las siguientes cláusulas:
-            </p>
-
-            <p>
-                <strong>PRIMERA. OBJETO DEL CONTRATO.</strong><br />
-                EL PRESTADOR se obliga a proporcionar a EL CLIENTE el servicio consistente en 
-                <strong>@Model.ServiceDetails</strong>, conforme a las especificaciones establecidas en la cotización aprobada.
-            </p>
-
-            <p>
-                <strong>SEGUNDA. PRECIO Y FORMA DE PAGO.</strong><br />
-                EL CLIENTE se obliga a pagar la cantidad de <strong>$@Model.Price</strong> 
-                por concepto del servicio, mediante la modalidad de pago 
-                <strong>@Model.PaymentMethod</strong>.
-            </p>
-
-            <p>
-                <strong>TERCERA. VIGENCIA.</strong><br />
-                El presente contrato tendrá una vigencia de <strong>@Model.Validity</strong>, 
-                contados a partir de la fecha de firma del mismo.
-            </p>
-
-            <p>
-                <strong>CUARTA. OBLIGACIONES DE LAS PARTES.</strong><br />
-                Ambas partes se comprometen a cumplir con las obligaciones establecidas en el presente contrato,
-                así como con las disposiciones legales aplicables.
-            </p>
-
-            <p>
-                <strong>QUINTA. DISPOSICIONES GENERALES.</strong><br />
-                El presente contrato constituye el acuerdo total entre las partes, sustituyendo cualquier acuerdo previo,
-                verbal o escrito, relacionado con el objeto del mismo.
-            </p>
-
-            <div class="firma">
-                <div>
-                    ___________________________<br />
-                    EL CLIENTE<br />
-                    @Model.BusinessName
+                <div class="section-header">DECLARACIONES</div>
+                <div class="legal-body">
+                    <p><strong>I. EL PRESTADOR DECLARA:</strong> Que es una sociedad mercantil legalmente constituida...</p>
                 </div>
 
-                <div>
-                    ___________________________<br />
-                    EL PRESTADOR<br />
-                    SIMAR S.A. de C.V.
+                <div class="section-header">CLÁUSULAS</div>
+                <div class="legal-body">
+                    <partial name="BodyContract" model="Model" />
                 </div>
+
+                <table class="sig-table" style="width: 100%; margin-top: 50px;">
+                    <tr>
+                        <td style="text-align: center; width: 50%;">
+                            <div class="sig-line">POR "EL PRESTADOR"</div>
+                            GUSTAVO CRUZ TORRES
+                        </td>
+                        <td style="text-align: center; width: 50%;">
+                            <div class="sig-line">POR "EL CLIENTE"</div>
+                            @Model.Representative
+                        </td>
+                    </tr>
+                </table>
             </div>
-
-            <div class="actions">
-                <button class="btn" type="submit" name="action" value="confirm">
-                    Confirmar
-                </button>
-
-                <button class="btn" type="submit" name="action" value="cancel">
-                    Cancelar
-                </button>
-            </div>
-
         </div>
     }
-    else
-    {
-        <br /><br />
-        <button class="btn" type="submit" name="action" value="preview">
-            Generar Vista Previa
-        </button>
-    }
-
 </form>
 
-</div>
+<script>
+    const quotations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Quotations));
+    let selectedId = @Model.QuotationId;
+
+    const searchInput = document.getElementById('searchInput');
+    const optionsList = document.getElementById('optionsList');
+    const hiddenInput = document.getElementById('selectedQuotationId');
+    const previewBtn = document.getElementById('previewBtn');
+
+    function renderOptions(filtered) {
+        optionsList.innerHTML = '';
+        if (filtered.length === 0) {
+            optionsList.innerHTML = '<div class="no-results">No se encontraron resultados</div>';
+        } else {
+            filtered.forEach(q => {
+                const div = document.createElement('div');
+                div.className = `option-item ${q.Id === selectedId ? 'selected' : ''}`;
+                div.textContent = q.Name;
+                div.onmousedown = (e) => {
+                    e.preventDefault(); 
+                    selectItem(q);
+                };
+                optionsList.appendChild(div);
+            });
+        }
+        optionsList.classList.add('show');
+    }
+
+    function selectItem(q) {
+        selectedId = q.Id;
+        hiddenInput.value = q.Id;
+        searchInput.value = q.Name;
+        optionsList.classList.remove('show');
+        if (previewBtn) previewBtn.disabled = false;
+    }
+
+    searchInput.addEventListener('focus', () => {
+        const term = searchInput.value.toLowerCase();
+        const filtered = quotations.filter(x => x.Name.toLowerCase().includes(term));
+        renderOptions(filtered);
+    });
+
+    searchInput.addEventListener('input', () => {
+        const term = searchInput.value.toLowerCase();
+        const filtered = quotations.filter(x => x.Name.toLowerCase().includes(term));
+        renderOptions(filtered);
+    });
+
+    searchInput.addEventListener('blur', () => {
+        setTimeout(() => optionsList.classList.remove('show'), 200);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#selectContainer')) {
+            optionsList.classList.remove('show');
+        }
+    });
+
+    function downloadPDF() {
+        const originalContent = document.body.innerHTML;
+        const contractContent = document.getElementById('contract-wrapper').innerHTML;
+        document.body.innerHTML = contractContent;
+        window.print();
+        setTimeout(() => location.reload(), 500);
+    }
+
+    if (selectedId) {
+        const item = quotations.find(x => x.Id === selectedId);
+        if (item) {
+            searchInput.value = item.Name;
+            if (previewBtn) previewBtn.disabled = false;
+        }
+    }
+</script>
