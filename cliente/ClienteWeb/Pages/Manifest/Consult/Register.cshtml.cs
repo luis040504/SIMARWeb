@@ -18,11 +18,12 @@ public class RegisterModel : PageModel
         if (found is null)
             return NotFound();
 
-        ManifestInfo = found;
+        if (found.Status != ManifestStatus.EnTransito)
+            return RedirectToPage("/Manifest/Consult/Detail", new { id });
 
+        ManifestInfo = found;
         Input.Id = found.Id;
-        Input.Status = found.Status;
-        Input.SignedDate = found.SignedDate ?? DateOnly.FromDateTime(DateTime.Today);
+        Input.SignedDate = DateOnly.FromDateTime(DateTime.Today);
 
         return Page();
     }
@@ -33,41 +34,29 @@ public class RegisterModel : PageModel
         if (found is null)
             return NotFound();
 
+        if (Input.SignedFile is null)
+            ModelState.AddModelError(nameof(Input.SignedFile), "Debes subir el PDF firmado.");
+
         if (!ModelState.IsValid)
         {
             ManifestInfo = found;
             return Page();
         }
 
-        found.Status = Input.Status;
-
-        if (Input.Status == ManifestStatus.Completado)
-        {
-            found.SignedDate = Input.SignedDate;
-
-            if (Input.SignedFile is not null)
-            {
-                found.SignedManifestFileName = Input.SignedFile.FileName;
-            }
-            else if (string.IsNullOrWhiteSpace(found.SignedManifestFileName))
-            {
-                found.SignedManifestFileName = $"{found.ManifestNumber}_firmado.pdf";
-            }
-        }
+        found.Status = ManifestStatus.Completado;
+        found.SignedDate = Input.SignedDate;
+        found.SignedManifestFileName = Input.SignedFile!.FileName;
 
         TempData["SuccessMessage"] =
-            $"El estado del manifiesto {found.ManifestNumber} ha sido actualizado correctamente a {Input.Status}.";
+            $"El manifiesto {found.ManifestNumber} ha sido marcado como completado.";
 
-        return RedirectToPage("/Manifest/Consult/Index");
+        return RedirectToPage("/Manifest/Consult/Detail", new { id = found.Id });
     }
 }
 
 public class RegisterViewModel
 {
     public string Id { get; set; } = string.Empty;
-
-    [Required]
-    public ManifestStatus Status { get; set; }
 
     public DateOnly SignedDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 

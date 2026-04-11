@@ -1,179 +1,89 @@
-@page "/Manifest/Consult/Detail"
+@page "/Manifest/Consult/Detail/{id}"
 @model ClienteWeb.Pages.Manifest.Consult.DetailModel
 @{
     ViewData["Title"] = $"Detalle – {Model.Manifest.ManifestNumber}";
     var m = Model.Manifest;
     bool esEspecial = m.Type == "especial";
+    string sHdr = esEspecial ? "consult-section-header especial" : "consult-section-header peligroso";
+    var fechaEmision = esEspecial
+        ? (m.ManifestDate?.ToString("dd/MM/yyyy") ?? "–")
+        : (m.GeneratorSignDate?.ToString("dd/MM/yyyy") ?? "–");
 }
 
-<style>
-    .detail-container { max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem; }
+<div class="consult-container">
 
-    .detail-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .detail-heading {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #1a3a5c;
-        margin: 0;
-    }
-
-    .badge-especial {
-        background: #1a3a5c; color: #fff;
-        font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
-    }
-
-    .badge-peligroso {
-        background: #7b2d2d; color: #fff;
-        font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
-    }
-
-    .badge-borrador   { background:#6c757d; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-    .badge-impreso    { background:#0d6efd; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-    .badge-transito   { background:#fd7e14; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-    .badge-completado { background:#198754; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; display:inline-block; }
-
-    .section-card {
-        border: 1px solid #c8d6e3;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        overflow: hidden;
-    }
-
-    .section-header {
-        background: #1a3a5c;
-        color: #fff;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        padding: 0.55rem 1rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        user-select: none;
-    }
-
-    .section-header.peligroso-hdr { background: #7b2d2d; }
-    .section-body { padding: 1rem 1.25rem; background: #fff; }
-
-    .detail-dl {
-        display: grid;
-        grid-template-columns: 200px 1fr;
-        gap: 0.3rem 1rem;
-        margin: 0;
-    }
-
-    .detail-dl dt {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #4a5568;
-        padding-top: 0.15rem;
-    }
-
-    .detail-dl dd {
-        font-size: 0.85rem;
-        color: #1a202c;
-        margin: 0;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid #eef0f3;
-    }
-
-    .residue-table th {
-        font-size: 0.72rem;
-        background: #f0f4f8;
-        color: #1a3a5c;
-        font-weight: 700;
-    }
-
-    .residue-table td { font-size: 0.82rem; vertical-align: middle; }
-
-    .cretibm-tag {
-        display: inline-block;
-        background: #7b2d2d;
-        color: #fff;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 10px;
-        margin: 1px;
-    }
-
-    @@media (max-width: 600px) {
-        .detail-dl { grid-template-columns: 1fr; }
-        .detail-dl dt { font-weight: 700; margin-top: 0.4rem; }
-        .detail-dl dd { border-bottom: none; padding-bottom: 0; }
-    }
-</style>
-
-<div class="detail-container">
-
-    <div class="detail-header">
-        <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver</a>
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">← Volver</a>
         <h1 class="detail-heading">@m.ManifestNumber</h1>
 
         @if (esEspecial)
         {
-            <span class="badge-especial">Residuos Especiales</span>
+            <span class="badge-simar badge-simar-especial">Residuos Especiales</span>
         }
         else
         {
-            <span class="badge-peligroso">Residuos Peligrosos</span>
+            <span class="badge-simar badge-simar-peligroso">Residuos Peligrosos</span>
         }
 
         @switch (m.Status)
         {
             case ManifestStatus.Completado:
-                <span class="badge-completado">Completado</span>
+                <span class="badge-simar badge-simar-completada">Completado</span>
                 break;
             case ManifestStatus.EnTransito:
-                <span class="badge-transito">En tránsito</span>
-                break;
-            case ManifestStatus.Impreso:
-                <span class="badge-impreso">Impreso</span>
+                <span class="badge-simar badge-simar-enruta">En tránsito</span>
                 break;
             default:
-                <span class="badge-borrador">Borrador</span>
+                <span class="badge-simar badge-simar-programada">Borrador</span>
                 break;
         }
 
         <div class="ms-auto d-flex gap-2">
-            @if (m.Status != ManifestStatus.Completado)
+            @if (m.Status == ManifestStatus.EnTransito)
             {
-                <a asp-page="/Manifest/Consult/Register"
+                <button type="button"
+                        class="btn-simar-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalRegistrarFirma">
+                    <i class="bi bi-pen"></i> Registrar Firma
+                </button>
+            }
+            @if (m.Status == ManifestStatus.Borrador)
+            {
+                <form method="post" asp-page-handler="Transitar" class="d-inline">
+                    <input type="hidden" name="id" value="@m.Id" />
+                    <button type="submit" class="btn-simar-primary">
+                        <i class="bi bi-arrow-right-circle"></i> Enviar a tránsito
+                    </button>
+                </form>
+                <a asp-page="/Manifest/Consult/Edit"
                    asp-route-id="@m.Id"
-                   class="btn btn-success btn-sm px-3">
-                    Registrar Firma
+                   class="btn-simar-secondary">
+                    <i class="bi bi-pencil"></i> Editar Manifiesto
                 </a>
             }
-            <a asp-page="/Manifest/Consult/Edit"
-               asp-route-id="@m.Id"
-               class="btn btn-warning btn-sm px-3">Editar Manifiesto</a>
         </div>
     </div>
 
     @if (m.Status == ManifestStatus.Completado && !string.IsNullOrEmpty(m.SignedManifestFileName))
     {
-        <div class="section-card">
-            <div class="section-header bg-success text-white" onclick="toggleSection(this)">
+        <div class="consult-section-card">
+            <div class="consult-section-header completado" style="background:#198754;" onclick="toggleSection(this)">
                 <span>Manifiesto Firmado</span>
                 <span class="chevron">▲</span>
             </div>
-            <div class="section-body">
+            <div class="consult-section-body">
                 <div class="d-flex align-items-center gap-3">
                     <div>
                         <strong>Archivo:</strong> @m.SignedManifestFileName<br />
-                        <strong>Fecha de Registro:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
+                        <strong>Fecha de firma:</strong> @m.SignedDate?.ToString("dd/MM/yyyy")
                     </div>
                     <div class="ms-auto">
-                        <button type="button" class="btn btn-outline-primary btn-sm">Descargar PDF</button>
+                        <a href="/api/manifiestos/@m.Id/firma"
+                           target="_blank"
+                           class="btn-simar-outline">
+                            <i class="bi bi-file-earmark-pdf"></i> Ver manifiesto firmado
+                        </a>
                     </div>
                 </div>
             </div>
@@ -181,12 +91,12 @@
     }
 
     <!-- GENERADOR -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Datos del Generador</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body">
+        <div class="consult-section-body">
             <dl class="detail-dl">
                 <dt>No. Registro @(esEspecial ? "SEDEMA" : "SEMARNAT")</dt>
                 <dd>@D(m.EnvironmentalRegistrationNumber)</dd>
@@ -266,12 +176,12 @@
     </div>
 
     <!-- RESIDUOS -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Residuos</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body p-0">
+        <div class="consult-section-body p-0">
             @if (esEspecial)
             {
                 <div class="table-responsive">
@@ -305,7 +215,7 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-sm table-bordered residue-table mb-0">
+                    <table class="table table-sm table-bordered residue-table peligroso mb-0">
                         <thead>
                             <tr>
                                 <th>Nombre del Residuo</th>
@@ -357,12 +267,12 @@
     </div>
 
     <!-- TRANSPORTISTA -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Transportista</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body">
+        <div class="consult-section-body">
             <dl class="detail-dl">
                 <dt>No. Autorización</dt>
                 <dd>@D(m.TransporterAuthorizationNumber)</dd>
@@ -448,12 +358,12 @@
     </div>
 
     <!-- DESTINATARIO -->
-    <div class="section-card">
-        <div class="section-header @(esEspecial ? "" : "peligroso-hdr")" onclick="toggleSection(this)">
+    <div class="consult-section-card">
+        <div class="@sHdr" onclick="toggleSection(this)">
             <span>Destinatario / Disposición Final</span>
             <span class="chevron">▲</span>
         </div>
-        <div class="section-body">
+        <div class="consult-section-body">
             <dl class="detail-dl">
                 @if (!string.IsNullOrWhiteSpace(m.ReceiverAuthorizationNumber))
                 {
@@ -536,12 +446,107 @@
     </div>
 
     <div class="d-flex justify-content-between mt-3">
-        <a asp-page="/Manifest/Consult/Index" class="btn btn-outline-secondary btn-sm">← Volver a la lista</a>
-        <a asp-page="/Manifest/Consult/Edit"
-           asp-route-id="@m.Id"
-           class="btn btn-warning btn-sm px-4">Editar este manifiesto</a>
+        <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">← Volver a la lista</a>
+        @if (m.Status == ManifestStatus.Borrador)
+        {
+            <div class="d-flex gap-2">
+                <a asp-page="/Manifest/Consult/Edit"
+                   asp-route-id="@m.Id"
+                   class="btn-simar-secondary">
+                    <i class="bi bi-pencil"></i> Editar este manifiesto
+                </a>
+                <form method="post" asp-page-handler="Transitar">
+                    <input type="hidden" name="id" value="@m.Id" />
+                    <button type="submit" class="btn-simar-primary">
+                        <i class="bi bi-arrow-right-circle"></i> Enviar a tránsito
+                    </button>
+                </form>
+            </div>
+        }
     </div>
 </div>
+
+@if (m.Status == ManifestStatus.EnTransito)
+{
+    <!-- MODAL: Registrar Firma -->
+    <div class="modal fade" id="modalRegistrarFirma" tabindex="-1" aria-labelledby="modalRegistrarFirmaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header @(esEspecial ? "especial" : "peligroso") register-card-header">
+                    <h5 class="modal-title" id="modalRegistrarFirmaLabel">Subir manifiesto firmado</h5>
+                    <span class="badge-simar @(esEspecial ? "badge-simar-especial" : "badge-simar-peligroso") ms-2">
+                        @(esEspecial ? "Especial" : "Peligroso")
+                    </span>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="info-summary @(esEspecial ? "especial" : "peligroso") mb-3">
+                        <div class="row">
+                            <div class="col-sm-6 mb-2">
+                                <strong>Folio:</strong><br />@m.ManifestNumber
+                            </div>
+                            <div class="col-sm-6 mb-2">
+                                <strong>Fecha base:</strong><br />@fechaEmision
+                            </div>
+                            <div class="col-sm-12">
+                                <strong>Generador:</strong><br />@m.SocialReason
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="formRegistrarFirma" method="post" enctype="multipart/form-data" asp-page-handler="Register">
+                        <input type="hidden" name="RegisterInput.Id" value="@m.Id" />
+
+                        <div class="mb-3">
+                            <label for="RegisterInput_SignedDate" class="form-label-sm">Fecha de firma / recepción final</label>
+                            <input type="date"
+                                   id="RegisterInput_SignedDate"
+                                   name="RegisterInput.SignedDate"
+                                   class="form-control"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-sm">Manifiesto firmado y sellado (PDF)</label>
+                            <div class="file-drop-area"
+                                 id="dropAreaModal"
+                                 onclick="document.getElementById('file-upload-modal').click()"
+                                 ondragover="event.preventDefault(); this.classList.add('dragover')"
+                                 ondragleave="this.classList.remove('dragover')"
+                                 ondrop="handleDropModal(event)">
+                                <div class="file-drop-icon">📄</div>
+                                <div>Haz clic o arrastra aquí el PDF firmado</div>
+                                <div class="form-hint mt-1">Solo PDF · máx. 10 MB</div>
+                                <div id="file-name-display-modal"></div>
+                            </div>
+                            <input type="file"
+                                   name="RegisterInput.SignedFile"
+                                   id="file-upload-modal"
+                                   class="d-none"
+                                   accept=".pdf"
+                                   onchange="onFileSelectedModal(this)" />
+                        </div>
+
+                        <div id="pdf-preview-modal" style="display:none;" class="mb-3">
+                            <span class="form-label-sm">Vista previa del archivo seleccionado</span>
+                            <iframe id="pdf-preview-frame-modal"
+                                    style="width:100%; height:420px; border:1px solid #c8d6e3; border-radius:8px; margin-top:0.4rem;"
+                                    title="Vista previa"></iframe>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formRegistrarFirma" class="btn-simar-primary">
+                        <i class="bi bi-check2-circle"></i> Guardar firma y marcar como completado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @functions {
     static string D(string? s) => string.IsNullOrWhiteSpace(s) ? "–" : s;
@@ -556,5 +561,49 @@
         body.style.display = isOpen ? 'none' : '';
         chevron.textContent = isOpen ? '▼' : '▲';
     }
+
+    function handleDropModal(event) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('dragover');
+        const file = event.dataTransfer.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') {
+            alert('Solo se permiten archivos PDF.');
+            return;
+        }
+        const input = document.getElementById('file-upload-modal');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        showPreviewModal(file);
+    }
+
+    function onFileSelectedModal(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showPreviewModal(file);
+    }
+
+    function showPreviewModal(file) {
+        const display = document.getElementById('file-name-display-modal');
+        if (display) display.textContent = file.name;
+
+        const preview = document.getElementById('pdf-preview-modal');
+        const frame = document.getElementById('pdf-preview-frame-modal');
+        if (preview && frame) {
+            frame.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+        }
+    }
+
+    // Limpiar preview al cerrar el modal
+    document.getElementById('modalRegistrarFirma')?.addEventListener('hidden.bs.modal', function () {
+        const input = document.getElementById('file-upload-modal');
+        if (input) input.value = '';
+        const display = document.getElementById('file-name-display-modal');
+        if (display) display.textContent = '';
+        const preview = document.getElementById('pdf-preview-modal');
+        if (preview) preview.style.display = 'none';
+    });
 </script>
 }
