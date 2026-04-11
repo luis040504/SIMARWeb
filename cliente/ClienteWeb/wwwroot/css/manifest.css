@@ -12,18 +12,31 @@
     padding-bottom: 0.75rem;
 }
 
-.manifest-header.peligroso { border-color: #7b2d2d; }
-.manifest-header.especial { border-color: #1a3a5c; }
+.manifest-header.peligroso {
+    border-color: #7b2d2d;
+}
+
+.manifest-header.especial {
+    border-color: #1a3a5c;
+}
 
 .brand-title {
     font-size: 1.8rem;
     font-weight: 700;
     margin: 0;
 }
-.brand-title.peligroso { color: #7b2d2d; }
-.brand-title.especial { color: #1a3a5c; }
 
-.brand-logo { height: 48px; }
+.brand-title.peligroso {
+    color: #7b2d2d;
+}
+
+.brand-title.especial {
+    color: #1a3a5c;
+}
+
+.brand-logo {
+    height: 48px;
+}
 
 .manifest-title {
     font-size: 0.88rem;
@@ -32,16 +45,28 @@
     line-height: 1.4;
     margin: 0;
 }
-.manifest-title.peligroso { color: #7b2d2d; }
-.manifest-title.especial { color: #1a3a5c; }
+
+.manifest-title.peligroso {
+    color: #7b2d2d;
+}
+
+.manifest-title.especial {
+    color: #1a3a5c;
+}
 
 .manifest-folio-top {
     font-size: 1rem;
     font-weight: 700;
     text-align: right;
 }
-.manifest-folio-top.peligroso { color: #7b2d2d; }
-.manifest-folio-top.especial { color: #1a3a5c; }
+
+.manifest-folio-top.peligroso {
+    color: #7b2d2d;
+}
+
+.manifest-folio-top.especial {
+    color: #1a3a5c;
+}
 
 .manifest-number-box {
     border: 2px solid;
@@ -54,8 +79,16 @@
     display: inline-block;
     text-align: center;
 }
-.manifest-number-box.peligroso { border-color: #7b2d2d; color: #7b2d2d; }
-.manifest-number-box.especial { border-color: #1a3a5c; color: #1a3a5c; }
+
+.manifest-number-box.peligroso {
+    border-color: #7b2d2d;
+    color: #7b2d2d;
+}
+
+.manifest-number-box.especial {
+    border-color: #1a3a5c;
+    color: #1a3a5c;
+}
 
 .section-card {
     border: 1px solid #c8d6e3;
@@ -85,8 +118,14 @@
     justify-content: center;
     border-radius: 8px 0 0 8px;
 }
-.section-label.peligroso { background: #7b2d2d; }
-.section-label.especial { background: #1a3a5c; }
+
+.section-label.peligroso {
+    background: #7b2d2d;
+}
+
+.section-label.especial {
+    background: #1a3a5c;
+}
 
 .subsection-title {
     font-size: 0.85rem;
@@ -96,8 +135,14 @@
     padding-bottom: 4px;
     margin-bottom: 10px;
 }
-.subsection-title.peligroso { color: #7b2d2d; }
-.subsection-title.especial { color: #1a3a5c; }
+
+.subsection-title.peligroso {
+    color: #7b2d2d;
+}
+
+.subsection-title.especial {
+    color: #1a3a5c;
+}
 
 .form-label-sm {
     font-size: 0.85rem;
@@ -120,6 +165,7 @@
     color: #1a3a5c;
     vertical-align: middle;
 }
+
 .manifest-table.peligroso th {
     background-color: #fdf0f0;
     color: #7b2d2d;
@@ -166,8 +212,14 @@
     font-size: 0.9rem;
     border-left: 5px solid #c8d6e3;
 }
-.info-summary.peligroso { border-left-color: #7b2d2d; }
-.info-summary.especial { border-left-color: #1a3a5c; }
+
+.info-summary.peligroso {
+    border-left-color: #7b2d2d;
+}
+
+.info-summary.especial {
+    border-left-color: #1a3a5c;
+}
 
 .info-summary strong {
     color: #2d3748;
@@ -210,9 +262,19 @@
     word-break: break-word;
 }
 
-.residue-row td { vertical-align: middle; }
-.cretibm-check label { font-size: 0.82rem; margin-left: 2px; }
-.add-row-btn { font-size: 0.85rem; }
+.residue-row td {
+    vertical-align: middle;
+}
+
+.cretibm-check label {
+    font-size: 0.82rem;
+    margin-left: 2px;
+}
+
+.add-row-btn {
+    font-size: 0.85rem;
+}
+
 .del-row-btn {
     font-size: 0.82rem;
     padding: 2px 7px;
@@ -224,6 +286,7 @@
     transition: all 0.2s;
     line-height: 1;
 }
+
 .del-row-btn:hover {
     background: #dc3545;
     color: #fff;
@@ -239,6 +302,7 @@
     animation: spin-simar 1s linear infinite;
     margin: 2rem auto;
 }
+
 /* TABLAS DE CLASIFICACIÓN (GENERACIÓN) */
 .cretibm-table th {
     font-size: 0.82rem;
@@ -248,11 +312,13 @@
     text-align: center;
     vertical-align: middle;
 }
+
 .cretibm-table td {
     vertical-align: middle;
     padding: 4px;
     text-align: center;
 }
+
 .cretibm-check {
     width: 18px;
     height: 18px;
@@ -290,9 +356,17 @@
 }
 
 @media (max-width: 767.98px) {
-    .manifest-container { padding: 1rem 0.5rem 1.5rem; }
-    .register-container { padding: 0 1rem; }
-    .brand-block img { height: 40px; }
+    .manifest-container {
+        padding: 1rem 0.5rem 1.5rem;
+    }
+
+    .register-container {
+        padding: 0 1rem;
+    }
+
+    .brand-block img {
+        height: 40px;
+    }
 }
 
 /* ============================================================
@@ -312,12 +386,17 @@
     border: 1px solid transparent;
     white-space: nowrap;
 }
+
 .action-btn.ver {
     color: #5aad31;
     border-color: #5aad31;
     background: transparent;
 }
-.action-btn.ver:hover { background: #5aad31; color: #fff; }
+
+.action-btn.ver:hover {
+    background: #5aad31;
+    color: #fff;
+}
 
 
 /* Barra de resumen */
@@ -326,14 +405,17 @@
     color: #6c757d;
     margin-bottom: 0.75rem;
 }
-.results-summary strong { color: #4a4a4a; }
+
+.results-summary strong {
+    color: #4a4a4a;
+}
 
 /* ============================================================
    CONSULTA: Edit / Detail
    ============================================================ */
 .consult-container {
-    max-width: 1050px;
-    margin: 0 auto;
+    /*max-width: 1050px;
+    margin: 0 auto; */
     padding: 1.5rem 1rem;
 }
 
@@ -344,8 +426,16 @@
     border-left: 4px solid;
     padding-left: 0.75rem;
 }
-.consult-heading.especial { border-color: #1a3a5c; color: #1a3a5c; }
-.consult-heading.peligroso { border-color: #7b2d2d; color: #7b2d2d; }
+
+.consult-heading.especial {
+    border-color: #1a3a5c;
+    color: #1a3a5c;
+}
+
+.consult-heading.peligroso {
+    border-color: #7b2d2d;
+    color: #7b2d2d;
+}
 
 .detail-heading {
     font-size: 1.35rem;
@@ -361,7 +451,10 @@
     margin-bottom: 1rem;
     overflow: hidden;
 }
-.consult-section-card.peligroso { border-color: #ead0d0; }
+
+.consult-section-card.peligroso {
+    border-color: #ead0d0;
+}
 
 .consult-section-header {
     color: #fff;
@@ -376,10 +469,19 @@
     justify-content: space-between;
     user-select: none;
 }
-.consult-section-header.especial { background: #1a3a5c; }
-.consult-section-header.peligroso { background: #7b2d2d; }
 
-.consult-section-body { padding: 1rem 1.25rem; background: #fff; }
+.consult-section-header.especial {
+    background: #1a3a5c;
+}
+
+.consult-section-header.peligroso {
+    background: #7b2d2d;
+}
+
+.consult-section-body {
+    padding: 1rem 1.25rem;
+    background: #fff;
+}
 
 /* Extensiones de badge-simar para tipos de manifiesto */
 .badge-simar-especial {
@@ -401,12 +503,14 @@
     gap: 0.3rem 1rem;
     margin: 0;
 }
+
 .detail-dl dt {
     font-size: 0.82rem;
     font-weight: 700;
     color: #4a5568;
     padding-top: 0.15rem;
 }
+
 .detail-dl dd {
     font-size: 0.9rem;
     color: #1a202c;
@@ -414,10 +518,21 @@
     padding-bottom: 0.25rem;
     border-bottom: 1px solid #eef0f3;
 }
+
 @media (max-width: 600px) {
-    .detail-dl { grid-template-columns: 1fr; }
-    .detail-dl dt { font-weight: 700; margin-top: 0.4rem; }
-    .detail-dl dd { border-bottom: none; padding-bottom: 0; }
+    .detail-dl {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-dl dt {
+        font-weight: 700;
+        margin-top: 0.4rem;
+    }
+
+    .detail-dl dd {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
 }
 
 /* Tabla de residuos en consulta */
@@ -427,8 +542,16 @@
     color: #1a3a5c;
     font-weight: 700;
 }
-.residue-table.peligroso th { background: #fdf0f0; color: #7b2d2d; }
-.residue-table td { font-size: 0.9rem; vertical-align: middle; }
+
+.residue-table.peligroso th {
+    background: #fdf0f0;
+    color: #7b2d2d;
+}
+
+.residue-table td {
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
 
 /* Tag CRETIBM en detalle */
 .cretibm-tag {
@@ -453,6 +576,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border: 1px solid #e9ecef;
 }
+
 .register-card-header {
     padding: 1rem 1.5rem;
     display: flex;
@@ -460,8 +584,26 @@
     align-items: center;
     color: #fff;
 }
-.register-card-header.especial  { background: #1a3a5c; }
-.register-card-header.peligroso { background: #7b2d2d; }
-.register-card-header h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
-.register-card-header .badge { font-size: 0.75rem; background: rgba(255, 255, 255, 0.2); }
-.register-card-body { padding: 1.5rem; }
+
+.register-card-header.especial {
+    background: #1a3a5c;
+}
+
+.register-card-header.peligroso {
+    background: #7b2d2d;
+}
+
+.register-card-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.register-card-header .badge {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.register-card-body {
+    padding: 1.5rem;
+}

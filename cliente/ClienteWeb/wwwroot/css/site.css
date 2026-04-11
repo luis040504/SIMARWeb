@@ -1,27 +1,5 @@
 
-.sidebar {
-    width: 260px;
-    min-height: calc(100vh - 56px); 
-    transition: width 0.3s ease, margin-left 0.3s ease;
-    overflow-y: auto;
-}
-
-
-.sidebar-hidden {
-    margin-left: -260px; 
-}
-
-
-#mainContent {
-    transition: margin-left 0.3s ease;
-    width: 100%;
-}
-
-
-.main-expanded {
-    margin-left: 0;
-    width: 100%;
-}
+/* Los estilos antiguos de layout se eliminaron para que .main-content-simar controle el ancho dinámicamente y no se desborde el contenido (width: 100% + margin). */
 
 
 .collapse .list-group-item {

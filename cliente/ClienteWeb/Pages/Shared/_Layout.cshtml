@@ -35,6 +35,11 @@
             overflow-x: hidden;
         }
 
+        /* Prevenir que se ejecuten animaciones cuando la página apenas está cargando */
+        .no-transitions * {
+            transition: none !important;
+        }
+
         /* Header Estilo Moderno */
         .header-simar {
             position: fixed;
@@ -140,7 +145,7 @@
             margin-top: var(--header-height);
             margin-left: var(--sidebar-width);
             transition: all var(--transition-speed) ease;
-            padding: 1.5rem;
+            padding: 1.5rem 1.5rem 0 1.5rem;
             min-height: calc(100vh - var(--header-height));
         }
 
@@ -289,7 +294,7 @@
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body>
+<body class="no-transitions">
 
     @{
         var usuarioNombre = "Luis López";
@@ -406,11 +411,24 @@
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
-    <main class="main-content-simar" id="mainContent">
-        @RenderBody()
+    <main class="main-content-simar d-flex flex-column" id="mainContent">
+        <script>
+            /*
+             * PREVENCIÓN DE PARPADEO (FOUC):
+             * Aplicar las clases asíncronamente justo antes de que el navegador renderice la vista,
+             * de esta forma evitamos que el menú se vea grande en pantalla e inmediatamente se oculte.
+             */
+            if (localStorage.getItem('sidebarCollapsed') === 'true' && !window.matchMedia('(max-width: 768px)').matches) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+            }
+        </script>
+        <div class="flex-grow-1">
+            @RenderBody()
+        </div>
         
         <!-- Footer simple -->
-        <footer class="footer-simar text-center">
+        <footer class="footer-simar text-center mt-auto w-100">
             <div class="container-fluid">
                 <span>Copyright &copy; 2025 SIMAR - Sistema de Recolección de Residuos</span>
             </div>
@@ -424,28 +442,43 @@
 
     <script>
         $(document).ready(function() {
+            // Habilitamos las animaciones solo después de que la página cargó por completo
+            setTimeout(function() {
+                $('body').removeClass('no-transitions');
+            }, 50);
+
+            // Función auxiliar para detectar si estamos en vista móvil (coincide exacto con CSS media query)
+            function isMobileView() {
+                return window.matchMedia('(max-width: 768px)').matches;
+            }
+
             // Toggle sidebar (colapsar/expandir)
             $('#sidebarToggle').on('click', function() {
-                $('#sidebar').toggleClass('collapsed');
-                $('#mainContent').toggleClass('expanded');
-                
-                // Guardar estado en localStorage
-                var isCollapsed = $('#sidebar').hasClass('collapsed');
-                localStorage.setItem('sidebarCollapsed', isCollapsed);
+                if (isMobileView()) {
+                    // En móviles, alternar la visibilidad completa encima del contenido
+                    $('#sidebar').toggleClass('mobile-open');
+                } else {
+                    // En escritorio, colapsar dejando los iconos
+                    $('#sidebar').toggleClass('collapsed');
+                    $('#mainContent').toggleClass('expanded');
+                    
+                    // Guardar estado en localStorage solo para escritorio
+                    var isCollapsed = $('#sidebar').hasClass('collapsed');
+                    localStorage.setItem('sidebarCollapsed', isCollapsed);
+                }
             });
             
-            // Restaurar estado del sidebar
-            var savedState = localStorage.getItem('sidebarCollapsed');
-            if (savedState === 'true') {
-                $('#sidebar').addClass('collapsed');
-                $('#mainContent').addClass('expanded');
-            }
+            // La restauración inicial del estado del sidebar se movió a un script síncrono
+            // arriba en el HTML principal del _Layout para evitar parpadeos visuales.
             
-            // Manejo responsivo en móvil
+            // Manejo responsivo en móvil al redimensionar ventana
             function handleMobile() {
-                if ($(window).width() <= 768) {
-                    $('#sidebar').removeClass('collapsed');
+                if (isMobileView()) {
+                    $('#sidebar').removeClass('collapsed'); // no se usa colapsado en movil
                     $('#mainContent').removeClass('expanded');
+                } else {
+                    // si redimensionamos hacia arriba, y no estaba colapsado en movil, esconder
+                    $('#sidebar').removeClass('mobile-open');
                 }
             }
             
