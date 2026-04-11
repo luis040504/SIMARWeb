@@ -5,11 +5,11 @@ import os
 load_dotenv()
 
 # Configuración de MongoDB
-MONGODB_HOST = os.getenv('MONGODB_HOST', 'localhost')
+MONGODB_HOST = os.getenv('MONGODB_HOST')
 MONGODB_PORT = int(os.getenv('MONGODB_PORT', 27017))
-MONGODB_USER = os.getenv('MONGODB_USER', 'root')
-MONGODB_PASSWORD = os.getenv('MONGODB_PASSWORD', 'Simar123!')
-MONGODB_DB = os.getenv('MONGODB_DB', 'simar_facturacion_db')
+MONGODB_USER = os.getenv('MONGODB_USER')
+MONGODB_PASSWORD = os.getenv('MONGODB_PASSWORD')
+MONGODB_DB = os.getenv('MONGODB_DB')
 
 
 MONGO_URI = f"mongodb://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_HOST}:{MONGODB_PORT}"
