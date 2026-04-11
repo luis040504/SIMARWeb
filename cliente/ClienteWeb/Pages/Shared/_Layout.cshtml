@@ -413,11 +413,6 @@
     <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content-simar d-flex flex-column" id="mainContent">
         <script>
-            /*
-             * PREVENCIÓN DE PARPADEO (FOUC):
-             * Aplicar las clases asíncronamente justo antes de que el navegador renderice la vista,
-             * de esta forma evitamos que el menú se vea grande en pantalla e inmediatamente se oculte.
-             */
             if (localStorage.getItem('sidebarCollapsed') === 'true' && !window.matchMedia('(max-width: 768px)').matches) {
                 document.getElementById('sidebar').classList.add('collapsed');
                 document.getElementById('mainContent').classList.add('expanded');
@@ -442,42 +437,31 @@
 
     <script>
         $(document).ready(function() {
-            // Habilitamos las animaciones solo después de que la página cargó por completo
             setTimeout(function() {
                 $('body').removeClass('no-transitions');
             }, 50);
 
-            // Función auxiliar para detectar si estamos en vista móvil (coincide exacto con CSS media query)
             function isMobileView() {
                 return window.matchMedia('(max-width: 768px)').matches;
             }
 
-            // Toggle sidebar (colapsar/expandir)
             $('#sidebarToggle').on('click', function() {
                 if (isMobileView()) {
-                    // En móviles, alternar la visibilidad completa encima del contenido
                     $('#sidebar').toggleClass('mobile-open');
                 } else {
-                    // En escritorio, colapsar dejando los iconos
                     $('#sidebar').toggleClass('collapsed');
                     $('#mainContent').toggleClass('expanded');
                     
-                    // Guardar estado en localStorage solo para escritorio
                     var isCollapsed = $('#sidebar').hasClass('collapsed');
                     localStorage.setItem('sidebarCollapsed', isCollapsed);
                 }
             });
             
-            // La restauración inicial del estado del sidebar se movió a un script síncrono
-            // arriba en el HTML principal del _Layout para evitar parpadeos visuales.
-            
-            // Manejo responsivo en móvil al redimensionar ventana
             function handleMobile() {
                 if (isMobileView()) {
-                    $('#sidebar').removeClass('collapsed'); // no se usa colapsado en movil
+                    $('#sidebar').removeClass('collapsed');
                     $('#mainContent').removeClass('expanded');
                 } else {
-                    // si redimensionamos hacia arriba, y no estaba colapsado en movil, esconder
                     $('#sidebar').removeClass('mobile-open');
                 }
             }

@@ -416,7 +416,7 @@
 .consult-container {
     /*max-width: 1050px;
     margin: 0 auto; */
-    padding: 1.5rem 1rem;
+    padding: 0 1rem 1.5rem 1rem;
 }
 
 .consult-heading {
