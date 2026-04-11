@@ -152,14 +152,8 @@ services:
     container_name: simar_manifiestos_api
     ports:
       - "8007:8007"
-    environment:
-      - NODE_ENV=production
-      - PORT=8007
-      - DB_HOST=mysql_manifiestos
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=Simar123!
-      - DB_NAME=simar_manifiestos_db
+    env_file:
+      - ./servicios/API_MANIFEST/.env
     depends_on:
       mysql_manifiestos:
         condition: service_healthy
@@ -200,8 +194,8 @@ services:
     image: mysql:8.0
     container_name: simar_mysql_manifiestos
     environment:
-      - MYSQL_ROOT_PASSWORD=Simar123!
-      - MYSQL_DATABASE=simar_manifiestos_db
+      - MYSQL_ROOT_PASSWORD=${MANIFEST_DB_PASSWORD}
+      - MYSQL_DATABASE=${MANIFEST_DB_NAME}
     ports:
       - "8011:3306"
     volumes:

@@ -5,6 +5,9 @@
     var m = Model.Manifest;
     bool esEspecial = m.Type == "especial";
     string sHdr = esEspecial ? "consult-section-header especial" : "consult-section-header peligroso";
+    var fechaEmision = esEspecial
+        ? (m.ManifestDate?.ToString("dd/MM/yyyy") ?? "–")
+        : (m.GeneratorSignDate?.ToString("dd/MM/yyyy") ?? "–");
 }
 
 <div class="consult-container">
@@ -38,11 +41,12 @@
         <div class="ms-auto d-flex gap-2">
             @if (m.Status == ManifestStatus.EnTransito)
             {
-                <a asp-page="/Manifest/Consult/Register"
-                   asp-route-id="@m.Id"
-                   class="btn-simar-primary">
-                    Registrar Firma
-                </a>
+                <button type="button"
+                        class="btn-simar-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalRegistrarFirma">
+                    <i class="bi bi-pen"></i> Registrar Firma
+                </button>
             }
             @if (m.Status == ManifestStatus.Borrador)
             {
@@ -462,6 +466,88 @@
     </div>
 </div>
 
+@if (m.Status == ManifestStatus.EnTransito)
+{
+    <!-- MODAL: Registrar Firma -->
+    <div class="modal fade" id="modalRegistrarFirma" tabindex="-1" aria-labelledby="modalRegistrarFirmaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header @(esEspecial ? "especial" : "peligroso") register-card-header">
+                    <h5 class="modal-title" id="modalRegistrarFirmaLabel">Subir manifiesto firmado</h5>
+                    <span class="badge-simar @(esEspecial ? "badge-simar-especial" : "badge-simar-peligroso") ms-2">
+                        @(esEspecial ? "Especial" : "Peligroso")
+                    </span>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="info-summary @(esEspecial ? "especial" : "peligroso") mb-3">
+                        <div class="row">
+                            <div class="col-sm-6 mb-2">
+                                <strong>Folio:</strong><br />@m.ManifestNumber
+                            </div>
+                            <div class="col-sm-6 mb-2">
+                                <strong>Fecha base:</strong><br />@fechaEmision
+                            </div>
+                            <div class="col-sm-12">
+                                <strong>Generador:</strong><br />@m.SocialReason
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="formRegistrarFirma" method="post" enctype="multipart/form-data" asp-page-handler="Register">
+                        <input type="hidden" name="RegisterInput.Id" value="@m.Id" />
+
+                        <div class="mb-3">
+                            <label for="RegisterInput_SignedDate" class="form-label-sm">Fecha de firma / recepción final</label>
+                            <input type="date"
+                                   id="RegisterInput_SignedDate"
+                                   name="RegisterInput.SignedDate"
+                                   class="form-control"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-sm">Manifiesto firmado y sellado (PDF)</label>
+                            <div class="file-drop-area"
+                                 id="dropAreaModal"
+                                 onclick="document.getElementById('file-upload-modal').click()"
+                                 ondragover="event.preventDefault(); this.classList.add('dragover')"
+                                 ondragleave="this.classList.remove('dragover')"
+                                 ondrop="handleDropModal(event)">
+                                <div class="file-drop-icon">📄</div>
+                                <div>Haz clic o arrastra aquí el PDF firmado</div>
+                                <div class="form-hint mt-1">Solo PDF · máx. 10 MB</div>
+                                <div id="file-name-display-modal"></div>
+                            </div>
+                            <input type="file"
+                                   name="RegisterInput.SignedFile"
+                                   id="file-upload-modal"
+                                   class="d-none"
+                                   accept=".pdf"
+                                   onchange="onFileSelectedModal(this)" />
+                        </div>
+
+                        <div id="pdf-preview-modal" style="display:none;" class="mb-3">
+                            <span class="form-label-sm">Vista previa del archivo seleccionado</span>
+                            <iframe id="pdf-preview-frame-modal"
+                                    style="width:100%; height:420px; border:1px solid #c8d6e3; border-radius:8px; margin-top:0.4rem;"
+                                    title="Vista previa"></iframe>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formRegistrarFirma" class="btn-simar-primary">
+                        <i class="bi bi-check2-circle"></i> Guardar firma y marcar como completado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @functions {
     static string D(string? s) => string.IsNullOrWhiteSpace(s) ? "–" : s;
 }
@@ -475,5 +561,49 @@
         body.style.display = isOpen ? 'none' : '';
         chevron.textContent = isOpen ? '▼' : '▲';
     }
+
+    function handleDropModal(event) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('dragover');
+        const file = event.dataTransfer.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') {
+            alert('Solo se permiten archivos PDF.');
+            return;
+        }
+        const input = document.getElementById('file-upload-modal');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        showPreviewModal(file);
+    }
+
+    function onFileSelectedModal(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showPreviewModal(file);
+    }
+
+    function showPreviewModal(file) {
+        const display = document.getElementById('file-name-display-modal');
+        if (display) display.textContent = file.name;
+
+        const preview = document.getElementById('pdf-preview-modal');
+        const frame = document.getElementById('pdf-preview-frame-modal');
+        if (preview && frame) {
+            frame.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+        }
+    }
+
+    // Limpiar preview al cerrar el modal
+    document.getElementById('modalRegistrarFirma')?.addEventListener('hidden.bs.modal', function () {
+        const input = document.getElementById('file-upload-modal');
+        if (input) input.value = '';
+        const display = document.getElementById('file-name-display-modal');
+        if (display) display.textContent = '';
+        const preview = document.getElementById('pdf-preview-modal');
+        if (preview) preview.style.display = 'none';
+    });
 </script>
 }

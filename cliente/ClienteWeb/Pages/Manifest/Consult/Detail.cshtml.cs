@@ -5,6 +5,9 @@ namespace ClienteWeb.Pages.Manifest.Consult;
 
 public class DetailModel : PageModel
 {
+    [BindProperty]
+    public RegisterViewModel RegisterInput { get; set; } = new();
+
     public ManifestDetailViewModel Manifest { get; private set; } = new();
 
     public IActionResult OnGet(string id)
@@ -14,6 +17,30 @@ public class DetailModel : PageModel
 
         Manifest = found;
         return Page();
+    }
+
+    public IActionResult OnPostRegister()
+    {
+        var found = SampleData.FirstOrDefault(m => m.Id == RegisterInput.Id);
+        if (found is null) return NotFound();
+
+        if (RegisterInput.SignedFile is null)
+            ModelState.AddModelError(nameof(RegisterInput.SignedFile), "Debes subir el PDF firmado.");
+
+        if (!ModelState.IsValid)
+        {
+            Manifest = found;
+            return Page();
+        }
+
+        found.Status = ManifestStatus.Completado;
+        found.SignedDate = RegisterInput.SignedDate;
+        found.SignedManifestFileName = RegisterInput.SignedFile!.FileName;
+
+        TempData["SuccessMessage"] =
+            $"El manifiesto {found.ManifestNumber} ha sido marcado como completado.";
+
+        return RedirectToPage(new { id = found.Id });
     }
 
     public IActionResult OnPostTransitar(string id)
