@@ -170,8 +170,18 @@ services:
     ports:
       - "8007:8007"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8007
+      - NODE_ENV=production
+      - PORT=8007
+      - DB_HOST=mysql_manifiestos
+      - DB_PORT=3306
+      - DB_USER=${MANIFEST_DB_USER}
+      - DB_PASSWORD=${MANIFEST_DB_PASSWORD}
+      - DB_NAME=${MANIFEST_DB_NAME}
+    depends_on:
+      mysql_manifiestos:
+        condition: service_healthy
+    volumes:
+      - manifiestos_uploads:/app/uploads/manifiestos
     networks:
       - simar_network
     restart: unless-stopped
@@ -211,6 +221,30 @@ services:
     volumes:
       - mysql_vehiculos_data:/var/lib/mysql
       - ./servicios/vehiculos_api/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  # ============================================
+  # BASE DE DATOS: MANIFIESTOS - MySQL
+  # ============================================
+  mysql_manifiestos:
+    image: mysql:8.0
+    container_name: simar_mysql_manifiestos
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MANIFEST_DB_PASSWORD}
+      - MYSQL_DATABASE=${MANIFEST_DB_NAME}
+      - MYSQL_USER=${MANIFEST_DB_USER}
+      - MYSQL_PASSWORD=${MANIFEST_DB_PASSWORD}
+    ports:
+      - "8011:3306"
+    volumes:
+      - mysql_manifiestos_data:/var/lib/mysql
+      - ./servicios/API_MANIFEST/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - simar_network
     restart: unless-stopped
@@ -309,6 +343,7 @@ services:
 volumes:
   mysql_vehiculos_data:
   mysql_manifiestos_data:
+  manifiestos_uploads:
   mongo_recolecciones_data:
   sqlserver_contratos_data:
   postgres_clientes_data:

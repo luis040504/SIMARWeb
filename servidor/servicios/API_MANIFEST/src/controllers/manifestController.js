@@ -18,7 +18,7 @@ const manifestController = {
             const data = await Manifest.findAll(filters);
             res.json({ success: true, data, count: data.length });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -29,7 +29,7 @@ const manifestController = {
             if (!manifest) return res.status(404).json({ success: false, message: 'Manifiesto no encontrado' });
             res.json({ success: true, data: manifest });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -39,7 +39,7 @@ const manifestController = {
             const manifest = await Manifest.create(req.body);
             res.status(201).json({ success: true, data: manifest });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -50,7 +50,7 @@ const manifestController = {
             if (!manifest) return res.status(404).json({ success: false, message: 'Manifiesto no encontrado' });
             res.json({ success: true, data: manifest });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -68,7 +68,7 @@ const manifestController = {
             if (!manifest) return res.status(404).json({ success: false, message: 'Manifiesto no encontrado' });
             res.json({ success: true, data: manifest });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -79,7 +79,7 @@ const manifestController = {
             if (!deleted) return res.status(404).json({ success: false, message: 'Manifiesto no encontrado' });
             res.json({ success: true, message: 'Manifiesto eliminado correctamente' });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -104,7 +104,7 @@ const manifestController = {
                 }
             });
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
 
@@ -126,7 +126,7 @@ const manifestController = {
             res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
             res.sendFile(filePath);
         } catch (err) {
-            res.status(500).json({ success: false, message: err.message });
+            res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     }
 };

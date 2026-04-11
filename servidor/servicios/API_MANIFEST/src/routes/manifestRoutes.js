@@ -33,10 +33,10 @@ const upload = multer({
 // ─── Rutas ────────────────────────────────────────────────────────────────────
 
 // CRUD principal
-router.get('/',    manifestController.getAll);
-router.get('/:id', manifestController.getById);
-router.post('/',   manifestController.create);
-router.put('/:id', manifestController.update);
+router.get('/',       manifestController.getAll);
+router.get('/:id',    manifestController.getById);
+router.post('/',      manifestController.create);
+router.put('/:id',    manifestController.update);
 router.delete('/:id', manifestController.delete);
 
 // Estado / firma

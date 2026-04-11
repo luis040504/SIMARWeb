@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 require('dotenv').config();
 
 const manifestRoutes = require('./routes/manifestRoutes');
@@ -11,13 +10,10 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // Middlewares de seguridad
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Servir PDFs firmados como archivos estáticos (cross-origin permitido)
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Rate limiting
 const limiter = rateLimit({
