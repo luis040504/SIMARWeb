@@ -19,6 +19,7 @@ services:
       - clientes_api
       - contratos_api
       - manifiestos_api
+      - empleados_api
     networks:
       - simar_network
     restart: unless-stopped
@@ -172,6 +173,26 @@ services:
       - simar_network
     restart: unless-stopped
 
+  # ============================================
+  # MICROSERVICIO: EMPLEADOS
+  # ============================================
+  empleados_api:
+    build:
+      context: ./servicios/API_Empleados
+      dockerfile: Dockerfile
+    container_name: simar_empleados_api
+    ports:
+      - "8008:8008"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8008 
+      - ConnectionStrings__DefaultConnection=Host=db_empleados;Database=${DB_POSTGRES_NAME};Username=${DB_POSTGRES_USER};Password=${DB_POSTGRES_PASSWORD}
+    depends_on:
+      - db_empleados
+    networks:
+      - simar_network
+    restart: unless-stopped
+
 
 # ============================================
   # BASES DE DATOS - MySQL
@@ -197,8 +218,8 @@ services:
       retries: 10
 
 # ============================================
-  # MONGODB - RECOLECCIONES
-  # ============================================
+# MONGODB - RECOLECCIONES
+# ============================================
   mongo_recolecciones:
     image: mongo:7
     container_name: simar_mongo_recolecciones
@@ -221,8 +242,8 @@ services:
       retries: 5
 
 # ============================================
-  # POSTGRESQL - CLIENTES
-  # ============================================
+# POSTGRESQL - CLIENTES
+# ============================================
   postgres_client_db:
     image: postgres:15-alpine
     container_name: simar_postgres_clientes
@@ -244,6 +265,24 @@ services:
       timeout: 5s
       retries: 5
 
+# ============================================
+# POSTGRES - EMPLEADOS
+# ============================================
+  db_empleados:
+    image: postgres:15-alpine
+    container_name: simar_db_empleados
+    environment:
+      - POSTGRES_USER=${DB_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${DB_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${DB_POSTGRES_NAME}
+    ports:
+      - "${DB_POSTGRES_PORT}:5432"
+    volumes:
+      - db_empleados_data:/var/lib/postgresql/data
+      - ./servicios/API_Empleados/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - simar_network
+    restart: unless-stopped
 
 # ============================================
 # VOLÚMENES
@@ -252,6 +291,7 @@ volumes:
   mysql_vehiculos_data:
   mongo_recolecciones_data:
   postgres_clientes_data:
+  db_empleados_data:
 
 # ============================================
 # REDES
