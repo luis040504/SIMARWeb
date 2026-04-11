@@ -20,6 +20,7 @@ services:
       - contratos_api
       - manifiestos_api
       - empleados_api
+      - facturacion_api
     networks:
       - simar_network
     restart: unless-stopped
@@ -207,6 +208,29 @@ services:
     restart: unless-stopped
 
   # ============================================
+  # MICROSERVICIO: FACTURACIÓN
+  # ============================================
+  facturacion_api:
+    build:
+      context: ./servicios/API_Billing
+      dockerfile: Dockerfile
+    container_name: simar_facturacion_api
+    ports:
+      - "8009:8009"
+    environment:
+      - PORT=8009
+      - MONGODB_HOST=mongo_facturacion
+      - MONGODB_PORT=27017
+      - MONGODB_USER=root
+      - MONGODB_PASSWORD=Simar123!
+      - MONGODB_DB=simar_facturacion_db
+    depends_on:
+      - mongo_facturacion
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # BASES DE DATOS - MySQL
   # ============================================  
 
@@ -273,6 +297,29 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # MONGODB - FACTURACIÓN
+  # ============================================
+  mongo_facturacion:
+    image: mongo:7
+    container_name: simar_mongo_facturacion
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
+      - MONGO_INITDB_DATABASE=simar_facturacion_db
+    ports:
+      - "8013:27017"
+    volumes:
+      - mongo_facturacion_data:/data/db
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -345,6 +392,7 @@ volumes:
   mysql_manifiestos_data:
   manifiestos_uploads:
   mongo_recolecciones_data:
+  mongo_facturacion_data:
   sqlserver_contratos_data:
   postgres_clientes_data:
   db_empleados_data:

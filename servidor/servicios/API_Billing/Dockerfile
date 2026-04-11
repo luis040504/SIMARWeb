@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Exponer el puerto de la aplicación
-EXPOSE 8008
+EXPOSE 8009
 
 # Comando para ejecutar la aplicación
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8008"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8009"]
