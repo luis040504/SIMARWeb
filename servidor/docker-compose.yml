@@ -19,6 +19,7 @@ services:
       - clientes_api
       - contratos_api
       - manifiestos_api
+      - empleados_api
     networks:
       - simar_network
     restart: unless-stopped
@@ -113,14 +114,27 @@ services:
   # ============================================
   clientes_api:
     build:
-      context: ./servicios/clientes_api
+      context: ./servicios/API_Clientes
       dockerfile: Dockerfile
     container_name: simar_clientes_api
     ports:
       - "8005:8005"
+    env_file:
+      - .env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8005
+      - DATABASE_CLIENT_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_client_db:5432/${POSTGRES_CLIENT_DB}
+    command: >
+      sh -c "
+        echo 'Esperando a PostgreSQL...';
+        until pg_isready -h postgres_client_db -U ${POSTGRES_USER}; do
+          sleep 2;
+        done;
+        echo 'Ejecutando migraciones...';
+        alembic upgrade head;
+        echo 'Iniciando servidor...';
+        uvicorn app.main:app --host 0.0.0.0 --port 8005"
+    depends_on:
+      - postgres_client_db
     networks:
       - simar_network
     restart: unless-stopped
@@ -138,6 +152,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8006
+      - ConnectionStrings__DefaultConnection=Server=sqlserver_contratos;Database=ContractsDB;User=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
+    depends_on:
+      - sqlserver_contratos
     networks:
       - simar_network
     restart: unless-stopped
@@ -152,19 +169,34 @@ services:
     container_name: simar_manifiestos_api
     ports:
       - "8007:8007"
-    env_file:
-      - ./servicios/API_MANIFEST/.env
-    depends_on:
-      mysql_manifiestos:
-        condition: service_healthy
-    volumes:
-      - manifiestos_uploads:/app/uploads/manifiestos
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8007
     networks:
       - simar_network
     restart: unless-stopped
 
+  # ============================================
+  # MICROSERVICIO: EMPLEADOS
+  # ============================================
+  empleados_api:
+    build:
+      context: ./servicios/API_Empleados
+      dockerfile: Dockerfile
+    container_name: simar_empleados_api
+    ports:
+      - "8008:8008"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8008
+      - ConnectionStrings__DefaultConnection=Host=db_empleados;Database=${DB_POSTGRES_NAME};Username=${DB_POSTGRES_USER};Password=${DB_POSTGRES_PASSWORD}
+    depends_on:
+      - db_empleados
+    networks:
+      - simar_network
+    restart: unless-stopped
 
-# ============================================
+  # ============================================
   # BASES DE DATOS - MySQL
   # ============================================  
 
@@ -183,29 +215,7 @@ services:
       - simar_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-
-  # ============================================
-  # BASE DE DATOS: MANIFIESTOS - MySQL
-  # ============================================
-  mysql_manifiestos:
-    image: mysql:8.0
-    container_name: simar_mysql_manifiestos
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MANIFEST_DB_PASSWORD}
-      - MYSQL_DATABASE=${MANIFEST_DB_NAME}
-    ports:
-      - "8011:3306"
-    volumes:
-      - mysql_manifiestos_data:/var/lib/mysql
-      - ./servicios/API_MANIFEST/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - simar_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 20s
       retries: 10
 
@@ -228,10 +238,70 @@ services:
       - simar_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 30s
       timeout: 10s
       retries: 5
+
+  # ============================================
+  # SQL SERVER - CONTRATOS
+  # ============================================
+  sqlserver_contratos:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: simar_sqlserver_contratos
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserver_contratos_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # POSTGRESQL - CLIENTES
+  # ============================================
+  postgres_client_db:
+    image: postgres:15-alpine
+    container_name: simar_postgres_clientes
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${POSTGRES_CLIENT_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_clientes_data:/var/lib/postgresql/data
+    networks:
+      - simar_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # POSTGRES - EMPLEADOS
+  # ============================================
+  db_empleados:
+    image: postgres:15-alpine
+    container_name: simar_db_empleados
+    environment:
+      - POSTGRES_USER=${DB_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${DB_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${DB_POSTGRES_NAME}
+    ports:
+      - "${DB_POSTGRES_PORT}:5432"
+    volumes:
+      - db_empleados_data:/var/lib/postgresql/data
+      - ./servicios/API_Empleados/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - simar_network
+    restart: unless-stopped
 
 # ============================================
 # VOLÚMENES
@@ -240,11 +310,13 @@ volumes:
   mysql_vehiculos_data:
   mysql_manifiestos_data:
   mongo_recolecciones_data:
-  manifiestos_uploads:
+  sqlserver_contratos_data:
+  postgres_clientes_data:
+  db_empleados_data:
 
-# ============================================
-# REDES
-# ============================================
+    # ============================================
+    # REDES
+    # ============================================
 networks:
   simar_network:
     driver: bridge
