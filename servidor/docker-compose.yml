@@ -221,7 +221,7 @@ services:
       - PORT=8009
       - MONGODB_HOST=mongo_facturacion
       - MONGODB_PORT=27017
-      - MONGODB_USER=root
+      - MONGODB_USER=facturacion_admin
       - MONGODB_PASSWORD=Simar123!
       - MONGODB_DB=simar_facturacion_db
     depends_on:
@@ -308,7 +308,7 @@ services:
     image: mongo:7
     container_name: simar_mongo_facturacion
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_USERNAME=facturacion_admin
       - MONGO_INITDB_ROOT_PASSWORD=Simar123!
       - MONGO_INITDB_DATABASE=simar_facturacion_db
     ports:
