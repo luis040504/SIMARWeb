@@ -217,13 +217,15 @@ services:
     container_name: simar_facturacion_api
     ports:
       - "8009:8009"
+    env_file:
+      - ./servicios/API_Billing/.env
     environment:
       - PORT=8009
       - MONGODB_HOST=mongo_facturacion
       - MONGODB_PORT=27017
-      - MONGODB_USER=facturacion_admin
-      - MONGODB_PASSWORD=Simar123!
-      - MONGODB_DB=simar_facturacion_db
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - MONGODB_DB=${MONGODB_DB}
     depends_on:
       - mongo_facturacion
     networks:
