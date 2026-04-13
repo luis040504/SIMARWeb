@@ -6,92 +6,226 @@
 
 @if (TempData["Mensaje"] != null)
 {
-    <div class="alerta-exito">
+    <div class="card-simar-subtle text-simar-green" style="padding:10px; text-align:center;">
         @TempData["Mensaje"]
     </div>
 }
 
-<h2>Clientes Registrados</h2>
-
 <style>
-    .btn-accion {
-        padding: 6px 22px;
-        border-radius: 5px;
-        background-color: green;
-        color: white;
-        text-decoration: none;
-        font-size: 12px;
+
+    /* Tabla mejorada */
+    .table-custom {
+        background: white;
+        border-radius: 16px;
+        overflow: visible;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
-    .btn-desactivate {
-        padding: 6px 12px;
-        border-radius: 5px;
-        background-color: red;
-        color: white;
-        text-decoration: wavy;
-        font-size: 12px;
-        margin-left: 35px;
+        .table-custom thead th {
+            background: var(--simar-gray-light);
+            color: var(--simar-dark);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--simar-green);
+            padding: 1rem;
+        }
+
+        .table-custom tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--simar-border);
+        }
+
+        .table-custom tbody tr:hover {
+            background: rgba(90, 173, 49, 0.03);
+        }
+
+        .table-custom table {
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+    /* Barra de búsqueda */
+    .search-box {
+        border: 1px solid var(--simar-border);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.2s;
     }
 
-    .btn-activate {
-        padding: 6px 12px;
-        border-radius: 5px;
-        background-color: greenyellow;
-        color: black;
-        text-decoration: wavy;
-        font-size: 12px;
-        margin-left: 35px;
+        .search-box:focus-within {
+            border-color: var(--simar-green);
+            box-shadow: 0 0 0 2px rgba(90, 173, 49, 0.2);
+        }
+
+        .search-box input {
+            border: none;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+
+            .search-box input:focus {
+                box-shadow: none;
+            }
+
+        .search-box button {
+            background: white;
+            border: none;
+            color: var(--simar-dark);
+            padding: 0.6rem 1.2rem;
+        }
+
+            .search-box button:hover {
+                background: var(--simar-green);
+                color: white;
+            }
+
+    .top-bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
-    .btn-edit {
-        padding: 6px 12px;
-        border-radius: 5px;
-        background-color: yellow;
-        color: black;
-        text-decoration: wavy;
-        font-size: 12px;
-    }
-
-    .btn-accion:hover {
-        background-color: #757575;
-    }
-
-    .alerta-exito {
-        background-color: #4CAF50;
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        text-align: center;
-    }
-
-    .buscador {
-        flex: 1;
+    /* 🔎 Buscador (más grande) */
+    .search-container {
+        flex: 2;
         min-width: 250px;
+    }
+
+    /* 🔽 Combo (tamaño controlado) */
+    .select-container {
+        flex: 1;
+        max-width: 220px;
+    }
+
+    /* ➕ Botón (compacto) */
+    .btn-container {
+        flex: 0;
+    }
+
+    /* Ajuste visual del select */
+    .form-select-simar {
+        width: 100%;
+        padding: 0.55rem 0.9rem;
+        border-radius: 10px;
+    }
+
+    /* Botón más consistente */
+    .btn-simar-primary {
+        white-space: nowrap;
+        padding: 0.55rem 1rem;
+    }
+
+    .dropdown-item-simar-desactivar {
+        background: var(--simar-white);
+        color: green;
+    }
+
+    .status-activo {
+        color: #2e7d32; /* verde */
+        font-weight: 600;
+    }
+
+    .status-inactivo {
+        color: #c62828; /* rojo */
+        font-weight: 600;
+    }
+
+    .modal-simar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .modal-content-registro {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .seccion-paso {
+        display: none;
+    }
+
+        .seccion-paso.activa {
+            display: block;
+        }
+
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .modal-scrollable {
+        max-height: 70vh;
+        overflow-y: auto;
     }
 </style>
 
-<div style="margin-bottom:20px; display:flex; gap:10px;"> 
-    
-    <!-- Barra de búsqueda -->
-    <input type="text" placeholder="Buscar cliente..." class="campo-entrada buscador" />
+<h2 class="fw-semibold" style="color: var(--simar-dark);">
+    <i class="bi bi-person-badge me-3" style="color: var(--simar-green);"></i>
+    Clientes Resgistrados
+</h2>
 
-    <!-- Combo de orden -->
-    <select class="campo-entrada">
-        <option>Ordenar por</option>
-        <option>Nombre</option>
-        <option>Fecha de registro</option>
-        <option>Status</option>
-    </select>
 
-    <!-- Boton registrar cliente -->
-    <a class="btn-accion" asp-page="ClientRegister">+ Nuevo Registro</a> |
+<div class="top-bar">
+
+    <!-- 🔎 Buscador -->
+    <div class="search-container">
+        <form method="get" class="d-flex gap-2">
+            <div class="search-box flex-grow-1">
+                <div class="d-flex">
+                    <input type="text" name="Search" class="form-control"
+                           placeholder="Buscar por nombre, Email, telefono..."
+                           value="@Model.Search">
+
+                    <button type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Search))
+            {
+                <a asp-page="Index" class="btn-simar-outline">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            }
+        </form>
+    </div>
+
+    <!-- 🔽 Combo -->
+    <div class="select-container">
+        <select class="form-select-simar">
+            <option>Ordenar por</option>
+            <option>Nombre</option>
+            <option>Fecha de registro</option>
+            <option>Status</option>
+        </select>
+    </div>
+
+    <!-- ➕ Botón -->
+    <div class="btn-container">
+        <a class="btn-simar-primary" data-bs-toggle="modal" data-bs-target="#modalRegistro">
+            <i class="bi bi-plus-lg"></i> Nuevo Cliente
+        </a>
+    </div>
 
 </div>
 
-<table style="width:100%; border-collapse:collapse;">
-    <thead>
-        <tr style="background-color:#f0f0f0;">
+<div class="table-responsive-custom">
+    <table class="table-custom w-100">
+
+        <thead>
             <th>ID</th>
             <th>Nombre</th>
             <th>Email</th>
@@ -99,58 +233,351 @@
             <th>Fecha Registro</th>
             <th>Estatus</th>
             <th>Acciones</th>
-        </tr>
-    </thead>
+        </thead>
 
-    <tbody>
-        @foreach (var cliente in Model.Clientes)
-        {
-            <tr id="cliente-@cliente.Id">
-                <td>@cliente.Id</td>
-                <td>@cliente.Name</td>
-                <td>@cliente.Email</td>
-                <td>@cliente.PhoneNumber</td>
-                <td>@cliente.RegisterDate.ToShortDateString()</td>
-                <td class="status">@cliente.Status</td>
+        <tbody>
+            @foreach (var cliente in Model.Clientes)
+            {
+                <tr id="cliente-@cliente.Id"
+                    data-email="@cliente.Email"
+                    data-username="@cliente.UserName"
+                    data-password="@cliente.Password"
+                    data-nombre="@cliente.Name"
+                    data-telefono="@cliente.PhoneNumber"
+                    data-direccion="@cliente.Address"
+                    data-rfc="@cliente.RFC"
+                    data-fecha="@cliente.RegisterDate.ToShortDateString()"
+                    data-semarnat="@cliente.SemarnatGeneratedNumber"
+                    data-status="@cliente.Status"
+                    data-certificado="@cliente.SatCertificateUrl">
 
-                <td>
-                    <a class="btn-edit" asp-page="EditClient" asp-route-id="@cliente.Id">
-                        <i class="bi bi-pencil"></i> Editar
-                    </a> |
+                    <td>@cliente.Id</td>
+                    <td>@cliente.Name</td>
+                    <td>@cliente.Email</td>
+                    <td>@cliente.PhoneNumber</td>
+                    <td>@cliente.RegisterDate.ToShortDateString()</td>
+                    <td class="status
+                        @(cliente.Status == "Activo" ? "status-activo" : "status-inactivo")">
+                        @cliente.Status
+                    </td>
 
-                    
-                    <a class="btn-accion" asp-page="ConsultedClient" asp-route-id="@cliente.Id">
-                        <i class="bi-eye"></i> Ver más
-                    </a>
+                    <td>
 
-                    @if (cliente.Status == "Activo")
-                    {
-                        <button class="btn-desactivate" type="button" onclick="confirmarAccion(@cliente.Id, 'desactivar')">
-                            <i class="bi bi-person-x"></i> Desactivar
-                        </button>
-                    }
-                    else
-                    {
-                        <button class="btn-activate" type="button" onclick="confirmarAccion(@cliente.Id, 'activar')">
-                            <i class="bi bi-person-check"></i> Activar
-                        </button>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                        <div class="dropdown">
+                            <button class="btn btn-sm rounded-circle" style="background: transparent; border: 1px solid var(--simar-border); width: 32px; height: 32px;" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
 
-<div id="modalDesactivar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+                            <ul class="dropdown-menu">
 
-    <div style="background:white; padding:25px; border-radius:10px; text-align:center; width:300px;">
+                                <!-- Editar -->
+                                <li>
+                                    <a class="dropdown-item btn-edit"
+                                       onclick="abrirModalEditar(@cliente.Id)">
+                                        <i class="bi bi-pencil me-2"></i> Editar
+                                    </a>
+                                </li>
+
+                                <!-- Ver más -->
+                                <li>
+                                    <a class="dropdown-item btn-details"
+                                       onclick="verDetalleCliente(@cliente.Id)">
+                                        <i class="bi bi-eye me-2"></i> Ver más
+                                    </a>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <!-- Activar / Desactivar -->
+                                @if (cliente.Status == "Activo")
+                                {
+                                    <li>
+                                        <button class="dropdown-item text-danger btn-delete"
+                                                onclick="confirmarAccion(@cliente.Id, 'desactivar')">
+                                            <i class="bi bi-person-x me-2"></i> Desactivar
+                                        </button>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li>
+                                        <button class="dropdown-item-simar-desactivar"
+                                                onclick="confirmarAccion(@cliente.Id, 'activar')">
+                                            <i class="bi bi-person-check me-2"></i> Activar
+                                        </button>
+                                    </li>
+                                }
+
+                            </ul>
+                        </div>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div id="modalDesactivar" class="modal-simar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+
+    <div class="card-simar" style="padding:25px; text-align:center; width:300px;">
         <p id="mensajeModal"></p>
 
-        <button onclick="ejecutarAccion()" class="btn">Confirmar</button>
-        <button onclick="cerrarModal()" class="btn">Cancelar</button>
+        <button onclick="ejecutarAccion()" class="btn-simar-primary">Confirmar</button>
+        <button onclick="cerrarModal()" class="btn-simar-outline">Cancelar</button>
     </div>
 
 </div>
+
+
+<!-- Modal Registrar Cliente -->
+<div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+
+            <!-- HEADER -->
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>Registrar Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- FORM -->
+            <form method="post" id="registroForm">
+
+                <!-- BODY -->
+                <div class="modal-body">
+
+                    <!-- PASO 1 -->
+                    <div id="paso1" class="seccion-paso activa">
+                        <input type="email" name="Email" class="form-control mb-3" placeholder="E-MAIL" required />
+                        <input type="text" name="UserName" class="form-control mb-3" placeholder="USERNAME" required />
+                        <input type="password" name="Password" class="form-control mb-3" placeholder="PASSWORD" required />
+
+                        <div class="text-center mb-3">
+                            <span class="badge bg-secondary">Paso 1 de 3</span>
+                        </div>
+
+                        <button type="button" class="btn-simar-primary w-100" onclick="irAPaso(2)">
+                            Siguiente
+                        </button>
+                    </div>
+
+                    <!-- PASO 2 -->
+                    <div id="paso2" class="seccion-paso">
+                        <input type="text" name="Name" class="form-control mb-3" placeholder="NOMBRE COMPLETO" />
+                        <input type="text" name="Address" class="form-control mb-3" placeholder="DIRECCION" />
+                        <input type="text" name="PhoneNumber" class="form-control mb-3" placeholder="TELEFONO" />
+                        <input type="text" name="RFC" class="form-control mb-3" placeholder="RFC" />
+                        <input type="text" name="SemarnatNumber" class="form-control mb-3" placeholder="NUMERO DE SEMARNAT" />
+
+                        <div class="text-center mb-3">
+                            <span class="badge bg-secondary">Paso 2 de 3</span>
+                        </div>
+
+                        <button type="button" class="btn-simar-primary w-100 mb-2" onclick="irAPaso(3)">
+                            Siguiente
+                        </button>
+                        <button type="button" class="btn-simar-outline w-100" onclick="irAPaso(1)">
+                            Regresar
+                        </button>
+                    </div>
+
+                    <!-- PASO 3 -->
+                    <div id="paso3" class="seccion-paso">
+
+                        <label class="form-label">Subir Certificado</label>
+                        <input type="file" class="form-control mb-3">
+
+                        <div class="text-center mb-3">
+                            <span class="badge bg-secondary">Paso 3 de 3</span>
+                        </div>
+
+                        <button type="submit" class="btn-simar-primary w-100 mb-2">
+                            Finalizar
+                        </button>
+                        <button type="button" class="btn-simar-outline w-100" onclick="irAPaso(2)">
+                            Regresar
+                        </button>
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Detalle Cliente -->
+<div class="modal fade" id="modalDetalle" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <!-- HEADER -->
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-lines-fill me-2"></i>Detalle del Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- BODY -->
+            <div class="modal-body modal-scrollable">
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <strong>Email:</strong>
+                        <div id="detalleEmail"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Username:</strong>
+                        <div id="detalleUsername"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Nombre:</strong>
+                        <div id="detalleNombre"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Teléfono:</strong>
+                        <div id="detalleTelefono"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Dirección:</strong>
+                        <div id="detalleDireccion"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>RFC:</strong>
+                        <div id="detalleRFC"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Fecha Registro:</strong>
+                        <div id="detalleFecha"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Numero de Semarnat:</strong>
+                        <div id="detalleSemarnat"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        <div id="detalleStatus"></div>
+                    </div>
+
+                    <div class="campo">
+                        <strong>Certificado SAT:</strong>
+                        <a id="detalleCertificado" href="#" target="_blank">Descargar</a>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button class="btn-simar-outline" data-bs-dismiss="modal">Cerrar</button>
+
+                <a id="btnHistorial"
+                   class="btn-simar-primary">
+                    <i class="bi bi-clock-history"></i> Historial de servicios
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal editar cliente -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <!-- HEADER -->
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>Editar Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- BODY -->
+            <div class="modal-body">
+
+                <input type="hidden" id="editId" />
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <strong>Username:</strong>
+                        <input type="text" id="editUsername" class="form-control" placeholder="Username" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Correo electronico:</strong>
+                        <input type="text" id="editEmail" class="form-control" placeholder="Email" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Contraseña:</strong>
+                        <input type="text" id="editPassword" class="form-control" placeholder="Contraseña" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Nombre:</strong>
+                        <input type="text" id="editNombre" class="form-control" placeholder="Nombre" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Telefono:</strong>
+                        <input type="text" id="editTelefono" class="form-control" placeholder="Teléfono" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Direccion:</strong>
+                        <input type="text" id="editDireccion" class="form-control" placeholder="Dirección" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>RFC:</strong>
+                        <input type="text" id="editRFC" class="form-control" placeholder="RFC" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>Numero de Semarnat:</strong>
+                        <input type="text" id="editSemarnat" class="form-control" placeholder="SEMARNAT" />
+                    </div>
+
+                    <div class="col-12">
+                        <label>Certificado SAT</label>
+                        <input type="file" id="editCertificado" class="form-control" />
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button class="btn-simar-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button onclick="guardarEdicion()" class="btn-simar-primary">Guardar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 
 <!-- simulacion desactivacion -->
 <script>
@@ -178,27 +605,131 @@
 
             let fila = document.getElementById("cliente-" + clienteSeleccionado);
             let statusCell = fila.querySelector(".status");
-            let boton = fila.querySelector("button");
 
             if (tipoAccion === "desactivar") {
                 statusCell.innerText = "Inactivo";
-
-                boton.className = "btn-activate";
-                boton.innerHTML = '<i class="bi bi-person-check"></i> Activar';
-                boton.setAttribute("onclick", `confirmarAccion(${clienteSeleccionado}, 'activar')`);
-
                 alert("El cliente ha sido dado de baja");
             } else {
                 statusCell.innerText = "Activo";
-
-                boton.className = "btn-desactivate";
-                boton.innerHTML = '<i class="bi bi-person-x"></i> Desactivar';
-                boton.setAttribute("onclick", `confirmarAccion(${clienteSeleccionado}, 'desactivar')`);
-
                 alert("El cliente ha sido activado");
             }
 
             cerrarModal();
         }
+    }
+</script>
+
+<script>
+    function abrirModalRegistro() {
+        document.getElementById("modalRegistro").style.display = "flex";
+    }
+
+    function cerrarModalRegistro() {
+        document.getElementById("modalRegistro").style.display = "none";
+    }
+
+    // cerrar al hacer click fuera
+    window.onclick = function (e) {
+        let modal = document.getElementById("modalRegistro");
+        if (e.target === modal) {
+            cerrarModalRegistro();
+        }
+    }
+
+    function irAPaso(paso) {
+        document.querySelectorAll('.seccion-paso')
+            .forEach(s => s.classList.remove('activa'));
+
+        document.getElementById('paso' + paso)
+            .classList.add('activa');
+    }
+
+    function irAPaso(paso) {
+        document.querySelectorAll('.seccion-paso')
+            .forEach(s => s.classList.remove('activa'));
+
+        document.getElementById('paso' + paso)
+            .classList.add('activa');
+    }
+</script>
+
+<script>
+    function verDetalleCliente(id) {
+
+        let fila = document.getElementById("cliente-" + id);
+
+        let certificado = fila.getAttribute("data-certificado");
+
+        let link = document.getElementById("detalleCertificado");
+
+        if (certificado) {
+            link.href = certificado;
+            link.style.display = "inline";
+        } else {
+            link.style.display = "none";
+        }
+
+        document.getElementById("detalleEmail").innerText = fila.dataset.email;
+        document.getElementById("detalleUsername").innerText = fila.dataset.username;
+        document.getElementById("detalleNombre").innerText = fila.dataset.nombre;
+        document.getElementById("detalleTelefono").innerText = fila.dataset.telefono;
+        document.getElementById("detalleDireccion").innerText = fila.dataset.direccion;
+        document.getElementById("detalleRFC").innerText = fila.dataset.rfc;
+        document.getElementById("detalleFecha").innerText = fila.dataset.fecha;
+        document.getElementById("detalleSemarnat").innerText = fila.dataset.semarnat;
+        document.getElementById("detalleStatus").innerText = fila.dataset.status;
+
+        // botón historial
+        document.getElementById("btnHistorial").href = "/Client_SimarUser/Client/ServicesHistory/" + id;
+
+
+        let modal = new bootstrap.Modal(document.getElementById('modalDetalle'));
+        modal.show();
+    }
+</script>
+
+<script>
+    let filaActual = null;
+
+    function abrirModalEditar(id) {
+
+        filaActual = document.getElementById("cliente-" + id);
+
+        document.getElementById("editId").value = id;
+
+        document.getElementById("editNombre").value = filaActual.getAttribute("data-nombre");
+        document.getElementById("editUsername").value = filaActual.getAttribute("data-username");
+        document.getElementById("editPassword").value = filaActual.getAttribute("data-password");
+        document.getElementById("editEmail").value = filaActual.getAttribute("data-email");
+        document.getElementById("editTelefono").value = filaActual.getAttribute("data-telefono");
+        document.getElementById("editDireccion").value = filaActual.getAttribute("data-direccion");
+        document.getElementById("editRFC").value = filaActual.getAttribute("data-rfc");
+        document.getElementById("editSemarnat").value = filaActual.getAttribute("data-semarnat");
+
+        let modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+        modal.show();
+    }
+
+    function cerrarModalEditar() {
+        document.getElementById("modalEditar").style.display = "none";
+    }
+
+    function guardarEdicion() {
+
+        // Actualizar visualmente la tabla (simulación)
+        filaActual.querySelector("td:nth-child(2)").innerText = document.getElementById("editNombre").value;
+        filaActual.querySelector("td:nth-child(3)").innerText = document.getElementById("editEmail").value;
+        filaActual.querySelector("td:nth-child(4)").innerText = document.getElementById("editTelefono").value;
+
+        // Actualizar data-* (IMPORTANTE 🔥)
+        filaActual.setAttribute("data-nombre", document.getElementById("editNombre").value);
+        filaActual.setAttribute("data-email", document.getElementById("editEmail").value);
+        filaActual.setAttribute("data-telefono", document.getElementById("editTelefono").value);
+        filaActual.setAttribute("data-direccion", document.getElementById("editDireccion").value);
+        filaActual.setAttribute("data-rfc", document.getElementById("editRFC").value);
+        filaActual.setAttribute("data-semarnat", document.getElementById("editSemarnat").value);
+
+        alert("Cliente actualizado (simulado)");
+
     }
 </script>

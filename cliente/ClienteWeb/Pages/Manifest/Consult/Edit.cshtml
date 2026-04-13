@@ -1,83 +1,45 @@
-@page "/Manifest/Consult/Edit"
+@page "/Manifest/Consult/Edit/{id}"
 @model ClienteWeb.Pages.Manifest.Consult.EditModel
 @{
     ViewData["Title"] = $"Editar – {Model.Manifest.ManifestNumber}";
     var m = Model.Manifest;
     bool esEspecial = m.Type == "especial";
-    string hdrClass = esEspecial ? "section-header" : "section-header peligroso-hdr";
+    string hdrClass = esEspecial ? "consult-section-header especial" : "consult-section-header peligroso";
 }
-
-<style>
-    .edit-container { max-width: 1050px; margin: 0 auto; padding: 1.5rem 1rem; }
-
-    .edit-heading {
-        font-size: 1.3rem; font-weight: 700; color: #1a3a5c; margin: 0;
-        border-left: 4px solid #1a3a5c; padding-left: 0.75rem;
-    }
-
-    .edit-heading.peligroso { border-color: #7b2d2d; color: #7b2d2d; }
-
-    .badge-especial { background:#1a3a5c; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; }
-    .badge-peligroso { background:#7b2d2d; color:#fff; font-size:.72rem; padding:4px 10px; border-radius:20px; }
-
-    .section-card { border:1px solid #c8d6e3; border-radius:8px; margin-bottom:1rem; overflow:hidden; }
-    .section-card.peligroso { border-color:#ead0d0; }
-
-    .section-header {
-        background:#1a3a5c; color:#fff; font-size:.8rem; font-weight:700;
-        text-transform:uppercase; letter-spacing:.07em;
-        padding:.55rem 1rem; cursor:pointer;
-        display:flex; align-items:center; justify-content:space-between;
-    }
-
-    .section-header.peligroso-hdr { background:#7b2d2d; }
-
-    .section-body { padding:1rem 1.25rem; background:#fff; }
-
-    .form-label-sm {
-        font-size:.75rem; font-weight:600; color:#4a5568;
-        margin-bottom:2px; display:block;
-    }
-
-    .residue-row td { vertical-align: middle; }
-    .cretibm-check label { font-size:.72rem; margin-left:2px; }
-    .add-row-btn { font-size:.75rem; }
-    .del-row-btn { font-size:.72rem; padding:2px 7px; }
-</style>
 
 <form method="post">
     <input type="hidden" asp-for="Manifest.Id" />
     <input type="hidden" asp-for="Manifest.Type" />
     <input type="hidden" asp-for="Manifest.ManifestNumber" />
 
-    <div class="edit-container">
+    <div class="consult-container">
 
         <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
             <a asp-page="/Manifest/Consult/Detail"
                asp-route-id="@m.Id"
-               class="btn btn-outline-secondary btn-sm">← Volver</a>
+               class="btn-simar-outline-gray">← Volver</a>
 
-            <h1 class="edit-heading @(esEspecial ? "" : "peligroso")">
+            <h1 class="consult-heading @(esEspecial ? "especial" : "peligroso")">
                 Editar: @m.ManifestNumber
             </h1>
 
             @if (esEspecial)
             {
-                <span class="badge-especial">Residuos Especiales</span>
+                <span class="badge-simar badge-simar-especial">Residuos Especiales</span>
             }
             else
             {
-                <span class="badge-peligroso">Residuos Peligrosos</span>
+                <span class="badge-simar badge-simar-peligroso">Residuos Peligrosos</span>
             }
         </div>
 
         <!-- GENERADOR -->
-        <div class="section-card @(esEspecial ? "" : "peligroso")">
+        <div class="consult-section-card @(esEspecial ? "" : "peligroso")">
             <div class="@hdrClass" onclick="toggleSection(this)">
                 <span>👤 Datos del Generador</span><span class="chevron">▲</span>
             </div>
 
-            <div class="section-body">
+            <div class="consult-section-body">
                 <div class="row g-2">
                     <div class="col-md-6">
                         <label class="form-label-sm">No. Registro @(esEspecial ? "SEDEMA" : "SEMARNAT")</label>
@@ -182,12 +144,12 @@
         </div>
 
         <!-- RESIDUOS -->
-        <div class="section-card @(esEspecial ? "" : "peligroso")">
+        <div class="consult-section-card @(esEspecial ? "" : "peligroso")">
             <div class="@hdrClass" onclick="toggleSection(this)">
                 <span>Residuos</span><span class="chevron">▲</span>
             </div>
 
-            <div class="section-body p-2">
+            <div class="consult-section-body p-2">
                 @if (esEspecial)
                 {
                     <div class="table-responsive">
@@ -237,7 +199,7 @@
                         </table>
                     </div>
 
-                    <button type="button" class="btn btn-outline-primary btn-sm add-row-btn"
+                    <button type="button" class="btn-simar-outline add-row-btn"
                             onclick="addSpecialRow()">+ Agregar residuo</button>
                 }
                 else
@@ -326,19 +288,19 @@
                         </table>
                     </div>
 
-                    <button type="button" class="btn btn-outline-danger btn-sm add-row-btn"
+                    <button type="button" class="btn-simar-outline add-row-btn"
                             onclick="addHazardRow()">+ Agregar residuo peligroso</button>
                 }
             </div>
         </div>
 
         <!-- TRANSPORTISTA -->
-        <div class="section-card @(esEspecial ? "" : "peligroso")">
+        <div class="consult-section-card @(esEspecial ? "" : "peligroso")">
             <div class="@hdrClass" onclick="toggleSection(this)">
                 <span>Transportista</span><span class="chevron">▲</span>
             </div>
 
-            <div class="section-body">
+            <div class="consult-section-body">
                 <div class="row g-2">
                     <div class="col-md-5">
                         <label class="form-label-sm">No. Autorización</label>
@@ -462,12 +424,12 @@
         </div>
 
         <!-- DESTINATARIO -->
-        <div class="section-card @(esEspecial ? "" : "peligroso")">
+        <div class="consult-section-card @(esEspecial ? "" : "peligroso")">
             <div class="@hdrClass" onclick="toggleSection(this)">
                 <span>Destinatario / Disposición Final</span><span class="chevron">▲</span>
             </div>
 
-            <div class="section-body">
+            <div class="consult-section-body">
                 <div class="row g-2">
                     <div class="col-md-5">
                         <label class="form-label-sm">No. Autorización</label>
@@ -568,10 +530,10 @@
         <div class="d-flex justify-content-between mt-2 mb-4">
             <a asp-page="/Manifest/Consult/Detail"
                asp-route-id="@m.Id"
-               class="btn btn-outline-secondary btn-sm">Cancelar</a>
+               class="btn-simar-outline-gray">Cancelar</a>
 
-            <button type="submit" class="btn @(esEspecial ? "btn-primary" : "btn-danger") btn-sm px-4">
-                Guardar cambios
+            <button type="submit" class="btn-simar-primary">
+                <i class="bi bi-check2-circle"></i> Guardar cambios
             </button>
         </div>
     </div>

@@ -1,249 +1,170 @@
-﻿@*
-@page
-@model ClienteWeb.Pages.Client_SimarUser.SimarUser.UserSimarRegistrerModel
-*@
-@page "/registro"
+﻿@page "/registro"
 @model ClienteWeb.Pages.Client_SimarUser.SimarUser.UserSimarRegistrerModel
 @{
     ViewData["Title"] = "Registro de Usuario SIMAR";
 }
 
-<style>
-    .registro-wizard-contenedor {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 80vh;
-        background-color: #f4f4f4; /* Fondo gris claro */
-    }
+<div class="container-fluid-simar py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card-simar shadow-lg">
+                <div class="card-simar-header d-flex align-items-center py-3">
+                    <a asp-page="/Index" class="btn-simar-icon me-3 text-decoration-none" title="Volver al listado">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
 
-    .tarjeta-registro {
-        background-color: white;
-        padding: 40px;
-        border-radius: 20px;
-        width: 380px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-
-    .titulo-signup {
-        font-weight: 300;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 35px;
-        color: #333;
-    }
-
-    .campo-entrada {
-        border: none;
-        border-bottom: 1px solid #ccc;
-        width: 100%;
-        padding: 12px 0;
-        margin-bottom: 25px;
-        outline: none;
-        font-size: 14px;
-        transition: border-color 0.3s;
-    }
-
-        .campo-entrada:focus {
-            border-bottom: 1px solid #666;
-        }
-
-    .puntos-progreso {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        margin: 20px 0 30px 0;
-    }
-
-    .punto {
-        width: 10px;
-        height: 10px;
-        background-color: #e0e0e0;
-        border-radius: 50%;
-        transition: background-color 0.3s;
-    }
-
-        .punto.activo {
-            background-color: #a0a0a0;
-        }
-
-    .boton-siguiente {
-        background-color: #9e9e9e;
-        color: white;
-        border: none;
-        padding: 12px 45px;
-        border-radius: 25px;
-        cursor: pointer;
-        font-size: 14px;
-        text-transform: uppercase;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-
-        .boton-siguiente:hover {
-            background-color: #757575;
-        }
-
-    .boton-volver {
-        background: none;
-        border: none;
-        color: #999;
-        text-decoration: underline;
-        cursor: pointer;
-        font-size: 13px;
-        margin-top: 10px;
-        display: block;
-        width: 100%;
-    }
-
-    /* Ocultar secciones por defecto */
-    .seccion-paso {
-        display: none;
-    }
-
-        .seccion-paso.activa {
-            display: block;
-        }
-</style>
-
-<div class="registro-wizard-contenedor">
-    <div class="tarjeta-registro">
-        <h2 class="titulo-signup">Registro</h2>
-
-        <form method="post" id="registroForm">
-
-            <div id="paso1" class="seccion-paso activa">
-                <input type="email" asp-for="Input.Email" class="campo-entrada" placeholder="Correo" required />
-                <input type="text" asp-for="Input.UserName" class="campo-entrada" placeholder="Nombre de usuario" required />
-                <input type="password" asp-for="Input.Password" class="campo-entrada" placeholder="Contraseña" required />
-
-                <div class="puntos-progreso">
-                    <div class="punto activo"></div>
-                    <div class="punto"></div>
-                    <div class="punto"></div>
+                    <div class="text-start">
+                        <h4 class="text-simar-dark mb-0">REGISTRO DE PERSONAL</h4>
+                    </div>
                 </div>
 
-                <button type="button" class="boton-siguiente" onclick="irAPaso(2)">Next</button>
+                <div class="card-body p-4 p-md-5">
+                    <form method="post" id="registroForm">
+
+                        <div id="paso1" class="seccion-paso activa">
+                            <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">1. Credenciales de Acceso</h5>
+                            <div class="mb-3">
+                                <label class="form-label-simar" asp-for="Input.Email">Correo</label>
+                                <input asp-for="Input.Email" class="form-control-simar" placeholder="ejemplo@simar.com" />
+                                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label-simar" asp-for="Input.UserName">Nombre de Usuario</label>
+                                <input asp-for="Input.UserName" class="form-control-simar" placeholder="Username" />
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label-simar" asp-for="Input.Password">Contraseña</label>
+                                <input asp-for="Input.Password" type="password" class="form-control-simar" />
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="puntos-progreso">
+                                    <span class="badge-simar badge-simar-vehiculo">1</span>
+                                    <span class="badge-simar badge-simar-programada">2</span>
+                                    <span class="badge-simar badge-simar-programada">3</span>
+                                </div>
+                                <button type="button" class="btn-simar-primary" onclick="irAPaso(2)">Siguiente <i class="bi bi-arrow-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div id="paso2" class="seccion-paso d-none">
+                            <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">2. Información Personal</h5>
+
+                            <div class="mb-3">
+                                <label class="form-label-simar">Nombre Completo</label>
+                                <input asp-for="Input.NombreCompleto" class="form-control-simar" />
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="form-label-simar">CURP</label>
+                                    <input asp-for="Input.Curp" class="form-control-simar" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label-simar">RFC</label>
+                                    <input asp-for="Input.Rfc" class="form-control-simar" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label-simar">Domicilio Completo</label>
+                                <input asp-for="Input.Direccion" class="form-control-simar" />
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="form-label-simar">Salario Mensual (MXN)</label>
+                                    <input asp-for="Input.Salario" class="form-control-simar" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label-simar">Género</label>
+                                    <select asp-for="Input.Genero" class="form-select-simar">
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label-simar">Rol en SIMAR</label>
+                                <select asp-for="Input.RolSeleccionado" id="selectorRol" class="form-select-simar" onchange="mostrarCamposEspecificos()">
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Seller">Vendedor</option>
+                                    <option value="Technical">Técnico</option>
+                                    <option value="Driver">Chofer</option>
+                                    <option value="Manager">Gerente</option>
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn-simar-outline-gray" onclick="irAPaso(1)">Atrás</button>
+                                <button type="button" class="btn-simar-primary" onclick="irAPaso(3)">Siguiente</button>
+                            </div>
+                        </div>
+
+                        <div id="paso3" class="seccion-paso d-none">
+                            <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">3. Detalles Específicos</h5>
+
+                            <div id="camposProfesionales" class="filter-section-simar d-none">
+                                <h6 class="text-simar-dark">Información de Cédula</h6>
+                                <input asp-for="Input.ProfessionalID" class="form-control-simar" placeholder="Ingrese ID Profesional" />
+                            </div>
+
+                            <div id="camposDriver" class="filter-section-simar d-none">
+                                <h6 class="text-simar-dark">Licencia de Conducir</h6>
+                                <input asp-for="Input.NumLicencia" class="form-control-simar mb-2" placeholder="Número de licencia" />
+                                <select asp-for="Input.TipoLicencia" class="form-select-simar">
+                                    <option value="A">Tipo A (Auto)</option>
+                                    <option value="B">Tipo B (Carga)</option>
+                                    <option value="E">Tipo E (Residuos Peligrosos)</option>
+                                </select>
+                            </div>
+
+                            <div class="empty-state-simar py-4" id="noSelection">
+                                <i class="bi bi-info-circle"></i>
+                                <p>Por favor seleccione un rol en el paso anterior para ver los requisitos.</p>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-5">
+                                <button type="button" class="btn-simar-outline-gray" onclick="irAPaso(2)">Atrás</button>
+                                <button type="submit" class="btn-simar-primary">Finalizar Registro <i class="bi bi-check-all"></i></button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
             </div>
-
-            <div id="paso2" class="seccion-paso">
-                <input type="text" asp-for="Input.NombreCompleto" class="campo-entrada" placeholder="Nombre Completo" />
-
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" asp-for="Input.Curp" class="campo-entrada" placeholder="CURP" style="width: 50%;" />
-                    <input type="text" asp-for="Input.Rfc" class="campo-entrada" placeholder="RFC" style="width: 50%;" />
-                </div>
-
-                <input type="text" asp-for="Input.Direccion" class="campo-entrada" placeholder="Domicilio" />
-
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" asp-for="Input.Salario" class="campo-entrada" placeholder="Salario mensual" style="width: 50%;" />
-                    <input type="date" asp-for="Input.FechaNac" class="campo-entrada" style="width: 50%; color: #999;" />
-                </div>
-
-                <select asp-for="Input.Genero" class="campo-entrada">
-                    <option value="">-- Selecciona Género --</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Femenino">Femenino</option>
-                    <option value="Otro">Otro</option>
-                </select>
-
-                <select asp-for="Input.RolSeleccionado" id="selectorRol" class="campo-entrada" onchange="mostrarCamposEspecificos()">
-                    <option value="">-- Selecciona Rol --</option>
-                    <option value="Seller">Seller</option>
-                    <option value="Technical">Technical</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Owner">Owner</option>
-                    <option value="Accountant">Accountant</option>
-                    <option value="Driver">Driver</option>
-                </select>
-
-                <div class="puntos-progreso">
-                    <div class="punto"></div>
-                    <div class="punto activo"></div>
-                    <div class="punto"></div>
-                </div>
-
-                <button type="button" class="boton-siguiente" onclick="irAPaso(3)">Next</button>
-                <button type="button" class="boton-volver" onclick="irAPaso(1)">Back</button>
-            </div>
-
-            <div id="paso3" class="seccion-paso">
-
-                <div id="camposProfesionales" style="display:none;">
-                    <p style="font-size: 12px; color: #666;">DATOS REQUERIDOS PARA SU PUESTO</p>
-                    <input type="text" asp-for="Input.ProfessionalID" class="campo-entrada" placeholder="Profesional ID (Cédula))" />
-                </div>
-
-                <div id="camposDriver" style="display:none;">
-                    <p style="font-size: 12px; color: #666;">DATOS DE CONDUCCIÓN</p>
-                    <input type="text" asp-for="Input.NumLicencia" class="campo-entrada" placeholder="Número de licencia" />
-                    <select asp-for="Input.TipoLicencia" class="campo-entrada">
-                        <option value="">-- Tipo de Licencia --</option>
-                        <option value="A">Tipo A</option>
-                        <option value="B">Tipo B</option>
-                        <option value="C">Tipo C</option>
-                        <option value="D">Tipo D</option>
-                        <option value="E">Tipo E</option>
-                    </select>
-                </div>
-
-                <div class="puntos-progreso">
-                    <div class="punto"></div>
-                    <div class="punto"></div>
-                    <div class="punto activo"></div>
-                </div>
-
-                <button type="submit" class="boton-siguiente">Finish</button>
-                <button type="button" class="boton-volver" onclick="irAPaso(2)">Back</button>
-            </div>
-
-        </form>
+        </div>
     </div>
 </div>
 
 <script>
     function irAPaso(paso) {
-        document.querySelectorAll('.seccion-paso').forEach(s => s.classList.remove('activa'));
-        document.getElementById('paso' + paso).classList.add('activa');
+        document.querySelectorAll('.seccion-paso').forEach(s => s.classList.add('d-none'));
+        document.getElementById('paso' + paso).classList.remove('d-none');
+        window.scrollTo(0,0);
     }
 
     function mostrarCamposEspecificos() {
         const rol = document.getElementById('selectorRol').value;
-
-        // Ocultar todos
-        document.getElementById('camposChofer').style.display = 'none';
-        document.getElementById('camposTecnico').style.display = 'none';
-        document.getElementById('camposVendedor').style.display = 'none';
-        document.getElementById('msgAdmin').style.display = 'none';
-
-        // Mostrar según el valor
-        if (rol === "Chofer") document.getElementById('camposChofer').style.display = 'block';
-        else if (rol === "Tecnico") document.getElementById('camposTecnico').style.display = 'block';
-        else if (rol === "Vendedor") document.getElementById('camposVendedor').style.display = 'block';
-        else if (rol === "Admin") document.getElementById('msgAdmin').style.display = 'block';
-    }
-
-        function mostrarCamposEspecificos() {
-        const rol = document.getElementById('selectorRol').value;
-
         const listaProfesionales = ["Seller", "Technical", "Manager", "Owner", "Accountant"];
 
         const divProf = document.getElementById('camposProfesionales');
         const divDriver = document.getElementById('camposDriver');
+        const noSelection = document.getElementById('noSelection');
+
+        // Reset
+        divProf.classList.add('d-none');
+        divDriver.classList.add('d-none');
+        noSelection.classList.add('d-none');
 
         if (listaProfesionales.includes(rol)) {
-            divProf.style.display = 'block';  // Mostrar ID Profesional
-            divDriver.style.display = 'none'; // Ocultar Licencia
-        }
-        else if (rol === "Driver") {
-            divProf.style.display = 'none';   // Ocultar ID Profesional
-            divDriver.style.display = 'block';// Mostrar Licencia
-        }
-        else {
-            divProf.style.display = 'none';
-            divDriver.style.display = 'none';
+            divProf.classList.remove('d-none');
+        } else if (rol === "Driver") {
+            divDriver.classList.remove('d-none');
+        } else {
+            noSelection.classList.remove('d-none');
         }
     }
 </script>

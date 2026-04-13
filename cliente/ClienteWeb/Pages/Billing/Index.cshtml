@@ -1,0 +1,436 @@
+@page
+@model ClienteWeb.Pages.Billing.IndexModel
+@{
+    ViewData["Title"] = "Gestión de Facturación";
+}
+
+<div class="container-fluid-simar mt-4">
+    <!-- User Role Selector Simulator -->
+    <div class="card-simar mb-4 border-info">
+        <div class="card-body bg-light d-flex align-items-center justify-content-between rounded-3">
+            <div>
+                <h5 class="mb-0 text-info fw-bold"><i class="bi bi-person-badge me-2"></i> Simulador de Rol de Usuario</h5>
+                <small class="text-muted">Cambia el rol para ver las funcionalidades correspondientes.</small>
+            </div>
+            <form method="get" class="d-flex" id="roleForm">
+                <select class="form-select-simar border-info" name="Role" asp-for="Role" onchange="document.getElementById('roleForm').submit()">
+                    <option value="Admin">Administrador / Empleado</option>
+                    <option value="Client">Cliente Final</option>
+                </select>
+                <input type="hidden" name="ActiveTab" value="" />
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card-simar mb-4">
+        <div class="card-simar-header pb-0 border-bottom-0">
+            <ul class="nav nav-tabs border-bottom-0 pb-0">
+                @if (Model.Role == "Admin")
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.ActiveTab == "RecentServices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RecentServices">
+                            <i class="bi bi-file-earmark-text me-1"></i> Servicios Recientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.ActiveTab == "RejectedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RejectedInvoices">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Facturas Rechazadas
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.ActiveTab == "PendingInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="PendingInvoices">
+                            <i class="bi bi-clock-history me-1"></i> Facturas Pendientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.ActiveTab == "AcceptedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="AcceptedInvoices">
+                            <i class="bi bi-check-circle me-1"></i> Facturas Aceptadas
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="card-body p-4 pt-4">
+
+            <!-- Search Bar -->
+            <form method="post" asp-page-handler="Search" class="mb-4">
+                <input type="hidden" asp-for="Role" />
+                <input type="hidden" asp-for="ActiveTab" />
+                <div class="row align-items-end g-3">
+                    <div class="col-md-9">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control-simar border-start-0" asp-for="SearchQuery" placeholder="Buscar por RFC, Nombre de Cliente o Número de Factura...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-simar-primary w-100 h-100 d-flex justify-content-center align-items-center">
+                            <i class="bi bi-search me-2"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            @if (Model.IsSearchResult)
+            {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-simar-green fw-bold mb-0 fs-4">
+                        <i class="bi bi-funnel me-2"></i> Resultados de la Búsqueda
+                    </h5>
+                    <a asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="@Model.ActiveTab" class="btn btn-simar-outline-gray">Limpiar Búsqueda</a>
+                </div>
+            }
+
+            <div class="row g-4">
+                @if (Model.DisplayedRecords != null && Model.DisplayedRecords.Any())
+                {
+                    foreach (var record in Model.DisplayedRecords)
+                    {
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="card-simar-subtle h-100">
+                                <div class="card-body p-4 position-relative d-flex flex-column h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title text-dark fw-semibold text-truncate mb-0" title="@record.ClientName">@record.ClientName</h5>
+                                        @if (record.RecordType == "Invoice")
+                                        {
+                                            <span class="badge @(record.Status == "Accepted" ? "bg-success" : (record.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")) border badge-simar">@record.InvoiceNumber</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark border badge-simar">ID: @record.Id</span>
+                                        }
+                                    </div>
+                                    <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong class="text-simar-dark">@record.TaxId</strong></p>
+                                    
+                                    @if(record.RecordType == "Service")
+                                    {
+                                        <p class="card-text mb-2"><small class="text-muted">Tipo:</small> <span class="badge bg-secondary badge-simar">@record.ServiceType</span></p>
+                                    }
+                                    else
+                                    {
+                                        @if(!string.IsNullOrEmpty(record.Reason))
+                                        {
+                                            <p class="card-text mb-2"><small class="text-muted">Motivo:</small> <span class="badge bg-warning text-dark badge-simar">@record.Reason</span></p>
+                                        }
+                                    }
+
+                                    <p class="card-text mb-3"><small class="text-muted">Fecha:</small> @record.Date.ToString("dd/MM/yyyy")</p>
+                                    <h4 class="card-text text-simar-green mt-2 mb-4">@record.Amount.ToString("C")</h4>
+                                    
+                                    <div class="mt-auto">
+                                        @if (Model.Role == "Admin")
+                                        {
+                                            if (Model.ActiveTab == "RecentServices")
+                                            {
+                                                <form method="post" asp-page-handler="PrepareModal">
+                                                    <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
+                                                    <input type="hidden" asp-for="Role" />
+                                                    <input type="hidden" asp-for="ActiveTab" />
+                                                    <input type="hidden" asp-for="SearchQuery" />
+                                                    <input type="hidden" name="modalType" value="Generate" />
+                                                    <button type="submit" class="btn btn-simar-primary justify-content-center w-100 mb-2">
+                                                        <i class="bi bi-receipt"></i> Generar Factura
+                                                    </button>
+                                                </form>
+
+                                                <form method="post" asp-page-handler="UploadPhysicalInvoice" enctype="multipart/form-data">
+                                                    <input type="hidden" name="selectedRecordIdUpload" value="@record.Id" />
+                                                    <input type="hidden" asp-for="Role" />
+                                                    <input type="hidden" asp-for="ActiveTab" />
+                                                    <div class="d-grid">
+                                                        <label class="btn btn-simar-outline-gray justify-content-center w-100 mb-0" style="cursor: pointer;" for="upload_@record.Id">
+                                                            <i class="bi bi-upload"></i> Subir Física
+                                                        </label>
+                                                        <input type="file" id="upload_@record.Id" name="PhysicalInvoice" accept=".pdf" class="d-none" onchange="this.form.submit()" />
+                                                    </div>
+                                                </form>
+                                            }
+                                            else if (Model.ActiveTab == "RejectedInvoices")
+                                            {
+                                                <form method="post" asp-page-handler="PrepareModal">
+                                                    <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
+                                                    <input type="hidden" asp-for="Role" />
+                                                    <input type="hidden" asp-for="ActiveTab" />
+                                                    <input type="hidden" asp-for="SearchQuery" />
+                                                    <input type="hidden" name="modalType" value="Edit" />
+                                                    <button type="submit" class="btn btn-simar-secondary justify-content-center w-100">
+                                                        <i class="bi bi-pencil-fill"></i> Editar Factura
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                        else 
+                                        {
+                                            <div class="mb-2">
+                                                <form method="post" asp-page-handler="PrepareModal" class="w-100">
+                                                    <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
+                                                    <input type="hidden" asp-for="Role" />
+                                                    <input type="hidden" asp-for="ActiveTab" />
+                                                    <input type="hidden" asp-for="SearchQuery" />
+                                                    <input type="hidden" name="modalType" value="Details" />
+                                                    <button type="submit" class="btn btn-info text-white justify-content-center w-100 mb-2 d-inline-flex align-items-center gap-2" style="border-radius:10px;">
+                                                        <i class="bi bi-eye"></i> Ver Detalles
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            
+                                            <div>
+                                                <form method="post" class="w-100 d-flex justify-content-between gap-2">
+                                                    <input type="hidden" name="id" value="@record.Id" />
+                                                    <input type="hidden" asp-for="Role" />
+                                                    <input type="hidden" asp-for="ActiveTab" />
+                                                    @if (record.Status == "Pending")
+                                                    {
+                                                        <button type="submit" asp-page-handler="Accept" class="btn btn-simar-primary flex-fill justify-content-center flex-column px-1 py-2 text-center" style="font-size:0.8rem">
+                                                            <i class="bi bi-check-circle mb-1"></i> Aceptar
+                                                        </button>
+                                                        <button type="submit" asp-page-handler="Reject" class="btn btn-outline-danger flex-fill d-inline-flex flex-column align-items-center justify-content-center px-1 py-2" style="border-radius:10px; font-size:0.8rem" onclick="return confirm('¿Rechazar esta factura?');">
+                                                            <i class="bi bi-x-circle mb-1"></i> Rechazar
+                                                        </button>
+                                                    }
+                                                    else if (record.Status == "Accepted")
+                                                    {
+                                                        <button type="submit" asp-page-handler="Download" class="btn btn-simar-primary justify-content-center w-100">
+                                                            <i class="bi bi-download"></i> Descargar
+                                                        </button>
+                                                    }
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="empty-state-simar">
+                            <i class="bi bi-inboxes"></i>
+                            <h4>No se encontraron registros</h4>
+                            <p class="text-muted mb-0">Intenta cambiar los filtros de búsqueda o categoría.</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modals Container -->
+@if (Model.ActiveModal == "Generate" || Model.ActiveModal == "Edit")
+{
+    var modalTitle = Model.ActiveModal == "Generate" ? "Generar Factura" : "Editar Factura";
+    var iconClass = Model.ActiveModal == "Generate" ? "bi-check-circle-fill" : "bi-save-fill";
+    var handler = Model.ActiveModal == "Generate" ? "Generate" : "Edit";
+    var bgClass = Model.ActiveModal == "Generate" ? "bg-simar-light" : "bg-warning bg-opacity-10";
+    
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+    <div class="modal modal-simar fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <i class="bi bi-clipboard-data me-2"></i> @modalTitle
+                    </h4>
+                    <form method="get" class="m-0 p-0">
+                        <input type="hidden" asp-for="Role" />
+                        <input type="hidden" asp-for="ActiveTab" />
+                        <button type="submit" class="btn-close"></button>
+                    </form>
+                </div>
+                
+                <div class="@bgClass px-5 py-4 border-bottom">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <small class="text-uppercase fw-bold text-muted ls-1">@modalTitle para:</small>
+                            <h3 class="mb-0 mt-2 text-simar-dark fw-bold">@Model.SelectedRecord?.ClientName <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedRecord?.TaxId)</span></h3>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <h2 class="mb-0 fw-bold text-simar-green">@Model.SelectedRecord?.Amount.ToString("C")</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" asp-page-handler="@handler">
+                    <div class="modal-body modal-scrollable-simar p-5 pt-4">
+                        <input type="hidden" asp-for="SelectedRecordId" />
+                        <input type="hidden" asp-for="Role" />
+                        <input type="hidden" asp-for="ActiveTab" />
+                        <input type="hidden" asp-for="SearchQuery" />
+                        
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <div class="card-simar-subtle border-0">
+                                    <div class="card-body p-4">
+                                        <h5 class="card-subtitle mb-4 text-simar-dark fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-person-vcard text-simar-green me-3"></i>1. Información del Receptor
+                                        </h5>
+                                        <div class="row g-4">
+                                            <div class="col-md-4">
+                                                <label class="form-label form-label-simar">RFC</label>
+                                                <input type="text" class="form-control form-control-simar" asp-for="TaxId" readonly>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label class="form-label form-label-simar">Razón Social</label>
+                                                <input type="text" class="form-control form-control-simar" asp-for="BillingName" readonly>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label form-label-simar text-danger">Código Postal *</label>
+                                                <input type="text" class="form-control form-control-simar" asp-for="PostalCode" required maxlength="5">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label form-label-simar text-danger">Régimen Fiscal *</label>
+                                                <select class="form-select form-select-simar" asp-for="FiscalRegime" required>
+                                                    <option value="">-- Seleccione --</option>
+                                                    <option value="601">601 - General Ley Personas Morales</option>
+                                                    <option value="612">612 - Personas Físicas con Actividades</option>
+                                                    <option value="626">626 - RESICO</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label form-label-simar text-danger">Uso de CFDI *</label>
+                                                <select class="form-select form-select-simar" asp-for="CfdiUsage" required>
+                                                    <option value="">-- Seleccione --</option>
+                                                    <option value="G01">G01 - Adquisición mercancías</option>
+                                                    <option value="G03">G03 - Gastos en general</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="card-simar-subtle border-0">
+                                    <div class="card-body p-4">
+                                        <h5 class="card-subtitle mb-4 text-simar-dark fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-wallet2 text-simar-green me-3"></i>2. Atributos de Pago
+                                        </h5>
+                                        <div class="row g-4">
+                                            <div class="col-md-6">
+                                                <label class="form-label form-label-simar text-danger">Forma de Pago *</label>
+                                                <select class="form-select form-select-simar" asp-for="PaymentForm" required>
+                                                    <option value="">-- Seleccione --</option>
+                                                    <option value="01">01 - Efectivo</option>
+                                                    <option value="03">03 - Transferencia</option>
+                                                    <option value="04">04 - Tarjeta Crédito</option>
+                                                    <option value="99">99 - Por definir</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label form-label-simar text-danger">Método de Pago *</label>
+                                                <select class="form-select form-select-simar" asp-for="PaymentMethod" required>
+                                                    <option value="">-- Seleccione --</option>
+                                                    <option value="PUE">PUE - Pago una exhibición</option>
+                                                    <option value="PPD">PPD - Pago diferido</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
+                        <button type="submit" class="btn btn-simar-primary">
+                            <i class="bi @iconClass"></i> Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script> document.body.style.overflow = 'hidden'; </script>
+}
+else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
+{
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+    <div class="modal modal-simar fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
+         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <i class="bi bi-file-text"></i> Detalles de Factura: @Model.SelectedRecord.InvoiceNumber
+                    </h4>
+                    <form method="get" class="m-0 p-0">
+                        <input type="hidden" asp-for="Role" />
+                        <input type="hidden" asp-for="ActiveTab" />
+                        <button type="submit" class="btn-close"></button>
+                    </form>
+                </div>
+                <div class="modal-body modal-scrollable-simar p-4">
+                     <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card-simar-subtle h-100 border-0 p-3 bg-light">
+                                <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">Receptor</h6>
+                                <p class="mb-2"><strong class="text-simar-dark">RFC:</strong> @Model.SelectedRecord.TaxId</p>
+                                <p class="mb-2"><strong class="text-simar-dark">Nombre:</strong> @Model.SelectedRecord.ClientName</p>
+                                <p class="mb-2"><strong class="text-simar-dark">CP:</strong> @Model.SelectedRecord.PostalCode</p>
+                                <p class="mb-0"><strong class="text-simar-dark">Régimen:</strong> @Model.SelectedRecord.FiscalRegime</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card-simar-subtle h-100 border-0 p-3 bg-light">
+                                <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">Fiscal</h6>
+                                <p class="mb-2"><strong class="text-simar-dark">Uso CFDI:</strong> @Model.SelectedRecord.CfdiUsage</p>
+                                <p class="mb-2"><strong class="text-simar-dark">Forma Pago:</strong> @Model.SelectedRecord.PaymentForm</p>
+                                <p class="mb-0"><strong class="text-simar-dark">Método Pago:</strong> @Model.SelectedRecord.PaymentMethod</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between align-items-center">
+                    <div>
+                         <span class="badge @(Model.SelectedRecord.Status == "Accepted" ? "bg-success" : (Model.SelectedRecord.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")) fs-6 px-3 py-2 badge-simar">
+                             Estado: @(Model.SelectedRecord.Status == "Accepted" ? "Aceptada" : (Model.SelectedRecord.Status == "Rejected" ? "Rechazada" : "Pendiente"))
+                         </span>
+                    </div>
+                    <div>
+                        <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cerrar</a>
+                    </div>
+                </div>
+            </div>
+         </div>
+    </div>
+    <script> document.body.style.overflow = 'hidden'; </script>
+}
+
+<!-- Toasts -->
+<div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;">
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="toast align-items-center text-white bg-success border-0 shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius:15px;">
+            <div class="d-flex p-2">
+                <div class="toast-body fs-5 d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
+                    <span>@Model.StatusMessage</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .ls-1 { letter-spacing: 1px; }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            toastElList.forEach(toastEl => {
+                var toast = new bootstrap.Toast(toastEl, { delay: 6000 });
+                toast.show();
+            });
+        });
+    </script>
+}
