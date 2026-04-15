@@ -51,8 +51,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
             if (!string.IsNullOrEmpty(Search))
             {
                 allContracts = allContracts
-                    .Where(c => c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase)
-                             || c.Client.Contains(Search, StringComparison.OrdinalIgnoreCase))
+                    .Where(c => c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
 
