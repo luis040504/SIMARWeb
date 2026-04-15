@@ -21,6 +21,12 @@ namespace ClienteWeb.Pages.Contracts.Generate
 
         public bool ShowPreview { get; set; }
 
+        // --- PROPIEDADES PARA MOCKS DE ANEXOS (NUEVO) ---
+        public List<Anexo1Scope> Anexo1Items { get; set; } = new();
+        public List<Anexo2Payment> Anexo2Payments { get; set; } = new();
+        public List<Anexo3Schedule> Anexo3Steps { get; set; } = new();
+        public List<Anexo4Extra> Anexo4Extras { get; set; } = new();
+
         public void OnGet()
         {
             LoadQuotations();
@@ -43,6 +49,21 @@ namespace ClienteWeb.Pages.Contracts.Generate
                     Price = quotation.Price;
                     PaymentMethod = quotation.PaymentMethod;
                     Validity = quotation.Validity;
+                    
+                    // --- CARGAR DATOS INICIALES (MOCKS) ---
+                    Anexo1Items = new List<Anexo1Scope> {
+                        new Anexo1Scope { Residuo = "Aceite Usado", Servicio = "Recolección", Frecuencia = "Mensual" }
+                    };
+                    Anexo2Payments = new List<Anexo2Payment> {
+                        new Anexo2Payment { Concepto = "Anticipo", Monto = 5000m, Fecha = DateTime.Now.AddDays(5) }
+                    };
+                    Anexo3Steps = new List<Anexo3Schedule> {
+                        new Anexo3Schedule { Fase = "Instalación de Contenedores", Duracion = "1 Semana" }
+                    };
+                    Anexo4Extras = new List<Anexo4Extra> {
+                        new Anexo4Extra { Descripcion = "Maniobras de Carga", Costo = 800m, Cantidad = 1 }
+                    };
+
                     ShowPreview = true;
                 }
             }
@@ -84,6 +105,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
         }
     }
 
+    // Clases del modelo
     public class Quotation { public int Id { get; set; } public string Name { get; set; } = ""; }
     public class QuotationDetail {
         public int Id { get; set; }
@@ -96,4 +118,10 @@ namespace ClienteWeb.Pages.Contracts.Generate
         public string PaymentMethod { get; set; } = "";
         public string Validity { get; set; } = "";
     }
+
+    // --- CLASES PARA LOS ANEXOS (NUEVO) ---
+    public class Anexo1Scope { public string Residuo { get; set; } = ""; public string Servicio { get; set; } = ""; public string Frecuencia { get; set; } = ""; }
+    public class Anexo2Payment { public string Concepto { get; set; } = ""; public decimal Monto { get; set; } public DateTime Fecha { get; set; } }
+    public class Anexo3Schedule { public string Fase { get; set; } = ""; public string Duracion { get; set; } = ""; }
+    public class Anexo4Extra { public string Descripcion { get; set; } = ""; public decimal Costo { get; set; } public int Cantidad { get; set; } public decimal Total => Costo * Cantidad; }
 }
