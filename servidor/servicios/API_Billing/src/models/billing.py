@@ -16,6 +16,9 @@ class ReceiverModel(BaseModel):
     tax_id: str
     name: str
     tax_usage: str
+    postal_code: Optional[str] = None
+    fiscal_regime: Optional[str] = None
+    client_id: Optional[str] = None
 
 class FiscalDataModel(BaseModel):
     uuid: Optional[str] = None
@@ -32,7 +35,7 @@ class FinancialsModel(BaseModel):
     discount: float = 0.0
     tax_total: float
     total: float
-    payment_method: Literal["PUE", "PPD"]
+    payment_method: str
     payment_form: str
 
 class TaxModel(BaseModel):
@@ -42,6 +45,8 @@ class TaxModel(BaseModel):
 
 class ItemModel(BaseModel):
     product_code: str
+    unit_code: Optional[str] = None
+    tax_object: Optional[str] = None
     description: str
     quantity: float
     unit_price: float
@@ -57,6 +62,8 @@ class AttachmentsModel(BaseModel):
 class Billing(BaseModel):
     id: Optional[str] = Field(None, alias='_id')
     upload_type: Literal["DIGITAL", "PHYSICAL"]
+    record_type: Optional[str] = "Invoice"
+    service_type: Optional[str] = None
     metadata: MetadataModel
     issuer: IssuerModel
     receiver: ReceiverModel
@@ -64,7 +71,8 @@ class Billing(BaseModel):
     financials: FinancialsModel
     items: List[ItemModel]
     attachments: AttachmentsModel
-    status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL"]
+    status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
+    reason: Optional[str] = None
     activo: bool = True
     
     class Config:

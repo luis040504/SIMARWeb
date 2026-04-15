@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from datetime import datetime
 from bson import ObjectId
 from ..config.database import facturas_collection
@@ -22,10 +22,20 @@ class BillingController:
                 query["status"] = filtro.status
             if filtro.upload_type:
                 query["upload_type"] = filtro.upload_type
+            if filtro.record_type:
+                query["record_type"] = filtro.record_type
             if filtro.issuer_tax_id:
                 query["issuer.tax_id"] = {"$regex": filtro.issuer_tax_id, "$options": "i"}
             if filtro.receiver_tax_id:
                 query["receiver.tax_id"] = {"$regex": filtro.receiver_tax_id, "$options": "i"}
+            
+            if filtro.search_query:
+                regex_pattern = {"$regex": filtro.search_query, "$options": "i"}
+                query["$or"] = [
+                    {"receiver.name": regex_pattern},
+                    {"receiver.tax_id": regex_pattern},
+                    {"fiscal_data.invoice_folio": regex_pattern}
+                ]
                 
             if filtro.start_date or filtro.end_date:
                 query["fiscal_data.issue_date"] = {}
@@ -37,6 +47,13 @@ class BillingController:
         cursor = facturas_collection.find(query).sort("metadata.created_at", -1)
         facturas = await cursor.to_list(length=None)
         
+        return [Billing(**fac) for fac in facturas]
+    
+    @staticmethod
+    async def get_by_client_id(client_id: str):
+        """Obtener facturas por ID de cliente"""
+        cursor = facturas_collection.find({"receiver.client_id": client_id, "activo": True}).sort("metadata.created_at", -1)
+        facturas = await cursor.to_list(length=None)
         return [Billing(**fac) for fac in facturas]
     
     @staticmethod
@@ -107,3 +124,49 @@ class BillingController:
             raise HTTPException(status_code=404, detail="Factura no encontrada o ya estaba inactiva")
         
         return {"message": "Factura eliminada (soft delete) y marcada como CANCELLED correctamente"}
+
+    @staticmethod
+    async def change_status(billing_id: str, new_status: str, reason: str = None):
+        """Actualizar únicamente el status y la razón (ideal para Aceptar/Rechazar)"""
+        if not ObjectId.is_valid(billing_id):
+            raise HTTPException(status_code=400, detail="ID inválido")
+            
+        update_data = {"status": new_status, "metadata.updated_at": datetime.now()}
+        if reason is not None:
+            update_data["reason"] = reason
+            
+        result = await facturas_collection.update_one(
+            {"_id": ObjectId(billing_id), "activo": True},
+            {"$set": update_data}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+            
+        updated = await facturas_collection.find_one({"_id": ObjectId(billing_id)})
+        return Billing(**updated)
+
+    @staticmethod
+    async def upload_file(billing_id: str, file: UploadFile):
+        """Manejar la subida del documento físico"""
+        if not ObjectId.is_valid(billing_id):
+            raise HTTPException(status_code=400, detail="ID inválido")
+            
+        if not file.filename.endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="El archivo físico debe ser un PDF válido")
+            
+        
+        file_url = f"/storage/invoices/{billing_id}_{file.filename}"
+        
+        result = await facturas_collection.update_one(
+            {"_id": ObjectId(billing_id), "activo": True},
+            {"$set": {
+                "attachments.pdf_url": file_url,
+                "upload_type": "PHYSICAL",
+                "metadata.updated_at": datetime.now()
+            }}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+            
+        updated = await facturas_collection.find_one({"_id": ObjectId(billing_id)})
+        return Billing(**updated)

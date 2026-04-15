@@ -16,6 +16,9 @@ class Receiver(BaseModel):
     tax_id: str
     name: str
     tax_usage: str
+    postal_code: Optional[str] = None
+    fiscal_regime: Optional[str] = None
+    client_id: Optional[str] = None
 
 class FiscalData(BaseModel):
     uuid: Optional[str] = None
@@ -32,7 +35,7 @@ class Financials(BaseModel):
     discount: float = 0.0
     tax_total: float
     total: float
-    payment_method: Literal["PUE", "PPD"]
+    payment_method: str
     payment_form: str
 
 class Tax(BaseModel):
@@ -42,6 +45,8 @@ class Tax(BaseModel):
 
 class Item(BaseModel):
     product_code: str
+    unit_code: Optional[str] = None
+    tax_object: Optional[str] = None
     description: str
     quantity: float
     unit_price: float
@@ -56,6 +61,8 @@ class Attachments(BaseModel):
 
 class BillingBase(BaseModel):
     upload_type: Literal["DIGITAL", "PHYSICAL"]
+    record_type: Optional[str] = "Invoice"
+    service_type: Optional[str] = None
     metadata: InvoiceMetadata
     issuer: Issuer
     receiver: Receiver
@@ -63,7 +70,8 @@ class BillingBase(BaseModel):
     financials: Financials
     items: List[Item]
     attachments: Attachments
-    status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL"]
+    status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
+    reason: Optional[str] = None
     activo: bool = True
 
 class BillingCreateSchema(BillingBase):
@@ -78,7 +86,10 @@ class BillingUpdateSchema(BaseModel):
     financials: Optional[Financials] = None
     items: Optional[List[Item]] = None
     attachments: Optional[Attachments] = None
-    status: Optional[Literal["VALID", "CANCELLED", "PENDING_APPROVAL"]] = None
+    status: Optional[Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]] = None
+    reason: Optional[str] = None
+    record_type: Optional[str] = None
+    service_type: Optional[str] = None
 
 class BillingResponseSchema(BillingBase):
     id: str = Field(alias="_id")
@@ -88,9 +99,11 @@ class BillingResponseSchema(BillingBase):
 
 class BillingFilterSchema(BaseModel):
     upload_type: Optional[Literal["DIGITAL", "PHYSICAL"]] = None
-    status: Optional[Literal["VALID", "CANCELLED", "PENDING_APPROVAL"]] = None
+    status: Optional[Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]] = None
     issuer_tax_id: Optional[str] = None
     receiver_tax_id: Optional[str] = None
+    record_type: Optional[str] = None
+    search_query: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     include_deleted: Optional[bool] = False

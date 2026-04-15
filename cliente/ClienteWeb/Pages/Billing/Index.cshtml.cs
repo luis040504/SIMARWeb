@@ -18,6 +18,15 @@ namespace ClienteWeb.Pages.Billing
         [BindProperty]
         public string SearchQuery { get; set; }
 
+        [BindProperty]
+        public DateTime? StartDate { get; set; }
+
+        [BindProperty]
+        public DateTime? EndDate { get; set; }
+
+        [BindProperty]
+        public string StatusFilter { get; set; }
+
         public List<BillingRecord> DisplayedRecords { get; set; }
         public bool IsSearchResult { get; set; }
 
@@ -45,12 +54,12 @@ namespace ClienteWeb.Pages.Billing
 
         private static List<BillingRecord> _simulatedDb = new List<BillingRecord>
         {
-            new BillingRecord { Id = 1, RecordType = "Service", ClientName = "Juan Pérez", TaxId = "PEPJ800101XYZ", ServiceType = "Mantenimiento", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m },
-            new BillingRecord { Id = 2, RecordType = "Service", ClientName = "Empresa SA de CV", TaxId = "EMP120304QWE", ServiceType = "Soporte Técnico", Date = DateTime.Now.AddDays(-5), Amount = 5000.00m },
-            new BillingRecord { Id = 3, RecordType = "Invoice", InvoiceNumber = "F-1001", Status = "Rejected", Reason = "Código Postal Inválido", ClientName = "Juan Pérez", TaxId = "PEPJ800101XYZ", Description = "Servicio de Mantenimiento", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m, PostalCode = "01000", FiscalRegime = "601", CfdiUsage = "G03", PaymentForm = "03", PaymentMethod = "PUE", ProductCode = "80141600", UnitCode = "E48", TaxObject = "02" },
-            new BillingRecord { Id = 4, RecordType = "Invoice", InvoiceNumber = "F-1003", Status = "Rejected", Reason = "Régimen Fiscal Incorrecto", ClientName = "María López", TaxId = "LOMM901212ABC", Description = "Instalación", Date = DateTime.Now.AddDays(-1), Amount = 3200.00m, PostalCode = "03000", FiscalRegime = "601", CfdiUsage = "G01", PaymentForm = "99", PaymentMethod = "PPD", ProductCode = "72151500", UnitCode = "E48", TaxObject = "02" },
-            new BillingRecord { Id = 5, RecordType = "Invoice", InvoiceNumber = "F-1004", Status = "Pending", ClientName = "Comercio C", TaxId = "GHI345678V3", Description = "Instalación", Date = DateTime.Now.AddDays(-10), Amount = 3200.00m, PostalCode = "03000", FiscalRegime = "601", CfdiUsage = "G01", PaymentForm = "99", PaymentMethod = "PPD", ProductCode = "72151500", UnitCode = "E48", TaxObject = "02" },
-            new BillingRecord { Id = 6, RecordType = "Invoice", InvoiceNumber = "F-1005", Status = "Accepted", ClientName = "Consultoría D", TaxId = "JKL901234W4", Description = "Asesoría Contable", Date = DateTime.Now.AddDays(-15), Amount = 4500.00m, PostalCode = "04000", FiscalRegime = "626", CfdiUsage = "P01", PaymentForm = "02", PaymentMethod = "PUE", ProductCode = "84111500", UnitCode = "E48", TaxObject = "02" }
+            new BillingRecord { Id = 1, RecordType = "Service", ClientName = "Juan Pérez", TaxId = "PEPJ800101XYZ", ServiceType = "Recolección de RPBI", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m },
+            new BillingRecord { Id = 2, RecordType = "Service", ClientName = "Empresa SA de CV", TaxId = "EMP120304QWE", ServiceType = "Manejo Especial de Químicos", Date = DateTime.Now.AddDays(-5), Amount = 5000.00m },
+            new BillingRecord { Id = 3, RecordType = "Invoice", InvoiceNumber = "F-1001", Status = "Rejected", Reason = "Código Postal Inválido", ClientName = "Juan Pérez", TaxId = "PEPJ800101XYZ", Description = "Tratamiento de Residuos Peligrosos", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m, PostalCode = "01000", FiscalRegime = "601", CfdiUsage = "G03", PaymentForm = "03", PaymentMethod = "PUE", ProductCode = "80141600", UnitCode = "E48", TaxObject = "02" },
+            new BillingRecord { Id = 4, RecordType = "Invoice", InvoiceNumber = "F-1003", Status = "Rejected", Reason = "Régimen Fiscal Incorrecto", ClientName = "María López", TaxId = "LOMM901212ABC", Description = "Transporte de Manejo Especial", Date = DateTime.Now.AddDays(-1), Amount = 3200.00m, PostalCode = "03000", FiscalRegime = "601", CfdiUsage = "G01", PaymentForm = "99", PaymentMethod = "PPD", ProductCode = "72151500", UnitCode = "E48", TaxObject = "02" },
+            new BillingRecord { Id = 5, RecordType = "Invoice", InvoiceNumber = "F-1004", Status = "Pending", ClientName = "Comercio C", TaxId = "GHI345678V3", Description = "Recolección de Residuos Peligrosos", Date = DateTime.Now.AddDays(-10), Amount = 3200.00m, PostalCode = "03000", FiscalRegime = "601", CfdiUsage = "G01", PaymentForm = "99", PaymentMethod = "PPD", ProductCode = "72151500", UnitCode = "E48", TaxObject = "02" },
+            new BillingRecord { Id = 6, RecordType = "Invoice", InvoiceNumber = "F-1005", Status = "Accepted", ClientName = "Consultoría D", TaxId = "JKL901234W4", Description = "Incineración de Desechos", Date = DateTime.Now.AddDays(-15), Amount = 4500.00m, PostalCode = "04000", FiscalRegime = "626", CfdiUsage = "P01", PaymentForm = "02", PaymentMethod = "PUE", ProductCode = "84111500", UnitCode = "E48", TaxObject = "02" }
         };
 
         public void OnGet()
@@ -63,18 +72,37 @@ namespace ClienteWeb.Pages.Billing
         public void OnPostSearch()
         {
             SetDefaultTab();
+            var filtered = GetBaseQuery();
+
             if (!string.IsNullOrEmpty(SearchQuery))
             {
                 var query = SearchQuery.ToLower();
-                var filtered = GetBaseQuery();
-                DisplayedRecords = filtered.Where(r => 
+                filtered = filtered.Where(r => 
                     (r.TaxId != null && r.TaxId.ToLower().Contains(query)) || 
                     (r.ClientName != null && r.ClientName.ToLower().Contains(query)) || 
                     (r.InvoiceNumber != null && r.InvoiceNumber.ToLower().Contains(query))
-                ).ToList();
-                IsSearchResult = true;
+                );
             }
-            else
+
+            if (StartDate.HasValue)
+            {
+                filtered = filtered.Where(r => r.Date.Date >= StartDate.Value.Date);
+            }
+
+            if (EndDate.HasValue)
+            {
+                filtered = filtered.Where(r => r.Date.Date <= EndDate.Value.Date);
+            }
+
+            if (!string.IsNullOrEmpty(StatusFilter))
+            {
+                filtered = filtered.Where(r => r.Status == StatusFilter);
+            }
+
+            DisplayedRecords = filtered.OrderByDescending(r => r.Date).ToList();
+            IsSearchResult = !string.IsNullOrEmpty(SearchQuery) || StartDate.HasValue || EndDate.HasValue || !string.IsNullOrEmpty(StatusFilter);
+            
+            if (!IsSearchResult)
             {
                 LoadData();
             }
@@ -149,12 +177,13 @@ namespace ClienteWeb.Pages.Billing
             return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
         }
 
-        public IActionResult OnPostReject(int id)
+        public IActionResult OnPostReject(int id, List<string> rejectReasons)
         {
             var invoice = _simulatedDb.FirstOrDefault(i => i.Id == id);
             if (invoice != null && invoice.Status == "Pending")
             {
                 invoice.Status = "Rejected";
+                invoice.Reason = string.Join(" / ", rejectReasons);
                 StatusMessage = $"La factura {invoice.InvoiceNumber} ha sido rechazada.";
             }
             return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
@@ -170,11 +199,44 @@ namespace ClienteWeb.Pages.Billing
             return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
         }
 
+        public string GetDisplayName_FiscalRegime(string code) => code switch
+        {
+            "601" => "601 - General Ley Personas Morales",
+            "612" => "612 - Personas Físicas con Actividades",
+            "626" => "626 - RESICO",
+            _ => code ?? "N/A"
+        };
+
+        public string GetDisplayName_CfdiUsage(string code) => code switch
+        {
+            "G01" => "G01 - Adquisición mercancías",
+            "G03" => "G03 - Gastos en general",
+            "P01" => "P01 - Por definir",
+            _ => code ?? "N/A"
+        };
+
+        public string GetDisplayName_PaymentForm(string code) => code switch
+        {
+            "01" => "01 - Efectivo",
+            "02" => "02 - Cheque nominativo",
+            "03" => "03 - Transferencia",
+            "04" => "04 - Tarjeta Crédito",
+            "99" => "99 - Por definir",
+            _ => code ?? "N/A"
+        };
+
+        public string GetDisplayName_PaymentMethod(string code) => code switch
+        {
+            "PUE" => "PUE - Pago una exhibición",
+            "PPD" => "PPD - Pago diferido",
+            _ => code ?? "N/A"
+        };
+
         private void SetDefaultTab()
         {
             if (Role == "Admin")
             {
-                if (ActiveTab != "RecentServices" && ActiveTab != "RejectedInvoices") ActiveTab = "RecentServices";
+                if (ActiveTab != "RecentServices" && ActiveTab != "RejectedInvoices" && ActiveTab != "GeneratedInvoices") ActiveTab = "RecentServices";
             }
             else
             {
@@ -188,6 +250,7 @@ namespace ClienteWeb.Pages.Billing
             {
                 if (ActiveTab == "RecentServices") return _simulatedDb.Where(r => r.RecordType == "Service");
                 if (ActiveTab == "RejectedInvoices") return _simulatedDb.Where(r => r.RecordType == "Invoice" && r.Status == "Rejected");
+                if (ActiveTab == "GeneratedInvoices") return _simulatedDb.Where(r => r.RecordType == "Invoice" && (r.Status == "Pending" || r.Status == "Accepted"));
             }
             else
             {

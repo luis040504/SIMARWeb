@@ -38,6 +38,11 @@
                             <i class="bi bi-exclamation-triangle me-1"></i> Facturas Rechazadas
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.ActiveTab == "GeneratedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="GeneratedInvoices">
+                            <i class="bi bi-receipt me-1"></i> Facturas Generadas
+                        </a>
+                    </li>
                 }
                 else
                 {
@@ -61,14 +66,33 @@
                 <input type="hidden" asp-for="Role" />
                 <input type="hidden" asp-for="ActiveTab" />
                 <div class="row align-items-end g-3">
-                    <div class="col-md-9">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control-simar border-start-0" asp-for="SearchQuery" placeholder="Buscar por RFC, Nombre de Cliente o Número de Factura...">
+                    <div class="col-md-@(Model.ActiveTab == "GeneratedInvoices" ? "3" : "5")">
+                        <div class="position-relative h-100">
+                            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                            <input type="text" class="form-control-simar ps-5 h-100" asp-for="SearchQuery" placeholder="Buscar por RFC, Cliente o Factura...">
                         </div>
                     </div>
+                    @if (Model.ActiveTab == "GeneratedInvoices")
+                    {
+                        <div class="col-md-2">
+                            <label class="form-label form-label-simar mb-1 lh-1" style="font-size: 0.85rem;">Estado</label>
+                            <select class="form-select form-control-simar px-3" style="height: 38px; border-radius: 8px;" asp-for="StatusFilter">
+                                <option value="">Todos</option>
+                                <option value="Pending">Pendiente</option>
+                                <option value="Accepted">Aceptada</option>
+                            </select>
+                        </div>
+                    }
+                    <div class="col-md-2">
+                        <label class="form-label form-label-simar mb-1 lh-1" style="font-size: 0.85rem;">Fecha Inicio</label>
+                        <input type="date" class="form-control-simar" asp-for="StartDate">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label form-label-simar mb-1 lh-1" style="font-size: 0.85rem;">Fecha Fin</label>
+                        <input type="date" class="form-control-simar" asp-for="EndDate">
+                    </div>
                     <div class="col-md-3">
-                        <button type="submit" class="btn btn-simar-primary w-100 h-100 d-flex justify-content-center align-items-center">
+                        <button type="submit" class="btn btn-simar-primary w-100 h-100 d-flex justify-content-center align-items-center" style="height: 38px;">
                             <i class="bi bi-search me-2"></i> Buscar
                         </button>
                     </div>
@@ -97,25 +121,19 @@
                                         <h5 class="card-title text-dark fw-semibold text-truncate mb-0" title="@record.ClientName">@record.ClientName</h5>
                                         @if (record.RecordType == "Invoice")
                                         {
-                                            <span class="badge @(record.Status == "Accepted" ? "bg-success" : (record.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")) border badge-simar">@record.InvoiceNumber</span>
+                                            <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))">@record.InvoiceNumber</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-light text-dark border badge-simar">ID: @record.Id</span>
+                                            <span class="badge badge-simar badge-simar-programada">ID: @record.Id</span>
                                         }
                                     </div>
                                     <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong class="text-simar-dark">@record.TaxId</strong></p>
                                     
-                                    @if(record.RecordType == "Service")
+                                    <p class="card-text mb-2"><small class="text-muted">Servicio:</small> <span class="badge bg-secondary badge-simar text-truncate d-inline-block align-bottom" title="@(record.ServiceType ?? record.Description)">@(record.ServiceType ?? record.Description)</span></p>
+                                    @if(!string.IsNullOrEmpty(record.Reason))
                                     {
-                                        <p class="card-text mb-2"><small class="text-muted">Tipo:</small> <span class="badge bg-secondary badge-simar">@record.ServiceType</span></p>
-                                    }
-                                    else
-                                    {
-                                        @if(!string.IsNullOrEmpty(record.Reason))
-                                        {
-                                            <p class="card-text mb-2"><small class="text-muted">Motivo:</small> <span class="badge bg-warning text-dark badge-simar">@record.Reason</span></p>
-                                        }
+                                        <p class="card-text mb-2"><small class="text-muted">Motivo:</small> <span class="badge badge-simar badge-simar-cancelada text-wrap text-start lh-sm w-100 border-0">@record.Reason</span></p>
                                     }
 
                                     <p class="card-text mb-3"><small class="text-muted">Fecha:</small> @record.Date.ToString("dd/MM/yyyy")</p>
@@ -157,10 +175,36 @@
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Edit" />
-                                                    <button type="submit" class="btn btn-simar-secondary justify-content-center w-100">
+                                                    <button type="submit" class="btn btn-simar-outline justify-content-center w-100">
                                                         <i class="bi bi-pencil-fill"></i> Editar Factura
                                                     </button>
                                                 </form>
+                                            }
+                                            else if (Model.ActiveTab == "GeneratedInvoices")
+                                            {
+                                                <div class="mb-2">
+                                                    <form method="post" asp-page-handler="PrepareModal" class="w-100">
+                                                        <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
+                                                        <input type="hidden" asp-for="Role" />
+                                                        <input type="hidden" asp-for="ActiveTab" />
+                                                        <input type="hidden" asp-for="SearchQuery" />
+                                                        <input type="hidden" name="modalType" value="Details" />
+                                                        <button type="submit" class="btn btn-simar-outline-gray justify-content-center w-100 d-inline-flex align-items-center gap-2">
+                                                            <i class="bi bi-eye"></i> Ver Detalles
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                                @if (record.Status == "Accepted") 
+                                                {
+                                                    <form method="post" asp-page-handler="Download" class="w-100">
+                                                        <input type="hidden" name="id" value="@record.Id" />
+                                                        <input type="hidden" asp-for="Role" />
+                                                        <input type="hidden" asp-for="ActiveTab" />
+                                                        <button type="submit" class="btn btn-simar-primary justify-content-center w-100">
+                                                            <i class="bi bi-download"></i> Descargar
+                                                        </button>
+                                                    </form>
+                                                }
                                             }
                                         }
                                         else 
@@ -172,7 +216,7 @@
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Details" />
-                                                    <button type="submit" class="btn btn-info text-white justify-content-center w-100 mb-2 d-inline-flex align-items-center gap-2" style="border-radius:10px;">
+                                                    <button type="submit" class="btn btn-simar-outline-gray justify-content-center w-100 mb-2 d-inline-flex align-items-center gap-2">
                                                         <i class="bi bi-eye"></i> Ver Detalles
                                                     </button>
                                                 </form>
@@ -185,10 +229,10 @@
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     @if (record.Status == "Pending")
                                                     {
-                                                        <button type="submit" asp-page-handler="Accept" class="btn btn-simar-primary flex-fill justify-content-center flex-column px-1 py-2 text-center" style="font-size:0.8rem">
+                                                        <button type="submit" asp-page-handler="Accept" class="btn btn-simar-primary flex-fill justify-content-center flex-column px-1 py-2 text-center small">
                                                             <i class="bi bi-check-circle mb-1"></i> Aceptar
                                                         </button>
-                                                        <button type="submit" asp-page-handler="Reject" class="btn btn-outline-danger flex-fill d-inline-flex flex-column align-items-center justify-content-center px-1 py-2" style="border-radius:10px; font-size:0.8rem" onclick="return confirm('¿Rechazar esta factura?');">
+                                                        <button type="button" class="btn btn-outline-danger flex-fill d-inline-flex flex-column align-items-center justify-content-center px-1 py-2" data-bs-toggle="modal" data-bs-target="#rejectModal-@record.Id">
                                                             <i class="bi bi-x-circle mb-1"></i> Rechazar
                                                         </button>
                                                     }
@@ -234,22 +278,18 @@
     <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
     <div class="modal modal-simar fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
+            <form method="post" asp-page-handler="@handler" class="modal-content h-100 needs-validation" novalidate>
                 <div class="modal-header">
                     <h4 class="modal-title">
                         <i class="bi bi-clipboard-data me-2"></i> @modalTitle
                     </h4>
-                    <form method="get" class="m-0 p-0">
-                        <input type="hidden" asp-for="Role" />
-                        <input type="hidden" asp-for="ActiveTab" />
-                        <button type="submit" class="btn-close"></button>
-                    </form>
+                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
                 
                 <div class="@bgClass px-5 py-4 border-bottom">
                     <div class="row align-items-end">
                         <div class="col-md-8">
-                            <small class="text-uppercase fw-bold text-muted ls-1">@modalTitle para:</small>
+                            <small class="text-uppercase fw-bold text-muted">@modalTitle para:</small>
                             <h3 class="mb-0 mt-2 text-simar-dark fw-bold">@Model.SelectedRecord?.ClientName <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedRecord?.TaxId)</span></h3>
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -258,49 +298,70 @@
                     </div>
                 </div>
 
-                <form method="post" asp-page-handler="@handler">
-                    <div class="modal-body modal-scrollable-simar p-5 pt-4">
-                        <input type="hidden" asp-for="SelectedRecordId" />
-                        <input type="hidden" asp-for="Role" />
-                        <input type="hidden" asp-for="ActiveTab" />
-                        <input type="hidden" asp-for="SearchQuery" />
-                        
-                        <div class="row g-4">
-                            <div class="col-12">
-                                <div class="card-simar-subtle border-0">
-                                    <div class="card-body p-4">
-                                        <h5 class="card-subtitle mb-4 text-simar-dark fw-bold text-uppercase border-bottom pb-3">
-                                            <i class="bi bi-person-vcard text-simar-green me-3"></i>1. Información del Receptor
-                                        </h5>
-                                        <div class="row g-4">
+                @{
+                    var reason = Model.SelectedRecord?.Reason ?? "";
+                    var isRfcBad = Model.ActiveModal == "Edit" && reason.Contains("RFC");
+                    var isNameBad = Model.ActiveModal == "Edit" && reason.Contains("Razón Social");
+                    var isPostalBad = Model.ActiveModal == "Edit" && reason.Contains("Código Postal");
+                    var isRegimeBad = Model.ActiveModal == "Edit" && reason.Contains("Régimen Fiscal");
+                    var isCfdiBad = Model.ActiveModal == "Edit" && reason.Contains("CFDI");
+                    var isPayFormBad = Model.ActiveModal == "Edit" && reason.Contains("Forma de Pago");
+                    var isPayMethodBad = Model.ActiveModal == "Edit" && reason.Contains("Método de Pago");
+                    var isConceptBad = Model.ActiveModal == "Edit" && (reason.Contains("Concepto") || reason.Contains("Servicio") || reason.Contains("Monto"));
+                }
+
+                <div class="modal-body modal-scrollable-simar p-5 pt-4 flex-grow-1 overflow-auto">
+                    <input type="hidden" asp-for="SelectedRecordId" />
+                    <input type="hidden" asp-for="Role" />
+                    <input type="hidden" asp-for="ActiveTab" />
+                    <input type="hidden" asp-for="SearchQuery" />
+                    
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <div class="card-simar-subtle border-0">
+                                <div class="card-body p-4">
+                                    <h5 class="card-subtitle mb-4 text-simar-dark fw-bold text-uppercase border-bottom pb-3">
+                                        <i class="bi bi-person-vcard text-simar-green me-3"></i>1. Información del Receptor
+                                    </h5>
+                                    <div class="row g-4">
                                             <div class="col-md-4">
-                                                <label class="form-label form-label-simar">RFC</label>
-                                                <input type="text" class="form-control form-control-simar" asp-for="TaxId" readonly>
+                                                <label class="form-label form-label-simar text-danger @(isRfcBad ? "fw-bold" : "")">RFC *</label>
+                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" readonly="@(Model.ActiveModal == "Generate" ? "readonly" : null)" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)">
+                                                <div class="invalid-feedback">RFC inválido. Letras mayúsculas (3-4), AAMMdd y 3 caracteres finales.</div>
+                                                @if(isRfcBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-8">
-                                                <label class="form-label form-label-simar">Razón Social</label>
-                                                <input type="text" class="form-control form-control-simar" asp-for="BillingName" readonly>
+                                                <label class="form-label form-label-simar text-danger @(isNameBad ? "fw-bold" : "")">Razón Social *</label>
+                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" readonly="@(Model.ActiveModal == "Generate" ? "readonly" : null)" required minlength="3" maxlength="250" title="Ingresa la razón social">
+                                                <div class="invalid-feedback">La razón social es requerida (mín. 3 caracteres).</div>
+                                                @if(isNameBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label form-label-simar text-danger">Código Postal *</label>
-                                                <input type="text" class="form-control form-control-simar" asp-for="PostalCode" required maxlength="5">
+                                                <label class="form-label form-label-simar text-danger @(isPostalBad ? "fw-bold" : "")">Código Postal *</label>
+                                                <input type="text" class="form-control form-control-simar @(isPostalBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="PostalCode" required maxlength="5" minlength="5" pattern="\d{5}" title="Debe contener exactamente 5 dígitos numéricos">
+                                                <div class="invalid-feedback">Debe contener 5 dígitos.</div>
+                                                @if(isPostalBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label form-label-simar text-danger">Régimen Fiscal *</label>
-                                                <select class="form-select form-select-simar" asp-for="FiscalRegime" required>
+                                                <label class="form-label form-label-simar text-danger @(isRegimeBad ? "fw-bold" : "")">Régimen Fiscal *</label>
+                                                <select class="form-select form-select-simar @(isRegimeBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="FiscalRegime" required>
                                                     <option value="">-- Seleccione --</option>
                                                     <option value="601">601 - General Ley Personas Morales</option>
                                                     <option value="612">612 - Personas Físicas con Actividades</option>
                                                     <option value="626">626 - RESICO</option>
                                                 </select>
+                                                <div class="invalid-feedback">Selecciona un régimen fiscal.</div>
+                                                @if(isRegimeBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label form-label-simar text-danger">Uso de CFDI *</label>
-                                                <select class="form-select form-select-simar" asp-for="CfdiUsage" required>
+                                                <label class="form-label form-label-simar text-danger @(isCfdiBad ? "fw-bold" : "")">Uso de CFDI *</label>
+                                                <select class="form-select form-select-simar @(isCfdiBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="CfdiUsage" required>
                                                     <option value="">-- Seleccione --</option>
                                                     <option value="G01">G01 - Adquisición mercancías</option>
                                                     <option value="G03">G03 - Gastos en general</option>
                                                 </select>
+                                                <div class="invalid-feedback">Selecciona el uso de CFDI.</div>
+                                                @if(isCfdiBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                         </div>
                                     </div>
@@ -315,37 +376,89 @@
                                         </h5>
                                         <div class="row g-4">
                                             <div class="col-md-6">
-                                                <label class="form-label form-label-simar text-danger">Forma de Pago *</label>
-                                                <select class="form-select form-select-simar" asp-for="PaymentForm" required>
+                                                <label class="form-label form-label-simar text-danger @(isPayFormBad ? "fw-bold" : "")">Forma de Pago *</label>
+                                                <select class="form-select form-select-simar @(isPayFormBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="PaymentForm" required>
                                                     <option value="">-- Seleccione --</option>
                                                     <option value="01">01 - Efectivo</option>
                                                     <option value="03">03 - Transferencia</option>
                                                     <option value="04">04 - Tarjeta Crédito</option>
                                                     <option value="99">99 - Por definir</option>
                                                 </select>
+                                                <div class="invalid-feedback">Selecciona una forma de pago.</div>
+                                                @if(isPayFormBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label form-label-simar text-danger">Método de Pago *</label>
-                                                <select class="form-select form-select-simar" asp-for="PaymentMethod" required>
+                                                <label class="form-label form-label-simar text-danger @(isPayMethodBad ? "fw-bold" : "")">Método de Pago *</label>
+                                                <select class="form-select form-select-simar @(isPayMethodBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="PaymentMethod" required>
                                                     <option value="">-- Seleccione --</option>
                                                     <option value="PUE">PUE - Pago una exhibición</option>
                                                     <option value="PPD">PPD - Pago diferido</option>
                                                 </select>
+                                                <div class="invalid-feedback">Selecciona un método de pago.</div>
+                                                @if(isPayMethodBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="col-12">
+                                <div class="card-simar-subtle border-0">
+                                    <div class="card-body p-4">
+                                        <h5 class="card-subtitle mb-4 text-simar-dark fw-bold text-uppercase border-bottom pb-3">
+                                            <i class="bi bi-list-check text-simar-green me-3"></i>3. Conceptos y Totales
+                                        </h5>
+                                        @if(isConceptBad) {
+                                            <div class="alert alert-danger py-2 mb-3 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i> Los importes o servicios están marcados para corrección.</div>
+                                        }
+                                        <div class="table-responsive table-responsive-simar">
+                                            <table class="table table-simar mb-0 @(isConceptBad ? "border-danger bg-danger bg-opacity-10" : "")">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Concepto</th>
+                                                        <th>Cantidad</th>
+                                                        <th>Precio Unitario</th>
+                                                        <th>Impuestos (IVA 16%)</th>
+                                                        <th>Importe</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>@(Model.SelectedRecord?.ServiceType ?? Model.SelectedRecord?.Description ?? "Servicio")</td>
+                                                        <td>1</td>
+                                                        <td>@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</td>
+                                                        <td>@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</td>
+                                                        <td>@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="4" class="text-end border-0">Subtotal:</th>
+                                                        <th>@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="4" class="text-end border-0">IVA (16%):</th>
+                                                        <th>@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="4" class="text-end fs-5 text-simar-green border-0">Total:</th>
+                                                        <th class="fs-5 text-simar-green">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
-                        <button type="submit" class="btn btn-simar-primary">
-                            <i class="bi @iconClass"></i> Confirmar
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer bg-light mt-auto">
+                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
+                    <button type="submit" class="btn btn-simar-primary">
+                        <i class="bi @iconClass"></i> Confirmar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     <script> document.body.style.overflow = 'hidden'; </script>
@@ -354,19 +467,15 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
 {
     <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
     <div class="modal modal-simar fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
-         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content h-100">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        <i class="bi bi-file-text"></i> Detalles de Factura: @Model.SelectedRecord.InvoiceNumber
+                        <i class="bi bi-file-text me-2"></i> Detalles de Factura: @Model.SelectedRecord.InvoiceNumber
                     </h4>
-                    <form method="get" class="m-0 p-0">
-                        <input type="hidden" asp-for="Role" />
-                        <input type="hidden" asp-for="ActiveTab" />
-                        <button type="submit" class="btn-close"></button>
-                    </form>
+                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
-                <div class="modal-body modal-scrollable-simar p-4">
+                <div class="modal-body modal-scrollable-simar p-4 flex-grow-1 overflow-auto">
                      <div class="row g-4">
                         <div class="col-md-6">
                             <div class="card-simar-subtle h-100 border-0 p-3 bg-light">
@@ -374,22 +483,22 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                                 <p class="mb-2"><strong class="text-simar-dark">RFC:</strong> @Model.SelectedRecord.TaxId</p>
                                 <p class="mb-2"><strong class="text-simar-dark">Nombre:</strong> @Model.SelectedRecord.ClientName</p>
                                 <p class="mb-2"><strong class="text-simar-dark">CP:</strong> @Model.SelectedRecord.PostalCode</p>
-                                <p class="mb-0"><strong class="text-simar-dark">Régimen:</strong> @Model.SelectedRecord.FiscalRegime</p>
+                                <p class="mb-0"><strong class="text-simar-dark">Régimen:</strong> @Model.GetDisplayName_FiscalRegime(Model.SelectedRecord.FiscalRegime)</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card-simar-subtle h-100 border-0 p-3 bg-light">
                                 <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">Fiscal</h6>
-                                <p class="mb-2"><strong class="text-simar-dark">Uso CFDI:</strong> @Model.SelectedRecord.CfdiUsage</p>
-                                <p class="mb-2"><strong class="text-simar-dark">Forma Pago:</strong> @Model.SelectedRecord.PaymentForm</p>
-                                <p class="mb-0"><strong class="text-simar-dark">Método Pago:</strong> @Model.SelectedRecord.PaymentMethod</p>
+                                <p class="mb-2"><strong class="text-simar-dark">Uso CFDI:</strong> @Model.GetDisplayName_CfdiUsage(Model.SelectedRecord.CfdiUsage)</p>
+                                <p class="mb-2"><strong class="text-simar-dark">Forma Pago:</strong> @Model.GetDisplayName_PaymentForm(Model.SelectedRecord.PaymentForm)</p>
+                                <p class="mb-0"><strong class="text-simar-dark">Método Pago:</strong> @Model.GetDisplayName_PaymentMethod(Model.SelectedRecord.PaymentMethod)</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between align-items-center">
                     <div>
-                         <span class="badge @(Model.SelectedRecord.Status == "Accepted" ? "bg-success" : (Model.SelectedRecord.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")) fs-6 px-3 py-2 badge-simar">
+                         <span class="badge badge-simar @(Model.SelectedRecord.Status == "Accepted" ? "badge-simar-completada" : (Model.SelectedRecord.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta")) fs-6 px-3 py-2">
                              Estado: @(Model.SelectedRecord.Status == "Accepted" ? "Aceptada" : (Model.SelectedRecord.Status == "Rejected" ? "Rechazada" : "Pendiente"))
                          </span>
                     </div>
@@ -401,6 +510,57 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
          </div>
     </div>
     <script> document.body.style.overflow = 'hidden'; </script>
+}
+
+@if (Model.DisplayedRecords != null)
+{
+    foreach (var record in Model.DisplayedRecords.Where(r => r.Status == "Pending"))
+    {
+        <!-- Reject Modal for @record.Id -->
+        <div class="modal fade modal-simar" id="rejectModal-@record.Id" tabindex="-1" aria-labelledby="rejectModalLabel-@record.Id" aria-hidden="true" style="z-index: 1060;">
+          <div class="modal-dialog modal-dialog-centered">
+            <form method="post" asp-page-handler="Reject" class="modal-content text-dark h-100 needs-validation" novalidate>
+              <input type="hidden" name="id" value="@record.Id" />
+              <input type="hidden" asp-for="Role" />
+              <input type="hidden" asp-for="ActiveTab" />
+              <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel-@record.Id">Rechazar Factura @record.InvoiceNumber</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body text-start flex-grow-1 overflow-auto">
+                <p class="mb-3">Por favor, marca las casillas de los campos incorrectos para informar al administrador:</p>
+                <div class="row g-2">
+                    @{
+                        var reasonsList = new List<string> {
+                            "RFC Incorrecto", "Razón Social Incorrecta", "Código Postal Incorrecto",
+                            "Régimen Fiscal Incorrecto", "Uso de CFDI Incorrecto", "Forma de Pago Incorrecta",
+                            "Método de Pago Incorrecto", "Concepto / Servicio Incorrecto", "Monto Total Incorrecto"
+                        };
+                    }
+                    @for (int idx = 0; idx < reasonsList.Count; idx++)
+                    {
+                        var rText = reasonsList[idx];
+                        var chkId = $"chk_{record.Id}_{idx}";
+                        <div class="col-md-6">
+                            <label class="form-check d-flex align-items-center p-2 border rounded-3 h-100 m-0 bg-light rounded" for="@chkId">
+                                <input class="form-check-input my-0 ms-1 me-3 validate-checkbox" type="checkbox" name="rejectReasons" value="@rText" id="@chkId">
+                                <span class="form-check-label text-simar-dark small">@rText</span>
+                            </label>
+                        </div>
+                    }
+                    <div class="col-12 mt-2 checkbox-feedback text-danger small text-center" style="display: none;">
+                        <i class="bi bi-exclamation-circle me-1"></i> Debes seleccionar al menos un motivo de rechazo.
+                    </div>
+                </div>
+              </div>
+              <div class="modal-footer bg-light mt-auto">
+                <button type="button" class="btn btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger rounded-3 fw-medium px-3 py-2">Confirmar Rechazo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+    }
 }
 
 <!-- Toasts -->
@@ -419,10 +579,6 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
     }
 </div>
 
-<style>
-    .ls-1 { letter-spacing: 1px; }
-</style>
-
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -430,6 +586,44 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
             toastElList.forEach(toastEl => {
                 var toast = new bootstrap.Toast(toastEl, { delay: 6000 });
                 toast.show();
+            });
+
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    // Checkbox group custom validation
+                    var checkboxFeedback = form.querySelector('.checkbox-feedback');
+                    var checkboxes = form.querySelectorAll('input[type="checkbox"][name="rejectReasons"]');
+                    if (checkboxes.length > 0) {
+                        var isChecked = Array.from(checkboxes).some(c => c.checked);
+                        if (!isChecked) {
+                            checkboxes.forEach(c => c.setCustomValidity("Debes seleccionar al menos un motivo."));
+                            if(checkboxFeedback) checkboxFeedback.style.display = 'block';
+                        } else {
+                            checkboxes.forEach(c => c.setCustomValidity(""));
+                            if(checkboxFeedback) checkboxFeedback.style.display = 'none';
+                        }
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+                
+                // Add event listeners to checkboxes to hide error as soon as one is clicked
+                var checkboxes = form.querySelectorAll('input[type="checkbox"][name="rejectReasons"]');
+                checkboxes.forEach(function(chk) {
+                    chk.addEventListener('change', function() {
+                        var anyChecked = Array.from(checkboxes).some(c => c.checked);
+                        if(anyChecked) {
+                            checkboxes.forEach(c => c.setCustomValidity(""));
+                            var feedback = form.querySelector('.checkbox-feedback');
+                            if(feedback) feedback.style.display = 'none';
+                        }
+                    });
+                });
             });
         });
     </script>
