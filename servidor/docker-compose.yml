@@ -29,19 +29,42 @@ services:
   # MICROSERVICIO: AUTENTICACIÓN
   # ============================================
   auth_api:
-    build:
-      context: ./servicios/auth_api
-      dockerfile: Dockerfile
+    build: ./servicios/API_Auth
     container_name: simar_auth_api
+    env_file:
+      - .env
     ports:
       - "8001:8001"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8001
-      - JWT__Key=${JWT_KEY}
-      - JWT__Issuer=${JWT_ISSUER}
-      - JWT__Audience=${JWT_AUDIENCE}
-      - JWT__ExpiresInMinutes=60
+      - DATABASE_URL=postgresql://${DB_POSTGRES_USER}:${DB_POSTGRES_PASSWORD}@db_usuarios:5432/${DB_POSTGRES_NAME}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+    command: >
+      sh -c "
+        until pg_isready -h db_usuarios -U ${DB_POSTGRES_USER}; do
+          echo 'Esperando a PostgreSQL...';
+          sleep 2;
+        done;
+        echo 'Base de datos lista';
+        uvicorn app.main:app --host 0.0.0.0 --port 8001"
+    depends_on:
+      - db_usuarios
+      - redis
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: Redis
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: simar_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - simar_network
     restart: unless-stopped
@@ -421,6 +444,7 @@ volumes:
   postgres_clientes_data:
   db_empleados_data:
   db_users_data:
+  redis_data:
 
     # ============================================
     # REDES
