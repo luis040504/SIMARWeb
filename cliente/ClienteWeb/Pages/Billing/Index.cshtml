@@ -314,7 +314,7 @@
                     <input type="hidden" asp-for="SelectedRecordId" />
                     <input type="hidden" asp-for="Role" />
                     <input type="hidden" asp-for="ActiveTab" />
-                    <input type="hidden" asp-for="SearchQuery" />
+                    <input type="hidden" asp-for="ItemsJson" id="ItemsJson" />
                     
                     <div class="row g-4">
                         <div class="col-12">
@@ -326,13 +326,13 @@
                                     <div class="row g-4">
                                             <div class="col-md-4">
                                                 <label class="form-label form-label-simar text-danger @(isRfcBad ? "fw-bold" : "")">RFC *</label>
-                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" readonly="@(Model.ActiveModal == "Generate" ? "readonly" : null)" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)">
+                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" readonly="readonly" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)">
                                                 <div class="invalid-feedback">RFC inválido. Letras mayúsculas (3-4), AAMMdd y 3 caracteres finales.</div>
                                                 @if(isRfcBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-8">
                                                 <label class="form-label form-label-simar text-danger @(isNameBad ? "fw-bold" : "")">Razón Social *</label>
-                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" readonly="@(Model.ActiveModal == "Generate" ? "readonly" : null)" required minlength="3" maxlength="250" title="Ingresa la razón social">
+                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" readonly="readonly" required minlength="3" maxlength="250" title="Ingresa la razón social">
                                                 <div class="invalid-feedback">La razón social es requerida (mín. 3 caracteres).</div>
                                                 @if(isNameBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
@@ -423,29 +423,49 @@
                                                         <th>Precio Unitario</th>
                                                         <th>Impuestos (IVA 16%)</th>
                                                         <th>Importe</th>
+                                                        <th></th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td>@(Model.SelectedRecord?.ServiceType ?? Model.SelectedRecord?.Description ?? "Servicio")</td>
-                                                        <td>1</td>
-                                                        <td>@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</td>
-                                                        <td>@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</td>
-                                                        <td>@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</td>
+                                                <tbody id="conceptsTbody">
+                                                    <tr class="concept-row">
+                                                        <td class="align-middle">
+                                                            <input type="text" class="form-control form-control-simar form-control-sm concept-input" required minlength="2" placeholder="Describe el servicio" value="@(Model.SelectedRecord?.ServiceType ?? Model.SelectedRecord?.Description ?? "Servicio")" />
+                                                            <div class="invalid-feedback">El concepto es requerido (mín. 2 caracteres).</div>
+                                                        </td>
+                                                        <td class="align-middle" style="max-width: 80px;">
+                                                            <input type="number" class="form-control form-control-simar form-control-sm qty-input" value="1" min="1" step="1" required />
+                                                        </td>
+                                                        <td class="align-middle" style="min-width: 150px;">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text">$</span>
+                                                                <input type="number" class="form-control form-control-simar amount-input" value="@(Model.SelectedRecord?.Amount ?? 0)" min="0.01" step="0.01" required />
+                                                            </div>
+                                                            <div class="invalid-feedback">Monto inválido (debe ser > 0).</div>
+                                                        </td>
+                                                        <td class="align-middle tax-cell">@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</td>
+                                                        <td class="align-middle fw-bold total-cell">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</td>
+                                                        <td class="align-middle text-center">
+                                                            <button type="button" class="btn btn-sm btn-outline-danger remove-concept-btn" title="Eliminar concepto"><i class="bi bi-trash"></i></button>
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <th colspan="4" class="text-end border-0">Subtotal:</th>
-                                                        <th>@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</th>
+                                                        <td colspan="6" class="border-0 pb-2">
+                                                            <button type="button" id="addConceptBtn" class="btn btn-sm btn-simar-outline-gray"><i class="bi bi-plus-circle me-1"></i> Añadir Concepto</button>
+                                                        </td>
                                                     </tr>
                                                     <tr>
-                                                        <th colspan="4" class="text-end border-0">IVA (16%):</th>
-                                                        <th>@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</th>
+                                                        <th colspan="4" class="text-end border-0 pb-1">Subtotal:</th>
+                                                        <th class="subtotal-cell pb-1">@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</th>
                                                     </tr>
                                                     <tr>
-                                                        <th colspan="4" class="text-end fs-5 text-simar-green border-0">Total:</th>
-                                                        <th class="fs-5 text-simar-green">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
+                                                        <th colspan="4" class="text-end border-0 py-1">IVA (16%):</th>
+                                                        <th class="tax-cell-foot py-1">@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="4" class="text-end fs-5 text-simar-green border-0 pt-1">Total:</th>
+                                                        <th class="fs-5 text-simar-green total-cell-foot pt-1">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -455,6 +475,7 @@
                             </div>
                         </div>
                 </div>
+
                 <div class="modal-footer bg-light mt-auto">
                     <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
                     <button type="submit" class="btn btn-simar-primary" id="confirmSubmitBtn" data-amount="@(Model.SelectedRecord?.Amount ?? 0)">
@@ -566,25 +587,25 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
     }
 }
 
-@if (Model.ActiveModal == "Edit")
+@if (Model.ActiveModal == "Edit" || Model.ActiveModal == "Generate")
 {
-    <!-- Edit Confirmation Modal -->
-    <div class="modal fade modal-simar" id="confirmEditModal" tabindex="-1" aria-labelledby="confirmEditModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <!-- Edit/Dirty Confirmation Modal -->
+    <div class="modal fade modal-simar" id="confirmDirtyModal" tabindex="-1" aria-labelledby="confirmDirtyModalLabel" aria-hidden="true" style="z-index: 1060;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold text-simar-dark" id="confirmEditModalLabel">
-                        <i class="bi bi-exclamation-triangle text-warning me-2"></i> Confirmar Edición
+                    <h5 class="modal-title fw-bold text-simar-dark" id="confirmDirtyModalLabel">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i> Confirmar Modificación
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-start">
-                    <p class="mb-0">¿Estás seguro de que deseas guardar los cambios realizados en esta factura? La información se actualizará y será enviada nuevamente para revisión.</p>
+                    <p class="mb-0">Estás modificando un valor que difiere de lo establecido en el contrato <strong>@(Model.SelectedRecord?.Id ?? 0)</strong>. ¿Deseas continuar?</p>
                 </div>
                 <div class="modal-footer bg-light mt-auto">
                     <button type="button" class="btn btn-simar-outline-gray" data-bs-dismiss="modal">Regresar</button>
-                    <button type="button" class="btn btn-simar-primary" id="confirmEditBtn">
-                        <i class="bi bi-save-fill me-1"></i> Guardar Cambios
+                    <button type="button" class="btn btn-simar-primary" id="confirmDirtyBtn">
+                        <i class="bi bi-check-circle-fill me-1"></i> Confirmar
                     </button>
                 </div>
             </div>
@@ -646,16 +667,38 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                         }
                     }
 
+                    // Submit intercepción para el JSON
+                    if (form.id === 'GenerateForm' || form.id === 'EditForm') {
+                        var itemsJsonInput = document.getElementById('ItemsJson');
+                        var items = [];
+                        var rows = form.querySelectorAll('.concept-row');
+                        rows.forEach(function(row) {
+                            var cInput = row.querySelector('.concept-input');
+                            var qInput = row.querySelector('.qty-input');
+                            var aInput = row.querySelector('.amount-input');
+                            if (cInput && qInput && aInput) {
+                                items.push({
+                                    Concept: cInput.value,
+                                    Quantity: parseInt(qInput.value) || 1,
+                                    Amount: parseFloat(aInput.value) || 0
+                                });
+                            }
+                        });
+                        if (itemsJsonInput) {
+                            itemsJsonInput.value = JSON.stringify(items);
+                        }
+                    }
+
                     if (!form.checkValidity()) {
                         event.preventDefault();
                         event.stopPropagation();
-                    } else if (form.id === 'EditForm') {
-                        if (!form.dataset.confirmed) {
+                    } else if (form.id === 'GenerateForm' || form.id === 'EditForm') {
+                        if (form.dataset.isDirty === 'true' && !form.dataset.confirmed) {
                             event.preventDefault();
-                            var confirmModal = new bootstrap.Modal(document.getElementById('confirmEditModal'));
+                            var confirmModal = new bootstrap.Modal(document.getElementById('confirmDirtyModal'));
                             confirmModal.show();
                             
-                            document.getElementById('confirmEditBtn').onclick = function() {
+                            document.getElementById('confirmDirtyBtn').onclick = function() {
                                 form.dataset.confirmed = 'true';
                                 confirmModal.hide();
                                 form.submit();
@@ -668,25 +711,176 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
 
                 // Real-time validation and amount check
                 var submitBtn = form.querySelector('button[type="submit"]');
+                var inputs = form.querySelectorAll('input, select, textarea');
+                
+                // Initialize initial values for dirty checking
+                inputs.forEach(function(input) {
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        input.dataset.initialValue = input.checked;
+                    } else {
+                        input.dataset.initialValue = input.value;
+                    }
+                });
+
+                var formatter = new Intl.NumberFormat('es-MX', {
+                    style: 'currency',
+                    currency: 'MXN'
+                });
+
+                var updateCalculations = function() {
+                    var totalAmount = 0;
+                    var rows = form.querySelectorAll('.concept-row');
+                    
+                    rows.forEach(function(row) {
+                        var qtyInput = row.querySelector('.qty-input');
+                        var amountInput = row.querySelector('.amount-input');
+                        var taxCell = row.querySelector('.tax-cell');
+                        var totalCell = row.querySelector('.total-cell');
+                        
+                        var qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+                        var price = parseFloat(amountInput ? amountInput.value : 0) || 0;
+                        var rowTotal = qty * price;
+                        var rowSubtotal = rowTotal / 1.16;
+                        var rowIva = rowSubtotal * 0.16;
+                        
+                        totalAmount += rowTotal;
+                        
+                        if (taxCell) taxCell.textContent = formatter.format(rowIva);
+                        if (totalCell) totalCell.textContent = formatter.format(rowTotal);
+                    });
+
+                    var globalSubtotal = totalAmount / 1.16;
+                    var globalIva = globalSubtotal * 0.16;
+                    
+                    var subtotalFoot = form.querySelector('.subtotal-cell');
+                    var taxFoot = form.querySelector('.tax-cell-foot');
+                    var totalFoot = form.querySelector('.total-cell-foot');
+                    
+                    if (subtotalFoot) subtotalFoot.textContent = formatter.format(globalSubtotal);
+                    if (taxFoot) taxFoot.textContent = formatter.format(globalIva);
+                    if (totalFoot) totalFoot.textContent = formatter.format(totalAmount);
+                };
+
                 var validateForm = function() {
                     var isValid = form.checkValidity();
+                    var isDirty = false;
+                    
                     if (form.id === 'GenerateForm' || form.id === 'EditForm') {
-                        var amount = parseFloat(submitBtn ? submitBtn.dataset.amount : 0);
-                        if (amount <= 0) {
+                        // Check if any amount <= 0
+                        var amounts = form.querySelectorAll('.amount-input');
+                        amounts.forEach(function(amountInput) {
+                            if (parseFloat(amountInput.value) <= 0) isValid = false;
+                        });
+                        
+                        // Check if concept count changed
+                        var currentConceptCount = form.querySelectorAll('.concept-row').length;
+                        var initialConceptCount = form.dataset.initialConceptCount ? parseInt(form.dataset.initialConceptCount) : currentConceptCount;
+                        if (currentConceptCount !== initialConceptCount) isDirty = true;
+                        
+                        // Dirty checking inputs
+                        var allInputs = form.querySelectorAll('input, select, textarea');
+                        allInputs.forEach(function(input) {
+                            if (input.dataset.initialValue !== undefined) {
+                                if (input.type === 'checkbox' || input.type === 'radio') {
+                                    if (input.dataset.initialValue !== String(input.checked)) isDirty = true;
+                                } else {
+                                    if (input.dataset.initialValue !== String(input.value)) isDirty = true;
+                                }
+                            }
+                        });
+                        
+                        // Disable if valid but NO changes (ONLY for EditForm)
+                        if (form.id === 'EditForm' && isValid && !isDirty) {
                             isValid = false;
                         }
+                        
+                        form.dataset.isDirty = isDirty;
                     }
+                    
                     if (submitBtn) {
                         submitBtn.disabled = !isValid;
                     }
                 };
+                
+                if (form.id === 'GenerateForm' || form.id === 'EditForm') {
+                    form.dataset.initialConceptCount = form.querySelectorAll('.concept-row').length;
+                }
 
-                // Listen to inputs
-                var inputs = form.querySelectorAll('input, select, textarea');
-                inputs.forEach(function(input) {
-                    input.addEventListener('input', validateForm);
-                    input.addEventListener('change', validateForm);
-                });
+                var bindInputEvents = function(container) {
+                    var innerInputs = container.querySelectorAll('input, select, textarea');
+                    innerInputs.forEach(function(input) {
+                        input.addEventListener('input', function() {
+                            if (input.classList.contains('amount-input') || input.classList.contains('qty-input')) {
+                                updateCalculations();
+                            }
+                            validateForm();
+                        });
+                        input.addEventListener('change', function() {
+                            if (input.classList.contains('amount-input') || input.classList.contains('qty-input')) {
+                                updateCalculations();
+                            }
+                            validateForm();
+                        });
+                    });
+                    
+                    var removeBtns = container.querySelectorAll('.remove-concept-btn');
+                    removeBtns.forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            var tbody = document.getElementById('conceptsTbody');
+                            if (tbody && tbody.querySelectorAll('.concept-row').length > 1) {
+                                var row = btn.closest('tr');
+                                if (row) {
+                                    row.remove();
+                                    updateCalculations();
+                                    validateForm();
+                                }
+                            } else {
+                                alert("Debe haber al menos un concepto en la factura.");
+                            }
+                        });
+                    });
+                };
+                
+                // Add new concept row
+                var addConceptBtn = document.getElementById('addConceptBtn');
+                if (addConceptBtn && (form.id === 'GenerateForm' || form.id === 'EditForm')) {
+                    addConceptBtn.addEventListener('click', function() {
+                        var tbody = document.getElementById('conceptsTbody');
+                        if (tbody) {
+                            var template = `
+                                <tr class="concept-row">
+                                    <td class="align-middle">
+                                        <input type="text" class="form-control form-control-simar form-control-sm concept-input" required minlength="2" placeholder="Describe el servicio" value="" />
+                                        <div class="invalid-feedback">El concepto es requerido.</div>
+                                    </td>
+                                    <td class="align-middle" style="max-width: 80px;">
+                                        <input type="number" class="form-control form-control-simar form-control-sm qty-input" value="1" min="1" step="1" required />
+                                    </td>
+                                    <td class="align-middle" style="min-width: 150px;">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control form-control-simar amount-input" value="0" min="0.01" step="0.01" required />
+                                        </div>
+                                        <div class="invalid-feedback">Monto inválido.</div>
+                                    </td>
+                                    <td class="align-middle tax-cell">$0.00</td>
+                                    <td class="align-middle fw-bold total-cell">$0.00</td>
+                                    <td class="align-middle text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-concept-btn" title="Eliminar concepto"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `;
+                            tbody.insertAdjacentHTML('beforeend', template);
+                            var newRow = tbody.lastElementChild;
+                            bindInputEvents(newRow);
+                            updateCalculations();
+                            validateForm();
+                        }
+                    });
+                }
+
+                // Initial binding
+                bindInputEvents(form);
                 
                 // Initial validation
                 if (form.id === 'GenerateForm' || form.id === 'EditForm') {

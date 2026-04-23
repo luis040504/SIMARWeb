@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using ClienteWeb.Services;
 
 namespace ClienteWeb.Pages.Billing
@@ -49,6 +50,7 @@ namespace ClienteWeb.Pages.Billing
         [BindProperty] public string ProductCode { get; set; }
         [BindProperty] public string UnitCode { get; set; }
         [BindProperty] public string TaxObject { get; set; }
+        [BindProperty] public string ItemsJson { get; set; }
 
         [TempData]
         public string StatusMessage { get; set; }
@@ -131,6 +133,17 @@ namespace ClienteWeb.Pages.Billing
                     ProductCode = SelectedRecord.ProductCode ?? "80141600";
                     UnitCode = SelectedRecord.UnitCode ?? "E48";
                     TaxObject = SelectedRecord.TaxObject ?? "02";
+                    
+                    var initialItems = new List<InvoiceItemDto>
+                    {
+                        new InvoiceItemDto 
+                        { 
+                            Concept = SelectedRecord.ServiceType ?? SelectedRecord.Description ?? "Servicio", 
+                            Quantity = 1,
+                            Amount = SelectedRecord.Amount 
+                        }
+                    };
+                    ItemsJson = JsonSerializer.Serialize(initialItems);
                 }
             }
         }
@@ -316,5 +329,12 @@ namespace ClienteWeb.Pages.Billing
         public string ProductCode { get; set; }
         public string UnitCode { get; set; }
         public string TaxObject { get; set; }
+    }
+
+    public class InvoiceItemDto
+    {
+        public string Concept { get; set; }
+        public int Quantity { get; set; }
+        public decimal Amount { get; set; }
     }
 }
