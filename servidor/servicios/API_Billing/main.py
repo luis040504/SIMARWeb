@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluir las rutas
+
 app.include_router(billing_router)
 
 @app.get("/")

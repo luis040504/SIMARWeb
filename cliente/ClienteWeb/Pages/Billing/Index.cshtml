@@ -278,7 +278,7 @@
     <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
     <div class="modal modal-simar fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <form method="post" asp-page-handler="@handler" class="modal-content h-100 needs-validation" novalidate>
+            <form method="post" asp-page-handler="@handler" id="@(handler)Form" class="modal-content h-100 needs-validation" novalidate>
                 <div class="modal-header">
                     <h4 class="modal-title">
                         <i class="bi bi-clipboard-data me-2"></i> @modalTitle
@@ -563,6 +563,32 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
     }
 }
 
+@if (Model.ActiveModal == "Edit")
+{
+    <!-- Edit Confirmation Modal -->
+    <div class="modal fade modal-simar" id="confirmEditModal" tabindex="-1" aria-labelledby="confirmEditModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-simar-dark" id="confirmEditModalLabel">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i> Confirmar Edición
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <p class="mb-0">¿Estás seguro de que deseas guardar los cambios realizados en esta factura? La información se actualizará y será enviada nuevamente para revisión.</p>
+                </div>
+                <div class="modal-footer bg-light mt-auto">
+                    <button type="button" class="btn btn-simar-outline-gray" data-bs-dismiss="modal">Regresar</button>
+                    <button type="button" class="btn btn-simar-primary" id="confirmEditBtn">
+                        <i class="bi bi-save-fill me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Toasts -->
 <div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;">
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
@@ -608,6 +634,19 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     if (!form.checkValidity()) {
                         event.preventDefault();
                         event.stopPropagation();
+                    } else if (form.id === 'EditForm') {
+                        if (!form.dataset.confirmed) {
+                            event.preventDefault();
+                            var confirmModal = new bootstrap.Modal(document.getElementById('confirmEditModal'));
+                            confirmModal.show();
+                            
+                            document.getElementById('confirmEditBtn').onclick = function() {
+                                form.dataset.confirmed = 'true';
+                                confirmModal.hide();
+                                form.submit();
+                            };
+                            return;
+                        }
                     }
                     form.classList.add('was-validated');
                 }, false);
