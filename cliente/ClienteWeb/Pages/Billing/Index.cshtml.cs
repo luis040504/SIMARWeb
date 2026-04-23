@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ClienteWeb.Services;
 
 namespace ClienteWeb.Pages.Billing
 {
@@ -141,8 +142,25 @@ namespace ClienteWeb.Pages.Billing
 
         public IActionResult OnPostGenerate()
         {
-            StatusMessage = $"¡La factura para el RFC {TaxId} ha sido generada exitosamente!";
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            try
+            {
+                // Aquí iría la llamada real al HttpClient de API_Billing que usará el interceptor:
+                // await _httpClient.PostAsJsonAsync("/billing", dto);
+                
+                // Simulación de error de red para propósitos de prueba
+                if (TaxId == "ERROR1234567") 
+                {
+                    throw new BillingApiException("Error de validación de datos: El RFC proporcionado no se encuentra en los registros del SAT.", 422);
+                }
+
+                StatusMessage = $"¡La factura para el RFC {TaxId} ha sido generada exitosamente!";
+                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            }
         }
 
         public IActionResult OnPostUploadPhysicalInvoice(IFormFile PhysicalInvoice, int selectedRecordIdUpload)
@@ -160,10 +178,20 @@ namespace ClienteWeb.Pages.Billing
 
         public IActionResult OnPostEdit()
         {
-            StatusMessage = $"¡La factura de {TaxId} ha sido actualizada y reenviada exitosamente!";
-            var invoice = _simulatedDb.FirstOrDefault(i => i.Id == SelectedRecordId);
-            if(invoice != null) invoice.Status = "Pending";
-            return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+            try
+            {
+                // Aquí iría la llamada real al HttpClient de API_Billing
+                
+                StatusMessage = $"¡La factura de {TaxId} ha sido actualizada y reenviada exitosamente!";
+                var invoice = _simulatedDb.FirstOrDefault(i => i.Id == SelectedRecordId);
+                if(invoice != null) invoice.Status = "Pending";
+                return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+            }
         }
 
         public IActionResult OnPostAccept(int id)

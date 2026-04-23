@@ -411,6 +411,9 @@
                                         @if(isConceptBad) {
                                             <div class="alert alert-danger py-2 mb-3 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i> Los importes o servicios están marcados para corrección.</div>
                                         }
+                                        @if(Model.SelectedRecord?.Amount <= 0) {
+                                            <div class="alert alert-danger py-2 mb-3 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i> El monto total debe ser mayor a 0 para generar la factura.</div>
+                                        }
                                         <div class="table-responsive table-responsive-simar">
                                             <table class="table table-simar mb-0 @(isConceptBad ? "border-danger bg-danger bg-opacity-10" : "")">
                                                 <thead class="table-light">
@@ -454,7 +457,7 @@
                 </div>
                 <div class="modal-footer bg-light mt-auto">
                     <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
-                    <button type="submit" class="btn btn-simar-primary">
+                    <button type="submit" class="btn btn-simar-primary" id="confirmSubmitBtn" data-amount="@(Model.SelectedRecord?.Amount ?? 0)">
                         <i class="bi @iconClass"></i> Confirmar
                     </button>
                 </div>
@@ -603,6 +606,18 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
             </div>
         </div>
     }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="toast align-items-center text-white bg-danger border-0 shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius:15px;">
+            <div class="d-flex p-2">
+                <div class="toast-body fs-5 d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                    <span>@TempData["ErrorMessage"]</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
@@ -650,6 +665,33 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     }
                     form.classList.add('was-validated');
                 }, false);
+
+                // Real-time validation and amount check
+                var submitBtn = form.querySelector('button[type="submit"]');
+                var validateForm = function() {
+                    var isValid = form.checkValidity();
+                    if (form.id === 'GenerateForm' || form.id === 'EditForm') {
+                        var amount = parseFloat(submitBtn ? submitBtn.dataset.amount : 0);
+                        if (amount <= 0) {
+                            isValid = false;
+                        }
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = !isValid;
+                    }
+                };
+
+                // Listen to inputs
+                var inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(function(input) {
+                    input.addEventListener('input', validateForm);
+                    input.addEventListener('change', validateForm);
+                });
+                
+                // Initial validation
+                if (form.id === 'GenerateForm' || form.id === 'EditForm') {
+                    validateForm();
+                }
                 
                 // Add event listeners to checkboxes to hide error as soon as one is clicked
                 var checkboxes = form.querySelectorAll('input[type="checkbox"][name="rejectReasons"]');
@@ -660,6 +702,9 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                             checkboxes.forEach(c => c.setCustomValidity(""));
                             var feedback = form.querySelector('.checkbox-feedback');
                             if(feedback) feedback.style.display = 'none';
+                        }
+                        if (form.id === 'rejectModal-' + form.querySelector('input[name="id"]').value) {
+                             validateForm();
                         }
                     });
                 });
