@@ -72,6 +72,12 @@ class BillingController:
     @staticmethod
     async def create(billing_data: BillingCreateSchema):
         """Crear nueva factura"""
+        
+        calculated_total = billing_data.financials.subtotal + billing_data.financials.tax_total - billing_data.financials.discount
+        if abs(calculated_total - billing_data.financials.total) > 0.01:
+            from ..handlers.exceptions import AppException
+            raise AppException(message="El total no cuadra con el subtotal, impuestos y descuento", status_code=400, code="INVALID_TOTAL")
+            
         billing_dict = billing_data.model_dump()
         billing_dict["metadata"]["created_at"] = datetime.now()
         billing_dict["metadata"]["updated_at"] = datetime.now()
@@ -92,6 +98,11 @@ class BillingController:
         existing = await facturas_collection.find_one({"_id": ObjectId(billing_id), "activo": True})
         if not existing:
             raise HTTPException(status_code=404, detail="Factura no encontrada o inactiva")
+            
+        immutable_states = ["Accepted", "Rejected", "CANCELLED"]
+        if existing.get("status") in immutable_states:
+            from ..handlers.exceptions import AppException
+            raise AppException(message="No se puede editar una factura que ya ha sido procesada o cancelada", status_code=400, code="IMMUTABLE_STATE")
         
         update_data = billing_data.model_dump(exclude_unset=True)
         if "metadata" not in update_data:

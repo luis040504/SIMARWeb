@@ -47,3 +47,28 @@ yarn-error.log*
 Thumbs.db
 .DS_Store
 *.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Coverage
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Type checking / Linting
+.mypy_cache/
+.ruff_cache/
