@@ -21,10 +21,7 @@ namespace ClienteWeb.Pages.Billing
         public string SearchQuery { get; set; }
 
         [BindProperty]
-        public DateTime? StartDate { get; set; }
-
-        [BindProperty]
-        public DateTime? EndDate { get; set; }
+        public DateTime? DateFilter { get; set; }
 
         [BindProperty]
         public string StatusFilter { get; set; }
@@ -87,14 +84,9 @@ namespace ClienteWeb.Pages.Billing
                 );
             }
 
-            if (StartDate.HasValue)
+            if (DateFilter.HasValue)
             {
-                filtered = filtered.Where(r => r.Date.Date >= StartDate.Value.Date);
-            }
-
-            if (EndDate.HasValue)
-            {
-                filtered = filtered.Where(r => r.Date.Date <= EndDate.Value.Date);
+                filtered = filtered.Where(r => r.Date.Date == DateFilter.Value.Date);
             }
 
             if (!string.IsNullOrEmpty(StatusFilter))
@@ -103,7 +95,7 @@ namespace ClienteWeb.Pages.Billing
             }
 
             DisplayedRecords = filtered.OrderByDescending(r => r.Date).ToList();
-            IsSearchResult = !string.IsNullOrEmpty(SearchQuery) || StartDate.HasValue || EndDate.HasValue || !string.IsNullOrEmpty(StatusFilter);
+            IsSearchResult = !string.IsNullOrEmpty(SearchQuery) || DateFilter.HasValue || !string.IsNullOrEmpty(StatusFilter);
             
             if (!IsSearchResult)
             {

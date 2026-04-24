@@ -83,13 +83,9 @@
                             </select>
                         </div>
                     }
-                    <div class="col-md-2">
-                        <label class="form-label form-label-simar mb-1 lh-1" style="font-size: 0.85rem;">Fecha Inicio</label>
-                        <input type="date" class="form-control-simar" asp-for="StartDate">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label form-label-simar mb-1 lh-1" style="font-size: 0.85rem;">Fecha Fin</label>
-                        <input type="date" class="form-control-simar" asp-for="EndDate">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-simar mb-1 lh-1" style="font-size: 0.85rem;">Filtrar por Fecha</label>
+                        <input type="date" class="form-control-simar" asp-for="DateFilter" max="@DateTime.Now.ToString("yyyy-12-31")">
                     </div>
                     <div class="col-md-3">
                         <button type="submit" class="btn btn-simar-primary w-100 h-100 d-flex justify-content-center align-items-center" style="height: 38px;">
