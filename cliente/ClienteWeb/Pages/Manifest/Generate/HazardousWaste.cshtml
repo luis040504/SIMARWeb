@@ -305,6 +305,7 @@
                 <div class="col-md-4">
                     <label asp-for="TransporterEmail" class="form-label-sm">Correo electrónico</label>
                     <input asp-for="TransporterEmail" class="form-control form-control-sm" placeholder="Ej. operaciones@gruposimar.com" />
+                    <span asp-validation-for="TransporterEmail" class="text-danger small"></span>
                 </div>
             </div>
 
@@ -417,6 +418,7 @@
                 <div class="col-md-4">
                     <label asp-for="ReceiverEmail" class="form-label-sm">Correo electrónico</label>
                     <input asp-for="ReceiverEmail" class="form-control form-control-sm" placeholder="Ej. captura@exitium.mx" />
+                    <span asp-validation-for="ReceiverEmail" class="text-danger small"></span>
                 </div>
             </div>
 
@@ -461,16 +463,56 @@
 
         <div class="d-flex justify-content-end gap-2 mt-4">
             <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">Cancelar</a>
-            <button type="submit" class="btn-simar-primary">
+            <button type="button" id="btnOpenConfirm" class="btn-simar-primary">
                 <i class="bi bi-check2-circle"></i> Generar manifiesto
             </button>
         </div>
     </form>
 </div>
 
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">Confirmar generación de manifiesto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Desea guardar el manifiesto <strong>@Model.ManifestNumber</strong>?</p>
+                <p class="mb-0">Se guardará con estado <span class="badge bg-secondary">Borrador</span>. Podrá editarlo y enviarlo a tránsito desde el listado de manifiestos.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirm" class="btn-simar-primary">
+                    <i class="bi bi-check2-circle"></i> Guardar como borrador
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        $.validator.messages.required = "Este campo es obligatorio.";
+        $.validator.messages.email = "Por favor ingrese un correo electrónico válido.";
+        $.validator.messages.number = "Por favor ingrese un número válido.";
+        $.validator.messages.range = $.validator.format("Por favor ingrese un valor entre {0} y {1}.");
+        $.validator.messages.min = $.validator.format("El valor mínimo es {0}.");
+        $.validator.messages.max = $.validator.format("El valor máximo es {0}.");
+
+        document.getElementById('btnOpenConfirm').addEventListener('click', function () {
+            const form = document.querySelector('form');
+            if ($(form).valid()) {
+                new bootstrap.Modal(document.getElementById('confirmModal')).show();
+            }
+        });
+
+        document.getElementById('btnConfirm').addEventListener('click', function () {
+            document.querySelector('form').submit();
+        });
+
         let hazardousIndex = @Model.Residues.Count;
 
         function deleteRow(btn) {

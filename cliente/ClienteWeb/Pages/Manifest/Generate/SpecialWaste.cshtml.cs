@@ -14,15 +14,15 @@ public class SpecialWasteModel : PageModel
 
     // ===================== GENERADOR =====================
     [BindProperty]
-    [Required]
+    [Required(ErrorMessage = "El número de registro SEDEMA es obligatorio.")]
     public string EnvironmentalRegistrationNumber { get; set; } = string.Empty;
-
+ 
     [BindProperty]
-    [Required]
+    [Required(ErrorMessage = "La razón social es obligatoria.")]
     public string SocialReason { get; set; } = string.Empty;
-
+ 
     [BindProperty]
-    [Required]
+    [Required(ErrorMessage = "El domicilio es obligatorio.")]
     public string Address { get; set; } = string.Empty;
 
     [BindProperty]
@@ -32,7 +32,13 @@ public class SpecialWasteModel : PageModel
     public string Municipality { get; set; } = string.Empty;
 
     [BindProperty]
+    [Required(ErrorMessage = "El teléfono es obligatorio.")]
     public string PhoneNumber { get; set; } = string.Empty;
+
+    [BindProperty]
+    [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
+    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
+    public string Email { get; set; } = string.Empty;
 
     [BindProperty]
     public DateOnly ManifestDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
@@ -141,8 +147,8 @@ public class SpecialWasteModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        TempData["SuccessMessage"] = $"Manifiesto {ManifestNumber} generado correctamente.";
-        return RedirectToPage("/Index");
+        TempData["SuccessMessage"] = $"Manifiesto {ManifestNumber} guardado como borrador. Puede editarlo y enviarlo a tránsito desde el listado.";
+        return RedirectToPage("/Manifest/Consult/Index");
     }
 
     private static string GenerateManifestSerial()

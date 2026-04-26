@@ -37,7 +37,7 @@ public class HazardousWasteModel : PageModel
     public string ExteriorNumber { get; set; } = string.Empty;
 
     [BindProperty]
-    public string InteriorNumber { get; set; } = string.Empty;
+    public string? InteriorNumber { get; set; }
 
     [BindProperty]
     public string Colony { get; set; } = string.Empty;
@@ -54,7 +54,7 @@ public class HazardousWasteModel : PageModel
 
     [BindProperty]
     [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
     [BindProperty]
     public string SafeHandlingInstructions { get; set; } = string.Empty;
@@ -88,7 +88,7 @@ public class HazardousWasteModel : PageModel
     public string TransporterExteriorNumber { get; set; } = string.Empty;
 
     [BindProperty]
-    public string TransporterInteriorNumber { get; set; } = string.Empty;
+    public string? TransporterInteriorNumber { get; set; }
 
     [BindProperty]
     public string TransporterColony { get; set; } = string.Empty;
@@ -104,7 +104,7 @@ public class HazardousWasteModel : PageModel
 
     [BindProperty]
     [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
-    public string TransporterEmail { get; set; } = string.Empty;
+    public string? TransporterEmail { get; set; }
 
     [BindProperty]
     public string TransporterAuthorizationNumber { get; set; } = string.Empty;
@@ -142,7 +142,7 @@ public class HazardousWasteModel : PageModel
     public string ReceiverExteriorNumber { get; set; } = string.Empty;
 
     [BindProperty]
-    public string ReceiverInteriorNumber { get; set; } = string.Empty;
+    public string? ReceiverInteriorNumber { get; set; }
 
     [BindProperty]
     public string ReceiverColony { get; set; } = string.Empty;
@@ -158,7 +158,7 @@ public class HazardousWasteModel : PageModel
 
     [BindProperty]
     [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
-    public string ReceiverEmail { get; set; } = string.Empty;
+    public string? ReceiverEmail { get; set; }
 
     [BindProperty]
     public string ReceiverAuthorizationNumber { get; set; } = string.Empty;
@@ -184,8 +184,8 @@ public class HazardousWasteModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        TempData["SuccessMessage"] = $"Manifiesto {ManifestNumber} generado correctamente.";
-        return RedirectToPage("/Index");
+        TempData["SuccessMessage"] = $"Manifiesto {ManifestNumber} guardado como borrador. Puede editarlo y enviarlo a tránsito desde el listado.";
+        return RedirectToPage("/Manifest/Consult/Index");
     }
 
     private static string GenerateManifestNumber()
