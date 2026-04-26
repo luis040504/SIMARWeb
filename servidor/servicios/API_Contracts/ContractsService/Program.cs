@@ -1,4 +1,5 @@
 using ContractsService.Data;
+using ContractsService.Models;
 using ContractsService.Services;
 using Microsoft.EntityFrameworkCore;
 
