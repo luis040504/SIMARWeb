@@ -20,6 +20,7 @@ services:
       - contratos_api
       - manifiestos_api
       - empleados_api
+      - audit_api
     networks:
       - simar_network
     restart: unless-stopped
@@ -187,6 +188,27 @@ services:
     restart: unless-stopped
 
   # ============================================
+  # MICROSERVICIO: AUDITORÍA
+  # ============================================
+  audit_api:
+    build:
+      context: ./servicios/API_Audit
+      dockerfile: Dockerfile
+    container_name: simar_audit_api
+    ports:
+      - "8009:8009"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8009
+      - ConnectionStrings__DefaultConnection=Server=sqlserver_audit;Database=AuditDB;User=sa;Password=${AUDIT_DB_PASSWORD};TrustServerCertificate=True;
+      - ApiKey__Value=${AUDIT_API_KEY}
+    depends_on:
+      - sqlserver_audit
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # MICROSERVICIO: EMPLEADOS
   # ============================================
   empleados_api:
@@ -278,6 +300,23 @@ services:
       retries: 5
 
   # ============================================
+  # SQL SERVER - AUDITORÍA
+  # ============================================
+  sqlserver_audit:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: simar_sqlserver_audit
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${AUDIT_DB_PASSWORD}
+    ports:
+      - "1435:1433"
+    volumes:
+      - sqlserver_audit_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # SQL SERVER - CONTRATOS
   # ============================================
   sqlserver_contratos:
@@ -341,6 +380,7 @@ services:
 # VOLÚMENES
 # ============================================
 volumes:
+  sqlserver_audit_data:
   mysql_vehiculos_data:
   mysql_manifiestos_data:
   manifiestos_uploads:
