@@ -1,25 +1,25 @@
--- ============================================================
--- BASE DE DATOS: MANIFIESTOS - SIMAR
--- ============================================================
-
 CREATE DATABASE IF NOT EXISTS simar_manifiestos_db;
 USE simar_manifiestos_db;
 
--- ============================================================
--- TABLA PRINCIPAL: MANIFIESTOS
--- ============================================================
+CREATE TABLE IF NOT EXISTS secuencias_manifiesto (
+    id                  INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente          INT NOT NULL,
+    tipo                ENUM('especial', 'peligroso') NOT NULL,
+    anio                YEAR NOT NULL,
+    ultimo_consecutivo  INT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_cliente_tipo_anio (id_cliente, tipo, anio)
+);
+
 CREATE TABLE IF NOT EXISTS manifiestos (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    numero_manifiesto   VARCHAR(50) UNIQUE NOT NULL,
+    id_cliente          INT NOT NULL,
+    numero_manifiesto   VARCHAR(50) NOT NULL,
     tipo                ENUM('especial', 'peligroso') NOT NULL,
     estado              ENUM('borrador', 'en_transito', 'completado') DEFAULT 'borrador',
 
-    -- === GENERADOR ===
     numero_registro_ambiental   VARCHAR(100),
     razon_social                VARCHAR(200) NOT NULL,
-    -- Especial: domicilio único
     domicilio                   VARCHAR(300),
-    -- Peligroso: dirección desglosada
     calle                       VARCHAR(200),
     numero_exterior             VARCHAR(20),
     numero_interior             VARCHAR(20),
@@ -93,24 +93,23 @@ CREATE TABLE IF NOT EXISTS manifiestos (
     nombre_responsable_destinatario   VARCHAR(100),
     observaciones_destinatario        TEXT,
 
-    -- === PDF FIRMADO ===
     nombre_archivo_firmado  VARCHAR(500),
     fecha_firma             DATE,
 
-    -- === CONTROL ===
     activo              BOOLEAN DEFAULT TRUE,
     fecha_creacion      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
+
+    UNIQUE KEY uk_folio_cliente_tipo (id_cliente, tipo, numero_manifiesto),
+    INDEX idx_cliente (id_cliente),
     INDEX idx_numero (numero_manifiesto),
     INDEX idx_tipo_estado (tipo, estado),
     INDEX idx_razon_social (razon_social),
     INDEX idx_fecha (fecha_manifiesto)
 );
 
--- ============================================================
--- TABLA: RESIDUOS ESPECIALES
--- ============================================================
+
 CREATE TABLE IF NOT EXISTS residuos_especiales (
     id              INT PRIMARY KEY AUTO_INCREMENT,
     manifiesto_id   INT NOT NULL,
@@ -123,9 +122,7 @@ CREATE TABLE IF NOT EXISTS residuos_especiales (
     FOREIGN KEY (manifiesto_id) REFERENCES manifiestos(id) ON DELETE CASCADE
 );
 
--- ============================================================
--- TABLA: RESIDUOS PELIGROSOS
--- ============================================================
+
 CREATE TABLE IF NOT EXISTS residuos_peligrosos (
     id              INT PRIMARY KEY AUTO_INCREMENT,
     manifiesto_id   INT NOT NULL,
@@ -144,9 +141,7 @@ CREATE TABLE IF NOT EXISTS residuos_peligrosos (
     FOREIGN KEY (manifiesto_id) REFERENCES manifiestos(id) ON DELETE CASCADE
 );
 
--- ============================================================
--- VISTA: RESUMEN DE MANIFIESTOS
--- ============================================================
+
 CREATE OR REPLACE VIEW v_manifiestos_resumen AS
 SELECT
     m.id,
@@ -163,9 +158,7 @@ SELECT
 FROM manifiestos m
 WHERE m.activo = TRUE;
 
--- ============================================================
--- PROCEDIMIENTO: BUSCAR MANIFIESTOS
--- ============================================================
+
 DELIMITER //
 
 CREATE PROCEDURE IF NOT EXISTS sp_buscar_manifiestos(
@@ -199,11 +192,13 @@ END//
 
 DELIMITER ;
 
--- ============================================================
--- DATOS DE EJEMPLO
--- ============================================================
+INSERT INTO secuencias_manifiesto (id_cliente, tipo, anio, ultimo_consecutivo) VALUES
+    (1, 'especial',  2026, 9),
+    (1, 'peligroso', 2026, 2)
+ON DUPLICATE KEY UPDATE ultimo_consecutivo = VALUES(ultimo_consecutivo);
+
 INSERT INTO manifiestos (
-    numero_manifiesto, tipo, estado,
+    id_cliente, numero_manifiesto, tipo, estado,
     numero_registro_ambiental, razon_social, domicilio,
     codigo_postal, municipio, telefono, correo,
     fecha_manifiesto, hora_manifiesto,
@@ -218,7 +213,7 @@ INSERT INTO manifiestos (
     tipo_disposicion, nombre_responsable_destinatario,
     nombre_archivo_firmado, fecha_firma
 ) VALUES (
-    '009/2026', 'especial', 'completado',
+    1, '009/2026', 'especial', 'completado',
     'SEDEMA/TRME-CH0990/20EXR-17/182',
     'Cementos Moctezuma S.A. de C.V.',
     'Dom. conocido Predio de Los Gallineros, Camino Vecinal Cerro Colorado',
@@ -242,7 +237,7 @@ INSERT INTO residuos_especiales (manifiesto_id, clave_residuo, nombre_residuo, t
 VALUES (1, 'IE-001', 'Otros Residuos Inorgánicos (RSU)', 'OF', '1/6 m³', 680, 'kg');
 
 INSERT INTO manifiestos (
-    numero_manifiesto, tipo, estado,
+    id_cliente, numero_manifiesto, tipo, estado,
     numero_registro_ambiental, razon_social,
     calle, numero_exterior, numero_interior, colonia, estado_generador,
     codigo_postal, municipio, telefono, correo,
@@ -257,7 +252,7 @@ INSERT INTO manifiestos (
     codigo_postal_destinatario, municipio_destinatario, estado_destinatario,
     nombre_responsable_destinatario, fecha_firma_destinatario
 ) VALUES (
-    '002/2026', 'peligroso', 'en_transito',
+    1, '002/2026', 'peligroso', 'en_transito',
     'CMORE3001711', 'Cementos Moctezuma S.A. de C.V.',
     'Dom. conocido Predio de Los Gallineros', 'S/N', 'S/N',
     'Camino Vecinal Cerro Colorado', 'Veracruz',

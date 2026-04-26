@@ -1,4 +1,5 @@
 const { promisePool: db } = require('../config/database');
+const { generarFolio } = require('../services/folioService');
 
 class Manifest {
 
@@ -8,6 +9,7 @@ class Manifest {
         let query = `
             SELECT
                 m.id,
+                m.id_cliente,
                 m.numero_manifiesto,
                 m.tipo,
                 m.estado,
@@ -73,11 +75,17 @@ class Manifest {
     // ─── CREAR ────────────────────────────────────────────────────────────────
 
     static async create(data) {
+        if (!data.id_cliente) throw new Error('id_cliente es requerido para generar el folio.');
+        if (!data.tipo) throw new Error('tipo es requerido para generar el folio.');
+
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
 
-            const fields = this._buildFields(data);
+            // El folio se genera aquí, nunca lo envía el cliente
+            const numero_manifiesto = await generarFolio(data.id_cliente, data.tipo, conn);
+
+            const fields = this._buildFields({ ...data, numero_manifiesto });
             const [result] = await conn.query(
                 `INSERT INTO manifiestos (${fields.columns}) VALUES (${fields.placeholders})`,
                 fields.values
@@ -178,6 +186,7 @@ class Manifest {
 
     static _buildFields(data) {
         const map = {
+            id_cliente: data.id_cliente,
             numero_manifiesto: data.numero_manifiesto,
             tipo: data.tipo,
             estado: data.estado,

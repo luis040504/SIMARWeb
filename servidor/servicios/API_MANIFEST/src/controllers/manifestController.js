@@ -36,6 +36,23 @@ const manifestController = {
     // POST /api/manifiestos
     async create(req, res) {
         try {
+            const { id_cliente, tipo } = req.body;
+
+            if (!id_cliente) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'id_cliente es requerido para asociar el manifiesto al cliente.'
+                });
+            }
+
+            const tiposValidos = ['especial', 'peligroso'];
+            if (!tiposValidos.includes(tipo)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'tipo debe ser "especial" (RME) o "peligroso" (RP).'
+                });
+            }
+
             const manifest = await Manifest.create(req.body);
             res.status(201).json({ success: true, data: manifest });
         } catch (err) {
