@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace ClienteWeb.Pages.Contracts.Generate
 {
     public class GenerateModel : PageModel
     {
+        [BindProperty]
+        public string AnexosJsonHidden { get; set; } = "";
+        
         [BindProperty]
         public int QuotationId { get; set; }
 
@@ -21,16 +25,13 @@ namespace ClienteWeb.Pages.Contracts.Generate
 
         public bool ShowPreview { get; set; }
 
-        // --- PROPIEDADES PARA MOCKS DE ANEXOS (NUEVO) ---
+        // Standardized properties for the frontend to map correctly
         public List<Anexo1Scope> Anexo1Items { get; set; } = new();
         public List<Anexo2Payment> Anexo2Payments { get; set; } = new();
         public List<Anexo3Schedule> Anexo3Steps { get; set; } = new();
         public List<Anexo4Extra> Anexo4Extras { get; set; } = new();
 
-        public void OnGet()
-        {
-            LoadQuotations();
-        }
+        public void OnGet() => LoadQuotations();
 
         public void OnPost(string action)
         {
@@ -38,7 +39,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
 
             if (action == "preview")
             {
-                var quotation = GetMockQuotation(QuotationId);
+                var quotation = GetQuotationFromDatabase(QuotationId); 
                 if (quotation != null)
                 {
                     BusinessName = quotation.BusinessName;
@@ -49,64 +50,52 @@ namespace ClienteWeb.Pages.Contracts.Generate
                     Price = quotation.Price;
                     PaymentMethod = quotation.PaymentMethod;
                     Validity = quotation.Validity;
-                    
-                    // --- CARGAR DATOS INICIALES (MOCKS) ---
-                    Anexo1Items = new List<Anexo1Scope> {
-                        new Anexo1Scope { Residuo = "Aceite Usado", Servicio = "Recolección", Frecuencia = "Mensual" }
-                    };
-                    Anexo2Payments = new List<Anexo2Payment> {
-                        new Anexo2Payment { Concepto = "Anticipo", Monto = 5000m, Fecha = DateTime.Now.AddDays(5) }
-                    };
-                    Anexo3Steps = new List<Anexo3Schedule> {
-                        new Anexo3Schedule { Fase = "Instalación de Contenedores", Duracion = "1 Semana" }
-                    };
-                    Anexo4Extras = new List<Anexo4Extra> {
-                        new Anexo4Extra { Descripcion = "Maniobras de Carga", Costo = 800m, Cantidad = 1 }
-                    };
+
+                    // Initialize with empty lists (No mocks)
+                    Anexo1Items = new List<Anexo1Scope>();
+                    Anexo2Payments = new List<Anexo2Payment>();
+                    Anexo3Steps = new List<Anexo3Schedule>();
+                    Anexo4Extras = new List<Anexo4Extra>();
 
                     ShowPreview = true;
                 }
-            }
-            else if (action == "cancel")
-            {
-                ShowPreview = false;
             }
         }
 
         private void LoadQuotations()
         {
-            Quotations = new List<Quotation>
-            {
-                new Quotation { Id = 1, Name = "Cotización Empresa X" },
-                new Quotation { Id = 2, Name = "Cotización Comercial Y" }
+            // Logic to load dropdown items from Database
+            Quotations = new List<Quotation> {
+                new Quotation { Id = 1, Name = "Client A - Quotation" }
             };
         }
 
-        private QuotationDetail? GetMockQuotation(int id)
-        {
-            var data = new List<QuotationDetail>
-            {
-                new QuotationDetail {
-                    Id = 1, BusinessName = "Empresa X", RFC = "XAXX010101000", 
-                    Address = "Av. Principal 123, Xalapa, Ver.", 
-                    Representative = "JUAN PÉREZ LÓPEZ",
-                    ServiceDetails = "Recolección de residuos peligrosos biológico-infecciosos", 
-                    Price = 12500, PaymentMethod = "Transferencia bancaria", Validity = "12 meses"
-                },
-                new QuotationDetail {
-                    Id = 2, BusinessName = "Comercial Y", RFC = "YAYY020202000", 
-                    Address = "Calle Secundaria 456, Veracruz, Ver.", 
-                    Representative = "MARÍA GARCÍA SOLÍS",
-                    ServiceDetails = "Manejo de residuos industriales no peligrosos", 
-                    Price = 8400, PaymentMethod = "Efectivo / Cheque", Validity = "6 meses"
-                }
-            };
-            return data.FirstOrDefault(q => q.Id == id);
-        }
+private QuotationDetail? GetQuotationFromDatabase(int id)
+{
+    // SI YA TIENES TU DB CONECTADA, USA ESTO:
+    // return _dbContext.QuotationDetails.FirstOrDefault(q => q.Id == id);
+
+    // SI AÚN NO LA TIENES, DEJA ESTO PARA QUE LA VISTA PREVIA FUNCIONE HOY:
+    return new QuotationDetail {
+        Id = id,
+        BusinessName = "Empresa X",
+        RFC = "XAXX010101000",
+        Address = "Av. Principal 123",
+        Representative = "JUAN PÉREZ",
+        ServiceDetails = "Recolección general",
+        Price = 12500,
+        PaymentMethod = "Transferencia",
+        Validity = "12 meses",
+        // Iniciamos la lista vacía para que el frontend no marque error
+        Anexo1Items = new List<Anexo1Scope>() 
+    };
+}
     }
 
-    // Clases del modelo
+    // --- DOMAIN CLASSES (Fully English to match Frontend JS) ---
+
     public class Quotation { public int Id { get; set; } public string Name { get; set; } = ""; }
+
     public class QuotationDetail {
         public int Id { get; set; }
         public string BusinessName { get; set; } = "";
@@ -117,11 +106,32 @@ namespace ClienteWeb.Pages.Contracts.Generate
         public decimal Price { get; set; }
         public string PaymentMethod { get; set; } = "";
         public string Validity { get; set; } = "";
+        // Adding this to avoid null errors when calling in OnPost
+        public List<Anexo1Scope> Anexo1Items { get; set; } = new();
     }
 
-    // --- CLASES PARA LOS ANEXOS (NUEVO) ---
-    public class Anexo1Scope { public string Residuo { get; set; } = ""; public string Servicio { get; set; } = ""; public string Frecuencia { get; set; } = ""; }
-    public class Anexo2Payment { public string Concepto { get; set; } = ""; public decimal Monto { get; set; } public DateTime Fecha { get; set; } }
-    public class Anexo3Schedule { public string Fase { get; set; } = ""; public string Duracion { get; set; } = ""; }
-    public class Anexo4Extra { public string Descripcion { get; set; } = ""; public decimal Costo { get; set; } public int Cantidad { get; set; } public decimal Total => Costo * Cantidad; }
+    public class Anexo1Scope { 
+        public int ExternalResiduoId { get; set; }
+        public string NombreResiduo { get; set; } = ""; 
+        public string EstadoFisico { get; set; } = ""; 
+        public string FormaAlmacenado { get; set; } = ""; 
+    }
+
+    public class Anexo2Payment { 
+        public string Concept { get; set; } = ""; 
+        public decimal Amount { get; set; } 
+        public DateTime PaymentDate { get; set; } 
+    }
+
+    public class Anexo3Schedule { 
+        public string Phase { get; set; } = ""; 
+        public DateTime StartDate { get; set; } 
+    }
+
+    public class Anexo4Extra { 
+        public string Description { get; set; } = ""; 
+        public decimal UnitCost { get; set; } 
+        public int Quantity { get; set; } 
+        public decimal Total => UnitCost * Quantity; 
+    }
 }
