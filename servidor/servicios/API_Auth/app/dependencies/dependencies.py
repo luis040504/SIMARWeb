@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import security
 from app.repositories import auth_repository
+from uuid import UUID
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -23,7 +24,7 @@ async def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-        user = auth_repository.get_user_by_id(db, int(user_id))
+        user = auth_repository.get_user_by_id(db, UUID(user_id))
         if user is None or not user.is_active:
             raise credentials_exception
     except JWTError:

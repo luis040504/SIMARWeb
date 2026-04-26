@@ -164,6 +164,8 @@ services:
       - postgres_client_db
     networks:
       - simar_network
+    volumes:
+      - client_files:/app/static
     restart: unless-stopped
 
   # ============================================
@@ -407,7 +409,7 @@ services:
     networks:
       - simar_network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_CLIENT_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -445,6 +447,7 @@ volumes:
   db_empleados_data:
   db_users_data:
   redis_data:
+  client_files:
 
     # ============================================
     # REDES

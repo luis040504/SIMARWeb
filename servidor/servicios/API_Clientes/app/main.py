@@ -2,338 +2,203 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi import UploadFile, File
 from pathlib import Path
+from app.models import StatusEnum
 
-from app import schemas
 from app.database import get_db
 from app.security import get_current_user
-from app.services.clients_service import ClientService, get_client_service
+from app.services.client_service import ClientService, get_client_service
 from app.repositories.client_repository import get_client_by_id
 from app import schemas as client_schemas
 import os
+from uuid import UUID
 import uuid
 
 app = FastAPI(title="Client Service")
 
+STATIC_CLIENTS_DIR = Path("/app/static/clientes")
+STATIC_CLIENTS_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+
 # --- API Endpoints ---
-@app.post("/playlist", response_model=playlist_schemas.Playlist)
-def create_playlist(
-    playlist: playlist_schemas.PlaylistCreate,
+@app.post("/client", response_model=client_schemas.Client)
+def create_client(
+    client: client_schemas.ClientCreate,
     current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    client_service: ClientService = Depends(get_client_service)
 ):
     try:
-        return playlist_service.create_playlist(current_user["user_id"], playlist)
+        return client_service.create_client(client)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@app.put("/playlist/{playlist_id}", response_model=playlist_schemas.Playlist)
-def update_playlist(
-    playlist_id: int,
-    playlist_update: playlist_schemas.PlaylistUpdate,
+@app.put("/client/{client_id}", response_model=client_schemas.Client)
+def update_client(
+    client_id: int,
+    client_update: client_schemas.ClientUpdate,
     current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    client_service: ClientService = Depends(get_client_service)
 ):
-    # Access control: ensure current_user owns the playlist
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     try:
-        return playlist_service.update_playlist(playlist_id, playlist_update)
+        return client_service.update_client(client_id, client_update)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@app.delete("/playlist/{playlist_id}")
-def delete_playlist(
-    playlist_id: int,
+@app.patch("/client/{client_id}/deactivate", response_model=client_schemas.Client)
+def deactivate_client(
+    client_id: int,
     current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    client_service: ClientService = Depends(get_client_service)
 ):
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     try:
-        pl.is_active = False
-        playlist_service.db.commit()
-        return {"message": "deleted"}
+        return client_service.deactivate_client(client_id)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@app.post("/playlist/{playlist_id}/like", response_model=playlist_schemas.PlaylistLike)
-def like_playlist(
-    playlist_id: int,
+        raise HTTPException(status_code=404, detail=str(e))
+    
+    
+@app.patch("/client/{client_id}/activate", response_model=client_schemas.Client)
+def activate_client(
+    client_id: int,
     current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    client_service: ClientService = Depends(get_client_service)
 ):
-    return playlist_service.add_like(current_user["user_id"], playlist_id)
+    try:
+        return client_service.activate_client(client_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    
 
-
-@app.post("/playlist/{playlist_id}/unlike")
-def unlike_playlist(
-    playlist_id: int,
-    current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/active", response_model=list[client_schemas.Client])
+def get_active_clients(
+    client_service: ClientService = Depends(get_client_service)
 ):
-    success = playlist_service.remove_like(current_user["user_id"], playlist_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Like not found")
-    return {"message": "unliked"}
+    return client_service.get_active_clients()
 
 
-@app.get("/playlist/active", response_model=list[playlist_schemas.Playlist])
-def get_active_playlists(
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/inactive", response_model=list[client_schemas.Client])
+def get_inactive_clients(
+    client_service: ClientService = Depends(get_client_service)
 ):
-    """Obtiene todas las playlists activas."""
-    return playlist_service.get_active_playlists()
+    return client_service.get_inactive_clients()
 
 
-@app.get("/playlist/all", response_model=list[playlist_schemas.Playlist])
-def get_all_playlists(
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/all", response_model=list[client_schemas.Client])
+def get_all_clients(
+    client_service: ClientService = Depends(get_client_service)
 ):
-    """Obtiene todas las playlists, activas e inactivas."""
-    return playlist_service.get_all_playlists()
+    return client_service.get_all_clients()
 
 
-@app.get("/playlist/public", response_model=list[playlist_schemas.Playlist])
-def get_public_playlists(
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/user/{user_id}/active", response_model=list[client_schemas.Client])
+def get_active_client_by_user(
+    user_id: UUID,
+    client_service: ClientService = Depends(get_client_service)
 ):
-    """Obtiene todas las playlists publicas."""
-    return playlist_service.get_public_playlists()
+    return client_service.get_active_client_by_user(user_id)
 
 
-@app.get("/playlist/owner/{owner_id}/public", response_model=list[playlist_schemas.Playlist])
-def get_public_playlists_by_owner(
-    owner_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/user/{user_id}/inactive", response_model=list[client_schemas.Client])
+def get_inactive_client_by_user(
+    user_id: UUID,
+    client_service: ClientService = Depends(get_client_service)
 ):
-    """Obtiene todas las playlists publicas."""
-    return playlist_service.get_public_playlists_by_owner(owner_id)
+    return client_service.get_inactive_client_by_user(user_id)
 
 
-@app.get("/playlist/{playlist_id}", response_model=playlist_schemas.Playlist)
-def get_playlist_id_endpoint(
-    playlist_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/id/{client_id}", response_model=client_schemas.Client)
+def get_client_id_endpoint(
+    client_id: int,
+    client_service: ClientService = Depends(get_client_service)
 ):
-    return playlist_service.get_playlist_by_id(playlist_id)
+    return client_service.get_client_by_id(client_id)
 
 
-@app.get("/playlist/{owner_id}/owner", response_model=list[playlist_schemas.Playlist])
-def get_playlists_by_owner(
-    owner_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/user/{user_id}", response_model=client_schemas.Client)
+def get_client_by_user(
+    user_id: UUID,
+    client_service: ClientService = Depends(get_client_service)
 ):
-    return playlist_service.get_playlists_by_owner(owner_id)
+    return client_service.get_client_by_user(user_id)
 
 
-@app.get("/playlist/{owner_id}/active", response_model=list[playlist_schemas.Playlist])
-def get_active_playlists_by_owner(
-    owner_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    """
-    Obtiene todas las playlists activas (is_active = True) de un usuario,
-    sin importar visibilidad (públicas y privadas).
-    """
-    return playlist_service.get_active_playlists_by_owner(owner_id)
-
-
-@app.get("/playlist/{owner_id}/active/public", response_model=list[playlist_schemas.Playlist])
-def get_active_public_playlists_by_owner(
-    owner_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    """
-    Obtiene todas las playlists activas y públicas (is_active = True y public = True)
-    de un usuario.
-    """
-    return playlist_service.get_active_public_playlists_by_owner(owner_id)
-
-
-@app.get("/playlist/active/public", response_model=list[playlist_schemas.Playlist])
-def get_active_public_playlists(
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    """
-    Obtiene todas las playlists activas y públicas de todos los usuarios.
-    """
-    return playlist_service.get_active_public_playlists()
-
-@app.get("/playlist/active/public/{name}", response_model=list[playlist_schemas.Playlist])
-def get_active_public_playlists_by_name(
+@app.get("/client/active/name/{name}", response_model=list[client_schemas.Client])
+def get_active_clients_by_name(
     name: str,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    client_service: ClientService = Depends(get_client_service)
 ):
-    """
-    Obtiene todas las playlists activas y públicas de todos los usuarios
-    que coincidan con el nombre dado.
-    """
-    return playlist_service.get_active_public_playlists_by_name(name)
+    return client_service.get_active_clients_by_name(name)
 
 
-@app.get("/playlist/{user_id}/liked-playlists", response_model=list[playlist_schemas.Playlist])
-def get_playlists_liked_by_user(
-    user_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+@app.get("/client/inactive/name/{name}", response_model=list[client_schemas.Client])
+def get_inactive_clients_by_name(
+    name: str,
+    client_service: ClientService = Depends(get_client_service)
 ):
-    """Obtiene todas las playlists, activas e inactivas."""
-    return playlist_service.get_playlists_liked_by_user(user_id)
+    return client_service.get_inactive_clients_by_name(name)
 
 
+@app.get("/client/name/{name}", response_model=list[client_schemas.Client])
+def get_clients_by_name(
+    name: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_clients_by_name(name)
 
-@app.post("/playlist/{playlist_id}/cover", response_model=playlist_schemas.Playlist)
-async def upload_playlist_cover(
-    playlist_id: int,
-    file: UploadFile = File(...),
+
+@app.post("/client/id/{client_id}/certificate", response_model=client_schemas.Client)
+async def upload_sat_certificate(
+    client_id: int,
     current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
+    file: UploadFile = File(...),
+    client_service: ClientService = Depends(get_client_service)
 ):
-    # 1) Verificar permisos y existencia
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=403, detail="Not allowed")
+    # 1) Verificar existencia
+    client = client_service.get_client_by_id(client_id)
 
     # 2) Validar tipo de archivo
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files are allowed")
+    allowed_types = ["application/pdf", "application/xml"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF or XML files are allowed"
+        )
 
-    # 3) Generar nombre único y ruta de guardado
+    # 3) Generar nombre único
     _, ext = os.path.splitext(file.filename)
-    # si ext está vacío, puedes forzar .png por ejemplo:
     if not ext:
-        ext = ".png"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    save_path = STATIC_PLAYLISTS_DIR / filename
+        ext = ".pdf"
 
-    # 4) Guardar archivo de forma segura
+    filename = f"{uuid.uuid4().hex}{ext}"
+    save_path = STATIC_CLIENTS_DIR / filename
+
+    # 4) Guardar archivo
     try:
         content = await file.read()
         save_path.write_bytes(content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
+        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
 
-    # 5) (Opcional) Borrar cover anterior si existía
+    # 5) (Opcional) borrar anterior
     try:
-        old_cover = pl.playlist_cover
-        if old_cover:
-            old_path = STATIC_PLAYLISTS_DIR / old_cover
-            # evita borrar si es igual al nuevo o si no existe
-            if old_path.exists() and old_cover != filename:
-                try:
-                    old_path.unlink()
-                except Exception:
-                    # no crítico, solo un log en producción
-                    pass
+        old_file = client.urlSatCertificate
+        if old_file:
+            old_filename = old_file.split("/")[-1]
+            old_path = STATIC_CLIENTS_DIR / old_file
+            if old_path.exists() and old_filename != filename:
+                old_path.unlink()
     except Exception:
-        # no queremos que la limpieza bloquee la respuesta
         pass
 
-    # 6) Actualizar en BD (usando tu servicio y schema de update)
-    updated_playlist = playlist_service.update_playlist(
-        playlist_id,
-        playlist_schemas.PlaylistUpdate(playlist_cover=filename)
+    # 6) Guardar path
+    file_path = f"/static/clientes/{filename}"
+
+    updated_client = client_service.update_client(
+        client_id,
+        client_schemas.ClientUpdate(urlSatCertificate=file_path)
     )
 
-    return updated_playlist
-
-
-# === PLAYLIST SONGS ===
-
-@app.post("/playlist/{playlist_id}/songs")
-def add_song_to_playlist(
-    playlist_id: int,
-    song: playlist_schemas.PlaylistSongCreate,  # schema con song_id y position
-    current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-
-    if not playlist_service.song_exists(song.song_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Song not found")
-
-    try:
-        return playlist_service.add_song_to_playlist(playlist_id, song.song_id, song.position)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@app.delete("/playlist/{playlist_id}/songs/{song_id}")
-def remove_song_from_playlist(
-    playlist_id: int,
-    song_id: str,
-    current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-    try:
-        playlist_service.remove_song_from_playlist(playlist_id, song_id)
-        return {"message": "song removed"}
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@app.delete("/playlist/songs/{song_id}")
-def remove_song_references_from_playlists(
-    song_id: str,
-    current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    try:
-        deleted_count = playlist_service.remove_song_references_from_playlists(song_id)
-        return {"message": f"song references removed from {deleted_count} playlists"}
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return updated_client
     
 
-@app.get("/playlist/{playlist_id}/songs", response_model=list[playlist_schemas.PlaylistSong])
-def get_songs_in_playlist(
-    playlist_id: int,
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    """
-    Devuelve todas las canciones de una playlist ordenadas por posición.
-    """
-    return playlist_service.get_songs_in_playlist(playlist_id)
-
-
-@app.put("/playlist/{playlist_id}/songs/{song_id}")
-def update_song_position(
-    playlist_id: int,
-    song_id: str,
-    update_data: playlist_schemas.PlaylistSongUpdate,  # schema con new_position
-    current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-    try:
-        return playlist_service.update_song_position(playlist_id, song_id, update_data.position)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@app.delete("/playlist/{playlist_id}/songs")
-def clear_playlist(
-    playlist_id: int,
-    current_user = Depends(get_current_user),
-    playlist_service: PlaylistService = Depends(get_playlist_service)
-):
-    """
-    Elimina todas las canciones de una playlist.
-    """
-    pl = get_playlist_by_id(playlist_service.db, playlist_id)
-    if pl is None or pl.owner_id != current_user["user_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-
-    result = playlist_service.clear_playlist(playlist_id)
-    return {"message": f"{result['deleted']} songs deleted"}
