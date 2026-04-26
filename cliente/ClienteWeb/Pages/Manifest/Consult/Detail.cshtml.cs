@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
 
 namespace ClienteWeb.Pages.Manifest.Consult;
 
@@ -50,6 +51,25 @@ public class DetailModel : PageModel
 
         if (found.Status != ManifestStatus.Borrador)
             return RedirectToPage(new { id });
+
+        // Validar campos obligatorios antes de enviar a tránsito
+        var faltantes = new List<string>();
+        if (string.IsNullOrWhiteSpace(found.EnvironmentalRegistrationNumber))
+            faltantes.Add("No. de registro ambiental");
+        if (string.IsNullOrWhiteSpace(found.SocialReason))
+            faltantes.Add("Razón social del generador");
+        if (string.IsNullOrWhiteSpace(found.PhoneNumber))
+            faltantes.Add("Teléfono del generador");
+        if (string.IsNullOrWhiteSpace(found.TransporterSocialReason))
+            faltantes.Add("Razón social del transportista");
+        if (string.IsNullOrWhiteSpace(found.ReceiverSocialReason))
+            faltantes.Add("Razón social del destinatario");
+
+        if (faltantes.Count > 0)
+        {
+            TempData["ErrorTransitar"] = "Faltan campos obligatorios: " + string.Join(", ", faltantes) + ".";
+            return RedirectToPage(new { id });
+        }
 
         found.Status = ManifestStatus.EnTransito;
 
@@ -302,7 +322,10 @@ public class ManifestDetailViewModel
     // GENERADOR
     public DateOnly? ManifestDate { get; set; }
     public TimeOnly? ManifestTime { get; set; }
+    [Required(ErrorMessage = "El número de registro ambiental es obligatorio.")]
     public string EnvironmentalRegistrationNumber { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "La razón social del generador es obligatoria.")]
     public string SocialReason { get; set; } = string.Empty;
 
     // Especial
@@ -311,14 +334,17 @@ public class ManifestDetailViewModel
     // Peligroso
     public string Street { get; set; } = string.Empty;
     public string ExteriorNumber { get; set; } = string.Empty;
-    public string InteriorNumber { get; set; } = string.Empty;
+    public string? InteriorNumber { get; set; }
     public string Colony { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
 
     public string PostalCode { get; set; } = string.Empty;
     public string Municipality { get; set; } = string.Empty;
+    [Required(ErrorMessage = "El teléfono es obligatorio.")]
     public string PhoneNumber { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
+
+    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
+    public string? Email { get; set; }
 
     public DateOnly? GeneratorSignDate { get; set; }
     public string GeneratorResponsibleName { get; set; } = string.Empty;
@@ -331,6 +357,7 @@ public class ManifestDetailViewModel
     // TRANSPORTISTA
     public string TransporterAuthorizationNumber { get; set; } = string.Empty;
     public string TransporterSCTPermit { get; set; } = string.Empty;
+    [Required(ErrorMessage = "La razón social del transportista es obligatoria.")]
     public string TransporterSocialReason { get; set; } = string.Empty;
 
     // Especial
@@ -339,10 +366,11 @@ public class ManifestDetailViewModel
     // Peligroso
     public string TransporterStreet { get; set; } = string.Empty;
     public string TransporterExteriorNumber { get; set; } = string.Empty;
-    public string TransporterInteriorNumber { get; set; } = string.Empty;
+    public string? TransporterInteriorNumber { get; set; }
     public string TransporterColony { get; set; } = string.Empty;
     public string TransporterState { get; set; } = string.Empty;
-    public string TransporterEmail { get; set; } = string.Empty;
+    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
+    public string? TransporterEmail { get; set; }
 
     public string TransporterPostalCode { get; set; } = string.Empty;
     public string TransporterMunicipality { get; set; } = string.Empty;
@@ -363,6 +391,7 @@ public class ManifestDetailViewModel
 
     // DESTINATARIO
     public string ReceiverAuthorizationNumber { get; set; } = string.Empty;
+    [Required(ErrorMessage = "La razón social del destinatario es obligatoria.")]
     public string ReceiverSocialReason { get; set; } = string.Empty;
 
     // Especial
@@ -373,10 +402,11 @@ public class ManifestDetailViewModel
     // Peligroso
     public string ReceiverStreet { get; set; } = string.Empty;
     public string ReceiverExteriorNumber { get; set; } = string.Empty;
-    public string ReceiverInteriorNumber { get; set; } = string.Empty;
+    public string? ReceiverInteriorNumber { get; set; }
     public string ReceiverColony { get; set; } = string.Empty;
     public string ReceiverState { get; set; } = string.Empty;
-    public string ReceiverEmail { get; set; } = string.Empty;
+    [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
+    public string? ReceiverEmail { get; set; }
     public string ReceiverPersonName { get; set; } = string.Empty;
     public DateOnly? ReceiverSignDate { get; set; }
 

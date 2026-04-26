@@ -20,9 +20,7 @@ public class EditModel : PageModel
 
     public IActionResult OnPost()
     {
-        if (!ModelState.IsValid)
-            return Page();
-
+        // Guarda sin validar — campos opcionales permitidos
         // TODO: Llamar a la API para actualizar el manifiesto
 
         TempData["SuccessMessage"] = $"Manifiesto {Manifest.ManifestNumber} actualizado correctamente.";

@@ -65,6 +65,23 @@
         </div>
     </div>
 
+    @if (TempData["SuccessMessage"] is string msgOk)
+    {
+        <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+            <i class="bi bi-check-circle me-1"></i> @msgOk
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorTransitar"] is string msgErr)
+    {
+        <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @msgErr
+            <br /><small>Edita el manifiesto y completa los campos antes de enviarlo a tránsito.</small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     @if (m.Status == ManifestStatus.Completado && !string.IsNullOrEmpty(m.SignedManifestFileName))
     {
         <div class="consult-section-card">
@@ -508,7 +525,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-sm">Manifiesto firmado y sellado (PDF)</label>
+                            <label class="form-label-sm">Manifiesto firmado y sellado (PDF) <span class="text-danger">*</span></label>
                             <div class="file-drop-area"
                                  id="dropAreaModal"
                                  onclick="document.getElementById('file-upload-modal').click()"
@@ -526,6 +543,12 @@
                                    class="d-none"
                                    accept=".pdf"
                                    onchange="onFileSelectedModal(this)" />
+                            @{
+                                var fileError = ViewData.ModelState["RegisterInput.SignedFile"]?.Errors.FirstOrDefault()?.ErrorMessage;
+                            }
+                            <span id="fileError" class="text-danger small @(fileError != null ? "" : "d-none")">
+                                @(fileError ?? "Debes adjuntar el PDF firmado antes de continuar.")
+                            </span>
                         </div>
 
                         <div id="pdf-preview-modal" style="display:none;" class="mb-3">
@@ -576,12 +599,18 @@
         dt.items.add(file);
         input.files = dt.files;
         showPreviewModal(file);
+        // Limpiar error al soltar archivo
+        const err = document.getElementById('fileError');
+        if (err) err.classList.add('d-none');
     }
 
     function onFileSelectedModal(input) {
         const file = input.files[0];
         if (!file) return;
         showPreviewModal(file);
+        // Limpiar error al seleccionar archivo
+        const err = document.getElementById('fileError');
+        if (err) err.classList.add('d-none');
     }
 
     function showPreviewModal(file) {
@@ -596,6 +625,18 @@
         }
     }
 
+    // Validar que se adjunte un PDF antes de enviar el formulario
+    document.getElementById('formRegistrarFirma')?.addEventListener('submit', function (e) {
+        const fileInput = document.getElementById('file-upload-modal');
+        const errorEl = document.getElementById('fileError');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            e.preventDefault();
+            errorEl.textContent = 'Debes adjuntar el PDF firmado antes de continuar.';
+            errorEl.classList.remove('d-none');
+            document.getElementById('dropAreaModal').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+
     // Limpiar preview al cerrar el modal
     document.getElementById('modalRegistrarFirma')?.addEventListener('hidden.bs.modal', function () {
         const input = document.getElementById('file-upload-modal');
@@ -604,6 +645,18 @@
         if (display) display.textContent = '';
         const preview = document.getElementById('pdf-preview-modal');
         if (preview) preview.style.display = 'none';
+        const err = document.getElementById('fileError');
+        if (err) err.classList.add('d-none');
     });
+
+    @if (ViewData.ModelState["RegisterInput.SignedFile"]?.Errors.Count > 0)
+    {
+        // Auto-abrir el modal si el servidor devolvió un error de archivo
+        <text>
+        document.addEventListener('DOMContentLoaded', function () {
+            new bootstrap.Modal(document.getElementById('modalRegistrarFirma')).show();
+        });
+        </text>
+    }
 </script>
 }

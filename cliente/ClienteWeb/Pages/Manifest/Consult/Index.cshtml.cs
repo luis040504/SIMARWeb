@@ -27,7 +27,27 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
-        var allManifests = SampleData;
+        // Deriva los datos desde DetailModel para mantener sincronía de estados
+        var allManifests = DetailModel.SampleData.Select(d => new ManifestSummary
+        {
+            Id              = d.Id,
+            ManifestNumber  = d.ManifestNumber,
+            Type            = d.Type,
+            Status          = d.Status switch
+            {
+                ManifestStatus.EnTransito => "en_transito",
+                ManifestStatus.Completado => "completado",
+                _                         => "borrador"
+            },
+            SocialReason    = d.SocialReason,
+            Municipality    = d.Municipality,
+            ManifestDate    = d.ManifestDate ?? d.GeneratorSignDate
+                              ?? DateOnly.FromDateTime(DateTime.Today),
+            ResidueSummary  = d.Type == "especial"
+                ? string.Join(", ", d.SpecialResidues.Select(r => $"{r.ResidueName} ({r.Weight} {r.Unit})"))
+                : string.Join(", ", d.HazardousResidues.Select(r => $"{r.ResidueName} ({r.AmountKg} kg)")),
+            TransporterName = d.TransporterSocialReason
+        });
 
         Results = allManifests
             .Where(m =>
@@ -46,60 +66,6 @@ public class IndexModel : PageModel
             .ThenByDescending(m => m.ManifestNumber)
             .ToList();
     }
-
-    public static List<ManifestSummary> SampleData { get; } = BuildSampleData();
-
-    private static List<ManifestSummary> BuildSampleData() =>
-    [
-        new()
-        {
-            Id = "1",
-            ManifestNumber = "009/2026",
-            Type = "especial",
-            Status = "completado",
-            SocialReason = "Cementos Moctezuma S.A. de C.V.",
-            Municipality = "Apazapan",
-            ManifestDate = new DateOnly(2026, 2, 26),
-            ResidueSummary = "Otros residuos inorgánicos (680 kg)",
-            TransporterName = "Sistemas en Manejo y Administración de Residuos S.A. de C.V."
-        },
-        new()
-        {
-            Id = "2",
-            ManifestNumber = "002/2026",
-            Type = "peligroso",
-            Status = "en_transito",
-            SocialReason = "Cementos Moctezuma S.A. de C.V.",
-            Municipality = "Apazapan",
-            ManifestDate = new DateOnly(2026, 2, 26),
-            ResidueSummary = "Objetos punzocortantes (250 kg), Residuos no anatómicos (640 kg)",
-            TransporterName = "Sistemas en Manejo y Administración de Residuos S.A. de C.V."
-        },
-        new()
-        {
-            Id = "3",
-            ManifestNumber = "015/2026",
-            Type = "especial",
-            Status = "impreso",
-            SocialReason = "Industrias Veracruz S.A. de C.V.",
-            Municipality = "Xalapa",
-            ManifestDate = new DateOnly(2026, 1, 15),
-            ResidueSummary = "Residuos de construcción (1.2 ton)",
-            TransporterName = "SIMAR"
-        },
-        new()
-        {
-            Id = "4",
-            ManifestNumber = "005/2026",
-            Type = "peligroso",
-            Status = "borrador",
-            SocialReason = "Hospital Regional IMSS",
-            Municipality = "Veracruz",
-            ManifestDate = new DateOnly(2026, 3, 1),
-            ResidueSummary = "Sangre y fluidos corporales (120 kg)",
-            TransporterName = "Exitum / SIMAR"
-        }
-    ];
 }
 
 public class ManifestSummary
