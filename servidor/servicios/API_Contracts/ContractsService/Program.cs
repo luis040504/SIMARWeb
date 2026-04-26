@@ -1,10 +1,13 @@
 using ContractsService.Data;
+using ContractsService.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ContractsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IContractService, ContractService>();
 
 builder.Services.AddOpenApi();
 
@@ -17,28 +20,44 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapPost("/api/contracts", async (Contract contractRequest, IContractService contractService) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    try
+    {
+        var result = await contractService.CreateContractAsync(contractRequest);
+        
+        return Results.Created($"/api/contracts/{result.Id}", result);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Ocurrió un error al crear el contrato: {ex.Message}");
+    }
 })
-.WithName("GetWeatherForecast");
+.WithName("CreateContract");
+
+app.MapGet("/api/contracts", async (
+    string? search, 
+    string? status, 
+    DateTime? dateFilter, 
+    IContractService contractService) =>
+{
+    var contracts = await contractService.GetContractsAsync(search, status, dateFilter);
+    return Results.Ok(contracts);
+})
+.WithName("GetContracts");
+
+app.MapGet("/api/contracts/{id:int}/download", async (int id, IContractService contractService) =>
+{
+    try
+    {
+        var (content, contentType, fileName) = await contractService.GetContractPdfAsync(id);
+        return Results.File(content, contentType, fileName);
+    }
+    catch (Exception)
+    {
+        return Results.NotFound();
+    }
+})
+.WithName("DownloadContractPdf");
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
