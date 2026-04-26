@@ -86,6 +86,7 @@
 </style>
 
 <form method="post">
+    <input type="hidden" id="AnexosJsonHidden" name="AnexosJsonHidden" value="@Model.AnexosJsonHidden" />
     <div class="container-fluid-simar d-print-none">
         <div class="mb-3">
             <a href="/Contracts/Consult" class="btn-simar-outline-gray" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
@@ -119,9 +120,9 @@
                         <button type="submit" name="action" value="cancel" class="btn-simar-outline-gray w-100 mb-2">
                             Cambiar Cotización
                         </button>
-                        <button type="button" onclick="downloadPDF()" class="btn-simar-primary w-100">
-                            <i class="bi bi-download me-2"></i>Descargar PDF
-                        </button>
+                            <button type="submit" asp-page-handler="DownloadPdf" class="btn-simar-primary w-100">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF Oficial
+                            </button>
                     </div>
                     
                     <div class="col-lg-12 mt-3 border-top pt-3">
@@ -327,11 +328,6 @@
         setTimeout(() => location.reload(), 500);
     }
 
-    // ==========================================
-    // LÓGICA DE LOS MODALES DE ANEXOS (CON BD EXTERNA MOCKEADA)
-    // ==========================================
-    
-    // MOCK: Tu base de datos externa de residuos
     const dbResiduosExterna = [
         { id: 101, name: "Metal ferroso", estado: "Sólido", forma: "A granel bajo techo" },
         { id: 102, name: "Aluminio", estado: "Sólido", forma: "A granel bajo techo" },
@@ -341,7 +337,6 @@
         { id: 106, name: "Bandas de hule", estado: "Sólido", forma: "Bolsa plástica" }
     ];
 
-    // Cargar los mocks del C#
     let anexoData = {
         1: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Anexo1Items)),
         2: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Anexo2Payments)),
@@ -402,7 +397,6 @@
         data.forEach((item, index) => {
             const tr = document.createElement('tr');
             if (currentAnexoType === 1) {
-                // ANEXO 1 CON SELECTOR DE BD EXTERNA
                 tr.innerHTML = `
                     <td>
                         <select class="form-select" style="width:100%; border:1px solid #ccc; padding:4px;" onchange="autoFillResiduo(this)">
@@ -430,7 +424,6 @@
         });
     }
 
-    // Auto-rellena "Estado" y "Forma" al seleccionar un residuo de la BD
     function autoFillResiduo(selectElement) {
         const id = parseInt(selectElement.value);
         const tr = selectElement.closest('tr');
@@ -459,67 +452,170 @@
         const tbody = document.getElementById('anexoTableBody');
         const rows = tbody.querySelectorAll('tr');
         let newData = [];
+        const alertBox = document.getElementById('anexoAlert');
+        alertBox.classList.add('d-none');
+
+        let hasError = false;
+        rows.forEach(tr => {
+            const inputs = tr.querySelectorAll('input:not([type="hidden"]), select');
+            inputs.forEach(i => {
+                if (!i.value || i.value.trim() === "") {
+                    i.style.border = "1px solid red";
+                    hasError = true;
+                } else {
+                    i.style.border = "1px solid #ccc";
+                }
+            });
+        });
+
+        if (hasError) {
+            alertBox.innerText = "Error: Todos los campos son obligatorios.";
+            alertBox.classList.remove('d-none', 'alert-warning');
+            alertBox.classList.add('alert-danger');
+            return;
+        }
 
         rows.forEach(tr => {
+            const inputs = tr.querySelectorAll('input, select');
+            
             if (currentAnexoType === 1) {
-                const select = tr.querySelector('select');
-                newData.push({ 
-                    ExternalResiduoId: parseInt(select.value) || 0,
-                    NombreResiduo: tr.querySelector('.residuo-name').value, 
-                    EstadoFisico: tr.querySelector('.estado-fisico').value, 
-                    FormaAlmacenado: tr.querySelector('.forma-almacenado').value 
+                newData.push({
+                    ExternalResiduoId: parseInt(tr.querySelector('select').value),
+                    NombreResiduo: tr.querySelector('.residuo-name').value,
+                    EstadoFisico: tr.querySelector('.estado-fisico').value,
+                    FormaAlmacenado: tr.querySelector('.forma-almacenado').value
                 });
-            } else if (currentAnexoType === 2) {
-                const inputs = tr.querySelectorAll('input');
-                newData.push({ Concepto: inputs[0].value, Monto: parseFloat(inputs[1].value) || 0, Fecha: inputs[2].value });
-            } else if (currentAnexoType === 3) {
-                const inputs = tr.querySelectorAll('input');
-                newData.push({ Fase: inputs[0].value, StartDate: inputs[1].value });
-            } else if (currentAnexoType === 4) {
-                const inputs = tr.querySelectorAll('input');
-                newData.push({ Description: inputs[0].value, UnitCost: parseFloat(inputs[1].value) || 0, Quantity: parseInt(inputs[2].value) || 1 });
+            } 
+            else if (currentAnexoType === 2) {
+                newData.push({
+                    Concept: inputs[0].value,
+                    Amount: parseFloat(inputs[1].value),
+                    PaymentDate: inputs[2].value,
+                    IsBilled: false 
+                });
+            } 
+            else if (currentAnexoType === 3) {
+                newData.push({
+                    Phase: inputs[0].value,
+                    StartDate: inputs[1].value,
+                    EndDate: inputs[1].value,
+                    Deliverable: "Pendiente"
+                });
+            } 
+            else if (currentAnexoType === 4) {
+                newData.push({
+                    Description: inputs[0].value,
+                    UnitCost: parseFloat(inputs[1].value),
+                    Quantity: parseInt(inputs[2].value)
+                });
             }
         });
 
+        if (currentAnexoType === 4) {
+            const totalExtra = newData.reduce((sum, item) => sum + (item.UnitCost * item.Quantity), 0);
+            if (totalExtra > (basePrice * 0.10)) {
+                alertBox.innerText = `Criterio de Aceptación: El total de extras ($${totalExtra.toFixed(2)}) no puede exceder el 10% del contrato ($${(basePrice * 0.10).toFixed(2)}).`;
+                alertBox.classList.remove('d-none');
+                return;
+            }
+        }
+
         anexoData[currentAnexoType] = newData;
+        document.getElementById('AnexosJsonHidden').value = JSON.stringify(anexoData);
+
         bootstrap.Modal.getInstance(document.getElementById('modalAnexo')).hide();
         renderPreviewPDF();
     }
 
-    // Actualiza el PDF visualmente
     function renderPreviewPDF() {
-        // Anexo 1 (ESTILO EXACTO AL PDF)
-        let html1 = `<table class="table-legal"><tr class="bg-gray-simar"><td style="width:5%">No.</td><td>Tipo de residuo</td><td>Estado físico</td><td>Forma de almacenado</td></tr>`;
+        let html1 = `
+            <table class="table-legal">
+                <tr class="bg-gray-simar">
+                    <td style="width:5%">No.</td>
+                    <td>Tipo de residuo</td>
+                    <td>Estado físico</td>
+                    <td>Forma de almacenado</td>
+                </tr>`;
+        
         anexoData[1].forEach((x, index) => {
-            html1 += `<tr><td>${index + 1}</td><td>${x.NombreResiduo||''}</td><td>${x.EstadoFisico||''}</td><td>${x.FormaAlmacenado||''}</td></tr>`;
+            html1 += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${x.NombreResiduo || 'No seleccionado'}</td>
+                    <td>${x.EstadoFisico || ''}</td>
+                    <td>${x.FormaAlmacenado || ''}</td>
+                </tr>`;
         });
         document.getElementById('preview-anexo-1').innerHTML = html1 + `</table>`;
 
-        // Anexo 2
-        let html2 = `<table class="table-legal"><tr class="bg-gray-simar"><td>Concepto</td><td>Monto</td><td>Fecha</td></tr>`;
+        // --- ANEXO 2: PAGOS ---
+        let html2 = `
+            <table class="table-legal">
+                <tr class="bg-gray-simar">
+                    <td>Concepto</td>
+                    <td>Monto</td>
+                    <td>Fecha</td>
+                </tr>`;
+        
         anexoData[2].forEach(x => {
-            let f = x.Fecha ? new Date(x.Fecha).toLocaleDateString() : '';
-            html2 += `<tr><td>${x.Concepto||''}</td><td>$${(x.Monto||0).toFixed(2)}</td><td>${f}</td></tr>`;
+            // Ajuste de fecha para evitar desfases de zona horaria en el preview
+            let f = x.PaymentDate ? new Date(x.PaymentDate + 'T00:00:00').toLocaleDateString() : 'Pendiente';
+            html2 += `
+                <tr>
+                    <td>${x.Concept || ''}</td>
+                    <td>$${(x.Amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td>${f}</td>
+                </tr>`;
         });
         document.getElementById('preview-anexo-2').innerHTML = html2 + `</table>`;
 
-        // Anexo 3
-        let html3 = `<table class="table-legal"><tr class="bg-gray-simar"><td>Fase Operativa</td><td>Fecha Inicio</td></tr>`;
+        // --- ANEXO 3: TIEMPOS ---
+        let html3 = `
+            <table class="table-legal">
+                <tr class="bg-gray-simar">
+                    <td>Fase Operativa</td>
+                    <td>Fecha Inicio</td>
+                </tr>`;
+        
         anexoData[3].forEach(x => {
-            let f = x.StartDate ? new Date(x.StartDate).toLocaleDateString() : '';
-            html3 += `<tr><td>${x.Fase||''}</td><td>${f}</td></tr>`;
+            let f = x.StartDate ? new Date(x.StartDate + 'T00:00:00').toLocaleDateString() : 'Pendiente';
+            html3 += `
+                <tr>
+                    <td>${x.Phase || ''}</td>
+                    <td>${f}</td>
+                </tr>`;
         });
         document.getElementById('preview-anexo-3').innerHTML = html3 + `</table>`;
 
-        // Anexo 4
-        let html4 = `<table class="table-legal"><tr class="bg-gray-simar"><td>Descripción</td><td>Costo Unit.</td><td>Cant.</td><td>Subtotal</td></tr>`;
+        // --- ANEXO 4: EXTRAS ---
+        let html4 = `
+            <table class="table-legal">
+                <tr class="bg-gray-simar">
+                    <td>Descripción</td>
+                    <td>Costo Unit.</td>
+                    <td>Cant.</td>
+                    <td>Subtotal</td>
+                </tr>`;
+        
         let totalExtra = 0;
         anexoData[4].forEach(x => {
-            let subt = (x.UnitCost||0) * (x.Quantity||1);
+            let subt = (x.UnitCost || 0) * (x.Quantity || 1);
             totalExtra += subt;
-            html4 += `<tr><td>${x.Description||''}</td><td>$${(x.UnitCost||0).toFixed(2)}</td><td>${x.Quantity||1}</td><td>$${subt.toFixed(2)}</td></tr>`;
+            html4 += `
+                <tr>
+                    <td>${x.Description || ''}</td>
+                    <td>$${(x.UnitCost || 0).toFixed(2)}</td>
+                    <td>${x.Quantity || 1}</td>
+                    <td>$${subt.toFixed(2)}</td>
+                </tr>`;
         });
-        html4 += `<tr><td colspan="3" style="text-align:right"><strong>Total Extras:</strong></td><td><strong>$${totalExtra.toFixed(2)}</strong></td></tr></table>`;
-        document.getElementById('preview-anexo-4').innerHTML = html4;
+        
+        html4 += `
+            <tr class="bg-gray-simar">
+                <td colspan="3" style="text-align:right">TOTAL EXTRAORDINARIOS (Máx 10%):</td>
+                <td>$${totalExtra.toFixed(2)}</td>
+            </tr>`;
+        
+        document.getElementById('preview-anexo-4').innerHTML = html4 + `</table>`;
     }
 </script>
