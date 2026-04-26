@@ -1,4 +1,6 @@
 using ContractsService.Data;
+using ContractsService.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContractsService.Services;
 

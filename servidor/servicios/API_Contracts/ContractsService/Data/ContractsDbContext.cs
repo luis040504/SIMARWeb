@@ -9,4 +9,5 @@ public class ContractsDbContext : DbContext
         : base(options) { }
 
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 }

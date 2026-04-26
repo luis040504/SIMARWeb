@@ -1,15 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace ContractsService.Data;
-
-public class ContractsDbContext : DbContext
-{
-    public ContractsDbContext(DbContextOptions<ContractsDbContext> options)
-        : base(options) { }
-
-    public DbSet<Contract> Contracts => Set<Contract>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-}
+namespace ContractsService.Models;
 
 public class Contract
 {
