@@ -219,8 +219,8 @@ services:
     container_name: simar_facturacion_api
     ports:
       - "8009:8009"
-    env_file:
-      - ./servicios/API_Billing/.env
+    #env_file:
+    #  - ./servicios/API_Billing/.env
     environment:
       - PORT=8009
       - MONGODB_HOST=mongo_facturacion
