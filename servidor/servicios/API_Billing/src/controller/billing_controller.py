@@ -1,9 +1,12 @@
 from fastapi import HTTPException, status, UploadFile
 from datetime import datetime
 from bson import ObjectId
+import os
+import httpx
 from ..config.database import facturas_collection
 from ..models.billing import Billing
 from ..schemas.billing_schema import BillingCreateSchema, BillingUpdateSchema, BillingFilterSchema
+from ..schemas.aggregator_schema import ReadyToBillSchema, ClientSummarySchema, ContractSummarySchema, ResidueDetailSchema
 
 class BillingController:
     
@@ -181,3 +184,103 @@ class BillingController:
             
         updated = await facturas_collection.find_one({"_id": ObjectId(billing_id)})
         return Billing(**updated)
+
+    @staticmethod
+    async def get_ready_to_bill():
+        """
+        Orquesta llamadas a Manifiestos, Clientes y Contratos para obtener
+        servicios listos para facturar.
+        """
+        manifest_url = os.getenv("MANIFEST_API_URL", "http://simar_manifiestos_api:8007")
+        client_url = os.getenv("CLIENTS_API_URL", "http://simar_clientes_api:8005")
+        contract_url = os.getenv("CONTRACTS_API_URL", "http://simar_contratos_api:8006")
+
+        async with httpx.AsyncClient() as client:
+            # 1. Obtener manifiestos completados
+            try:
+                resp = await client.get(f"{manifest_url}/api/manifiestos?estado=completado")
+                if resp.status_code != 200:
+                    return []
+                manifests_data = resp.json().get("data", [])
+            except Exception:
+                return []
+            
+            results = []
+            for m in manifests_data:
+                razon_social = m.get("razon_social")
+                
+                # 2. Buscar cliente por razón social
+                client_info = None
+                try:
+                    client_resp = await client.get(f"{client_url}/clientes?nombre={razon_social}")
+                    if client_resp.status_code == 200:
+                        c_list = client_resp.json()
+                        if isinstance(c_list, list) and len(c_list) > 0:
+                            c = c_list[0]
+                            client_info = ClientSummarySchema(
+                                id=c.get("id"),
+                                razon_social=c.get("nombre"),
+                                rfc=c.get("rfc"),
+                                direccion_fiscal=c.get("direccion")
+                            )
+                except Exception:
+                    pass
+                
+                if not client_info:
+                    client_info = ClientSummarySchema(
+                        id=0,
+                        razon_social=razon_social,
+                        rfc=None,
+                        direccion_fiscal=m.get("domicilio")
+                    )
+
+                # 3. Buscar contrato para precios
+                contract_info = None
+                try:
+                    contract_resp = await client.get(f"{contract_url}/contracts")
+                    if contract_resp.status_code == 200:
+                        contracts = contract_resp.json()
+                        target_contract = next((c for c in contracts if c.get("client") == razon_social), None)
+                        if target_contract:
+                            contract_info = ContractSummarySchema(
+                                folio=target_contract.get("folio"),
+                                precio_unitario=target_contract.get("price", 0.0),
+                                metodo_pago=target_contract.get("paymentMethod"),
+                                condiciones=target_contract.get("serviceConditions")
+                            )
+                except Exception:
+                    pass
+
+                # 4. Obtener detalles de residuos del manifiesto
+                residues = []
+                try:
+                    detail_resp = await client.get(f"{manifest_url}/api/manifiestos/{m.get('id')}")
+                    if detail_resp.status_code == 200:
+                        m_detail = detail_resp.json().get("data", {})
+                        raw_residues = m_detail.get("residuos_especiales") or m_detail.get("residuos_peligrosos") or []
+                        for r in raw_residues:
+                            residues.append(ResidueDetailSchema(
+                                residuo=r.get("nombre_residuo"),
+                                cantidad=float(r.get("peso") or r.get("cantidad_kg") or 0),
+                                unidad=r.get("unidad", "kg")
+                            ))
+                except Exception:
+                    pass
+
+                # Calcular total estimado
+                price = contract_info.precio_unitario if contract_info else 0.0
+                total_qty = sum(r.cantidad for r in residues)
+                total_estimated = total_qty * price
+
+                results.append(ReadyToBillSchema(
+                    manifest_id=m.get("id"),
+                    numero_manifiesto=m.get("numero_manifiesto"),
+                    fecha_servicio=m.get("fecha_manifiesto"),
+                    tipo_residuo=m.get("tipo"),
+                    cliente=client_info,
+                    contrato=contract_info,
+                    detalles_servicio=residues,
+                    total_estimated=total_estimated
+                ))
+
+            return results

@@ -218,14 +218,15 @@ services:
     ports:
       - "8009:8009"
     env_file:
-      - ./servicios/API_Billing/.env
+      - .env
     environment:
       - PORT=8009
-      - MONGODB_HOST=mongo_facturacion
-      - MONGODB_PORT=27017
+      - MONGODB_HOST=${MONGODB_HOST}
+      - MONGODB_PORT=${MONGODB_PORT}
       - MONGODB_USER=${MONGODB_USER}
       - MONGODB_PASSWORD=${MONGODB_PASSWORD}
       - MONGODB_DB=${MONGODB_DB}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     depends_on:
       - mongo_facturacion
     networks:
@@ -310,9 +311,9 @@ services:
     image: mongo:7
     container_name: simar_mongo_facturacion
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=facturacion_admin
-      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
-      - MONGO_INITDB_DATABASE=simar_facturacion_db
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGODB_DB}
     ports:
       - "8013:27017"
     volumes:

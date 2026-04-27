@@ -1,6 +1,9 @@
 from datetime import datetime
-from typing import Optional, List, Literal
-from pydantic import BaseModel, Field
+from typing import Annotated, Optional, List, Literal
+from pydantic import BaseModel, Field, BeforeValidator
+
+# Tipo personalizado para manejar ObjectId de MongoDB convirtiéndolo a string
+PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class MetadataModel(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
@@ -60,7 +63,7 @@ class AttachmentsModel(BaseModel):
     thumbnail_url: Optional[str] = None
 
 class Billing(BaseModel):
-    id: Optional[str] = Field(None, alias='_id')
+    id: Optional[PyObjectId] = Field(None, alias='_id')
     upload_type: Literal["DIGITAL", "PHYSICAL"]
     record_type: Optional[str] = "Invoice"
     service_type: Optional[str] = None

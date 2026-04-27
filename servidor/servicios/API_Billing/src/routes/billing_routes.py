@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status, File, UploadFile, Form
 from typing import List
 from ..schemas.billing_schema import BillingCreateSchema, BillingUpdateSchema, BillingResponseSchema, BillingFilterSchema
+from ..schemas.aggregator_schema import ReadyToBillSchema
 from ..controller.billing_controller import BillingController
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
@@ -9,6 +10,14 @@ router = APIRouter(prefix="/billing", tags=["Billing"])
 async def get_all_billing(filtro: BillingFilterSchema = Depends()):
     """Obtener todas las facturas, opcionalmente incluyendo las inactivas usando filtros"""
     return await BillingController.get_all(filtro)
+
+@router.get("/ready-to-bill", response_model=List[ReadyToBillSchema])
+async def get_ready_to_bill():
+    """
+    Endpoint agregador que consulta Manifiestos, Clientes y Contratos 
+    para devolver servicios listos para facturación.
+    """
+    return await BillingController.get_ready_to_bill()
 
 @router.get("/{billing_id}", response_model=BillingResponseSchema)
 async def get_billing(billing_id: str):
