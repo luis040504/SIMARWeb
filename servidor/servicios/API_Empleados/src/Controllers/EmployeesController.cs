@@ -17,6 +17,8 @@ public class EmployeesController : ControllerBase
         _context = context;
     }
 
+    // === CREAR EMPLEADO ===
+
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] EmployeeCreateDto dto)
     {
@@ -81,6 +83,8 @@ public class EmployeesController : ControllerBase
         }
     }
 
+    // === CONSULTAR EMPLEADO ===
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEmployee(Guid id)
     {
@@ -99,6 +103,8 @@ public class EmployeesController : ControllerBase
             ProfessionalInfo = professional
         });
     }
+
+    // === ACTUALIZAR EMPLEADO ===
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(Guid id, [FromBody] EmployeeUpdateDto dto)
@@ -122,6 +128,8 @@ public class EmployeesController : ControllerBase
         return Ok(new { mensaje = "Datos actualizados correctamente" });
     }
 
+    // === CONSULTAR EMPLEADOS ===
+
     [HttpGet]
     public async Task<IActionResult> GetEmployees([FromQuery] string? name, [FromQuery] string? role)
     {
@@ -142,6 +150,8 @@ public class EmployeesController : ControllerBase
         var employees = await query.ToListAsync();
         return Ok(employees);
     }
+
+    // === DAR BAJA EMPLEADO ===
 
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> ChangeStatus(Guid id, [FromQuery] int newState)
