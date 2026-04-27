@@ -1,19 +1,26 @@
 using Microsoft.EntityFrameworkCore;
 using API_Usuarios.src.Models;
-using Npgsql;
 
-namespace API_Usuarios.src.Data // <--- AGREGA ESTA LÍNEA
+namespace API_Usuarios.src.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) 
+        { 
+        }
 
         public DbSet<Usuario> Usuarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasPostgresEnum<RoleEnum>();
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Usuario>(entity =>
+            {
+                entity.Property(u => u.Role)
+                .HasColumnName("role")
+                .HasColumnType("character varying"); 
+            });
         }
     }
 }

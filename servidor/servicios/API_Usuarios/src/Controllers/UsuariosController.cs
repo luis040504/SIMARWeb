@@ -5,7 +5,7 @@ using API_Usuarios.src.DTOs;
 namespace API_Usuarios.src.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/usuarios")] 
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
@@ -18,32 +18,35 @@ namespace API_Usuarios.src.Controllers
         [HttpPost("registro-completo")]
         public async Task<IActionResult> Registrar([FromBody] RegistroRequestDto dto)
         {
-            // 1. Validación básica de atributos ([Required], [Email], etc.)
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // 2. VALIDACIÓN LÓGICA POR ROL (Lo que platicamos)
-            if (dto.RolSeleccionado == "Chofer")
+            string rolLimpio = dto.RolSeleccionado?.Trim().ToLower() ?? "";
+
+            if (rolLimpio == "chofer")
             {
                 if (string.IsNullOrWhiteSpace(dto.LicenseNumber) || string.IsNullOrWhiteSpace(dto.LicenseType))
                 {
                     return BadRequest(new { mensaje = "Para el rol Chofer, el número y tipo de licencia son obligatorios." });
                 }
             }
-            else if (dto.RolSeleccionado == "Admin" || dto.RolSeleccionado == "Empleado")
+            else if (new[] { "administrador", "vendedor", "tecnico", "dueño", "contador" }.Contains(rolLimpio))
             {
                 if (string.IsNullOrWhiteSpace(dto.ProfessionalId))
                 {
                     return BadRequest(new { mensaje = $"Para el rol {dto.RolSeleccionado}, la Cédula/ID Profesional es obligatoria." });
                 }
             }
+            else if (rolLimpio != "cliente")
+            {
+                return BadRequest(new { mensaje = $"El rol '{dto.RolSeleccionado}' no es válido en el sistema." });
+            }
 
-            // 3. Si todo está bien, llamamos al servicio
             var exito = await _usuarioService.RegistrarUsuarioCompletoAsync(dto);
 
             if (exito)
                 return Ok(new { mensaje = "Registro exitoso en SIMAR" });
     
-            return BadRequest(new { mensaje = "Hubo un error al procesar el registro coordinado (posiblemente el correo o CURP ya existen)" });
+            return BadRequest(new { mensaje = "Error al procesar el registro (el correo, usuario o CURP podrían estar duplicados)" });
         }
     }
 }

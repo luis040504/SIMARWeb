@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (username, email, role, password_hash) 
-VALUES ('admin_root', 'admin@simar.com', 'empleado', '$2b$12$KlSdkTSRu6zq/9hQdFYyrue1DD7IDuyjJfgjZXNj1kCgz2ysdlbCK'); #prueba_password123!
+--INSERT INTO users (username, email, role, password_hash) 
+--VALUES ('admin_root', 'admin@simar.com', 'empleado', '$2b$12$KlSdkTSRu6zq/9hQdFYyrue1DD7IDuyjJfgjZXNj1kCgz2ysdlbCK'); #prueba_password123!

@@ -2,8 +2,7 @@ using API_Usuarios.src.Models;
 using API_Usuarios.src.DTOs;
 using API_Usuarios.src.Data;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
-using System.Net.Http.Json; // Asegúrate de tener este using para PostAsJsonAsync
+using System.Net.Http.Json;
 
 namespace API_Usuarios.src.Services
 {
@@ -22,74 +21,75 @@ namespace API_Usuarios.src.Services
 
         public async Task<bool> RegistrarUsuarioCompletoAsync(RegistroRequestDto dto)
         {
-            // Iniciamos una transacción local para asegurar integridad en la DB de Usuarios
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. DETERMINAR MACRO-ROL PARA LA TABLA 'users'
-                // Mapeamos los roles específicos a los dos únicos valores del ENUM en Postgres
-                var macroRol = dto.RolSeleccionado.Equals("cliente", StringComparison.OrdinalIgnoreCase) 
-                               ? RoleEnum.cliente 
-                               : RoleEnum.empleado;
+                string macroRol = dto.RolSeleccionado.Equals("cliente", StringComparison.OrdinalIgnoreCase) 
+                                ? RoleTypes.Cliente 
+                                : RoleTypes.Empleado;
 
-                // 2. Mapear al modelo de la base de datos de Usuarios (Auth)
                 var nuevoUsuario = new Usuario
                 {
                     Username = dto.Username,
                     Email = dto.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                    Role = macroRol, 
+                    Role = macroRol,
                     IsActive = true
                 };
 
-                // 3. Guardar en DB local (Microservicio Usuarios)
                 _context.Usuarios.Add(nuevoUsuario);
                 await _context.SaveChangesAsync();
 
-                // 4. SI EL ROL ES EMPLEADO, NOTIFICAR AL MICROSERVICIO DE EMPLEADOS
-                if (macroRol == RoleEnum.empleado)
+                if (macroRol == RoleTypes.Empleado)
                 {
-                    // Agregamos los campos que antes se iban como NULL
                     var empleadoPayload = new
                     {
                         UserId = nuevoUsuario.IdUser,
                         FullName = dto.NombreCompleto,
                         Address = dto.Direccion,
-                        Birthday = dto.Birthday, // <-- CORREGIDO: Ahora se envía la fecha
-                        Curp = dto.Curp,
-                        Rfc = dto.Rfc,
-                        Phone = dto.Phone,       // <-- CORREGIDO: Ahora se envía el teléfono
-                        Genre = dto.Genre,       // <-- CORREGIDO: Ahora se envía el género
+                        Birthday = dto.Birthday.HasValue 
+                                    ? dto.Birthday.Value.ToString("yyyy-MM-dd") 
+                                    : null,
+                        Curp = dto.Curp.Trim(),
+                        Rfc = dto.Rfc.Trim(),
+                        Phone = dto.Phone,
+                        Genre = dto.Genre,
                         Salary = dto.Salario,
-                        RoleName = dto.RolSeleccionado,
-                        dto.ProfessionalId,
-                        dto.LicenseNumber,
-                        dto.LicenseType
+                        RoleName = dto.RolSeleccionado.ToLower().Trim(), 
+                        ProfessionalId = dto.ProfessionalId,
+                        LicenseNumber = dto.LicenseNumber,
+                        LicenseType = dto.LicenseType
                     };
 
                     var baseUrl = _configuration["Microservices:EmpleadosUrl"];
                     var endpoint = $"{baseUrl}/api/employees";
 
-                    // Llamada síncrona entre microservicios
                     var response = await _httpClient.PostAsJsonAsync(endpoint, empleadoPayload);
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        // Si el microservicio de Empleados falla (ej. CURP duplicada), 
-                        // hacemos Rollback para que no se cree el usuario aquí.
+                        // --- DIAGNÓSTICO DE ERROR 400 ---
+                        var errorDetail = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine("*********************************************");
+                        Console.WriteLine($"FALLO EN API EMPLEADOS: {response.StatusCode}");
+                        Console.WriteLine($"DETALLE DEL ERROR: {errorDetail}");
+                        Console.WriteLine("*********************************************");
+
                         await transaction.RollbackAsync();
                         return false;
                     }
                 }
 
-                // Si todo el flujo fue exitoso, confirmamos los cambios
                 await transaction.CommitAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                // Loguear el error sería ideal aquí: Console.WriteLine(ex.Message);
+                Console.WriteLine($"ERROR CRÍTICO EN REGISTRO: {ex.Message}");
+                if (ex.InnerException != null) 
+                    Console.WriteLine($"INNER EXCEPTION: {ex.InnerException.Message}");
+
                 await transaction.RollbackAsync();
                 return false;
             }

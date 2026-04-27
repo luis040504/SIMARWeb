@@ -4,56 +4,43 @@ namespace API_Usuarios.src.DTOs
 {
     public class RegistroRequestDto
     {
-        // --- Datos para el Microservicio de Usuarios (Auth/DB Local) ---
-        [Required(ErrorMessage = "El correo es obligatorio")]
-        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
-        public string Email { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "El nombre de usuario es obligatorio")]
+        [Required]
         public string Username { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es obligatoria")]
-        [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres")]
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El rol es obligatorio")]
-        public string RolSeleccionado { get; set; } = string.Empty; // chofer, administrador, etc.
+        [Required]
+        public string RolSeleccionado { get; set; } = string.Empty; 
 
-
-        // --- Datos para el Microservicio de Empleados (RRHH) ---
-        [Required(ErrorMessage = "El nombre completo es obligatorio")]
+        [Required]
         public string NombreCompleto { get; set; } = string.Empty;
 
-        public string Direccion { get; set; } = string.Empty;
-
-        // NUEVO: Teléfono
-        [Phone(ErrorMessage = "Formato de teléfono inválido")]
-        public string? Phone { get; set; }
-
-        // NUEVO: Género
-        public string? Genre { get; set; }
-
-        // NUEVO: Fecha de Nacimiento
+        public string? Direccion { get; set; }
+        
         public DateTime? Birthday { get; set; }
 
-        [Required(ErrorMessage = "El CURP es obligatorio")]
-        [StringLength(18, MinimumLength = 18, ErrorMessage = "El CURP debe tener 18 caracteres")]
+        [Required]
+        [StringLength(18, MinimumLength = 18, ErrorMessage = "La CURP debe tener exactamente 18 caracteres")]
         public string Curp { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El RFC es obligatorio")]
+        [Required]
         [StringLength(13, MinimumLength = 12, ErrorMessage = "El RFC debe tener entre 12 y 13 caracteres")]
         public string Rfc { get; set; } = string.Empty;
 
+        public string? Phone { get; set; }
+        
+        public string? Genre { get; set; }
+
         public decimal Salario { get; set; }
 
-
-        // --- Campos Condicionales de Especialidad ---
-        
-        // Para Profesionales (Admin, Contador, Vendedor, etc.)
+        // Campos opcionales según especialidad
         public string? ProfessionalId { get; set; }
-
-        // Para Choferes
-        public string? LicenseNumber { get; set; } 
-        public string? LicenseType { get; set; } 
+        public string? LicenseNumber { get; set; }
+        public string? LicenseType { get; set; }
     }
 }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API_Usuarios.src.Models
 {
-    [Table("users")] // Mapea al nombre exacto de la tabla en Postgres
+    [Table("users")]
     public class Usuario
     {
         [Key]
@@ -23,7 +23,7 @@ namespace API_Usuarios.src.Models
 
         [Required]
         [Column("role")]
-        public RoleEnum Role { get; set; }
+        public string Role { get; set; } = "empleado"; 
 
         [Required]
         [Column("password_hash")]
@@ -38,11 +38,9 @@ namespace API_Usuarios.src.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
-
-    // Definimos el Enum para que coincida con tu role_enum de SQL
-    public enum RoleEnum
+    public static class RoleTypes
     {
-        empleado,
-        cliente
+        public const string Empleado = "empleado";
+        public const string Cliente = "cliente";
     }
 }
