@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 require('dotenv').config();
 
 const manifestRoutes = require('./routes/manifestRoutes');
@@ -22,6 +24,9 @@ const limiter = rateLimit({
     message: 'Demasiadas solicitudes desde esta IP'
 });
 app.use('/api/manifiestos', limiter);
+
+// Swagger UI
+app.use('/api/manifiestos/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rutas
 app.use('/api/manifiestos', manifestRoutes);

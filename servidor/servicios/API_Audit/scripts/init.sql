@@ -1,5 +1,4 @@
--- Script de inicialización de la base de datos AuditDB
--- Se ejecuta solo si la tabla no existe (idempotente)
+
 
 IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'AuditDB')
 BEGIN

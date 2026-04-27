@@ -3,6 +3,7 @@ using API_Audit.Middleware;
 using API_Audit.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,8 +39,8 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
+app.MapOpenApi();
+app.MapScalarApiReference(opts => opts.WithTitle("SIMAR — Auditoría"));
 
 app.UseRateLimiter();
 app.UseMiddleware<ApiKeyMiddleware>();
