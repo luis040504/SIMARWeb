@@ -36,10 +36,10 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    print("🚀 Iniciando Trazabilidad API...")
+    print("Iniciando Trazabilidad API...")
     await test_connection()
-    print(f"✅ Servidor corriendo en puerto {os.getenv('PORT', 8006)}")
+    print(f"Servidor corriendo en puerto {os.getenv('PORT', 8006)}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    print("🛑 Cerrando Trazabilidad API...")
+    print("Cerrando Trazabilidad API...")

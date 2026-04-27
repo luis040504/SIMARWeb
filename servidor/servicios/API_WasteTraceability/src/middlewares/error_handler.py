@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Manejador de errores de validación"""
     errors = []
     for error in exc.errors():
         errors.append({
@@ -21,7 +20,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 async def generic_exception_handler(request: Request, exc: Exception):
-    """Manejador de errores genérico"""
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={

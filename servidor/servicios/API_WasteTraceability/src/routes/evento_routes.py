@@ -14,7 +14,6 @@ async def get_all(
     fechaInicio: Optional[datetime] = Query(None),
     fechaFin: Optional[datetime] = Query(None)
 ):
-    """Obtener todos los eventos con filtros"""
     filtro = EventoFilter(
         servicioId=servicioId,
         tipoEvento=tipoEvento,
@@ -31,13 +30,11 @@ async def get_all(
 
 @router.get("/tipos")
 async def get_tipos_evento():
-    """Obtener lista de tipos de evento posibles"""
     tipos = await EventoController.get_tipos_evento()
     return {"success": True, "data": tipos}
 
 @router.get("/servicio/{servicioId}")
 async def get_by_servicio(servicioId: str):
-    """Obtener trazabilidad completa de un servicio"""
     eventos = await EventoController.get_by_servicio(servicioId)
     return {
         "success": True,
@@ -47,18 +44,15 @@ async def get_by_servicio(servicioId: str):
 
 @router.get("/servicio/{servicioId}/resumen")
 async def get_resumen_servicio(servicioId: str):
-    """Obtener resumen de trazabilidad de un servicio"""
     resumen = await EventoController.get_resumen_servicio(servicioId)
     return {"success": True, "data": resumen}
 
 @router.get("/{evento_id}")
 async def get_by_id(evento_id: str):
-    """Obtener evento por ID"""
     evento = await EventoController.get_by_id(evento_id)
     return {"success": True, "data": evento.model_dump(by_alias=True)}
 
 @router.post("/")
 async def create(evento: EventoCreate):
-    """Registrar nuevo evento de trazabilidad"""
     new_evento = await EventoController.create(evento)
     return {"success": True, "data": new_evento.model_dump(by_alias=True)}

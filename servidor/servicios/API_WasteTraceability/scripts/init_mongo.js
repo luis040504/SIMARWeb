@@ -133,5 +133,5 @@ const eventos = [
 
 db.eventos_trazabilidad.insertMany(eventos);
 
-print('✅ Base de datos simar_trazabilidad_db creada exitosamente');
-print('✅ Colección eventos_trazabilidad inicializada con ' + eventos.length + ' registros');
+print('Base de datos simar_trazabilidad_db creada exitosamente');
+print('Colección eventos_trazabilidad inicializada con ' + eventos.length + ' registros');

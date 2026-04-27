@@ -36,10 +36,10 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    print("🚀 Iniciando Servicios API...")
+    print("Iniciando Servicios API...")
     await test_connection()
-    print(f"✅ Servidor corriendo en puerto {os.getenv('PORT', 8005)}")
+    print(f"Servidor corriendo en puerto {os.getenv('PORT', 8005)}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    print("🛑 Cerrando Servicios API...")
+    print("Cerrando Servicios API...")
