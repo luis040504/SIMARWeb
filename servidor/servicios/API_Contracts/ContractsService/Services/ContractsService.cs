@@ -8,6 +8,8 @@ public interface IContractService
 {
     Task<ContractResponseDto> CreateContractAsync(Contract request);
     Task<List<ContractListDto>> GetContractsAsync(string? search, string? status, DateTime? dateFilter);
+    Task<ContractListDto> GetContractByIdAsync(int id);
+    Task<ContractResponseDto> UpdateContractAsync(int id, Contract request);
     Task<(byte[] Content, string ContentType, string FileName)> GetContractPdfAsync(int id);
 }
 
@@ -82,6 +84,88 @@ public class ContractService : IContractService
             CreatedAt = c.CreatedAt,
             ExpirationDate = c.Anexo3Steps.Max(s => (DateTime?)s.EndDate) ?? DateTime.MinValue
         }).ToListAsync();
+    }
+
+    public async Task<ContractListDto> GetContractByIdAsync(int id)
+    {
+        var contract = await _context.Contracts
+            .Include(c => c.Anexo3Steps)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (contract == null) throw new KeyNotFoundException("Contrato no encontrado.");
+
+        return new ContractListDto
+        {
+            Id = contract.Id,
+            Folio = contract.Folio,
+            ClientId = contract.ClientId,
+            Status = contract.Status,
+            CreatedAt = contract.CreatedAt,
+            ExpirationDate = contract.Anexo3Steps.Any() ? contract.Anexo3Steps.Max(s => s.EndDate) : DateTime.MinValue
+        };
+    }
+
+    public async Task<ContractResponseDto> UpdateContractAsync(int id, Contract request)
+    {
+        var existingContract = await _context.Contracts
+            .Include(c => c.Anexo1Items)
+            .Include(c => c.Anexo2Payments)
+            .Include(c => c.Anexo3Steps)
+            .Include(c => c.Anexo4Extras)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (existingContract == null) throw new KeyNotFoundException("Contrato no encontrado.");
+
+        existingContract.Status = request.Status;
+        existingContract.TotalBasePrice = request.TotalBasePrice;
+
+        existingContract.Anexo1Items.RemoveAll(e => !request.Anexo1Items.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Anexo1Items)
+        {
+            var existing = existingContract.Anexo1Items.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
+            else existingContract.Anexo1Items.Add(item);
+        }
+
+        existingContract.Anexo2Payments.RemoveAll(e => !request.Anexo2Payments.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Anexo2Payments)
+        {
+            var existing = existingContract.Anexo2Payments.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
+            else existingContract.Anexo2Payments.Add(item);
+        }
+
+        existingContract.Anexo3Steps.RemoveAll(e => !request.Anexo3Steps.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Anexo3Steps)
+        {
+            if (item.EndDate < item.StartDate) throw new ArgumentException("Rango de fechas inválido en Anexo 3.");
+            var existing = existingContract.Anexo3Steps.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
+            else existingContract.Anexo3Steps.Add(item);
+        }
+
+        existingContract.Anexo4Extras.RemoveAll(e => !request.Anexo4Extras.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Anexo4Extras)
+        {
+            var existing = existingContract.Anexo4Extras.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
+            else existingContract.Anexo4Extras.Add(item);
+        }
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            Action = "Update Contract Full",
+            Details = $"Contrato {existingContract.Folio} actualizado (incluyendo anexos)."
+        });
+
+        await _context.SaveChangesAsync();
+
+        return new ContractResponseDto
+        {
+            Id = existingContract.Id,
+            Folio = existingContract.Folio,
+            Message = "Contrato actualizado exitosamente."
+        };
     }
 
     public async Task<(byte[] Content, string ContentType, string FileName)> GetContractPdfAsync(int id)

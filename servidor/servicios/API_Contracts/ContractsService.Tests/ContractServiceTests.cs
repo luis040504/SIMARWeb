@@ -177,5 +177,105 @@ namespace ContractsService.Tests
             var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.GetContractPdfAsync(-1));
             Assert.Equal("ID inválido", exception.Message);
         }
+
+        [Fact]
+        public async Task GetContractByIdAsync_ValidId_ReturnsContract()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            var service = new ContractService(context);
+
+            var result = await service.GetContractByIdAsync(1);
+
+            Assert.NotNull(result);
+            Assert.Equal("CON-202604-AAAA", result.Folio);
+        }
+
+        [Fact]
+        public async Task GetContractByIdAsync_NonExistentId_ThrowsKeyNotFoundException()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetContractByIdAsync(999));
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_ValidUpdate_UpdatesAndLogs()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            var service = new ContractService(context);
+            var updateRequest = new Contract { Status = "Firmado", TotalBasePrice = 20000m };
+
+            var result = await service.UpdateContractAsync(1, updateRequest);
+
+            Assert.Equal("Contrato actualizado exitosamente.", result.Message);
+            var updated = await context.Contracts.FindAsync(1);
+            Assert.Equal("Firmado", updated!.Status);
+            Assert.Equal(20000m, updated.TotalBasePrice);
+
+            var log = await context.AuditLogs.OrderByDescending(l => l.Timestamp).FirstAsync();
+            Assert.Equal("Update Contract Full", log.Action);
+            Assert.Contains("(incluyendo anexos)", log.Details);
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_NonExistentId_ThrowsKeyNotFoundException()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context);
+            var updateRequest = new Contract { Status = "Firmado" };
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.UpdateContractAsync(999, updateRequest));
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_UpdateAnnexItems_SyncsCorrectly()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            var service = new ContractService(context);
+
+            var existing = await context.Contracts
+                .Include(c => c.Anexo1Items)
+                .FirstAsync(c => c.Id == 3);
+            
+            var updateRequest = new Contract
+            {
+                Status = "Firmado",
+                Anexo1Items = new List<Anexo1Scope>
+                {
+                    new Anexo1Scope { Id = 0, NombreResiduo = "Nuevo Residuo" }
+                }
+            };
+
+            await service.UpdateContractAsync(3, updateRequest);
+
+            var updated = await context.Contracts
+                .Include(c => c.Anexo1Items)
+                .FirstAsync(c => c.Id == 3);
+
+            Assert.Single(updated.Anexo1Items);
+            Assert.Equal("Nuevo Residuo", updated.Anexo1Items.First().NombreResiduo);
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_InvalidAnexo3Dates_ThrowsArgumentException()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            var service = new ContractService(context);
+
+            var updateRequest = new Contract
+            {
+                Anexo3Steps = new List<Anexo3Schedule>
+                {
+                    new Anexo3Schedule { StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(-1) }
+                }
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateContractAsync(3, updateRequest));
+        }
     }
 }
