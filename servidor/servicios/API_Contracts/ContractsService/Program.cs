@@ -50,6 +50,38 @@ app.MapGet("/api/contracts", async (
     return Results.Ok(contracts);
 })
 .WithName("GetContracts");
+ 
+app.MapGet("/api/contracts/{id:int}", async (int id, IContractService contractService) =>
+{
+    try
+    {
+        var contract = await contractService.GetContractByIdAsync(id);
+        return Results.Ok(contract);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { error = ex.Message });
+    }
+})
+.WithName("GetContractById");
+
+app.MapPut("/api/contracts/{id:int}", async (int id, Contract contractRequest, IContractService contractService) =>
+{
+    try
+    {
+        var result = await contractService.UpdateContractAsync(id, contractRequest);
+        return Results.Ok(result);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("Error al actualizar el contrato.");
+    }
+})
+.WithName("UpdateContract");
 
 app.MapGet("/api/contracts/{id:int}/download", async (int id, IContractService contractService) =>
 {
