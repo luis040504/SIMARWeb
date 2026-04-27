@@ -29,9 +29,13 @@ app.MapPost("/api/contracts", async (Contract contractRequest, IContractService 
         
         return Results.Created($"/api/contracts/{result.Id}", result);
     }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
     catch (Exception ex)
     {
-        return Results.Problem($"Ocurrió un error al crear el contrato: {ex.Message}");
+        return Results.Problem("Ocurrió un error interno en el servidor.");
     }
 })
 .WithName("CreateContract");
@@ -54,9 +58,13 @@ app.MapGet("/api/contracts/{id:int}/download", async (int id, IContractService c
         var (content, contentType, fileName) = await contractService.GetContractPdfAsync(id);
         return Results.File(content, contentType, fileName);
     }
-    catch (Exception)
+    catch (KeyNotFoundException ex)
     {
-        return Results.NotFound();
+        return Results.NotFound(new { error = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
     }
 })
 .WithName("DownloadContractPdf");

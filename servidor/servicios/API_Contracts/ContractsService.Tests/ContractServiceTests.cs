@@ -44,6 +44,23 @@ namespace ContractsService.Tests
             await Assert.ThrowsAsync<NullReferenceException>(() => service.CreateContractAsync(null!));
         }
 
+        [Fact]
+        public async Task CreateContractAsync_InvalidDates_ThrowsArgumentException()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context);
+            var invalidContract = new Contract 
+            { 
+                ClientId = 101, 
+                Anexo3Steps = new List<Anexo3Schedule> { 
+                    new Anexo3Schedule { StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(-5) }
+                }
+            };
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateContractAsync(invalidContract));
+            Assert.Contains("La fecha de fin no puede ser anterior a la de inicio", exception.Message);
+        }
+
         private async Task SeedDataAsync(ContractsDbContext context)
         {
             context.Contracts.AddRange(
@@ -147,8 +164,18 @@ namespace ContractsService.Tests
             var context = GetInMemoryDbContext();
             var service = new ContractService(context);
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => service.GetContractPdfAsync(999));
-            Assert.Equal("Contract not found", exception.Message);
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetContractPdfAsync(999));     
+            Assert.Equal("Contract not found", exception.Message); 
+        }
+
+        [Fact]
+        public async Task GetContractPdfAsync_NegativeId_ThrowsArgumentException()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context);
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.GetContractPdfAsync(-1));
+            Assert.Equal("ID inválido", exception.Message);
         }
     }
 }

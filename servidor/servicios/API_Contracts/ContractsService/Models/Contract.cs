@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace ContractsService.Models;
 
@@ -7,9 +8,12 @@ public class Contract
     public int Id { get; set; }
     public string Folio { get; set; } = "";
     
-    public int ClientId { get; set; } 
-    
+    [Range(1, int.MaxValue, ErrorMessage = "El ID del cliente es requerido y debe ser válido.")]
+    public int ClientId { get; set; }
+
+    [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "El monto debe ser mayor a 0.")]
     public decimal TotalBasePrice { get; set; } 
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Status { get; set; } = "Pendiente de firma";
 
