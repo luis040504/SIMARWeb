@@ -8,9 +8,11 @@ public class Role
 {
     [Key]
     [Column("id_role")]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)] 
     public Guid IdRole { get; set; }
 
-    [Column("name_role")] // <--- ¡CÁMBIALO AQUÍ! (Antes decía role_name)
+    [Required]
+    [Column("name_role")] 
     public string RoleName { get; set; } = string.Empty;
 
     [Column("description")]

@@ -20,29 +20,25 @@ public class EmployeesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] EmployeeCreateDto dto)
     {
-        // Iniciamos transacción para asegurar integridad entre tablas
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
-            // 1. BUSCAR EL ID DEL ROL (Para que no sea null en la BD)
-            // Convertimos a minúsculas para que coincida con tu script de inserción
             string nombreRolLimpio = dto.RoleName.ToLower().Trim();
             var roleDb = await _context.Roles
                 .FirstOrDefaultAsync(r => r.RoleName.ToLower() == nombreRolLimpio);
 
-            // 2. Mapeo del empleado con los NUEVOS campos (Evita los NULL en pgAdmin)
             var emp = new Employee {
                 UserId = dto.UserId,
                 FullName = dto.FullName,
                 Address = dto.Address,
-                Birthday = dto.Birthday, // <-- Agregado
-                Phone = dto.Phone,       // <-- Agregado
-                Genre = dto.Genre,       // <-- Agregado
+                Birthday = dto.Birthday,
+                Phone = dto.Phone,
+                Genre = dto.Genre,
                 Curp = dto.Curp,
                 Rfc = dto.Rfc,
                 Salary = dto.Salary,
-                IdRole = roleDb?.IdRole, // <-- ID real de la tabla 'roles'
+                IdRole = roleDb?.IdRole, 
                 State = 1, 
                 RegisterDate = DateTime.UtcNow
             };
@@ -50,7 +46,6 @@ public class EmployeesController : ControllerBase
             _context.Employees.Add(emp);
             await _context.SaveChangesAsync();
 
-            // 3. Lógica de especialidad según el rol
             if (nombreRolLimpio == "chofer")
             {
                 _context.DriverDetails.Add(new DriverDetail {
@@ -90,7 +85,7 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> GetEmployee(Guid id)
     {
         var employee = await _context.Employees
-            .Include(e => e.Role) // Incluye el nombre del rol en la consulta
+            .Include(e => e.Role)
             .FirstOrDefaultAsync(e => e.UserId == id);
 
         if (employee == null) return NotFound(new { mensaje = "Empleado no encontrado" });
@@ -105,21 +100,18 @@ public class EmployeesController : ControllerBase
         });
     }
 
-    // === ACTUALIZACION DE INFORMACION ===
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(Guid id, [FromBody] EmployeeUpdateDto dto)
     {
         var emp = await _context.Employees.FindAsync(id);
         if (emp == null) return NotFound(new { mensaje = "Empleado no encontrado" });
 
-        // Actualizamos solo lo permitido
         emp.FullName = dto.FullName;
         emp.Address = dto.Address;
         emp.Phone = dto.Phone;
         emp.Genre = dto.Genre;
         emp.Salary = dto.Salary;
 
-        // Actualizamos detalles según el rol
         var driver = await _context.DriverDetails.FindAsync(id);
         if (driver != null) driver.LicenseNumber = dto.LicenseNumber ?? driver.LicenseNumber;
 
@@ -130,43 +122,34 @@ public class EmployeesController : ControllerBase
         return Ok(new { mensaje = "Datos actualizados correctamente" });
     }
 
-    // === BUSCAR POR USUARIO O ROL ===
     [HttpGet]
     public async Task<IActionResult> GetEmployees([FromQuery] string? name, [FromQuery] string? role)
     {
-        // 1. Iniciamos la consulta incluyendo el Rol para poder filtrar por su nombre
         var query = _context.Employees
             .Include(e => e.Role)
             .AsQueryable();
 
-        // 2. Filtro por Nombre (si el usuario lo envió)
-        // Usamos ToLower() para que no importe si escriben en mayúsculas o minúsculas
         if (!string.IsNullOrWhiteSpace(name))
         {
             query = query.Where(e => e.FullName.ToLower().Contains(name.ToLower()));
         }
 
-        // 3. Filtro por Rol (si el usuario lo envió)
         if (!string.IsNullOrWhiteSpace(role))
         {
-            query = query.Where(e => e.Role.RoleName.ToLower() == role.ToLower());
+            query = query.Where(e => e.Role != null && e.Role.RoleName.ToLower() == role.ToLower());
         }
 
-        // 4. Ejecutamos la consulta y traemos los resultados
-        ar employees = await query.ToListAsync();
-
+        var employees = await query.ToListAsync();
         return Ok(employees);
     }
 
-
-    // === DAR DE BAJA ===
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> ChangeStatus(Guid id, [FromQuery] int newState)
     {
         var emp = await _context.Employees.FindAsync(id);
         if (emp == null) return NotFound();
 
-        emp.State = newState; // 0 para inactivo, 1 para activo
+        emp.State = newState; 
         await _context.SaveChangesAsync();
     
         return Ok(new { mensaje = $"Estado cambiado a {newState}" });

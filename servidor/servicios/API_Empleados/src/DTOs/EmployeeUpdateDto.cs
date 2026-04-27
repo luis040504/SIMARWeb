@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations; // Necesario para las validaciones
+using System.ComponentModel.DataAnnotations;
 
 namespace API_Empleados.src.DTOs
 {
@@ -17,14 +17,12 @@ namespace API_Empleados.src.DTOs
 
         [Range(0, double.MaxValue, ErrorMessage = "El salario no puede ser negativo")]
         public decimal Salary { get; set; }
-
-        // --- Campos de especialidad (Opcionales en la edición) ---
         
         // Para Choferes
         public string? LicenseNumber { get; set; }
         public string? LicenseType { get; set; }
 
-        // Para Personal Administrativo/Técnico
+        // Para Personal Administrativo/Técnico etc
         public string? ProfessionalId { get; set; } 
     }
 }

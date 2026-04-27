@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS professional_staff (
 ---
 --- INSERCIÓN DE ROLES PREDEFINIDOS
 ---
-
 INSERT INTO roles (name_role, description, permissions) VALUES 
 (
     'dueño', 

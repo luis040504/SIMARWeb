@@ -8,7 +8,8 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:7001");
+//builder.WebHost.UseUrls("http://localhost:8008");
+builder.WebHost.UseUrls("http://*:8008");
 
 // --- CONFIGURACIÓN DINÁMICA DE JWT ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -28,12 +29,12 @@ builder.Services.AddAuthentication(config =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-        ValidateIssuer = false,   // Pon true si tu compañero configuró el Issuer
-        ValidateAudience = false, // Pon true si tu compañero configuró la Audience
+        ValidateIssuer = false, 
+        ValidateAudience = false, 
         ClockSkew = TimeSpan.Zero 
     };
 });
-// --- FIN JWT ---
+
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -61,7 +62,6 @@ if (app.Environment.IsDevelopment())
 app.UseRouting();
 app.UseCors("AllowAll");
 
-// IMPORTANTE: Primero Autenticación, luego Autorización
 app.UseAuthentication(); 
 app.UseAuthorization();
 

@@ -8,6 +8,7 @@ public class Employee
 {
     [Key]
     [Column("user_id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid UserId { get; set; }
 
     [Column("full_name")]
@@ -21,11 +22,11 @@ public class Employee
     public DateTime? Birthday { get; set; }
 
     [Column("curp")]
-    [MaxLength(18)]
+    [StringLength(18)]
     public string? Curp { get; set; }
 
     [Column("rfc")]
-    [MaxLength(13)]
+    [StringLength(13)]
     public string? Rfc { get; set; }
 
     [Column("phone")]
@@ -40,7 +41,7 @@ public class Employee
     public decimal Salary { get; set; }
 
     [Column("state")]
-    public int State { get; set; } = 1; // 1: Activo, 0: Inactivo, etc.
+    public int State { get; set; } = 1;
 
     [Column("register_date")]
     public DateTime RegisterDate { get; set; } = DateTime.UtcNow;
@@ -51,7 +52,6 @@ public class Employee
     [Column("manager_id")]
     public Guid? ManagerId { get; set; }
 
-    // Propiedades de Navegación (Opcionales, para facilitar consultas)
     [ForeignKey("IdRole")]
     public virtual Role? Role { get; set; }
 
