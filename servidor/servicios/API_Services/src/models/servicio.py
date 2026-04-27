@@ -1,6 +1,25 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, Field, validator
+from bson import ObjectId
+
+class PyObjectId(ObjectId):
+    """Validador personalizado para ObjectId de MongoDB"""
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, handler=None):
+        if isinstance(v, ObjectId):
+            return str(v)
+        if isinstance(v, str) and ObjectId.is_valid(v):
+            return v
+        raise ValueError(f"ObjectId inválido: {v}")
+    
+    @classmethod
+    def __get_pydantic_json_schema__(cls, field_schema):
+        field_schema.update(type="string")
 
 class Servicio(BaseModel):
     id: Optional[str] = Field(None, alias='_id')
@@ -27,6 +46,13 @@ class Servicio(BaseModel):
     createdAt: datetime = Field(default_factory=datetime.now)
     updatedAt: datetime = Field(default_factory=datetime.now)
     
+    @validator('id', pre=True)
+    def convert_objectid(cls, v):
+        """Convierte ObjectId a string automáticamente"""
+        if isinstance(v, ObjectId):
+            return str(v)
+        return v
+    
     @validator('estado')
     def validate_estado(cls, v):
         allowed = ['Asignado', 'Recolectado', 'En curso', 'Concluido']
@@ -44,5 +70,6 @@ class Servicio(BaseModel):
         populate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {
+            ObjectId: str,
             datetime: lambda v: v.isoformat()
         }

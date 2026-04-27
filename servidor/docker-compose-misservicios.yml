@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # MICROSERVICIO: SERVICIOS
+  # ============================================
+  servicios_api:
+    build:
+      context: ./servicios/API_Services
+      dockerfile: Dockerfile
+    container_name: simar_servicios_api
+    ports:
+      - "8005:8005"
+    environment:
+      - PORT=8005
+      - MONGODB_HOST=mongo_servicios
+      - MONGODB_PORT=27017
+      - MONGODB_USER=root
+      - MONGODB_PASSWORD=Simar123!
+      - MONGODB_DB=simar_servicios_db
+    depends_on:
+      mongo_servicios:
+        condition: service_healthy
+    networks:
+      - simar_test_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: TRAZABILIDAD
+  # ============================================
+  trazabilidad_api:
+    build:
+      context: ./servicios/API_WasteTraceability
+      dockerfile: Dockerfile
+    container_name: simar_trazabilidad_api
+    ports:
+      - "8006:8006"
+    environment:
+      - PORT=8006
+      - MONGODB_HOST=mongo_trazabilidad
+      - MONGODB_PORT=27017
+      - MONGODB_USER=root
+      - MONGODB_PASSWORD=Simar123!
+      - MONGODB_DB=simar_trazabilidad_db
+    depends_on:
+      mongo_trazabilidad:
+        condition: service_healthy
+    networks:
+      - simar_test_network
+    restart: unless-stopped
+
+  # ============================================
+  # MONGODB - SERVICIOS
+  # ============================================
+  mongo_servicios:
+    image: mongo:7
+    container_name: simar_mongo_servicios
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
+      - MONGO_INITDB_DATABASE=simar_servicios_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_servicios_data:/data/db
+      - ./servicios/API_Services/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+    networks:
+      - simar_test_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # MONGODB - TRAZABILIDAD
+  # ============================================
+  mongo_trazabilidad:
+    image: mongo:7
+    container_name: simar_mongo_trazabilidad
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
+      - MONGO_INITDB_DATABASE=simar_trazabilidad_db
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo_trazabilidad_data:/data/db
+      - ./servicios/API_WasteTraceability/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+    networks:
+      - simar_test_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_servicios_data:
+  mongo_trazabilidad_data:
+
+networks:
+  simar_test_network:
+    driver: bridge
