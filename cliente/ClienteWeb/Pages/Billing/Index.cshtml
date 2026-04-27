@@ -35,7 +35,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link @(Model.ActiveTab == "RejectedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RejectedInvoices">
-                            <i class="bi bi-exclamation-triangle me-1"></i> Facturas Rechazadas
+                            <i class="bi bi-exclamation-triangle me-1"></i> Prefacturas Rechazadas
                         </a>
                     </li>
                     <li class="nav-item">
@@ -48,7 +48,7 @@
                 {
                     <li class="nav-item">
                         <a class="nav-link @(Model.ActiveTab == "PendingInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="PendingInvoices">
-                            <i class="bi bi-clock-history me-1"></i> Facturas Pendientes
+                            <i class="bi bi-clock-history me-1"></i> Prefacturas Pendientes
                         </a>
                     </li>
                     <li class="nav-item">
@@ -147,7 +147,7 @@
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Generate" />
                                                     <button type="submit" class="btn btn-simar-primary justify-content-center w-100 mb-2">
-                                                        <i class="bi bi-receipt"></i> Generar Factura
+                                                        <i class="bi bi-receipt"></i> Generar Prefactura
                                                     </button>
                                                 </form>
 
@@ -172,7 +172,7 @@
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Edit" />
                                                     <button type="submit" class="btn btn-simar-outline justify-content-center w-100">
-                                                        <i class="bi bi-pencil-fill"></i> Editar Factura
+                                                        <i class="bi bi-pencil-fill"></i> Editar Prefactura
                                                     </button>
                                                 </form>
                                             }
@@ -266,7 +266,9 @@
 <!-- Modals Container Edit / Generate -->
 @if (Model.ActiveModal == "Generate" || Model.ActiveModal == "Edit")
 {
-    var modalTitle = Model.ActiveModal == "Generate" ? "Generar Factura" : "Editar Factura";
+    var isPreInvoice = Model.ActiveModal == "Generate" || Model.SelectedRecord?.Status == "Pending" || Model.SelectedRecord?.Status == "Rejected";
+    var documentName = isPreInvoice ? "Prefactura" : "Factura";
+    var modalTitle = Model.ActiveModal == "Generate" ? $"Generar {documentName}" : $"Editar {documentName}";
     var iconClass = Model.ActiveModal == "Generate" ? "bi-check-circle-fill" : "bi-save-fill";
     var handler = Model.ActiveModal == "Generate" ? "Generate" : "Edit";
     var bgClass = Model.ActiveModal == "Generate" ? "bg-simar-light" : "bg-warning bg-opacity-10";
@@ -311,6 +313,21 @@
                     <input type="hidden" asp-for="Role" />
                     <input type="hidden" asp-for="ActiveTab" />
                     <input type="hidden" asp-for="ItemsJson" id="ItemsJson" />
+
+                    @if (isPreInvoice)
+                    {
+                        <div class="alert alert-warning border-0 shadow-sm rounded-3 d-flex align-items-center mb-4 p-3">
+                            <div class="bg-warning bg-opacity-25 rounded-circle p-2 me-3">
+                                <i class="bi bi-info-circle-fill text-warning fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading fw-bold mb-1">Documento sin Validez Fiscal</h6>
+                                <p class="mb-0 small text-dark opacity-75">
+                                    Este documento es una <strong>Prefactura</strong> informativa. No tiene validez legal ni fiscal hasta que sea revisada y aceptada por un administrador.
+                                </p>
+                            </div>
+                        </div>
+                    }
                     
                     <div class="row g-4">
                         <div class="col-12">
@@ -470,6 +487,15 @@
                                 </div>
                             </div>
                         </div>
+                    @if (isPreInvoice)
+                    {
+                        <div class="text-center pb-4">
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-info-circle me-1"></i> 
+                                Al confirmar, se generará una prefactura para revisión. Este documento no tiene validez fiscal (CFDI).
+                            </p>
+                        </div>
+                    }
                 </div>
 
                 <div class="modal-footer bg-light mt-auto">
@@ -485,18 +511,35 @@
 }
 else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
 {
+    var isPreInvoiceDetails = Model.SelectedRecord.Status == "Pending" || Model.SelectedRecord.Status == "Rejected";
+    var documentNameDetails = isPreInvoiceDetails ? "Prefactura" : "Factura";
+    
     <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
     <div class="modal modal-simar fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content h-100">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        <i class="bi bi-file-text me-2"></i> Detalles de Factura: @Model.SelectedRecord.InvoiceNumber
+                        <i class="bi bi-file-text me-2"></i> Detalles de @documentNameDetails: @Model.SelectedRecord.InvoiceNumber
                     </h4>
                     <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
                 <div class="modal-body modal-scrollable-simar p-4 flex-grow-1 overflow-auto">
-                     <div class="row g-4">
+                    @if (isPreInvoiceDetails)
+                    {
+                        <div class="alert alert-warning border-0 shadow-sm rounded-3 d-flex align-items-center mb-4 p-3">
+                            <div class="bg-warning bg-opacity-25 rounded-circle p-2 me-3">
+                                <i class="bi bi-info-circle-fill text-warning fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading fw-bold mb-1">Documento sin Validez Fiscal</h6>
+                                <p class="mb-0 small text-dark opacity-75">
+                                    Esta es una <strong>Prefactura</strong> informativa. No es un comprobante fiscal válido (CFDI) hasta ser aprobado.
+                                </p>
+                            </div>
+                        </div>
+                    }
+                    <div class="row g-4">
                         <div class="col-md-6">
                             <div class="card-simar-subtle h-100 border-0 p-3 bg-light">
                                 <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">Receptor</h6>
