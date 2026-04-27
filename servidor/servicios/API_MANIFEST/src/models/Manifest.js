@@ -7,17 +7,7 @@ class Manifest {
 
     static async findAll(filters = {}) {
         let query = `
-            SELECT
-                m.id,
-                m.id_cliente,
-                m.numero_manifiesto,
-                m.tipo,
-                m.estado,
-                m.razon_social,
-                m.municipio,
-                m.fecha_manifiesto,
-                m.razon_social_transportista,
-                m.fecha_creacion
+            SELECT m.*
             FROM manifiestos m
             WHERE m.activo = TRUE
         `;
@@ -112,6 +102,7 @@ class Manifest {
             await conn.beginTransaction();
 
             const fields = this._buildFields(data);
+            if (!fields.updates) throw new Error('No se proporcionaron campos válidos para actualizar.');
             await conn.query(
                 `UPDATE manifiestos SET ${fields.updates}, fecha_actualizacion = NOW() WHERE id = ?`,
                 [...fields.values, id]

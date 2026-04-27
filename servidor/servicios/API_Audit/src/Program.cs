@@ -1,5 +1,4 @@
 using API_Audit.Data;
-using API_Audit.Middleware;
 using API_Audit.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +42,6 @@ app.MapOpenApi();
 app.MapScalarApiReference(opts => opts.WithTitle("SIMAR — Auditoría"));
 
 app.UseRateLimiter();
-app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers().RequireRateLimiting("fixed");

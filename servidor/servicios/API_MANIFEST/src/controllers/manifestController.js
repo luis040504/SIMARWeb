@@ -67,6 +67,10 @@ const manifestController = {
             if (!manifest) return res.status(404).json({ success: false, message: 'Manifiesto no encontrado' });
             res.json({ success: true, data: manifest });
         } catch (err) {
+            console.error('[PUT /manifiestos/:id]', err.message);
+            if (err.message.includes('campos válidos')) {
+                return res.status(400).json({ success: false, message: err.message });
+            }
             res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
