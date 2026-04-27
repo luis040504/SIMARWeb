@@ -394,6 +394,10 @@
         tbody.innerHTML = "";
         const data = anexoData[currentAnexoType];
 
+        const localDate = new Date();
+        localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+        const todayStr = localDate.toISOString().split('T')[0];
+
         data.forEach((item, index) => {
             const tr = document.createElement('tr');
             if (currentAnexoType === 1) {
@@ -407,13 +411,14 @@
                     <td><input type="text" class="estado-fisico" value="${item.EstadoFisico || ''}"></td>
                     <td><input type="text" class="forma-almacenado" value="${item.FormaAlmacenado || ''}"></td>`;
             } else if (currentAnexoType === 2) {
-                let d = item.Fecha ? new Date(item.Fecha).toISOString().split('T')[0] : '';
-                tr.innerHTML = `<td><input type="text" value="${item.Concepto || ''}"></td>
+                let d = item.PaymentDate ? new Date(item.PaymentDate).toISOString().split('T')[0] : '';
+                tr.innerHTML = `<td><input type="text" value="${item.Concept || ''}"></td>
                                 <td><input type="number" step="0.01" value="${item.Amount || item.Monto || 0}"></td>
-                                <td><input type="date" value="${d}"></td>`;
+                                <td><input type="date" min="${todayStr}" value="${d}"></td>`;
             } else if (currentAnexoType === 3) {
+                let d = item.StartDate ? new Date(item.StartDate).toISOString().split('T')[0] : '';
                 tr.innerHTML = `<td><input type="text" value="${item.Phase || item.Fase || ''}"></td>
-                                <td><input type="date" value="${item.StartDate ? new Date(item.StartDate).toISOString().split('T')[0] : ''}"></td>`;
+                                <td><input type="date" min="${todayStr}" value="${d}"></td>`;
             } else if (currentAnexoType === 4) {
                 tr.innerHTML = `<td><input type="text" value="${item.Description || ''}"></td>
                                 <td><input type="number" step="0.01" value="${item.UnitCost || 0}"></td>
@@ -456,25 +461,53 @@
         alertBox.classList.add('d-none');
 
         let hasError = false;
+        let dateError = false;
+        
+        // 1. Calculamos la fecha de hoy blindada contra zonas horarias
+        const localDate = new Date();
+        localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+        const todayStr = localDate.toISOString().split('T')[0];
+        const todayDateObj = new Date(todayStr + 'T00:00:00'); // Objeto matemático de hoy
+
         rows.forEach(tr => {
             const inputs = tr.querySelectorAll('input:not([type="hidden"]), select');
             inputs.forEach(i => {
+                
+                // Regla A: Que no esté vacío
                 if (!i.value || i.value.trim() === "") {
                     i.style.border = "1px solid red";
                     hasError = true;
-                } else {
+                } 
+                // Regla B: Si es un campo de fecha (verificando de dos formas por si el navegador falla)
+                else if (i.type === 'date' || i.getAttribute('type') === 'date') {
+                    const inputDateObj = new Date(i.value + 'T00:00:00'); // Objeto matemático del usuario
+                    
+                    if (inputDateObj < todayDateObj) {
+                        i.style.border = "1px solid red";
+                        dateError = true;
+                    } else {
+                        i.style.border = "1px solid #ccc";
+                    }
+                } 
+                // Regla C: Todo está bien
+                else {
                     i.style.border = "1px solid #ccc";
                 }
             });
         });
 
-        if (hasError) {
-            alertBox.innerText = "Error: Todos los campos son obligatorios.";
+        if (hasError || dateError) {
+            if (dateError) {
+                alertBox.innerText = "Error: Las fechas no pueden ser anteriores al día de hoy.";
+            } else {
+                alertBox.innerText = "Error: Todos los campos son obligatorios.";
+            }
             alertBox.classList.remove('d-none', 'alert-warning');
             alertBox.classList.add('alert-danger');
             return;
         }
 
+        // --- (A partir de aquí es exactamente igual que lo que ya tenías) ---
         rows.forEach(tr => {
             const inputs = tr.querySelectorAll('input, select');
             
