@@ -5,7 +5,8 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const vehiculoRoutes = require('./routes/vehiculoRoutes');
-const errorHandler = require('./middlewares/errorHandler');
+const errorHandler = require('./middleware/errorHandler');
+const { testConnection } = require('./config/database');
 
 const app = express();
 
@@ -17,8 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // 100 solicitudes por ventana
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: 'Demasiadas solicitudes desde esta IP'
 });
 app.use('/api/vehiculos', limiter);
@@ -26,9 +27,15 @@ app.use('/api/vehiculos', limiter);
 // Rutas
 app.use('/api/vehiculos', vehiculoRoutes);
 
-// Health check
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', service: 'vehiculos-api' });
+// Health check mejorado
+app.get('/health', async (req, res) => {
+    const dbConnected = await testConnection();
+    res.status(200).json({ 
+        status: dbConnected ? 'healthy' : 'degraded',
+        service: 'vehiculos-api',
+        database: dbConnected ? 'connected' : 'disconnected',
+        version: '1.0.0'
+    });
 });
 
 // Manejador de errores

@@ -30,7 +30,7 @@ services:
   # ============================================
   auth_api:
     build:
-      context: ./servicios/auth_api
+      context: ./servicios/API_Auth
       dockerfile: Dockerfile
     container_name: simar_auth_api
     ports:
@@ -51,7 +51,7 @@ services:
   # ============================================
   usuarios_api:
     build:
-      context: ./servicios/usuarios_api
+      context: ./servicios/API_Empleados
       dockerfile: Dockerfile
     container_name: simar_usuarios_api
     ports:
@@ -68,7 +68,7 @@ services:
   # ============================================
   vehiculos_api:
     build:
-      context: ./servicios/vehiculos_api
+      context: ./servicios/API_Vehiculos
       dockerfile: Dockerfile
     container_name: simar_vehiculos_api
     ports:
@@ -92,7 +92,7 @@ services:
   # ============================================
   recolecciones_api:
     build:
-      context: ../servicios/recolecciones_api
+      context: ./servicios/API_Recolecciones
       dockerfile: Dockerfile
     container_name: simar_recolecciones_api
     ports:
@@ -145,7 +145,7 @@ services:
   # ============================================
   contratos_api:
     build:
-      context: ./servicios/contratos_api
+      context: ./servicios/API_Contracts
       dockerfile: Dockerfile
     container_name: simar_contratos_api
     ports:
