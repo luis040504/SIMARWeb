@@ -21,6 +21,7 @@ services:
       - manifiestos_api
       - empleados_api
       - audit_api
+      - catalog_api
     networks:
       - simar_network
     restart: unless-stopped
@@ -188,6 +189,26 @@ services:
     restart: unless-stopped
 
   # ============================================
+  # MICROSERVICIO: CATÁLOGO DE RESIDUOS
+  # ============================================
+  catalog_api:
+    build:
+      context: ./servicios/API_WasteCatalog
+      dockerfile: Dockerfile
+    container_name: simar_catalog_api
+    ports:
+      - "8013:8010"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8010
+      - ConnectionStrings__DefaultConnection=Server=sqlserver_catalog;Database=CatalogDb;User=sa;Password=${CATALOG_DB_PASSWORD};TrustServerCertificate=True;
+    depends_on:
+      - sqlserver_catalog
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # MICROSERVICIO: AUDITORÍA
   # ============================================
   audit_api:
@@ -300,6 +321,23 @@ services:
       retries: 5
 
   # ============================================
+  # SQL SERVER - CATÁLOGO
+  # ============================================
+  sqlserver_catalog:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: simar_sqlserver_catalog
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${CATALOG_DB_PASSWORD}
+    ports:
+      - "1436:1433"
+    volumes:
+      - sqlserver_catalog_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # SQL SERVER - AUDITORÍA
   # ============================================
   sqlserver_audit:
@@ -380,6 +418,7 @@ services:
 # VOLÚMENES
 # ============================================
 volumes:
+  sqlserver_catalog_data:
   sqlserver_audit_data:
   mysql_vehiculos_data:
   mysql_manifiestos_data:
