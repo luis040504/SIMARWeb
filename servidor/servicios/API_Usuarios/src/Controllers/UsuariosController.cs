@@ -15,6 +15,8 @@ namespace API_Usuarios.src.Controllers
             _usuarioService = usuarioService;
         }
 
+        // === CREAR/REGISTRAR USUARIO/EMPLEADO ===
+
         [HttpPost("registro-completo")]
         public async Task<IActionResult> Registrar([FromBody] RegistroRequestDto dto)
         {
