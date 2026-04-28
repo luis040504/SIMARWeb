@@ -12,8 +12,8 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         {
             Clientes = new List<ClienteOutput>
         {
-            new ClienteOutput { Id = 1, Name = "Juan Pérez", Email = "juan@test.com", PhoneNumber = "1234567890", RegisterDate = DateTime.Now, Status = "Activo", Address = "Xalapa, Veracruz", RFC = "JUAP900101XX1", UserName = "juanp", SemarnatGeneratedNumber = "SEM123", SatCertificateUrl = "/docs/certificado1.pdf", Password = "12345"},
-            new ClienteOutput { Id = 2, Name = "Ana López", Email = "ana@test.com", PhoneNumber = "9876543210", RegisterDate = DateTime.Now, Status = "Inactivo", Address = "CDMX", RFC = "ANa900101XX2", UserName = "anita", SemarnatGeneratedNumber = "SEM456", Password = "54321"}
+            new ClienteOutput { Id = 1, Name = "Juan Pérez", Email = "juan@test.com", PhoneNumber = "1234567890", RegisterDate = DateTime.Now, Status = "activo", Address = "Xalapa, Veracruz", RFC = "JUAP900101XX1", UserName = "juanp", SemarnatGeneratedNumber = "SEM123", SatCertificateUrl = "/docs/certificado1.pdf", Password = "12345"},
+            new ClienteOutput { Id = 2, Name = "Ana López", Email = "ana@test.com", PhoneNumber = "9876543210", RegisterDate = DateTime.Now, Status = "inactivo", Address = "CDMX", RFC = "ANa900101XX2", UserName = "anita", SemarnatGeneratedNumber = "SEM456", Password = "54321"}
         };
         }
     }

@@ -257,7 +257,7 @@
                     <td>@cliente.PhoneNumber</td>
                     <td>@cliente.RegisterDate.ToShortDateString()</td>
                     <td class="status
-                        @(cliente.Status == "Activo" ? "status-activo" : "status-inactivo")">
+                        @(cliente.Status == "activo" ? "status-activo" : "status-inactivo")">
                         @cliente.Status
                     </td>
 
@@ -289,7 +289,7 @@
                                 <li><hr class="dropdown-divider"></li>
 
                                 <!-- Activar / Desactivar -->
-                                @if (cliente.Status == "Activo")
+                                @if (cliente.Status == "activo")
                                 {
                                     <li>
                                         <button class="dropdown-item text-danger btn-delete"
@@ -352,17 +352,17 @@
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email:</strong>
+                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: *</strong>
                             <input type="email" name="Email" id="regEmail" class="form-control" placeholder="Email" required />
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
+                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username: *</strong>
                             <input type="text" name="UserName" id="regUsername" class="form-control" placeholder="Username" required />
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
+                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña *:</strong>
                             <div class="input-group">
                                 <input type="password" name="Password" id="regPassword" class="form-control" placeholder="Contraseña" required />
                                 <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('regPassword', this)">
@@ -372,7 +372,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre Completo:</strong>
+                            <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre Completo: *</strong>
                             <input type="text" name="Name" id="regNombre" class="form-control" placeholder="Nombre completo" required />
                         </div>
 
@@ -387,7 +387,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i> RFC:</strong>
+                            <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i> RFC: *</strong>
                             <input type="text" name="RFC" id="regRFC" class="form-control" placeholder="RFC" required />
                         </div>
 
@@ -632,7 +632,7 @@
                 statusCell.innerText = "Inactivo";
                 alert("El cliente ha sido dado de baja");
             } else {
-                statusCell.innerText = "Activo";
+                statusCell.innerText = "activo";
                 alert("El cliente ha sido activado");
             }
 
@@ -757,7 +757,7 @@
         filaActual.querySelector("td:nth-child(3)").innerText = document.getElementById("editEmail").value;
         filaActual.querySelector("td:nth-child(4)").innerText = document.getElementById("editTelefono").value;
 
-        // Actualizar data-* (IMPORTANTE 🔥)
+        // Actualizar data-* (IMPORTANTE)
         filaActual.setAttribute("data-nombre", document.getElementById("editNombre").value);
         filaActual.setAttribute("data-email", document.getElementById("editEmail").value);
         filaActual.setAttribute("data-telefono", document.getElementById("editTelefono").value);
