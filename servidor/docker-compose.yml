@@ -21,6 +21,8 @@ services:
       - manifiestos_api
       - empleados_api
       - facturacion_api
+      - servicios_api
+      - trazabilidad_api
     networks:
       - simar_network
     restart: unless-stopped
@@ -30,18 +32,27 @@ services:
   # ============================================
   auth_api:
     build:
-      context: ./servicios/auth_api
+      context: ./servicios/API_Auth
       dockerfile: Dockerfile
     container_name: simar_auth_api
+    env_file:
+      - .env
     ports:
       - "8001:8001"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8001
-      - JWT__Key=${JWT_KEY}
-      - JWT__Issuer=${JWT_ISSUER}
-      - JWT__Audience=${JWT_AUDIENCE}
-      - JWT__ExpiresInMinutes=60
+      - DATABASE_URL=postgresql://${DB_POSTGRES_USER}:${DB_POSTGRES_PASSWORD}@db_usuarios:5432/${DB_POSTGRES_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+    command: >
+      sh -c "
+        until pg_isready -h db_usuarios -U ${DB_POSTGRES_USER}; do
+          echo 'Esperando a PostgreSQL...';
+          sleep 2;
+        done;
+        echo 'Base de datos lista';
+        uvicorn app.main:app --host 0.0.0.0 --port 8001"
+    depends_on:
+      - db_usuarios
     networks:
       - simar_network
     restart: unless-stopped
@@ -51,7 +62,7 @@ services:
   # ============================================
   usuarios_api:
     build:
-      context: ./servicios/usuarios_api
+      context: ./servicios/API_Usuarios
       dockerfile: Dockerfile
     container_name: simar_usuarios_api
     ports:
@@ -59,6 +70,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8002
+      - ConnectionStrings__DefaultConnection=Host=db_usuarios;Database=${DB_USERS_NAME};Username=${DB_USERS_USER};Password=${DB_USERS_PASSWORD}
+    depends_on:
+      - db_usuarios
     networks:
       - simar_network
     restart: unless-stopped
@@ -68,7 +82,7 @@ services:
   # ============================================
   vehiculos_api:
     build:
-      context: ./servicios/vehiculos_api
+      context: ./servicios/API_Vehiculos
       dockerfile: Dockerfile
     container_name: simar_vehiculos_api
     ports:
@@ -92,7 +106,7 @@ services:
   # ============================================
   recolecciones_api:
     build:
-      context: ../servicios/recolecciones_api
+      context: ./servicios/API_Recolecciones
       dockerfile: Dockerfile
     container_name: simar_recolecciones_api
     ports:
@@ -138,6 +152,8 @@ services:
       - postgres_client_db
     networks:
       - simar_network
+    volumes:
+      - client_files:/app/static
     restart: unless-stopped
 
   # ============================================
@@ -145,7 +161,7 @@ services:
   # ============================================
   contratos_api:
     build:
-      context: ./servicios/contratos_api
+      context: ./servicios/API_Contracts
       dockerfile: Dockerfile
     container_name: simar_contratos_api
     ports:
@@ -234,6 +250,54 @@ services:
     restart: unless-stopped
 
   # ============================================
+  # MICROSERVICIO: SERVICIOS (NUEVO)
+  # ============================================
+  servicios_api:
+    build:
+      context: ./servicios/API_Services
+      dockerfile: Dockerfile
+    container_name: simar_servicios_api
+    ports:
+      - "8014:8005"
+    environment:
+      - PORT=8005
+      - MONGODB_HOST=mongo_servicios
+      - MONGODB_PORT=27017
+      - MONGODB_USER=root
+      - MONGODB_PASSWORD=Simar123!
+      - MONGODB_DB=simar_servicios_db
+    depends_on:
+      mongo_servicios:
+        condition: service_healthy
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: TRAZABILIDAD (NUEVO)
+  # ============================================
+  trazabilidad_api:
+    build:
+      context: ./servicios/API_WasteTraceability
+      dockerfile: Dockerfile
+    container_name: simar_trazabilidad_api
+    ports:
+      - "8015:8006"
+    environment:
+      - PORT=8006
+      - MONGODB_HOST=mongo_trazabilidad
+      - MONGODB_PORT=27017
+      - MONGODB_USER=root
+      - MONGODB_PASSWORD=Simar123!
+      - MONGODB_DB=simar_trazabilidad_db
+    depends_on:
+      mongo_trazabilidad:
+        condition: service_healthy
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # BASES DE DATOS - MySQL
   # ============================================  
 
@@ -294,7 +358,7 @@ services:
       - "8012:27017"
     volumes:
       - mongo_recolecciones_data:/data/db
-      - ../servicios/recolecciones_api/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+      - ./servicios/recolecciones_api/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
     networks:
       - simar_network
     restart: unless-stopped
@@ -328,6 +392,54 @@ services:
       retries: 5
 
   # ============================================
+  # MONGODB - SERVICIOS (NUEVO)
+  # ============================================
+  mongo_servicios:
+    image: mongo:7
+    container_name: simar_mongo_servicios
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
+      - MONGO_INITDB_DATABASE=simar_servicios_db
+    ports:
+      - "8016:27017"
+    volumes:
+      - mongo_servicios_data:/data/db
+      - ./servicios/API_Services/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # MONGODB - TRAZABILIDAD (NUEVO)
+  # ============================================
+  mongo_trazabilidad:
+    image: mongo:7
+    container_name: simar_mongo_trazabilidad
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Simar123!
+      - MONGO_INITDB_DATABASE=simar_trazabilidad_db
+    ports:
+      - "8017:27017"
+    volumes:
+      - mongo_trazabilidad_data:/data/db
+      - ./servicios/API_WasteTraceability/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+    networks:
+      - simar_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
   # SQL SERVER - CONTRATOS
   # ============================================
   sqlserver_contratos:
@@ -340,6 +452,25 @@ services:
       - "1434:1433"
     volumes:
       - sqlserver_contratos_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # POSTGRES - USUARIOS
+  # ============================================
+  db_usuarios:
+    image: postgres:15-alpine
+    container_name: simar_db_usuarios
+    environment:
+      - POSTGRES_USER=${DB_USERS_USER}
+      - POSTGRES_PASSWORD=${DB_USERS_PASSWORD}
+      - POSTGRES_DB=${DB_USERS_NAME}
+    ports:
+      - "${DB_USERS_PORT}:5432"
+    volumes:
+      - db_users_data:/var/lib/postgresql/data
+      - ./servicios/API_Usuarios/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - simar_network
     restart: unless-stopped
@@ -363,7 +494,7 @@ services:
     networks:
       - simar_network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_CLIENT_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -396,13 +527,17 @@ volumes:
   manifiestos_uploads:
   mongo_recolecciones_data:
   mongo_facturacion_data:
+  mongo_servicios_data:
+  mongo_trazabilidad_data:
   sqlserver_contratos_data:
   postgres_clientes_data:
   db_empleados_data:
+  db_users_data:
+  client_files:
 
-    # ============================================
-    # REDES
-    # ============================================
+# ============================================
+# REDES
+# ============================================
 networks:
   simar_network:
     driver: bridge

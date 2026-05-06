@@ -173,7 +173,7 @@
 
 <h2 class="fw-semibold" style="color: var(--simar-dark);">
     <i class="bi bi-person-badge me-3" style="color: var(--simar-green);"></i>
-    Clientes Resgistrados
+    Clientes Registrados
 </h2>
 
 
@@ -185,7 +185,7 @@
             <div class="search-box flex-grow-1">
                 <div class="d-flex">
                     <input type="text" name="Search" class="form-control"
-                           placeholder="Buscar por nombre, Email, telefono..."
+                           placeholder="Buscar por nombre, Email, teléfono..."
                            value="@Model.Search">
 
                     <button type="submit">
@@ -257,7 +257,7 @@
                     <td>@cliente.PhoneNumber</td>
                     <td>@cliente.RegisterDate.ToShortDateString()</td>
                     <td class="status
-                        @(cliente.Status == "Activo" ? "status-activo" : "status-inactivo")">
+                        @(cliente.Status == "activo" ? "status-activo" : "status-inactivo")">
                         @cliente.Status
                     </td>
 
@@ -289,7 +289,7 @@
                                 <li><hr class="dropdown-divider"></li>
 
                                 <!-- Activar / Desactivar -->
-                                @if (cliente.Status == "Activo")
+                                @if (cliente.Status == "activo")
                                 {
                                     <li>
                                         <button class="dropdown-item text-danger btn-delete"
@@ -332,7 +332,7 @@
 
 <!-- Modal Registrar Cliente -->
 <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
 
             <!-- HEADER -->
@@ -344,64 +344,71 @@
             </div>
 
             <!-- FORM -->
-            <form method="post" id="registroForm">
+            <form method="post" id="registroForm" enctype="multipart/form-data">
 
                 <!-- BODY -->
                 <div class="modal-body">
 
-                    <!-- PASO 1 -->
-                    <div id="paso1" class="seccion-paso activa">
-                        <input type="email" name="Email" class="form-control mb-3" placeholder="E-MAIL" required />
-                        <input type="text" name="UserName" class="form-control mb-3" placeholder="USERNAME" required />
-                        <input type="password" name="Password" class="form-control mb-3" placeholder="PASSWORD" required />
+                    <div class="row g-3">
 
-                        <div class="text-center mb-3">
-                            <span class="badge bg-secondary">Paso 1 de 3</span>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: *</strong>
+                            <input type="email" name="Email" id="regEmail" class="form-control" placeholder="Email" required />
                         </div>
 
-                        <button type="button" class="btn-simar-primary w-100" onclick="irAPaso(2)">
-                            Siguiente
-                        </button>
-                    </div>
-
-                    <!-- PASO 2 -->
-                    <div id="paso2" class="seccion-paso">
-                        <input type="text" name="Name" class="form-control mb-3" placeholder="NOMBRE COMPLETO" />
-                        <input type="text" name="Address" class="form-control mb-3" placeholder="DIRECCION" />
-                        <input type="text" name="PhoneNumber" class="form-control mb-3" placeholder="TELEFONO" />
-                        <input type="text" name="RFC" class="form-control mb-3" placeholder="RFC" />
-                        <input type="text" name="SemarnatNumber" class="form-control mb-3" placeholder="NUMERO DE SEMARNAT" />
-
-                        <div class="text-center mb-3">
-                            <span class="badge bg-secondary">Paso 2 de 3</span>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username: *</strong>
+                            <input type="text" name="UserName" id="regUsername" class="form-control" placeholder="Username" required />
                         </div>
 
-                        <button type="button" class="btn-simar-primary w-100 mb-2" onclick="irAPaso(3)">
-                            Siguiente
-                        </button>
-                        <button type="button" class="btn-simar-outline w-100" onclick="irAPaso(1)">
-                            Regresar
-                        </button>
-                    </div>
-
-                    <!-- PASO 3 -->
-                    <div id="paso3" class="seccion-paso">
-
-                        <label class="form-label">Subir Certificado</label>
-                        <input type="file" class="form-control mb-3">
-
-                        <div class="text-center mb-3">
-                            <span class="badge bg-secondary">Paso 3 de 3</span>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña *:</strong>
+                            <div class="input-group">
+                                <input type="password" name="Password" id="regPassword" class="form-control" placeholder="Contraseña" required />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('regPassword', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn-simar-primary w-100 mb-2">
-                            Finalizar
-                        </button>
-                        <button type="button" class="btn-simar-outline w-100" onclick="irAPaso(2)">
-                            Regresar
-                        </button>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre Completo: *</strong>
+                            <input type="text" name="Name" id="regNombre" class="form-control" placeholder="Nombre completo" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i>Teléfono:</strong>
+                            <input type="text" name="PhoneNumber" id="regTelefono" class="form-control" placeholder="Teléfono" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-geo-alt-fill me-1" style="color: var(--simar-green);"></i>Dirección:</strong>
+                            <input type="text" name="Address" id="regDireccion" class="form-control" placeholder="Dirección" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i> RFC: *</strong>
+                            <input type="text" name="RFC" id="regRFC" class="form-control" placeholder="RFC" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i>Número de Semarnat:</strong>
+                            <input type="text" name="SemarnatNumber" id="regSemarnat" class="form-control" placeholder="Número de SEMARNAT" />
+                        </div>
+
+                        <div class="col-12">
+                            <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT:</strong>
+                            <input type="file" name="CertificadoFile" id="regCertificado" class="form-control" />
+                        </div>
+
                     </div>
 
+                </div>
+
+                <!-- FOOTER -->
+                <div class="modal-footer">
+                    <button type="button" class="btn-simar-outline" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn-simar-primary"><i class="bi bi-check-circle me-1"></i>Registrar</button>
                 </div>
 
             </form>
@@ -430,32 +437,42 @@
                 <div class="row g-3">
 
                     <div class="col-md-6">
-                        <strong>Email:</strong>
+                        <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email:</strong>
                         <div id="detalleEmail"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Username:</strong>
+                        <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i> Username:</strong>
                         <div id="detalleUsername"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Nombre:</strong>
+                        <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i> Contraseña:</strong>
+                        <div class="input-group">
+                            <input type="password" id="detallePassword" class="form-control" value="" readonly style="background-color: #f8f9fa;" />
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordDetalle('detallePassword', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre:</strong>
                         <div id="detalleNombre"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Teléfono:</strong>
+                        <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i> Teléfono:</strong>
                         <div id="detalleTelefono"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Dirección:</strong>
+                        <strong><i class="bi bi-geo-alt-fill me-1" style="color: var(--simar-green);"></i> Dirección:</strong>
                         <div id="detalleDireccion"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>RFC:</strong>
+                        <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i>RFC:</strong>
                         <div id="detalleRFC"></div>
                     </div>
 
@@ -465,17 +482,17 @@
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Numero de Semarnat:</strong>
+                        <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Semarnat:</strong>
                         <div id="detalleSemarnat"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Status:</strong>
+                        <strong><i class="bi bi-toggle2-on me-1" style="color: var(--simar-green);"></i>Estatus:</strong>
                         <div id="detalleStatus"></div>
                     </div>
 
                     <div class="campo">
-                        <strong>Certificado SAT:</strong>
+                        <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT:</strong>
                         <a id="detalleCertificado" href="#" target="_blank">Descargar</a>
                     </div>
 
@@ -519,47 +536,52 @@
                 <div class="row g-3">
 
                     <div class="col-md-6">
-                        <strong>Username:</strong>
+                        <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
                         <input type="text" id="editUsername" class="form-control" placeholder="Username" />
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Correo electronico:</strong>
+                        <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
                         <input type="text" id="editEmail" class="form-control" placeholder="Email" />
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Contraseña:</strong>
-                        <input type="text" id="editPassword" class="form-control" placeholder="Contraseña" />
+                        <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
+                        <div class="input-group">
+                            <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Nombre:</strong>
+                        <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i> Nombre:</strong>
                         <input type="text" id="editNombre" class="form-control" placeholder="Nombre" />
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Telefono:</strong>
+                        <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i> Teléfono:</strong>
                         <input type="text" id="editTelefono" class="form-control" placeholder="Teléfono" />
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Direccion:</strong>
+                        <strong><i class="bi bi-geo-alt-fill me-1" style="color: var(--simar-green);"></i> Dirección:</strong>
                         <input type="text" id="editDireccion" class="form-control" placeholder="Dirección" />
                     </div>
 
                     <div class="col-md-6">
-                        <strong>RFC:</strong>
+                        <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i>RFC:</strong>
                         <input type="text" id="editRFC" class="form-control" placeholder="RFC" />
                     </div>
 
                     <div class="col-md-6">
-                        <strong>Numero de Semarnat:</strong>
+                        <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Semarnat:</strong>
                         <input type="text" id="editSemarnat" class="form-control" placeholder="SEMARNAT" />
                     </div>
 
                     <div class="col-12">
-                        <label>Certificado SAT</label>
+                        <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT</strong>
                         <input type="file" id="editCertificado" class="form-control" />
                     </div>
 
@@ -610,7 +632,7 @@
                 statusCell.innerText = "Inactivo";
                 alert("El cliente ha sido dado de baja");
             } else {
-                statusCell.innerText = "Activo";
+                statusCell.innerText = "activo";
                 alert("El cliente ha sido activado");
             }
 
@@ -679,6 +701,20 @@
         document.getElementById("detalleSemarnat").innerText = fila.dataset.semarnat;
         document.getElementById("detalleStatus").innerText = fila.dataset.status;
 
+        // Para la contraseña (input en lugar de div)
+        const passwordInput = document.getElementById("detallePassword");
+        if (passwordInput) {
+            passwordInput.value = fila.dataset.password || '';
+            passwordInput.type = 'password'; // Asegurar que esté oculta al abrir
+            // Resetear el ícono del botón
+            const toggleButton = passwordInput.parentElement.querySelector('button');
+            if (toggleButton) {
+                const icon = toggleButton.querySelector('i');
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
         // botón historial
         document.getElementById("btnHistorial").href = "/Client_SimarUser/Client/ServicesHistory/" + id;
 
@@ -721,7 +757,7 @@
         filaActual.querySelector("td:nth-child(3)").innerText = document.getElementById("editEmail").value;
         filaActual.querySelector("td:nth-child(4)").innerText = document.getElementById("editTelefono").value;
 
-        // Actualizar data-* (IMPORTANTE 🔥)
+        // Actualizar data-* (IMPORTANTE)
         filaActual.setAttribute("data-nombre", document.getElementById("editNombre").value);
         filaActual.setAttribute("data-email", document.getElementById("editEmail").value);
         filaActual.setAttribute("data-telefono", document.getElementById("editTelefono").value);
@@ -731,5 +767,37 @@
 
         alert("Cliente actualizado (simulado)");
 
+    }
+</script>
+
+<script>
+    function togglePassword(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+
+    function togglePasswordDetalle(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
     }
 </script>

@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, f
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class StatusEnum(enum.Enum):
@@ -12,15 +13,15 @@ class Clientes(Base):
     __tablename__ = "clientes"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False)
-    telefono = Column(String(100), nullable=True)
-    fechaRegistro = Column(DateTime(timezone=True), server_default=func.now())
-    direccion = Column(String(100), nullable=True)
+    name = Column(String(100), nullable=False)
+    phone = Column(String(100), nullable=True)
+    registerDate = Column(DateTime(timezone=True), server_default=func.now())
+    address = Column(String(100), nullable=True)
     rfc = Column(String(100), nullable=True)
-    urlCertificadoSat = Column(String(100), nullable=True)
-    numeroSemarnat = Column(String(100), nullable=True)
+    urlSatCertificate = Column(String(100), nullable=True)
+    semarnatNum = Column(String(100), nullable=True)
     status = Column(Enum(StatusEnum), nullable=False, default=StatusEnum.activo)
-    idUsuario = Column(Integer, nullable=True)
+    idUser = Column(UUID(as_uuid=True), nullable=False)
 
     
 
