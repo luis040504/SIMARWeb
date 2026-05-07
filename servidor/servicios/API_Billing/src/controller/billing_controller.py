@@ -280,7 +280,7 @@ class BillingController:
                     cliente=client_info,
                     contrato=contract_info,
                     detalles_servicio=residues,
-                    total_estimated=total_estimated
+                    total_estimado=total_estimated
                 ))
 
             return results

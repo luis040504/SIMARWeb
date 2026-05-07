@@ -639,7 +639,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-start">
-                    <p class="mb-0">Estás modificando un valor que difiere de lo establecido en el contrato <strong>@(Model.SelectedRecord?.Id ?? 0)</strong>. ¿Deseas continuar?</p>
+                    <p class="mb-0">Estás modificando un valor que difiere de lo establecido en el contrato <strong>@(Model.SelectedRecord?.Id ?? "N/A")</strong>. ¿Deseas continuar?</p>
                 </div>
                 <div class="modal-footer bg-light mt-auto">
                     <button type="button" class="btn btn-simar-outline-gray" data-bs-dismiss="modal">Regresar</button>
