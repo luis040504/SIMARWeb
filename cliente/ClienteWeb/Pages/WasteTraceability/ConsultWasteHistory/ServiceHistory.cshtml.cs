@@ -2,209 +2,169 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
 {
     public class ServicioHistorial
     {
-        public int Id { get; set; }
-        public string Cliente { get; set; }
-        public string Observaciones { get; set; }
-        public string Manifiesto { get; set; }
-        public string TecnicoAsignado { get; set; }
-        public string OperadorAsignado { get; set; }
-        public string Vehiculo { get; set; }
-        public string TipoResiduo { get; set; }
+        public string? Id { get; set; }
+        public string? Cliente { get; set; }
+        public string? Observaciones { get; set; }
+        public string? Manifiesto { get; set; }
+        public string? TecnicoAsignado { get; set; }
+        public string? OperadorAsignado { get; set; }
+        public string? Vehiculo { get; set; }
+        public string? TipoResiduo { get; set; }
         public double CantidadEstimada { get; set; }
-        public string Estado { get; set; }
+        public string? Estado { get; set; }
         public DateTime FechaServicio { get; set; }
-        public string Direccion { get; set; }
-        public string Contrato { get; set; }
-        public string Conductor { get; set; }
+        public string? Direccion { get; set; }
+        public string? Contrato { get; set; }
+        public string? Conductor { get; set; }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+        public int Count { get; set; }
+    }
+
+    public class ServicioHistorialResponse
+    {
+        [JsonPropertyName("_id")]
+        public string? Id { get; set; }
+
+        [JsonPropertyName("cliente")]
+        public string? Cliente { get; set; }
+
+        [JsonPropertyName("observaciones")]
+        public string? Observaciones { get; set; }
+
+        [JsonPropertyName("manifiesto")]
+        public string? Manifiesto { get; set; }
+
+        [JsonPropertyName("tecnico")]
+        public string? TecnicoAsignado { get; set; }
+
+        [JsonPropertyName("operadorAsignado")]
+        public string? OperadorAsignado { get; set; }
+
+        [JsonPropertyName("vehiculo")]
+        public string? Vehiculo { get; set; }
+
+        [JsonPropertyName("tipoResiduo")]
+        public string? TipoResiduo { get; set; }
+
+        [JsonPropertyName("cantidadEstimada")]
+        public double? CantidadEstimada { get; set; }
+
+        [JsonPropertyName("estado")]
+        public string? Estado { get; set; }
+
+        [JsonPropertyName("fechaServicio")]
+        public DateTime? FechaServicio { get; set; }
+
+        [JsonPropertyName("direccion")]
+        public string? Direccion { get; set; }
+
+        [JsonPropertyName("contrato")]
+        public string? Contrato { get; set; }
+
+        [JsonPropertyName("conductor")]
+        public string? Conductor { get; set; }
     }
 
     public class ServiceHistoryModel : PageModel
     {
-        public List<ServicioHistorial> ServiciosHistorial { get; set; }
-        public string ClienteSeleccionado { get; set; }
-        public string Rol { get; set; }
+        private const string ServiciosApiUrlTemplate = "http://localhost:8005/api/servicios/{0}";
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public void OnGet(int? id, string cliente, string rol = "empresa")
+        public ServiceHistoryModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public List<ServicioHistorial> ServiciosHistorial { get; set; } = new();
+        public string? ClienteSeleccionado { get; set; }
+        public string? Rol { get; set; }
+        public string? ErrorMessage { get; set; }
+
+        public async Task OnGetAsync(int? id, string cliente, string rol = "empresa")
         {
             Rol = rol;
             ViewData["Rol"] = rol;
             ClienteSeleccionado = cliente ?? "Cliente no especificado";
-            
-            ServiciosHistorial = new List<ServicioHistorial>();
-            
-            if (cliente == "Industrias ABC")
+
+            if (string.IsNullOrWhiteSpace(cliente))
             {
-                ServiciosHistorial = new List<ServicioHistorial>
-                {
-                    new ServicioHistorial
-                    {
-                        Id = 1001,
-                        Cliente = "Industrias ABC",
-                        Observaciones = "Recolección mensual de residuos plásticos - PENDIENTE",
-                        Manifiesto = "MAN-2024-001",
-                        TecnicoAsignado = "Carlos López",
-                        OperadorAsignado = "Pedro Ramírez",
-                        Vehiculo = "Camión ABC-123",
-                        TipoResiduo = "Plásticos",
-                        CantidadEstimada = 500.5,
-                        Estado = "Asignado",
-                        FechaServicio = DateTime.Today,
-                        Direccion = "Av. Industrial 123, Parque Industrial",
-                        Contrato = "CON-2024-001",
-                        Conductor = "Juan Pérez"
-                    },
-                    new ServicioHistorial
-                    {
-                        Id = 1006,
-                        Cliente = "Industrias ABC",
-                        Observaciones = "Recolección de residuos plásticos - Lote 2",
-                        Manifiesto = "MAN-2024-006",
-                        TecnicoAsignado = "Carlos López",
-                        OperadorAsignado = "Pedro Ramírez",
-                        Vehiculo = "Camión ABC-123",
-                        TipoResiduo = "Plásticos",
-                        CantidadEstimada = 450.0,
-                        Estado = "Recolectado",
-                        FechaServicio = DateTime.Today.AddDays(-7),
-                        Direccion = "Av. Industrial 123, Parque Industrial",
-                        Contrato = "CON-2024-001",
-                        Conductor = "Juan Pérez"
-                    },
-                    new ServicioHistorial
-                    {
-                        Id = 1009,
-                        Cliente = "Industrias ABC",
-                        Observaciones = "Recolección de residuos plásticos - Lote 3",
-                        Manifiesto = "MAN-2024-009",
-                        TecnicoAsignado = "Carlos López",
-                        OperadorAsignado = "Pedro Ramírez",
-                        Vehiculo = "Camión ABC-123",
-                        TipoResiduo = "Plásticos",
-                        CantidadEstimada = 520.0,
-                        Estado = "En curso",
-                        FechaServicio = DateTime.Today.AddDays(-14),
-                        Direccion = "Av. Industrial 123, Parque Industrial",
-                        Contrato = "CON-2024-001",
-                        Conductor = "Juan Pérez"
-                    }
-                };
+                ServiciosHistorial = new List<ServicioHistorial>();
+                return;
             }
-            else if (cliente == "Comercial XYZ")
+
+            await LoadServiceHistoryAsync(id, cliente);
+        }
+
+        private async Task LoadServiceHistoryAsync(int? id, string cliente)
+        {
+            try
             {
-                ServiciosHistorial = new List<ServicioHistorial>
+                var requestUrl = string.Format(ServiciosApiUrlTemplate, Uri.EscapeDataString(cliente));
+                using var httpClient = _httpClientFactory.CreateClient();
+
+                var response = await httpClient.GetFromJsonAsync<ApiResponse<List<ServicioHistorialResponse>>>(
+                    requestUrl,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (response is null)
                 {
-                    new ServicioHistorial
-                    {
-                        Id = 1002,
-                        Cliente = "Comercial XYZ",
-                        Observaciones = "Recolección semanal de residuos orgánicos - PENDIENTE",
-                        Manifiesto = "MAN-2024-045",
-                        TecnicoAsignado = "Roberto Sánchez",
-                        OperadorAsignado = "Ana Torres",
-                        Vehiculo = "Camión DEF-456",
-                        TipoResiduo = "Orgánicos",
-                        CantidadEstimada = 300.0,
-                        Estado = "Asignado",
-                        FechaServicio = DateTime.Today,
-                        Direccion = "Calle Comercio 456, Centro",
-                        Contrato = "CON-2024-045",
-                        Conductor = "María García"
-                    },
-                    new ServicioHistorial
-                    {
-                        Id = 1007,
-                        Cliente = "Comercial XYZ",
-                        Observaciones = "Recolección de residuos orgánicos - Semana 2",
-                        Manifiesto = "MAN-2024-047",
-                        TecnicoAsignado = "Roberto Sánchez",
-                        OperadorAsignado = "Ana Torres",
-                        Vehiculo = "Camión DEF-456",
-                        TipoResiduo = "Orgánicos",
-                        CantidadEstimada = 280.0,
-                        Estado = "En curso",
-                        FechaServicio = DateTime.Today.AddDays(-7),
-                        Direccion = "Calle Comercio 456, Centro",
-                        Contrato = "CON-2024-045",
-                        Conductor = "María García"
-                    },
-                    new ServicioHistorial
-                    {
-                        Id = 1010,
-                        Cliente = "Comercial XYZ",
-                        Observaciones = "Recolección de residuos orgánicos - Semana 3",
-                        Manifiesto = "MAN-2024-050",
-                        TecnicoAsignado = "Roberto Sánchez",
-                        OperadorAsignado = "Ana Torres",
-                        Vehiculo = "Camión DEF-456",
-                        TipoResiduo = "Orgánicos",
-                        CantidadEstimada = 290.0,
-                        Estado = "Concluido",
-                        FechaServicio = DateTime.Today.AddDays(-14),
-                        Direccion = "Calle Comercio 456, Centro",
-                        Contrato = "CON-2024-045",
-                        Conductor = "María García"
-                    }
-                };
+                    ErrorMessage = "El cliente no existe.";
+                    ServiciosHistorial = new List<ServicioHistorial>();
+                    return;
+                }
+
+                if (!response.Success || response.Data is null)
+                {
+                    ErrorMessage = "No se pudo obtener el historial de servicios para este cliente.";
+                    ServiciosHistorial = new List<ServicioHistorial>();
+                    return;
+                }
+
+                ServiciosHistorial = response.Data.Select(MapToViewModel).ToList();
             }
-            else
+            catch (Exception)
             {
-                ServiciosHistorial = new List<ServicioHistorial>
-                {
-                    new ServicioHistorial
-                    {
-                        Id = 1,
-                        Cliente = cliente ?? "Cliente",
-                        Observaciones = "Servicio de recolección de residuos - PENDIENTE",
-                        Manifiesto = "MAN-2024-XXX",
-                        TecnicoAsignado = "Carlos López",
-                        OperadorAsignado = "Pedro Ramírez",
-                        Vehiculo = "Camión ABC-123",
-                        TipoResiduo = "Residuos generales",
-                        CantidadEstimada = 100.0,
-                        Estado = "Asignado",
-                        FechaServicio = DateTime.Today,
-                        Direccion = "Dirección del servicio",
-                        Contrato = "CON-2024-XXX"
-                    },
-                    new ServicioHistorial
-                    {
-                        Id = 2,
-                        Cliente = cliente ?? "Cliente",
-                        Observaciones = "Servicio de recolección de residuos",
-                        Manifiesto = "MAN-2024-XX1",
-                        TecnicoAsignado = "Carlos López",
-                        OperadorAsignado = "Agusto Ramirez",
-                        Vehiculo = "Camión ABC-122",
-                        TipoResiduo = "Residuos generales",
-                        CantidadEstimada = 100.0,
-                        Estado = "Recolectado",
-                        FechaServicio = DateTime.Today,
-                        Direccion = "Dirección del servicio",
-                        Contrato = "CON-2024-XXX"
-                    },
-                    new ServicioHistorial
-                    {
-                        Id = 3,
-                        Cliente = cliente ?? "Cliente",
-                        Observaciones = "Servicio de recolección de residuos",
-                        Manifiesto = "MAN-2024-231",
-                        TecnicoAsignado = "Juan Torres",
-                        OperadorAsignado = "Bruno Villegas",
-                        Vehiculo = "Camión SFC-873",
-                        TipoResiduo = "Residuos generales",
-                        CantidadEstimada = 200.0,
-                        Estado = "En curso",
-                        FechaServicio = DateTime.Today,
-                        Direccion = "Dirección del servicio",
-                        Contrato = "CON-2024-XXX"
-                    }
-                };
+                ErrorMessage = "Ocurrió un error al consultar el backend de servicios.";
+                ServiciosHistorial = new List<ServicioHistorial>();
             }
+        }
+
+        private static ServicioHistorial MapToViewModel(ServicioHistorialResponse dto)
+        {
+            return new ServicioHistorial
+            {
+                Id = dto.Id ?? string.Empty,
+                Cliente = dto.Cliente ?? string.Empty,
+                Observaciones = dto.Observaciones ?? string.Empty,
+                Manifiesto = dto.Manifiesto ?? string.Empty,
+                TecnicoAsignado = dto.TecnicoAsignado ?? string.Empty,
+                OperadorAsignado = dto.OperadorAsignado ?? string.Empty,
+                Vehiculo = dto.Vehiculo ?? string.Empty,
+                TipoResiduo = dto.TipoResiduo ?? string.Empty,
+                CantidadEstimada = dto.CantidadEstimada ?? 0.0,
+                Estado = dto.Estado ?? string.Empty,
+                FechaServicio = dto.FechaServicio ?? DateTime.Today,
+                Direccion = dto.Direccion ?? string.Empty,
+                Contrato = dto.Contrato ?? string.Empty,
+                Conductor = dto.Conductor ?? string.Empty
+            };
         }
     }
 }

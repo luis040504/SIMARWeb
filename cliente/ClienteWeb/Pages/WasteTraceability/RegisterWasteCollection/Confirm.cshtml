@@ -483,6 +483,7 @@
         <!-- Botones de acción -->
         <div class="action-buttons">
             <form method="post" asp-page-handler="Confirmar" class="inline-form">
+                <input type="hidden" asp-for="Servicio.Id" />
                 <button type="submit" class="btn-simar-primary">
                     <i class="bi bi-check-lg"></i>
                     Registrar recolección

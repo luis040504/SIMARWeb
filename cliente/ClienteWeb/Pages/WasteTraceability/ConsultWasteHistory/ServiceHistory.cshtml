@@ -533,6 +533,14 @@
             Total de servicios: <strong>@Model.ServiciosHistorial.Count</strong>
         </span>
     </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="info-message" style="background: #f8d7da; border-color: #f5c2c7; color: #842029;">
+            <i class="bi bi-exclamation-triangle"></i>
+            @Model.ErrorMessage
+        </div>
+    }
     
     <!-- Tabla de historial -->
     <div class="table-container">
@@ -558,7 +566,7 @@
                     var estadoClass = servicio.Estado == "Asignado" ? "badge-asignado" : 
                                       (servicio.Estado == "Recolectado" ? "badge-recolectado" :
                                       (servicio.Estado == "En curso" ? "badge-en-curso" : "badge-concluido"));
-                    <tr onclick="abrirModalDetalle(@servicio.Id)" data-id="@servicio.Id">
+                    <tr onclick="abrirModalDetalle('@servicio.Id')" data-id="@servicio.Id">
                         <td><strong>#@servicio.Id</strong></td>
                         <td>@servicio.Manifiesto</td>
                         <td>@servicio.FechaServicio.ToString("dd/MM/yyyy")</td>
@@ -642,9 +650,8 @@
     }
 
     function abrirModalDetalle(id) {
-        var idBuscado = typeof id === 'string' ? parseInt(id) : id;
-        
-        var servicio = servicios.find(s => s.id === idBuscado || s.Id === idBuscado);
+        var idBuscado = id;
+        var servicio = servicios.find(s => s.id == idBuscado || s.Id == idBuscado);
         
         if (!servicio) {
             alert('Error: No se encontró el servicio solicitado');

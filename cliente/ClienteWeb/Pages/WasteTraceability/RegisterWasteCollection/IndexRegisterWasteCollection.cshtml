@@ -697,7 +697,7 @@
     var esCliente = (rol === 'cliente');
     
     function abrirModal(id) {
-        var idBuscado = typeof id === 'string' ? parseInt(id) : id;
+        var idBuscado = id?.toString();
         var servicio = servicios.find(s => s.Id === idBuscado);
         
         if (!servicio) {
@@ -761,10 +761,9 @@
         btnHistorial.className = 'btn-simar-primary';
         btnHistorial.innerHTML = '<i class="bi bi-clock-history"></i> Ver historial de servicios';
         btnHistorial.onclick = function() {
-            window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
+            window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + encodeURIComponent(servicio.Id) + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
         };
         botonesDiv.appendChild(btnHistorial);
-        
         modalBody.appendChild(template);
         document.getElementById('servicioModal').style.display = 'block';
     }

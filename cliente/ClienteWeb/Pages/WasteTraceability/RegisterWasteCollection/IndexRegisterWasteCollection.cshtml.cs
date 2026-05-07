@@ -2,12 +2,17 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 {
     public class ServicioRecoleccion
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string Cliente { get; set; }
         public string Direccion { get; set; }
         public string Contrato { get; set; }
@@ -25,102 +30,22 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 
     public class IndexModel : PageModel
     {
-        public List<ServicioRecoleccion> Servicios { get; set; }
+        private const string ServiciosApiUrl = "http://localhost:8005/api/servicios";
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public IndexModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public List<ServicioRecoleccion> Servicios { get; set; } = new();
         public string Rol { get; set; } = "empresa";
 
-        public void OnGet(string rol = "empresa")
+        public async Task OnGetAsync(string rol = "empresa")
         {
             Rol = rol;
             ViewData["Rol"] = rol;
-            
-            Servicios = new List<ServicioRecoleccion>
-            {
-                new ServicioRecoleccion
-                {
-                    Id = 1001,
-                    Cliente = "Industrias ABC",
-                    Direccion = "Av. Industrial 123, Parque Industrial",
-                    Contrato = "CON-2024-001",
-                    Conductor = "Juan Pérez",
-                    Vehiculo = "Camión ABC-123",
-                    Tecnico = "Carlos López",
-                    OperadorAsignado = "Pedro Ramírez",
-                    FechaServicio = DateTime.Today,
-                    Estado = "En curso",
-                    Observaciones = "Residuos industriales no peligrosos",
-                    TipoResiduo = "Plásticos",
-                    CantidadEstimada = 500.5,
-                    Manifiesto = "MAN-2024-001"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1002,
-                    Cliente = "Comercial XYZ",
-                    Direccion = "Calle Comercio 456, Centro",
-                    Contrato = "CON-2024-045",
-                    Conductor = "María García",
-                    Vehiculo = "Camión DEF-456",
-                    Tecnico = "Roberto Sánchez",
-                    OperadorAsignado = "Ana Torres",
-                    FechaServicio = DateTime.Today,
-                    Estado = "En curso",
-                    Observaciones = "Recolección semanal de residuos orgánicos",
-                    TipoResiduo = "Orgánicos",
-                    CantidadEstimada = 300.0,
-                    Manifiesto = "MAN-2024-045"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1003,
-                    Cliente = "Hospital del Sur",
-                    Direccion = "Av. Salud 789, Colonia Médica",
-                    Contrato = "CON-2024-089",
-                    Conductor = "Ana Martínez",
-                    Vehiculo = "Camión GHI-789",
-                    Tecnico = "José Ramírez",
-                    OperadorAsignado = "Laura Méndez",
-                    FechaServicio = DateTime.Today.AddDays(1),
-                    Estado = "En curso",
-                    Observaciones = "Residuos biológicos - Manejo especial",
-                    TipoResiduo = "Biológicos",
-                    CantidadEstimada = 150.75,
-                    Manifiesto = "MAN-2024-089"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1004,
-                    Cliente = "Restaurante El Sabor",
-                    Direccion = "Calle Principal 321, Zona Centro",
-                    Contrato = "CON-2024-112",
-                    Conductor = "Pedro González",
-                    Vehiculo = "Camión JKL-012",
-                    Tecnico = "Miguel Ángel",
-                    OperadorAsignado = "Carlos Ruiz",
-                    FechaServicio = DateTime.Today,
-                    Estado = "Concluido",
-                    Observaciones = "Aceites y grasas",
-                    TipoResiduo = "Aceites",
-                    CantidadEstimada = 50.0,
-                    Manifiesto = "MAN-2024-112"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1005,
-                    Cliente = "Constructora Moderna",
-                    Direccion = "Blvd. Construcción 567, Zona Industrial",
-                    Contrato = "CON-2024-078",
-                    Conductor = "Luis Hernández",
-                    Vehiculo = "Camión MNO-345",
-                    Tecnico = "Fernando Díaz",
-                    OperadorAsignado = "Roberto Méndez",
-                    FechaServicio = DateTime.Today,
-                    Estado = "Concluido",
-                    Observaciones = "Escombros y materiales de construcción",
-                    TipoResiduo = "Escombros",
-                    CantidadEstimada = 1000.0,
-                    Manifiesto = "MAN-2024-078"
-                }
-            };
+            await LoadServiciosAsync();
 
             if (TempData["MensajeExito"] != null)
             {
@@ -132,6 +57,54 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                 ViewData["MensajeError"] = TempData["MensajeError"];
                 ViewData["TipoError"] = TempData["TipoError"];
             }
+        }
+
+        private async Task LoadServiciosAsync()
+        {
+            try
+            {
+                using var httpClient = _httpClientFactory.CreateClient();
+                var response = await httpClient.GetFromJsonAsync<ApiResponse<List<ServicioRecoleccionResponse>>>(
+                    ServiciosApiUrl,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (response?.Success == true && response.Data != null)
+                {
+                    Servicios = response.Data.ConvertAll(MapToViewModel);
+                }
+                else
+                {
+                    Servicios = new List<ServicioRecoleccion>();
+                    ViewData["MensajeError"] = "No se pudieron cargar los servicios desde el backend.";
+                }
+            }
+            catch (Exception)
+            {
+                Servicios = new List<ServicioRecoleccion>();
+                ViewData["MensajeError"] = "Ocurrió un error al consultar el backend de servicios.";
+            }
+        }
+
+        private static ServicioRecoleccion MapToViewModel(ServicioRecoleccionResponse dto)
+        {
+            return new ServicioRecoleccion
+            {
+                Id = dto.Id ?? string.Empty,
+                Cliente = dto.Cliente ?? string.Empty,
+                Direccion = dto.Direccion ?? string.Empty,
+                Contrato = dto.Contrato ?? string.Empty,
+                Conductor = dto.Conductor ?? string.Empty,
+                Vehiculo = dto.Vehiculo ?? string.Empty,
+                Tecnico = dto.Tecnico ?? string.Empty,
+                FechaServicio = dto.FechaServicio ?? DateTime.Today,
+                Estado = dto.Estado ?? string.Empty,
+                Observaciones = dto.Observaciones ?? string.Empty,
+                TipoResiduo = dto.TipoResiduo ?? string.Empty,
+                CantidadEstimada = dto.CantidadEstimada ?? 0.0,
+                Manifiesto = dto.Manifiesto ?? string.Empty,
+                OperadorAsignado = dto.OperadorAsignado ?? string.Empty
+            };
         }
     }
 }
