@@ -666,29 +666,35 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
     </div>
 }
 
-<!-- Toasts -->
-<div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;">
+<!-- Premium Toasts -->
+<div class="toast-container toast-container-simar position-fixed top-0 end-0 p-4" style="margin-top: 75px;">
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
-        <div class="toast align-items-center text-white bg-success border-0 shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius:15px;">
-            <div class="d-flex p-2">
-                <div class="toast-body fs-5 d-flex align-items-center">
-                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
-                    <span>@Model.StatusMessage</span>
+        <div class="toast toast-simar toast-simar-success shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill main-icon fs-5 me-2"></i>
+                    <strong class="toast-title text-simar-green">Éxito</strong>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                @Model.StatusMessage
             </div>
         </div>
     }
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="toast align-items-center text-white bg-danger border-0 shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius:15px;">
-            <div class="d-flex p-2">
-                <div class="toast-body fs-5 d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
-                    <span>@TempData["ErrorMessage"]</span>
+        <div class="toast toast-simar toast-simar-error shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill main-icon fs-5 me-2"></i>
+                    <strong class="toast-title text-danger">Error</strong>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                @TempData["ErrorMessage"]
             </div>
         </div>
     }
