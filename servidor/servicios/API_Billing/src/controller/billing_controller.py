@@ -169,6 +169,7 @@ class BillingController:
             update_data["fiscal_data.invoice_folio"] = f"A-{random.randint(1000, 9999)}"
             update_data["fiscal_data.uuid"] = str(uuid.uuid4()).upper()
             update_data["fiscal_data.issue_date"] = datetime.now()
+            update_data["reason"] = ""  # Limpiar motivo de rechazo previo
 
         result = await facturas_collection.update_one(
             {"_id": ObjectId(billing_id), "activo": True},
