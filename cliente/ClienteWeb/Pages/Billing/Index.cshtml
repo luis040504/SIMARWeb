@@ -321,6 +321,9 @@
                     <input type="hidden" asp-for="Role" />
                     <input type="hidden" asp-for="ActiveTab" />
                     <input type="hidden" asp-for="ItemsJson" id="ItemsJson" />
+                    <input type="hidden" asp-for="ProductCode" />
+                    <input type="hidden" asp-for="UnitCode" />
+                    <input type="hidden" asp-for="TaxObject" />
 
                     @if (isPreInvoice)
                     {
@@ -347,13 +350,13 @@
                                     <div class="row g-4">
                                             <div class="col-md-4">
                                                 <label class="form-label form-label-simar text-danger @(isRfcBad ? "fw-bold" : "")">RFC *</label>
-                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" readonly="readonly" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)">
+                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)">
                                                 <div class="invalid-feedback">RFC inválido. Letras mayúsculas (3-4), AAMMdd y 3 caracteres finales.</div>
                                                 @if(isRfcBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-8">
                                                 <label class="form-label form-label-simar text-danger @(isNameBad ? "fw-bold" : "")">Razón Social *</label>
-                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" readonly="readonly" required minlength="3" maxlength="250" title="Ingresa la razón social">
+                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" required minlength="3" maxlength="250" title="Ingresa la razón social">
                                                 <div class="invalid-feedback">La razón social es requerida (mín. 3 caracteres).</div>
                                                 @if(isNameBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>

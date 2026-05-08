@@ -3,7 +3,7 @@ from typing import Optional, List, Literal
 from datetime import datetime
 
 class InvoiceMetadata(BaseModel):
-    created_at: datetime
+    created_at: Optional[datetime] = None
     updated_at: datetime
     source: Literal["web_app", "mobile_app", "email_sync"]
 
@@ -69,7 +69,7 @@ class BillingBase(BaseModel):
     fiscal_data: FiscalData
     financials: Financials
     items: List[Item]
-    attachments: Attachments
+    attachments: Optional[Attachments] = Field(default_factory=Attachments)
     status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
     reason: Optional[str] = None
     activo: bool = True

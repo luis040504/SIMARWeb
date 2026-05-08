@@ -49,6 +49,12 @@ namespace ClienteWeb.Services
             return await response.Content.ReadFromJsonAsync<BillingResponse>();
         }
 
+        public async Task<BillingResponse> UpdateInvoiceAsync(string id, BillingCreate data)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"billing/{id}", data);
+            return await response.Content.ReadFromJsonAsync<BillingResponse>();
+        }
+
         public async Task<BillingResponse> UpdateStatusAsync(string id, string status, string reason = null)
         {
             var url = $"billing/{id}/status?new_status={status}";

@@ -184,14 +184,47 @@ namespace ClienteWeb.Pages.Billing
         {
             try
             {
-                // Para simplificar, el Edit en este contexto se trata como un re-envío (generar una nueva o actualizar estado)
-                // Aquí podrías implementar la llamada a Update si el API lo soporta completamente para correcciones
-                StatusMessage = $"¡La prefactura de {TaxId} ha sido actualizada y reenviada exitosamente!";
+                if (string.IsNullOrEmpty(SelectedRecordId))
+                {
+                    TempData["ErrorMessage"] = "No se ha seleccionado ninguna factura para editar.";
+                    return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                }
+
+                var items = JsonSerializer.Deserialize<List<InvoiceItemDto>>(ItemsJson);
+                var subtotal = items.Sum(i => i.Amount);
+                var taxTotal = subtotal * 0.16m;
+                var total = subtotal + taxTotal;
+
+                var billingUpdate = new BillingCreate
+                {
+                    UploadType = "DIGITAL",
+                    RecordType = "Invoice",
+                    Metadata = new InvoiceMetadata { UpdatedAt = DateTime.Now, Source = "web_app" },
+                    Issuer = new Issuer { TaxId = "SIM120101XYZ", Name = "SIMAR S.A. de C.V.", TaxRegime = "601" },
+                    Receiver = new Receiver { TaxId = TaxId, Name = BillingName, PostalCode = PostalCode, FiscalRegime = FiscalRegime, TaxUsage = CfdiUsage },
+                    FiscalData = new FiscalData { IssueDate = DateTime.Now },
+                    Financials = new Financials { Subtotal = subtotal, TaxTotal = taxTotal, Total = total, PaymentForm = PaymentForm, PaymentMethod = PaymentMethod },
+                    Items = items.Select(i => new BillingItem { 
+                        Description = i.Concept, 
+                        Quantity = (double)i.Quantity, 
+                        UnitPrice = i.Amount / (decimal)i.Quantity, 
+                        Amount = i.Amount,
+                        ProductCode = ProductCode,
+                        UnitCode = UnitCode,
+                        TaxObject = TaxObject,
+                        Taxes = new List<TaxItem> { new TaxItem { Amount = i.Amount * 0.16m } }
+                    }).ToList(),
+                    Status = "Pending", 
+                    Reason = "" 
+                };
+
+                await _billingService.UpdateInvoiceAsync(SelectedRecordId, billingUpdate);
+                StatusMessage = $"¡La prefactura de {BillingName} ha sido actualizada y reenviada exitosamente!";
                 return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
             }
-            catch (BillingApiException ex)
+            catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Error de validación o comunicación: {ex.Message}";
                 return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
             }
         }

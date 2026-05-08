@@ -102,16 +102,21 @@ class BillingController:
         if not existing:
             raise HTTPException(status_code=404, detail="Factura no encontrada o inactiva")
             
-        immutable_states = ["Accepted", "Rejected", "CANCELLED"]
+        immutable_states = ["Accepted", "CANCELLED"]
         if existing.get("status") in immutable_states:
             from ..handlers.exceptions import AppException
             raise AppException(message="No se puede editar una factura que ya ha sido procesada o cancelada", status_code=400, code="IMMUTABLE_STATE")
         
         update_data = billing_data.model_dump(exclude_unset=True)
-        if "metadata" not in update_data:
-            update_data["metadata"] = existing.get("metadata", {})
-            update_data["metadata"]["updated_at"] = datetime.now()
+        
+        # Manejo robusto de metadata para asegurar que updated_at siempre se actualice
+        if update_data.get("metadata") is None:
+            # Si no viene metadata o es null, usamos la existente y actualizamos el timestamp
+            current_metadata = existing.get("metadata", {})
+            current_metadata["updated_at"] = datetime.now()
+            update_data["metadata"] = current_metadata
         else:
+            # Si viene metadata, nos aseguramos de refrescar updated_at
             update_data["metadata"]["updated_at"] = datetime.now()
         
         if update_data:

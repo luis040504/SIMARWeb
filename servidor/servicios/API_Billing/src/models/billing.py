@@ -73,7 +73,7 @@ class Billing(BaseModel):
     fiscal_data: FiscalDataModel
     financials: FinancialsModel
     items: List[ItemModel]
-    attachments: AttachmentsModel
+    attachments: Optional[AttachmentsModel] = Field(default_factory=AttachmentsModel)
     status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
     reason: Optional[str] = None
     activo: bool = True
