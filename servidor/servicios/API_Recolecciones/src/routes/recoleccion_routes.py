@@ -11,8 +11,9 @@ async def get_all(
     cliente: Optional[str] = Query(None),
     fechaInicio: Optional[datetime] = Query(None),
     fechaFin: Optional[datetime] = Query(None),
-    vehiculo: Optional[str] = Query(None),
-    tecnico: Optional[str] = Query(None),
+    vehiculo: Optional[str] = Query(None, description="Filtrar por vehículo"),
+    chofer: Optional[str] = Query(None, description="Filtrar por chofer"),
+    tecnico: Optional[str] = Query(None, description="Filtrar por técnico"),
     estado: Optional[str] = Query(None)
 ):
     """Obtener todas las recolecciones con filtros"""
@@ -21,6 +22,7 @@ async def get_all(
         fechaInicio=fechaInicio,
         fechaFin=fechaFin,
         vehiculo=vehiculo,
+        chofer=chofer,
         tecnico=tecnico,
         estado=estado
     )

@@ -5,114 +5,233 @@
 }
 
 <style>
-    body {
-        font-family: Arial, Helvetica, sans-serif;
-        background-color: white;
-        color: black;
-        margin: 0;
-        padding: 20px;
+    /* Unificación de estilos con el layout */
+    :root {
+        --simar-green: #5aad31;
+        --simar-dark: #4a4a4a;
+        --simar-gray-light: #f8f9fa;
+        --simar-border: #e9ecef;
     }
     
-    h1 {
-        font-size: 24px;
-        margin-bottom: 20px;
-        border-bottom: 2px solid black;
-        padding-bottom: 10px;
+    * {
+        font-family: 'Inter', sans-serif;
     }
     
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
+    /* Contenedor principal */
+    .container-fluid-custom {
+        width: 100%;
+        padding-right: 1rem;
+        padding-left: 1rem;
     }
     
-    .btn-regresar {
-        padding: 10px 20px;
-        background-color: white;
-        border: 1px solid black;
+    /* Header de página */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--simar-dark);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .page-header h1 i {
+        color: var(--simar-green);
+    }
+    
+    .page-header p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    /* Barra superior con botones */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    /* Botón regresar */
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: transparent;
+        border: 1px solid var(--simar-border);
+        color: var(--simar-dark);
+        border-radius: 10px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
         cursor: pointer;
-        font-size: 14px;
-        margin-bottom: 20px;
-        display: inline-block;
         text-decoration: none;
-        color: black;
     }
     
-    .btn-regresar:hover {
-        background-color: #f0f0f0;
+    .btn-back:hover {
+        background: var(--simar-gray-light);
+        border-color: var(--simar-green);
+        transform: translateX(-3px);
     }
     
-    table {
+    /* Botones de vista mejorados */
+    .view-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn-view {
+        background: white;
+        border: 1px solid var(--simar-border);
+        color: var(--simar-dark);
+        border-radius: 10px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-view:hover {
+        background: var(--simar-gray-light);
+        border-color: var(--simar-green);
+        transform: translateY(-2px);
+    }
+    
+    .btn-view-active {
+        background: var(--simar-green);
+        color: white;
+        border: 1px solid var(--simar-green);
+    }
+    
+    .btn-view-active:hover {
+        background: #3d7a1f;
+        color: white;
+    }
+    
+    /* Mensaje informativo */
+    .info-message {
+        margin-bottom: 1.5rem;
+        padding: 1rem 1.25rem;
+        background: var(--simar-gray-light);
+        border-radius: 12px;
+        border: 1px solid var(--simar-border);
+        color: var(--simar-dark);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .info-message i {
+        color: var(--simar-green);
+        font-size: 1.1rem;
+    }
+    
+    /* Tabla mejorada */
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--simar-border);
+        margin-top: 1rem;
+    }
+    
+    .table-simar {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
-        cursor: pointer;
     }
     
-    th {
+    .table-simar thead tr {
+        background: var(--simar-gray-light);
+        border-bottom: 2px solid var(--simar-green);
+    }
+    
+    .table-simar th {
+        padding: 1rem 1.25rem;
         text-align: left;
-        padding: 12px;
-        background-color: #333;
-        color: white;
-        font-weight: bold;
-        border: 1px solid black;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--simar-dark);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
-    td {
-        padding: 12px;
-        border: 1px solid #999;
+    .table-simar th i {
+        color: var(--simar-green);
+        margin-right: 0.5rem;
+    }
+    
+    .table-simar td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--simar-border);
         vertical-align: middle;
+        color: #666;
+        font-size: 0.9rem;
     }
     
-    tr {
-        transition: background-color 0.2s;
-    }
-    
-    tr:hover {
-        background-color: #e6f7ff;
+    .table-simar tbody tr {
         cursor: pointer;
+        transition: all 0.2s ease;
     }
     
-    .mensaje-info {
-        padding: 15px;
-        border: 1px solid #999;
-        background-color: #f9f9f9;
-        margin: 20px 0;
+    .table-simar tbody tr:hover {
+        background: rgba(90, 173, 49, 0.05);
     }
     
-    .badge-estado {
+    .table-simar tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Badges de estado */
+    .badge-simar {
         display: inline-block;
-        padding: 3px 8px;
-        font-size: 12px;
-        font-weight: bold;
-        border-radius: 3px;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
     
-    .estado-asignado {
-        background-color: #fff3cd;
-        border: 1px solid #ffc107;
+    .badge-asignado {
+        background: rgba(255, 193, 7, 0.1);
         color: #856404;
+        border: 1px solid rgba(255, 193, 7, 0.3);
     }
     
-    .estado-recolectado {
-        background-color: #cce5ff;
-        border: 1px solid #0066cc;
-        color: #004085;
+    .badge-recolectado {
+        background: rgba(0, 102, 204, 0.1);
+        color: #0066cc;
+        border: 1px solid rgba(0, 102, 204, 0.3);
     }
     
-    .estado-en-curso {
-        background-color: #cce5ff;
-        border: 1px solid #0066cc;
-        color: #004085;
+    .badge-en-curso {
+        background: rgba(0, 102, 204, 0.1);
+        color: #0066cc;
+        border: 1px solid rgba(0, 102, 204, 0.3);
     }
     
-    .estado-concluido {
-        background-color: #d4edda;
-        border: 1px solid #28a745;
-        color: #155724;
+    .badge-concluido {
+        background: rgba(90, 173, 49, 0.1);
+        color: var(--simar-green);
+        border: 1px solid rgba(90, 173, 49, 0.3);
     }
     
-    /* Estilos para el modal de detalle */
-    .modal {
+    /* Modal mejorado */
+    .modal-simar {
         display: none;
         position: fixed;
         z-index: 1000;
@@ -120,253 +239,363 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0,0,0,0.5);
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
     }
     
-    .modal-content {
-        background-color: white;
-        margin: 50px auto;
-        padding: 0;
-        border: 2px solid black;
-        width: 80%;
-        max-width: 900px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    .modal-content-simar {
+        background: white;
+        margin: 40px auto;
+        width: 90%;
+        max-width: 800px;
+        max-height: 85vh;
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
     
-    .modal-header {
-        padding: 15px 20px;
-        background-color: #333;
-        color: white;
-        border-bottom: 2px solid black;
+    .modal-header-simar {
+        padding: 1.25rem 1.5rem;
+        background: white;
+        border-bottom: 2px solid var(--simar-green);
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
     
-    .modal-header h2 {
+    .modal-header-simar h2 {
         margin: 0;
-        font-size: 20px;
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-    
-    .close {
-        color: white;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    
-    .close:hover {
-        color: #ccc;
-    }
-    
-    .modal-body {
-        padding: 20px;
-    }
-    
-    .detalles-servicio {
-        border: 1px solid #ccc;
-        background-color: #f9f9f9;
-    }
-    
-    .detalle-fila {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--simar-dark);
         display: flex;
-        border-bottom: 1px solid #ddd;
+        align-items: center;
+        gap: 0.5rem;
     }
     
-    .detalle-fila:last-child {
+    .modal-header-simar h2 i {
+        color: var(--simar-green);
+    }
+    
+    .close-simar {
+        color: #999;
+        font-size: 1.5rem;
+        font-weight: 400;
+        cursor: pointer;
+        transition: color 0.2s;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    
+    .close-simar:hover {
+        color: var(--simar-dark);
+        background: var(--simar-gray-light);
+    }
+    
+    .modal-body-simar {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+    
+    .modal-body-simar::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .modal-body-simar::-webkit-scrollbar-track {
+        background: var(--simar-border);
+        border-radius: 4px;
+    }
+    
+    .modal-body-simar::-webkit-scrollbar-thumb {
+        background: var(--simar-green);
+        border-radius: 4px;
+    }
+    
+    /* Detalles en modal */
+    .details-card {
+        background: var(--simar-gray-light);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--simar-border);
+        margin-bottom: 1.5rem;
+    }
+    
+    .detail-item {
+        display: flex;
+        border-bottom: 1px solid var(--simar-border);
+    }
+    
+    .detail-item:last-child {
         border-bottom: none;
     }
     
-    .detalle-etiqueta {
-        width: 200px;
-        padding: 12px;
-        background-color: #eaeaea;
-        font-weight: bold;
-        border-right: 1px solid #ccc;
+    .detail-label {
+        width: 180px;
+        padding: 0.9rem 1.25rem;
+        background: white;
+        font-weight: 500;
+        font-size: 0.85rem;
+        color: var(--simar-dark);
+        border-right: 1px solid var(--simar-border);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
     
-    .detalle-valor {
+    .detail-label i {
+        color: var(--simar-green);
+        font-size: 1rem;
+        width: 18px;
+    }
+    
+    .detail-value {
         flex: 1;
-        padding: 12px;
+        padding: 0.9rem 1.25rem;
+        color: #666;
+        font-size: 0.9rem;
+        background: white;
         word-break: break-word;
     }
     
-    .seccion-acciones {
-        margin-top: 25px;
-        padding-top: 20px;
-        border-top: 2px solid #ccc;
+    /* Sección de acciones */
+    .actions-section {
+        padding-top: 0.5rem;
     }
     
-    .botones-accion {
+    .actions-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--simar-dark);
+        margin-bottom: 1rem;
         display: flex;
-        gap: 10px;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .actions-section h3 i {
+        color: var(--simar-green);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
         flex-wrap: wrap;
     }
     
-    .btn-accion {
-        padding: 10px 20px;
-        background-color: white;
-        border: 1px solid black;
+    .btn-simar-primary {
+        background: var(--simar-green);
+        border: none;
+        color: white;
+        border-radius: 10px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.2s;
         cursor: pointer;
-        font-size: 14px;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        text-decoration: none;
-        border-radius: 4px;
+        gap: 0.5rem;
     }
     
-    .btn-accion:hover {
-        background-color: #f0f0f0;
+    .btn-simar-primary:hover {
+        background: #3d7a1f;
+        transform: translateY(-2px);
     }
     
-    .btn-primary {
-        background-color: #0066cc;
-        color: white;
-        border: 1px solid #0052a3;
-    }
-    
-    .btn-primary:hover {
-        background-color: #0052a3;
-    }
-    
-    .btn-warning {
-        background-color: #ffc107;
-        color: black;
-        border: 1px solid #d39e00;
-    }
-    
-    .btn-warning:hover {
-        background-color: #d39e00;
-    }
-    
-    .btn-success {
-        background-color: #28a745;
-        color: white;
-        border: 1px solid #1e7e34;
-    }
-    
-    .btn-success:hover {
-        background-color: #1e7e34;
-    }
-    
-    .botones-vista {
-        margin-bottom: 20px;
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-    }
-    
-    .btn-vista {
-        padding: 10px 20px;
-        background-color: white;
-        border: 1px solid black;
+    .btn-simar-warning {
+        background: #ffc107;
+        border: none;
+        color: #856404;
+        border-radius: 10px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.2s;
         cursor: pointer;
-        font-size: 14px;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        text-decoration: none;
-        border-radius: 4px;
+        gap: 0.5rem;
     }
     
-    .btn-vista:hover {
-        background-color: #f0f0f0;
+    .btn-simar-warning:hover {
+        background: #e0a800;
+        transform: translateY(-2px);
     }
     
-    .btn-vista-activo {
-        background-color: #0066cc;
+    .btn-simar-success {
+        background: #28a745;
+        border: none;
         color: white;
-        border: 1px solid #0052a3;
+        border-radius: 10px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
     
-    .btn-vista-activo:hover {
-        background-color: #0052a3;
+    .btn-simar-success:hover {
+        background: #1e7e34;
+        transform: translateY(-2px);
+    }
+    
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .top-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .view-buttons {
+            justify-content: stretch;
+        }
+        
+        .btn-view {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .detail-item {
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid var(--simar-border);
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn-simar-primary,
+        .btn-simar-warning,
+        .btn-simar-success {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
 
-<div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <a href="/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection?rol=@ViewData["Rol"]" class="btn-regresar">
-            ← Regresar a consulta de servicios
+<div class="container-fluid-custom">
+    <!-- Barra superior -->
+    <div class="top-bar">
+        <a href="/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection?rol=@ViewData["Rol"]" class="btn-back">
+            <i class="bi bi-arrow-left"></i>
+            Regresar a consulta de servicios
         </a>
         
-        <div class="botones-vista" style="margin-bottom: 0;">
-            <a href="?rol=empresa&cliente=@Model.ClienteSeleccionado" class="btn-vista @(ViewData["Rol"]?.ToString() == "empresa" ? "btn-vista-activo" : "")">
+        <div class="view-buttons">
+            <a href="?rol=empresa&cliente=@Model.ClienteSeleccionado" class="btn-view @(ViewData["Rol"]?.ToString() == "empresa" ? "btn-view-active" : "")">
+                <i class="bi bi-building"></i>
                 Vista Empresarial
             </a>
-            <a href="?rol=cliente&cliente=@Model.ClienteSeleccionado" class="btn-vista @(ViewData["Rol"]?.ToString() == "cliente" ? "btn-vista-activo" : "")">
+            <a href="?rol=cliente&cliente=@Model.ClienteSeleccionado" class="btn-view @(ViewData["Rol"]?.ToString() == "cliente" ? "btn-view-active" : "")">
+                <i class="bi bi-person"></i>
                 Vista Cliente
             </a>
         </div>
     </div>
     
-    <h1>Historial de Servicios - @Model.ClienteSeleccionado</h1>
-    
-    <div class="mensaje-info">
-        <strong>Instrucciones:</strong> Haga clic en cualquier fila de la tabla para ver los detalles completos del servicio.
-        Total de servicios en historial: @Model.ServiciosHistorial.Count
+    <!-- Header -->
+    <div class="page-header">
+        <h1>
+            <i class="bi bi-clock-history"></i>
+            Historial de Servicios
+        </h1>
+        <p>
+            <i class="bi bi-building me-1"></i>
+            Cliente: <strong>@Model.ClienteSeleccionado</strong>
+        </p>
     </div>
     
-    <table id="tablaHistorial">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Manifiesto</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                @if (ViewData["Rol"]?.ToString() != "cliente")
-                {
-                    <th>Técnico</th>
-                    <th>Vehículo</th>
-                }
-                <th>Tipo Residuo</th>
-                <th>Cantidad (kg)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var servicio in Model.ServiciosHistorial)
-            {
-                <tr onclick="abrirModalDetalle(@servicio.Id)" data-id="@servicio.Id">
-                    <td>@servicio.Id</td>
-                    <td>@servicio.Manifiesto</td>
-                    <td>@servicio.FechaServicio.ToString("dd/MM/yyyy")</td>
-                    <td>
-                        @{
-                            var estadoClass = servicio.Estado == "Asignado" ? "estado-asignado" : 
-                                              (servicio.Estado == "Recolectado" ? "estado-recolectado" :
-                                              (servicio.Estado == "En curso" ? "estado-en-curso" : "estado-concluido"));
-                        }
-                        <span class="badge-estado @estadoClass">
-                            @servicio.Estado
-                        </span>
-                    </td>
+    <!-- Mensaje informativo -->
+    <div class="info-message">
+        <i class="bi bi-info-circle"></i>
+        <span>
+            <strong>Instrucciones:</strong> Haga clic en cualquier fila para ver los detalles completos del servicio. 
+            Total de servicios: <strong>@Model.ServiciosHistorial.Count</strong>
+        </span>
+    </div>
+    
+    <!-- Tabla de historial -->
+    <div class="table-container">
+        <table class="table-simar" id="tablaHistorial">
+            <thead>
+                <tr>
+                    <th><i class="bi bi-hash"></i>ID</th>
+                    <th><i class="bi bi-file-text"></i>Manifiesto</th>
+                    <th><i class="bi bi-calendar"></i>Fecha</th>
+                    <th><i class="bi bi-flag"></i>Estado</th>
                     @if (ViewData["Rol"]?.ToString() != "cliente")
                     {
-                        <td>@servicio.TecnicoAsignado</td>
-                        <td>@servicio.Vehiculo</td>
+                        <th><i class="bi bi-tools"></i>Técnico</th>
+                        <th><i class="bi bi-truck"></i>Vehículo</th>
                     }
-                    <td>@servicio.TipoResiduo</td>
-                    <td>@servicio.CantidadEstimada</td>
+                    <th><i class="bi bi-recycle"></i>Tipo Residuo</th>
+                    <th><i class="bi bi-weight"></i>Cantidad (kg)</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var servicio in Model.ServiciosHistorial)
+                {
+                    var estadoClass = servicio.Estado == "Asignado" ? "badge-asignado" : 
+                                      (servicio.Estado == "Recolectado" ? "badge-recolectado" :
+                                      (servicio.Estado == "En curso" ? "badge-en-curso" : "badge-concluido"));
+                    <tr onclick="abrirModalDetalle(@servicio.Id)" data-id="@servicio.Id">
+                        <td><strong>#@servicio.Id</strong></td>
+                        <td>@servicio.Manifiesto</td>
+                        <td>@servicio.FechaServicio.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <span class="badge-simar @estadoClass">
+                                <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
+                                @servicio.Estado
+                            </span>
+                        </td>
+                        @if (ViewData["Rol"]?.ToString() != "cliente")
+                        {
+                            <td>@servicio.TecnicoAsignado</td>
+                            <td>@servicio.Vehiculo</td>
+                        }
+                        <td>@servicio.TipoResiduo</td>
+                        <td>@servicio.CantidadEstimada.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
-
-<div id="servicioModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Detalles del Servicio</h2>
-            <span class="close" onclick="cerrarModal()">&times;</span>
+<!-- Modal de detalles -->
+<div id="servicioModal" class="modal-simar">
+    <div class="modal-content-simar">
+        <div class="modal-header-simar">
+            <h2>
+                <i class="bi bi-info-circle"></i>
+                Detalles del Servicio
+            </h2>
+            <span class="close-simar" onclick="cerrarModal()">
+                <i class="bi bi-x-lg"></i>
+            </span>
         </div>
-        <div class="modal-body" id="modalBody">
-  
+        <div class="modal-body-simar" id="modalBody">
+            <!-- Contenido cargado dinámicamente -->
         </div>
     </div>
 </div>
@@ -375,26 +604,36 @@
     var servicios = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiciosHistorial));
     var rol = '@ViewData["Rol"]';
     
+    function getBadgeClass(estado) {
+        switch(estado) {
+            case 'Asignado': return 'badge-asignado';
+            case 'Recolectado': return 'badge-recolectado';
+            case 'En curso': return 'badge-en-curso';
+            case 'Concluido': return 'badge-concluido';
+            default: return 'badge-asignado';
+        }
+    }
+    
     function getBotonesAccion(servicio) {
         var estado = servicio.estado || servicio.Estado;
         var botones = '';
         
         if (rol !== 'cliente') {
             if (estado === 'Asignado') {
-                botones += `<button class="btn-accion btn-primary" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/Confirm'">
-                                Registrar recolección
+                botones += `<button class="btn-simar-primary" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/Confirm'">
+                                <i class="bi bi-check-lg"></i> Registrar recolección
                             </button>`;
             }
 
             if (estado === 'Recolectado') {
-                botones += `<button class="btn-accion btn-warning" onclick="window.location.href='/WasteTraceability/RegisterWasteTransportRecord/TransportConfirm'">
-                                Registrar inicio de ruta
+                botones += `<button class="btn-simar-warning" onclick="window.location.href='/WasteTraceability/RegisterWasteTransportRecord/TransportConfirm'">
+                                <i class="bi bi-truck"></i> Registrar inicio de ruta
                             </button>`;
             }
 
             if (estado === 'En curso') {
-                botones += `<button class="btn-accion btn-success" onclick="window.location.href='/WasteTraceability/RegisterWasteDestinationRecord/DestinationConfirm'">
-                                Registrar llegada a destino
+                botones += `<button class="btn-simar-success" onclick="window.location.href='/WasteTraceability/RegisterWasteDestinationRecord/DestinationConfirm'">
+                                <i class="bi bi-geo-alt"></i> Registrar llegada a destino
                             </button>`;
             }
         }
@@ -415,97 +654,100 @@
         var modalBody = document.getElementById('modalBody');
         
         var estado = servicio.estado || servicio.Estado;
-        var estadoClass = estado === 'Asignado' ? 'estado-asignado' : 
-                         (estado === 'Recolectado' ? 'estado-recolectado' :
-                         (estado === 'En curso' ? 'estado-en-curso' : 'estado-concluido'));
-        
+        var estadoClass = getBadgeClass(estado);
         var esCliente = (rol === 'cliente');
         
+        // Construir HTML del modal
         var contenidoHtml = `
-            <div class="detalles-servicio">
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">ID del Servicio:</div>
-                    <div class="detalle-valor">${servicio.id || servicio.Id}</div>
+            <div class="details-card">
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-hash"></i>ID del Servicio</div>
+                    <div class="detail-value"><strong>#${servicio.id || servicio.Id}</strong></div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Cliente:</div>
-                    <div class="detalle-valor">${servicio.cliente || servicio.Cliente}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-building"></i>Cliente</div>
+                    <div class="detail-value">${servicio.cliente || servicio.Cliente}</div>
                 </div>`;
         
         if (!esCliente) {
             contenidoHtml += `
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Observaciones:</div>
-                    <div class="detalle-valor">${servicio.observaciones || servicio.Observaciones || 'Sin observaciones'}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-chat-text"></i>Observaciones</div>
+                    <div class="detail-value">${servicio.observaciones || servicio.Observaciones || 'Sin observaciones'}</div>
                 </div>`;
         }
         
         contenidoHtml += `
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Manifiesto:</div>
-                    <div class="detalle-valor">${servicio.manifiesto || servicio.Manifiesto}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-file-text"></i>Manifiesto</div>
+                    <div class="detail-value">${servicio.manifiesto || servicio.Manifiesto}</div>
                 </div>`;
         
         if (!esCliente) {
             contenidoHtml += `
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Técnico Asignado:</div>
-                    <div class="detalle-valor">${servicio.tecnicoAsignado || servicio.TecnicoAsignado}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-tools"></i>Técnico Asignado</div>
+                    <div class="detail-value">${servicio.tecnicoAsignado || servicio.TecnicoAsignado || 'No asignado'}</div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Operador Asignado:</div>
-                    <div class="detalle-valor">${servicio.operadorAsignado || servicio.OperadorAsignado}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-person-badge"></i>Operador Asignado</div>
+                    <div class="detail-value">${servicio.operadorAsignado || servicio.OperadorAsignado || 'No asignado'}</div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Vehículo:</div>
-                    <div class="detalle-valor">${servicio.vehiculo || servicio.Vehiculo}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-truck"></i>Vehículo</div>
+                    <div class="detail-value">${servicio.vehiculo || servicio.Vehiculo || 'No asignado'}</div>
                 </div>`;
         }
         
         contenidoHtml += `
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Tipo de Residuo:</div>
-                    <div class="detalle-valor">${servicio.tipoResiduo || servicio.TipoResiduo}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-recycle"></i>Tipo de Residuo</div>
+                    <div class="detail-value">${servicio.tipoResiduo || servicio.TipoResiduo || 'No especificado'}</div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Cantidad Estimada:</div>
-                    <div class="detalle-valor">${servicio.cantidadEstimada || servicio.CantidadEstimada} kg</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-weight"></i>Cantidad Estimada</div>
+                    <div class="detail-value"><strong>${(servicio.cantidadEstimada || servicio.CantidadEstimada || 0).toFixed(2)} kg</strong></div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Estado:</div>
-                    <div class="detalle-valor">
-                        <span class="badge-estado ${estadoClass}">
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-flag"></i>Estado</div>
+                    <div class="detail-value">
+                        <span class="badge-simar ${estadoClass}">
+                            <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
                             ${estado}
                         </span>
                     </div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Fecha del Servicio:</div>
-                    <div class="detalle-valor">${new Date(servicio.fechaServicio || servicio.FechaServicio).toLocaleDateString('es-MX')}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-calendar"></i>Fecha del Servicio</div>
+                    <div class="detail-value">${new Date(servicio.fechaServicio || servicio.FechaServicio).toLocaleDateString('es-MX', {year: 'numeric', month: 'long', day: 'numeric'})}</div>
                 </div>
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Dirección:</div>
-                    <div class="detalle-valor">${servicio.direccion || servicio.Direccion}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-geo-alt"></i>Dirección</div>
+                    <div class="detail-value">${servicio.direccion || servicio.Direccion || 'No especificada'}</div>
                 </div>`;
         
         if (!esCliente) {
             contenidoHtml += `
-                <div class="detalle-fila">
-                    <div class="detalle-etiqueta">Contrato:</div>
-                    <div class="detalle-valor">${servicio.contrato || servicio.Contrato}</div>
+                <div class="detail-item">
+                    <div class="detail-label"><i class="bi bi-file-earmark-text"></i>Contrato</div>
+                    <div class="detail-value">${servicio.contrato || servicio.Contrato || 'No especificado'}</div>
                 </div>`;
         }
         
         contenidoHtml += `
-            </div>
-            
-            <div class="seccion-acciones">
-                <h3>Acciones disponibles</h3>
-                <div class="botones-accion">
-                    ${getBotonesAccion(servicio)}
+            </div>`;
+        
+        // Agregar sección de acciones si hay botones
+        var botonesAccion = getBotonesAccion(servicio);
+        if (botonesAccion) {
+            contenidoHtml += `
+            <div class="actions-section">
+                <h3><i class="bi bi-gear"></i>Acciones disponibles</h3>
+                <div class="action-buttons">
+                    ${botonesAccion}
                 </div>
-            </div>
-        `;
+            </div>`;
+        }
         
         modalBody.innerHTML = contenidoHtml;
         document.getElementById('servicioModal').style.display = 'block';
@@ -515,10 +757,18 @@
         document.getElementById('servicioModal').style.display = 'none';
     }
     
+    // Cerrar modal al hacer clic fuera
     window.onclick = function(event) {
         var modal = document.getElementById('servicioModal');
         if (event.target == modal) {
             modal.style.display = 'none';
         }
     }
+    
+    // Cerrar con tecla ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            cerrarModal();
+        }
+    });
 </script>

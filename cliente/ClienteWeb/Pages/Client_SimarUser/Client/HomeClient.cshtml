@@ -5,71 +5,232 @@
 }
 
 <style>
-    /* Efecto de elevación para las tarjetas */
-    .tarjeta-funcionalidad {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* Desactivar Sidebar del Layout para ancho completo */
+    #sidebar, .sidebar, .sidebar-simar, .nav-lateral {
+        display: none !important;
+    }
+
+    main, .content-wrapper, #main-content, .body-content {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    body {
+        background-color: #f8faf9;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hero-simar {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+        color: white;
+        padding: 60px 0;
+        border-bottom: 5px solid #00c02b;
+        margin-bottom: 60px;
+    }
+
+    .card-portal {
+        background: white;
+        border: none;
+        border-radius: 25px;
+        padding: 50px 30px;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        height: 100%;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    }
+
+        .card-portal:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+
+    .icon-circle-portal {
+        width: 90px;
+        height: 90px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        font-size: 3rem;
+    }
+
+    .bg-soft-green {
+        background-color: #e6f9ed;
+        color: #00c02b;
+    }
+
+    .bg-soft-blue {
+        background-color: #eef2f7;
+        color: #2c3e50;
+    }
+
+    /* Estilos de Modales */
+    .modal-simar-custom .modal-content {
+        border-radius: 25px;
+        border: none;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    }
+
+    /* Tarjetas de Selección en el Modal de Registro */
+    .selection-card {
+        border: 2px solid #f0f0f0;
+        border-radius: 15px;
+        padding: 20px;
+        transition: all 0.3s;
         cursor: pointer;
         text-decoration: none;
         color: inherit;
         display: block;
     }
 
-        .tarjeta-funcionalidad:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+        .selection-card:hover {
+            border-color: #00c02b;
+            background-color: #f0fff4;
+            transform: scale(1.02);
         }
 
-    .btn-proximamente {
-        background-color: #333;
-        color: white;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        padding: 5px 15px;
-        border: none;
-        transition: background 0.3s;
+        .selection-card i {
+            font-size: 2.5rem;
+            color: #00c02b;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+    .form-control-simar {
+        height: 50px;
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+        padding-left: 45px;
     }
 
-    .tarjeta-funcionalidad:hover .btn-proximamente {
-        background-color: #007bff; /* Cambia a azul al pasar */
+    .input-icon-group {
+        position: relative;
     }
+
+        .input-icon-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+        }
 </style>
 
-@*TODO - Cambiar imagen*@
-<header style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); background-size: cover; color: white; padding: 100px 0; text-align: center;">
+<div class="container-fluid p-0">
+    <header class="hero-simar shadow-sm">
+        <div class="container text-center">
+            <div class="mb-3"><i class="bi bi-recycle fs-1 text-white"></i></div>
+            <h1 class="display-4 fw-bold">Sistema SIMAR</h1>
+            <p class="lead opacity-75">Control de Residuos y Administración Operativa</p>
+        </div>
+    </header>
+
     <div class="container">
-        <h1 class="display-3 fw-bold">Sistema SIMAR</h1>
-        <p class="lead mb-5">Sistema en Manejo y Administración de Residuos.</p>
-        <a href="/login" class="btn btn-light btn-lg px-5" style="border-radius: 30px; font-weight: bold;">Comenzar Ahora</a>
-    </div>
-</header>
-
-<section class="container my-5 py-5">
-    <div class="row text-center">
-
-        <div class="col-md-4 mb-4">
-            <div class="p-4 shadow-sm h-100 tarjeta-funcionalidad" style="border-radius: 15px; background: #fff;">
-                <div class="mb-3">
-                    <i class="bi bi-graph-up-arrow" style="font-size: 2rem; color: #333;"></i>
+        <div class="row g-5 justify-content-center">
+            <div class="col-lg-5 col-md-6">
+                <div class="card-portal text-center border">
+                    <div class="icon-circle-portal bg-soft-green">
+                        <i class="bi bi-map-fill"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">Ruta del Residuo</h2>
+                    <p class="text-muted mb-4">Consulte el estado actual de las rutas y puntos de recolección en tiempo real.</p>
+                    <a href="#" class="btn border-dark w-100 py-3 fw-bold rounded-pill shadow-sm">Consultar Mapa</a>
                 </div>
-                <h3 class="h5 mb-3">Módulo 1...</h3>
-                <p class="text-muted small">Agregar descripción del módulo.</p>
-                <button class="btn-proximamente">Próximamente</button>
+            </div>
+
+            <div class="col-lg-5 col-md-6">
+                <div class="card-portal text-center border">
+                    <div class="icon-circle-portal bg-soft-blue">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">Portal de Acceso</h2>
+                    <p class="text-muted mb-4">Ingrese a su cuenta o cree una nueva para comenzar a utilizar SIMAR.</p>
+                    <div class="d-flex flex-column gap-3 mt-2">
+                        <button type="button" class="btn btn-success w-100 py-3 fw-bold rounded-pill shadow-sm"
+                                data-bs-toggle="modal" data-bs-target="#loginModal" style="background-color: #00c02b; border:none;">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                        </button>
+                        <button type="button" class="btn border-dark w-100 py-3 fw-bold rounded-pill shadow-sm bg-white"
+                                data-bs-toggle="modal" data-bs-target="#registerTypeModal">
+                            <i class="bi bi-person-plus-fill me-2"></i> Crear Cuenta Nueva
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <div class="col-md-4 mb-4">
-            <div class="p-4 shadow-sm h-100 tarjeta-funcionalidad" style="border-radius: 15px; background: #fff;">
-                <div class="mb-3">
-                    <i class="bi bi-truck" style="font-size: 2rem; color: #333;"></i>
+<div class="modal fade modal-simar-custom" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4">
+            <div class="modal-header d-flex flex-column align-items-center border-0">
+                <div class="icon-circle-portal bg-soft-green mb-3" style="width:70px; height:70px; font-size: 2rem;">
+                    <i class="bi bi-person-badge"></i>
                 </div>
-                <h3 class="h5 mb-3">Módulo 2...</h3>
-                <p class="text-muted small">Agregar descripción del módulo.</p>
-                <button class="btn-proximamente">Próximamente</button>
+                <h3 class="fw-bold">Ingresar a SIMAR</h3>
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-4" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="mb-4 input-icon-group">
+                        <i class="bi bi-person"></i>
+                        <input type="text" class="form-control form-control-simar" id="identifier" placeholder="Usuario o Correo" required>
+                    </div>
+                    <div class="mb-4 input-icon-group">
+                        <i class="bi bi-lock"></i>
+                        <input type="password" class="form-control form-control-simar" id="password" placeholder="Contraseña" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-pill" style="background-color: #00c02b; border:none;">
+                        Acceder
+                    </button>
+                </form>
             </div>
         </div>
     </div>
-</section>
+</div>
 
-<footer class="bg-dark text-white text-center py-4">
-    <p class="mb-0">© 2026 SIMAR - Todos los derechos reservados.</p>
-</footer>
+<div class="modal fade modal-simar-custom" id="registerTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 text-center">
+            <div class="modal-header border-0 flex-column align-items-center">
+                <h3 class="fw-bold">¿Cómo desea registrarse?</h3>
+                <p class="text-muted">Seleccione su perfil para continuar</p>
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-4" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <a href="/registro-cliente" class="selection-card">
+                            <i class="bi bi-house-door"></i>
+                            <span class="fw-bold">Soy Cliente</span>
+                            <small class="d-block text-muted mt-1">Solicitar recolección</small>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/registro" class="selection-card">
+                            <i class="bi bi-briefcase"></i>
+                            <span class="fw-bold">Soy Personal</span>
+                            <small class="d-block text-muted mt-1">Uso interno SIMAR</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <p class="small text-muted mb-0">Ya tengo cuenta. <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal" class="text-success fw-bold">Login</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Ocultar Sidebar
+            const sidebars = document.querySelectorAll('#sidebar, .sidebar, .sidebar-simar');
+            sidebars.forEach(s => s.style.setProperty('display', 'none', 'important'));
+        });
+    </script>
+}

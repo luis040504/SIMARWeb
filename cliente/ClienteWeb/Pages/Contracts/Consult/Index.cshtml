@@ -107,33 +107,43 @@
     </div>
 
     <form method="get" class="mb-4">
-        <div class="row g-3">
-            <div class="col-md-7">
-                <label class="form-label-simar">Búsqueda rápida</label>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label-simar">Búsqueda por Cliente</label>
                 <div class="search-box">
                     <input type="text" name="Search" class="form-control" 
-                            placeholder="Buscar por cliente, RFC o folio..." value="@Model.Search">
+                        placeholder="Nombre del cliente o RFC..." value="@Model.Search">
                     <button type="submit">
                         <i class="bi bi-search"></i>
                     </button>
                 </div>
             </div>
-            <div class="col-md-5">
+
+            <div class="col-md-3">
                 <label class="form-label-simar">Filtrar por Estatus</label>
-                <div class="d-flex gap-2">
-                    <select name="Status" class="form-select-simar flex-grow-1" onchange="this.form.submit()">
-                        <option value="">Todos los estados</option>
-                        <option value="Activo" selected="@(Model.Status == "Activo")">Activo</option>
-                        <option value="Vencido" selected="@(Model.Status == "Vencido")">Vencido</option>
-                        <option value="Pendiente de firma" selected="@(Model.Status == "Pendiente de firma")">Pendiente</option>
-                    </select>
-                    @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status))
-                    {
-                        <a href="/Contracts/Consult" class="btn-simar-outline-gray text-center d-flex align-items-center" style="border-radius: 10px;">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    }
-                </div>
+                <select name="Status" class="form-select-simar w-100" onchange="this.form.submit()" @(string.IsNullOrEmpty(Model.Search) ? "disabled" : "")>
+                    <option value="">Todos los estados</option>
+                    <option value="Activo" selected="@(Model.Status == "Activo")">Activo</option>
+                    <option value="Vencido" selected="@(Model.Status == "Vencido")">Vencido</option>
+                    <option value="Pendiente de firma" selected="@(Model.Status == "Pendiente de firma")">Pendiente</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label-simar">Vigentes en la fecha:</label>
+                <input type="date" name="DateFilter" class="form-control-simar w-100" 
+                    value="@(Model.DateFilter?.ToString("yyyy-MM-dd"))" 
+                    onchange="this.form.submit()" 
+                    @(string.IsNullOrEmpty(Model.Search) ? "disabled" : "") />
+            </div>
+
+            <div class="col-md-1">
+                @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status) || Model.DateFilter.HasValue)
+                {
+                    <a href="/Contracts/Consult" class="btn-simar-outline-gray w-100 d-flex justify-content-center align-items-center" style="height: 42px;" title="Limpiar filtros">
+                        <i class="bi bi-eraser-fill"></i>
+                    </a>
+                }
             </div>
         </div>
     </form>

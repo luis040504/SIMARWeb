@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_CLIENT_URL",
-    "postgresql+psycopg2://simero:contra@localhost:5432/simar_client_db"
+    "postgresql+psycopg2://simero:contra@postgres_client_db:5432/simar_clientes_db"
 )
 
 if not SQLALCHEMY_DATABASE_URL:

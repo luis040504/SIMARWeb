@@ -11,6 +11,9 @@ namespace ClienteWeb.Pages.Contracts.Consult
         [BindProperty(SupportsGet = true)]
         public string? Status { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public DateTime? DateFilter { get; set; }
+
         public List<Contract> Contracts { get; set; } = new();
 
         public void OnGet()
@@ -51,16 +54,30 @@ namespace ClienteWeb.Pages.Contracts.Consult
             if (!string.IsNullOrEmpty(Search))
             {
                 allContracts = allContracts
-                    .Where(c => c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase)
-                             || c.Client.Contains(Search, StringComparison.OrdinalIgnoreCase))
+                    .Where(c => c.Client.Contains(Search, StringComparison.OrdinalIgnoreCase) || 
+                                c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase)) // Dejamos el ID por si acaso
                     .ToList();
-            }
+                    
+                // 2. Filtros secundarios (Solo aplican si ya se buscó por cliente)
+                if (!string.IsNullOrEmpty(Status))
+                {
+                    allContracts = allContracts
+                        .Where(c => c.Status == Status)
+                        .ToList();
+                }
 
-            if (!string.IsNullOrEmpty(Status))
+                // 3. NUEVO: Filtrar por Fecha (Contratos cuya vigencia abarca la fecha seleccionada)
+                if (DateFilter.HasValue)
+                {
+                    allContracts = allContracts
+                        .Where(c => c.StartDate.Date <= DateFilter.Value.Date && c.EndDate.Date >= DateFilter.Value.Date)
+                        .ToList();
+                }
+            }
+            else
             {
-                allContracts = allContracts
-                    .Where(c => c.Status == Status)
-                    .ToList();
+                Status = string.Empty;
+                DateFilter = null;
             }
 
             Contracts = allContracts;
