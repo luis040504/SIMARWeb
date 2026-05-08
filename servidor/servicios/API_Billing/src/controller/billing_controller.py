@@ -76,6 +76,14 @@ class BillingController:
     async def create(billing_data: BillingCreateSchema):
         """Crear nueva factura"""
         
+        import random
+        # Generar un folio preliminar si no viene uno
+        if not billing_data.fiscal_data or not billing_data.fiscal_data.invoice_folio:
+            if not billing_data.fiscal_data:
+                from ..models.billing import FiscalData
+                billing_data.fiscal_data = FiscalData(issue_date=datetime.now())
+            billing_data.fiscal_data.invoice_folio = f"PRE-{random.randint(1000, 9999)}"
+
         calculated_total = billing_data.financials.subtotal + billing_data.financials.tax_total - billing_data.financials.discount
         if abs(calculated_total - billing_data.financials.total) > 0.01:
             from ..handlers.exceptions import AppException
