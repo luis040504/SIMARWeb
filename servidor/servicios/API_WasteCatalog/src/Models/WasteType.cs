@@ -29,6 +29,9 @@ public class WasteType
     // ── LGPGIR category — only applies to RME (null for RP) ──
     public string? LgpgirCategory { get; set; }
 
+    /// <summary>How the waste is stored. E.g. "A granel bajo techo", "Contenedor hermético"</summary>
+    public string? StorageForm { get; set; }
+
     /// <summary>Comma-separated list of valid units. E.g. "kg,ton,lt"</summary>
     public string ValidUnits { get; set; } = "kg";
 

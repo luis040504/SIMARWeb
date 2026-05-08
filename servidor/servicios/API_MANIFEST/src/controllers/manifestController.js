@@ -13,7 +13,9 @@ const manifestController = {
                 tipo:         req.query.tipo,
                 estado:       req.query.estado,
                 fecha_desde:  req.query.fecha_desde,
-                fecha_hasta:  req.query.fecha_hasta
+                fecha_hasta:  req.query.fecha_hasta,
+                id_cliente:   req.query.id_cliente,
+                contrato_id:  req.query.contrato_id
             };
             const data = await Manifest.findAll(filters);
             res.json({ success: true, data, count: data.length });
@@ -36,14 +38,7 @@ const manifestController = {
     // POST /api/manifiestos
     async create(req, res) {
         try {
-            const { id_cliente, tipo } = req.body;
-
-            if (!id_cliente) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'id_cliente es requerido para asociar el manifiesto al cliente.'
-                });
-            }
+            const { tipo } = req.body;
 
             const tiposValidos = ['especial', 'peligroso'];
             if (!tiposValidos.includes(tipo)) {
@@ -53,7 +48,10 @@ const manifestController = {
                 });
             }
 
-            const manifest = await Manifest.create(req.body);
+            // id_cliente = 0 cuando el cliente no está registrado en el sistema
+            const body = { ...req.body, id_cliente: req.body.id_cliente || 0 };
+
+            const manifest = await Manifest.create(body);
             res.status(201).json({ success: true, data: manifest });
         } catch (err) {
             res.status(500).json({ success: false, message: 'Error interno del servidor' });

@@ -21,6 +21,7 @@ public class CatalogDbContext : DbContext
             entity.Property(e => e.Type).IsRequired().HasMaxLength(20);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.PhysicalState).HasMaxLength(20);
+            entity.Property(e => e.StorageForm).HasMaxLength(100);
             entity.Property(e => e.LgpgirCategory).HasMaxLength(100);
             entity.Property(e => e.ValidUnits).IsRequired().HasMaxLength(50);
 

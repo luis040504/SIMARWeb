@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS secuencias_manifiesto (
 
 CREATE TABLE IF NOT EXISTS manifiestos (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    id_cliente          INT NOT NULL,
+    id_cliente          INT NOT NULL DEFAULT 0,
+    contrato_id         INT NULL,
     numero_manifiesto   VARCHAR(50) NOT NULL,
     tipo                ENUM('especial', 'peligroso') NOT NULL,
     estado              ENUM('borrador', 'en_transito', 'completado') DEFAULT 'borrador',
@@ -103,6 +104,7 @@ CREATE TABLE IF NOT EXISTS manifiestos (
 
     UNIQUE KEY uk_folio_cliente_tipo (id_cliente, tipo, numero_manifiesto),
     INDEX idx_cliente (id_cliente),
+    INDEX idx_contrato (contrato_id),
     INDEX idx_numero (numero_manifiesto),
     INDEX idx_tipo_estado (tipo, estado),
     INDEX idx_razon_social (razon_social),

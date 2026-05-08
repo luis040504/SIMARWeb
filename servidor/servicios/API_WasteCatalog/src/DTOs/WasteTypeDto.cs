@@ -17,6 +17,7 @@ public class WasteTypeDto
     public bool? IsBiological { get; set; }
     public bool? IsMutagenic { get; set; }
     public string? PhysicalState { get; set; }
+    public string? StorageForm { get; set; }
 
     // Category (RME only)
     public string? LgpgirCategory { get; set; }

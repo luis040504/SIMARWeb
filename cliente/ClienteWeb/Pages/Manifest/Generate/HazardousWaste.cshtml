@@ -21,8 +21,8 @@
 
         <div class="text-end">
             <small class="text-muted">No. de Manifiesto</small>
-            <div class="manifest-number-box">@Model.ManifestNumber</div>
-            <div class="page-box">Página @Model.ManifestPage</div>
+            <div class="manifest-number-box">Se asignará al guardar</div>
+            <div class="page-box">Página 1</div>
         </div>
     </div>
 
@@ -235,6 +235,36 @@
         <!-- TRANSPORTISTA -->
         <div class="section-card mb-3">
             <div class="section-label">TRANSPORTISTA</div>
+
+            @if (Model.Vehiculos.Count > 0)
+            {
+                <div class="row g-2 mb-3">
+                    <div class="col-12">
+                        <label class="form-label-sm">
+                            <i class="bi bi-truck me-1"></i> Seleccionar vehículo del catálogo
+                            <span class="text-muted">(opcional — pre-llena placa, tipo y licencia requerida)</span>
+                        </label>
+                        <select id="vehiculoSelector" class="form-select form-select-sm" onchange="onVehiculoChange(this)">
+                            <option value="">— Seleccionar vehículo —</option>
+                            @foreach (var v in Model.Vehiculos)
+                            {
+                                <option value="@v.Id"
+                                        data-placas="@v.Placas"
+                                        data-tipo="@($"{v.Marca} {v.Modelo}".Trim())"
+                                        data-licencia="@(v.LicenciaRequerida ?? "")">
+                                    @v.DisplayLabel
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div id="licenciaHint" class="col-12 d-none">
+                        <div class="alert alert-info py-1 mb-0 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Este vehículo requiere licencia tipo <strong id="licenciaTipo"></strong>.
+                        </div>
+                    </div>
+                </div>
+            }
 
             <div class="row g-2 mb-2">
                 <div class="col-md-6">
@@ -479,7 +509,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>¿Desea guardar el manifiesto <strong>@Model.ManifestNumber</strong>?</p>
+                <p>¿Desea guardar el manifiesto como borrador?</p>
                 <p class="mb-0">Se guardará con estado <span class="badge bg-secondary">Borrador</span>. Podrá editarlo y enviarlo a tránsito desde el listado de manifiestos.</p>
             </div>
             <div class="modal-footer">
@@ -495,6 +525,32 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        function onVehiculoChange(sel) {
+            const opt = sel.selectedOptions[0];
+            if (!opt || !opt.value) {
+                document.getElementById('licenciaHint')?.classList.add('d-none');
+                return;
+            }
+            const placas   = opt.dataset.placas  || '';
+            const tipo     = opt.dataset.tipo     || '';
+            const licencia = opt.dataset.licencia || '';
+
+            const fPlaca = document.getElementById('VehiclePlate');
+            const fTipo  = document.getElementById('VehicleType');
+            if (fPlaca) fPlaca.value = placas;
+            if (fTipo)  fTipo.value  = tipo;
+
+            const hint = document.getElementById('licenciaHint');
+            if (hint) {
+                if (licencia) {
+                    document.getElementById('licenciaTipo').textContent = licencia;
+                    hint.classList.remove('d-none');
+                } else {
+                    hint.classList.add('d-none');
+                }
+            }
+        }
+
         $.validator.messages.required = "Este campo es obligatorio.";
         $.validator.messages.email = "Por favor ingrese un correo electrónico válido.";
         $.validator.messages.number = "Por favor ingrese un número válido.";

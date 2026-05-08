@@ -17,20 +17,48 @@
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
-            <a asp-page="/Manifest/Generate/SpecialWaste" class="btn-simar-primary">
+            <a asp-page="/Manifest/Generate/SelectContract" asp-route-tipo="especial" class="btn-simar-primary">
                 <i class="bi bi-plus-lg"></i> Nuevo especial
             </a>
-            <a asp-page="/Manifest/Generate/HazardousWaste" class="btn-simar-primary">
+            <a asp-page="/Manifest/Generate/SelectContract" asp-route-tipo="peligroso" class="btn-simar-primary">
                 <i class="bi bi-plus-lg"></i> Nuevo peligroso
             </a>
         </div>
     </div>
+
+    @if (Model.ApiError is not null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show py-2 mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @Model.ApiError
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     @if (TempData["SuccessMessage"] is string msg)
     {
         <div class="alert alert-success alert-dismissible fade show py-2 mb-3" role="alert">
             ✅ @msg
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.FilterClienteId.HasValue || Model.FilterContratoId.HasValue)
+    {
+        <div class="alert alert-info py-2 mb-3 d-flex align-items-center justify-content-between">
+            <span>
+                <i class="bi bi-funnel-fill me-1"></i>
+                @if (Model.FilterClienteId.HasValue)
+                {
+                    <span>Mostrando manifiestos del <strong>cliente #@Model.FilterClienteId</strong></span>
+                }
+                @if (Model.FilterContratoId.HasValue)
+                {
+                    <span>Mostrando manifiestos del <strong>contrato #@Model.FilterContratoId</strong></span>
+                }
+            </span>
+            <a asp-page="/Manifest/Consult/Index" class="btn btn-sm btn-outline-secondary ms-3">
+                <i class="bi bi-x"></i> Quitar filtro
+            </a>
         </div>
     }
 
@@ -189,10 +217,10 @@
             <h4>No se encontraron manifiestos</h4>
             <p class="text-muted mb-3">Ajusta los filtros o genera un nuevo manifiesto.</p>
             <div class="d-flex gap-2 justify-content-center flex-wrap">
-                <a asp-page="/Manifest/Generate/SpecialWaste" class="btn-simar-outline">
+                <a asp-page="/Manifest/Generate/SelectContract" asp-route-tipo="especial" class="btn-simar-outline">
                     Nuevo especial
                 </a>
-                <a asp-page="/Manifest/Generate/HazardousWaste" class="btn-simar-outline">
+                <a asp-page="/Manifest/Generate/SelectContract" asp-route-tipo="peligroso" class="btn-simar-outline">
                     Nuevo peligroso
                 </a>
             </div>
