@@ -14,10 +14,12 @@ namespace ClienteWeb.Pages.Billing
     public class IndexModel : PageModel
     {
         private readonly IBillingService _billingService;
+        private readonly IInvoiceGeneratorService _pdfService;
 
-        public IndexModel(IBillingService billingService)
+        public IndexModel(IBillingService billingService, IInvoiceGeneratorService pdfService)
         {
             _billingService = billingService;
+            _pdfService = pdfService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -265,8 +267,30 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task<IActionResult> OnPostDownloadAsync(string id)
         {
-            StatusMessage = $"Iniciando descarga de la factura... (Simulación)";
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            try
+            {
+                var invoice = await _billingService.GetInvoiceByIdAsync(id);
+                if (invoice == null)
+                {
+                    TempData["ErrorMessage"] = "No se pudo encontrar la factura para descargar.";
+                    return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                }
+
+                var pdfBytes = _pdfService.GenerateInvoicePdf(invoice);
+                var fileName = $"Factura_{invoice.FiscalData?.InvoiceFolio ?? invoice.Id}.pdf";
+
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = $"Error al obtener datos: {ex.Message}";
+                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error inesperado al generar PDF: {ex.Message}";
+                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            }
         }
 
         public string GetDisplayName_FiscalRegime(string code) => code switch

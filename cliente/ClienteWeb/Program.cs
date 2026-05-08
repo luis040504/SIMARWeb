@@ -1,3 +1,5 @@
+using QuestPDF.Infrastructure;
+using ClienteWeb.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -10,6 +12,10 @@ builder.Services.AddHttpClient<ClienteWeb.Services.IBillingService, ClienteWeb.S
     client.BaseAddress = new Uri(builder.Configuration["BillingApiUrl"] ?? "http://localhost:8009");
 })
 .AddHttpMessageHandler<ClienteWeb.Services.BillingApiInterceptor>();
+
+// PDF Generation
+QuestPDF.Settings.License = LicenseType.Community;
+builder.Services.AddScoped<IInvoiceGeneratorService, InvoiceGeneratorService>();
 
 var app = builder.Build();
 

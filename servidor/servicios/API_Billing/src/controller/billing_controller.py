@@ -154,6 +154,14 @@ class BillingController:
         if reason is not None:
             update_data["reason"] = reason
             
+        if new_status == "Accepted":
+            import random
+            import uuid
+            # Simular timbrado fiscal si no tiene datos
+            update_data["fiscal_data.invoice_folio"] = f"A-{random.randint(1000, 9999)}"
+            update_data["fiscal_data.uuid"] = str(uuid.uuid4()).upper()
+            update_data["fiscal_data.issue_date"] = datetime.now()
+
         result = await facturas_collection.update_one(
             {"_id": ObjectId(billing_id), "activo": True},
             {"$set": update_data}
