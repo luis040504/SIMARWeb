@@ -9,7 +9,15 @@ namespace ClienteWeb.Services
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var response = await base.SendAsync(request, cancellationToken);
+            HttpResponseMessage response;
+            try
+            {
+                response = await base.SendAsync(request, cancellationToken);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new BillingApiException("No se pudo establecer comunicación con el servicio de facturación. Verifique su conexión o intente más tarde.", 503, ex);
+            }
 
             if (!response.IsSuccessStatusCode)
             {

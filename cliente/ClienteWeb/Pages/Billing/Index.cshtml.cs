@@ -222,9 +222,14 @@ namespace ClienteWeb.Pages.Billing
                 StatusMessage = $"¡La prefactura de {BillingName} ha sido actualizada y reenviada exitosamente!";
                 return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
             }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+            }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error de validación o comunicación: {ex.Message}";
+                TempData["ErrorMessage"] = $"Error inesperado al actualizar: {ex.Message}";
                 return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
             }
         }
@@ -311,80 +316,93 @@ namespace ClienteWeb.Pages.Billing
 
         private async Task LoadDataAsync()
         {
-            var allInvoices = await _billingService.GetInvoicesAsync(
-                status: StatusFilter,
-                searchQuery: SearchQuery
-            );
-
-            var mappedInvoices = allInvoices.Select(i => new BillingRecord
+            try
             {
-                Id = i.Id,
-                RecordType = "Invoice",
-                ClientName = i.Receiver.Name,
-                TaxId = i.Receiver.TaxId,
-                Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
-                Date = i.FiscalData.IssueDate,
-                Amount = i.Financials.Total,
-                InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
-                Status = i.Status,
-                Reason = i.Reason,
-                PostalCode = i.Receiver.PostalCode,
-                FiscalRegime = i.Receiver.FiscalRegime,
-                CfdiUsage = i.Receiver.TaxUsage,
-                PaymentForm = i.Financials.PaymentForm,
-                PaymentMethod = i.Financials.PaymentMethod,
-                ProductCode = i.Items.FirstOrDefault()?.ProductCode,
-                UnitCode = i.Items.FirstOrDefault()?.UnitCode,
-                TaxObject = i.Items.FirstOrDefault()?.TaxObject
-            });
+                var allInvoices = await _billingService.GetInvoicesAsync(
+                    status: StatusFilter,
+                    searchQuery: SearchQuery
+                );
 
-            var displayed = new List<BillingRecord>();
-
-            if (Role == "Admin")
-            {
-                if (ActiveTab == "RecentServices")
+                var mappedInvoices = allInvoices.Select(i => new BillingRecord
                 {
-                    var ready = await _billingService.GetReadyToBillAsync();
-                    displayed.AddRange(ready.Select(r => new BillingRecord
+                    Id = i.Id,
+                    RecordType = "Invoice",
+                    ClientName = i.Receiver.Name,
+                    TaxId = i.Receiver.TaxId,
+                    Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
+                    Date = i.FiscalData.IssueDate,
+                    Amount = i.Financials.Total,
+                    InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
+                    Status = i.Status,
+                    Reason = i.Reason,
+                    PostalCode = i.Receiver.PostalCode,
+                    FiscalRegime = i.Receiver.FiscalRegime,
+                    CfdiUsage = i.Receiver.TaxUsage,
+                    PaymentForm = i.Financials.PaymentForm,
+                    PaymentMethod = i.Financials.PaymentMethod,
+                    ProductCode = i.Items.FirstOrDefault()?.ProductCode,
+                    UnitCode = i.Items.FirstOrDefault()?.UnitCode,
+                    TaxObject = i.Items.FirstOrDefault()?.TaxObject
+                });
+
+                var displayed = new List<BillingRecord>();
+
+                if (Role == "Admin")
+                {
+                    if (ActiveTab == "RecentServices")
                     {
-                        Id = r.ManifestId.ToString(),
-                        RecordType = "Service",
-                        ClientName = r.Cliente.RazonSocial,
-                        TaxId = r.Cliente.Rfc,
-                        ServiceType = r.TipoResiduo,
-                        Date = r.FechaServicio,
-                        Amount = r.TotalEstimado,
-                        PostalCode = r.Cliente.DireccionFiscal?.Split(',').Last().Trim() // Simplificación
-                    }));
+                        var ready = await _billingService.GetReadyToBillAsync();
+                        displayed.AddRange(ready.Select(r => new BillingRecord
+                        {
+                            Id = r.ManifestId.ToString(),
+                            RecordType = "Service",
+                            ClientName = r.Cliente.RazonSocial,
+                            TaxId = r.Cliente.Rfc,
+                            ServiceType = r.TipoResiduo,
+                            Date = r.FechaServicio,
+                            Amount = r.TotalEstimado,
+                            PostalCode = r.Cliente.DireccionFiscal?.Split(',').Last().Trim() // Simplificación
+                        }));
+                    }
+                    else if (ActiveTab == "RejectedInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Rejected"));
+                    }
+                    else if (ActiveTab == "GeneratedInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Pending" || r.Status == "Accepted"));
+                    }
                 }
-                else if (ActiveTab == "RejectedInvoices")
+                else
                 {
-                    displayed.AddRange(mappedInvoices.Where(r => r.Status == "Rejected"));
+                    if (ActiveTab == "PendingInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Pending"));
+                    }
+                    else if (ActiveTab == "AcceptedInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Accepted"));
+                    }
                 }
-                else if (ActiveTab == "GeneratedInvoices")
-                {
-                    displayed.AddRange(mappedInvoices.Where(r => r.Status == "Pending" || r.Status == "Accepted"));
-                }
-            }
-            else
-            {
-                if (ActiveTab == "PendingInvoices")
-                {
-                    displayed.AddRange(mappedInvoices.Where(r => r.Status == "Pending"));
-                }
-                else if (ActiveTab == "AcceptedInvoices")
-                {
-                    displayed.AddRange(mappedInvoices.Where(r => r.Status == "Accepted"));
-                }
-            }
 
-            if (DateFilter.HasValue)
-            {
-                displayed = displayed.Where(r => r.Date.Date == DateFilter.Value.Date).ToList();
-            }
+                if (DateFilter.HasValue)
+                {
+                    displayed = displayed.Where(r => r.Date.Date == DateFilter.Value.Date).ToList();
+                }
 
-            DisplayedRecords = displayed.OrderByDescending(r => r.Date).ToList();
-            IsSearchResult = !string.IsNullOrEmpty(SearchQuery) || DateFilter.HasValue || !string.IsNullOrEmpty(StatusFilter);
+                DisplayedRecords = displayed.OrderByDescending(r => r.Date).ToList();
+                IsSearchResult = !string.IsNullOrEmpty(SearchQuery) || DateFilter.HasValue || !string.IsNullOrEmpty(StatusFilter);
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                DisplayedRecords = new List<BillingRecord>();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar datos de facturación: {ex.Message}";
+                DisplayedRecords = new List<BillingRecord>();
+            }
         }
     }
 
