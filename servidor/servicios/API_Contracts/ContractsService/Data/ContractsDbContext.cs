@@ -10,4 +10,7 @@ public class ContractsDbContext : DbContext
 
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ContractServiceItem> ContractServices => Set<ContractServiceItem>();
+    public DbSet<ContractPaymentItem> ContractPayments => Set<ContractPaymentItem>();
+    public DbSet<ContractExtra> ContractExtras => Set<ContractExtra>();
 }

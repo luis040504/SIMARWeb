@@ -2,79 +2,28 @@
 @model ClienteWeb.Pages.Contracts.Generate.GenerateModel
 
 <style>
-    /* Estilos específicos para PDF (No están en site.css) */
     @@page { margin: 0; }
     .contract-container { background-color: #f8f9fa; padding: 40px 0; min-height: 100vh; }
     .pdf-page {
-        background: white;
-        width: 21.59cm;
-        min-height: 27.94cm;
-        padding: 1.8cm 2.2cm;
-        margin: 0 auto 20px auto; /* Agregado margen inferior para separar páginas */
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-        box-sizing: border-box;
-        border: 1px solid #ddd;
-        page-break-after: always;
+        background: white; width: 21.59cm; min-height: 27.94cm;
+        padding: 1.8cm 2.2cm; margin: 0 auto 20px auto; 
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); box-sizing: border-box;
+        border: 1px solid #ddd; page-break-after: always;
     }
-
-    /* FIX: Buscador Seleccionable - Forzando visibilidad */
-    .searchable-select {
-        position: relative;
-        /* Esto es vital para que la lista no se corte por el overflow de la card-simar */
-        overflow: visible !important; 
-    }
-
-    .options-list {
-        position: absolute;
-        background: white;
-        border: 1px solid var(--simar-border);
-        border-radius: 10px;
-        max-height: 250px;
-        overflow-y: auto;
-        /* z-index muy alto para sobrepasar cualquier elemento */
-        z-index: 9999 !important; 
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        display: none;
-        width: 100%;
-        top: 100%; 
-        left: 0;
-        margin-top: 5px;
-    }
-
-    .options-list.show { display: block; }
-
-    .option-item {
-        padding: 12px 16px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border-bottom: 1px solid #f1f1f1;
-        color: #333;
-        text-align: left;
-    }
-
-    .option-item:hover {
-        background: var(--simar-green-light);
-        color: var(--simar-green);
-    }
-
-    .option-item.selected {
-        background: var(--simar-green);
-        color: white;
-    }
-
-    .no-results { padding: 12px; color: #666; font-style: italic; }
-
-    /* Formato legal del contrato */
-    .table-legal { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9.5pt; }
-    .table-legal td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }
-    .bg-gray-simar { background-color: #E6E6E6; font-weight: bold; }
+    
+    /* Estilos Legales */
+    .table-legal { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 8.5pt; }
+    .table-legal td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
+    .bg-gray-simar { background-color: #E6E6E6; font-weight: bold; text-align: center; }
     .section-header { background: #000; color: #fff; padding: 7px 10px; font-weight: bold; font-size: 10.5pt; text-align: center; margin: 20px 0 12px 0; }
     .legal-body { font-size: 9.5pt; text-align: justify; line-height: 1.45; color: #222; }
     .sig-line { border-top: 1px solid #000; width: 80%; margin: 45px auto 8px auto; text-align: center; font-weight: bold; }
-
-    /* Estilos para el modal editable (NUEVO) */
-    .table-editable input { width: 100%; border: 1px solid #ccc; padding: 4px; border-radius: 4px; }
-    .table-editable td { padding: 5px; vertical-align: middle; }
+    
+    /* Buscador y Modal */
+    .table-editable input, .table-editable textarea { width: 100%; border: 1px solid #ccc; padding: 4px; border-radius: 4px; font-size: 0.85rem; }
+    .search-box-local { display: flex; border: 1px solid var(--simar-border); border-radius: 8px; overflow: hidden; background: white; max-width: 400px; }
+    .search-box-local input { border: none; padding: 10px 15px; width: 100%; outline: none; }
+    .search-box-local i { padding: 10px 15px; color: gray; background: #f8f9fa; }
 
     @@media print {
         body * { visibility: hidden; }
@@ -85,151 +34,148 @@
     }
 </style>
 
-<form method="post">
-    <input type="hidden" id="AnexosJsonHidden" name="AnexosJsonHidden" value="@Model.AnexosJsonHidden" />
+<form method="post" id="mainForm">
+    <input type="hidden" name="QuotationId" id="selectedQuotationId" value="@Model.QuotationId" />
+    <input type="hidden" id="hidServicesJson" name="ServicesJsonHidden" value="@Model.ServicesJsonHidden" />
+    <input type="hidden" id="hidPaymentsJson" name="PaymentsJsonHidden" value="@Model.PaymentsJsonHidden" />
+    <input type="hidden" id="hidExtrasJson" name="ExtrasJsonHidden" value="@Model.ExtrasJsonHidden" />
+    
+    <input type="hidden" id="hidObjetoSocial" name="ClientObjetoSocial" value="@Model.ClientObjetoSocial" />
+    <input type="hidden" id="hidDeclaraciones" name="ClientDeclaraciones" value="@Model.ClientDeclaraciones" />
+    <input type="hidden" id="hidDuration" name="ContractDuration" value="@Model.ContractDuration" />
+    <input type="hidden" id="hidFirstService" name="FirstServiceDate" value="@Model.FirstServiceDate" />
+    <input type="hidden" id="hidTotalPrice" name="TotalPrice" value="@Model.TotalPrice" />
+
     <div class="container-fluid-simar d-print-none">
         <div class="mb-3">
-            <a href="/Contracts/Consult" class="btn-simar-outline-gray" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                <i class="bi bi-arrow-left"></i> Regresar a Consulta
-            </a>
+            <a href="/Contracts/Consult" class="btn-simar-outline-gray" style="text-decoration: none;"><i class="bi bi-arrow-left"></i> Regresar a Consulta</a>
         </div>
 
-        <div class="card-simar p-4 mb-4" style="overflow: visible !important;">
-            <div class="row align-items-end g-3">
-                <div class="col-lg-6">
-                    <label class="form-label-simar">Seleccionar Cotización</label>
-                    <div class="searchable-select" id="selectContainer">
-                        <input type="text" id="searchInput" class="form-control-simar" placeholder="Buscar cotización..." autocomplete="off" @(Model.ShowPreview ? "disabled" : "") />
-                        <input type="hidden" name="QuotationId" id="selectedQuotationId" value="@Model.QuotationId" />
-                        <div id="optionsList" class="options-list"></div>
-                    </div>
+        @if (!Model.ShowPreview)
+        {
+            <div class="card-simar p-4 mb-4">
+                <h4 class="text-simar-dark fw-bold mb-4">Cotizaciones Aprobadas Pendientes</h4>
+                <div class="search-box-local mb-4">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="tableSearchInput" placeholder="Buscar por cliente..." onkeyup="filterQuotations()">
                 </div>
-
-                <div class="col-lg-3">
-                    @if (!Model.ShowPreview)
-                    {
-                        <button type="submit" name="action" value="preview" id="previewBtn" class="btn-simar-primary w-100" disabled>
-                            <i class="bi bi-eye me-2"></i>Generar Vista Previa
-                        </button>
-                    }
+                <div class="table-responsive-simar">
+                    <table class="table-simar" id="quotationsTable">
+                        <thead><tr><th>Folio Cot.</th><th>Cliente</th><th>Servicio Solicitado</th><th>Aprobación</th><th class="text-center">Acción</th></tr></thead>
+                        <tbody>
+                            @foreach (var q in Model.Quotations) {
+                                <tr>
+                                    <td class="fw-bold">#@q.Id</td><td>@q.ClientName</td><td>@q.ServiceType</td><td>@q.DateApproved</td>
+                                    <td class="text-center"><button type="button" class="btn-simar-primary btn-sm" onclick="selectQuotationAndPreview(@q.Id)"><i class="bi bi-file-earmark-plus me-1"></i> Formular</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-
-                @if (Model.ShowPreview)
-                {
-                    <div class="col-lg-3">
-                        <button type="submit" name="action" value="cancel" class="btn-simar-outline-gray w-100 mb-2">
-                            Cambiar Cotización
-                        </button>
-                            <button type="submit" asp-page-handler="DownloadPdf" class="btn-simar-primary w-100">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF Oficial
-                            </button>
-                    </div>
-                    
-                    <div class="col-lg-12 mt-3 border-top pt-3">
-                        <label class="form-label-simar d-block mb-2">Configurar Anexos</label>
-                        <div class="btn-group w-100">
-                            <button type="button" class="btn btn-outline-dark" onclick="openAnexoModal(1)"><i class="bi bi-table"></i> Anexo 1: Alcance</button>
-                            <button type="button" class="btn btn-outline-dark" onclick="openAnexoModal(2)"><i class="bi bi-currency-dollar"></i> Anexo 2: Pagos</button>
-                            <button type="button" class="btn btn-outline-dark" onclick="openAnexoModal(3)"><i class="bi bi-calendar"></i> Anexo 3: Tiempos</button>
-                            <button type="button" class="btn btn-outline-warning" onclick="openAnexoModal(4)"><i class="bi bi-exclamation-triangle"></i> Anexo 4: Extras</button>
-                        </div>
-                    </div>
-                }
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="card-simar p-4 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+                        <h4 class="text-simar-dark fw-bold mb-1"><i class="bi bi-file-earmark-check text-success me-2"></i>Contrato Pre-cargado: @Model.BusinessName</h4>
+                        <p class="text-muted small mb-0">Utiliza el botón de configuración para modificar el objeto social, declaraciones y tablas antes de descargar el documento legal.</p>
+                    </div>
+                    <div class="col-lg-5 text-end d-flex gap-2">
+                        <button type="submit" name="action" value="cancel" class="btn-simar-outline-gray w-100"><i class="bi bi-arrow-repeat me-1"></i> Cancelar</button>
+                        <button type="button" class="btn btn-outline-primary w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar Contrato</button>
+                        <button type="submit" asp-page-handler="DownloadPdf" class="btn-simar-primary w-100"><i class="bi bi-download me-1"></i> Descargar PDF</button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     @if (Model.ShowPreview)
     {
         <div id="contract-wrapper" class="contract-container">
             <div class="pdf-page">
-                <div style="text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 25px;">
-                    CONTRATO DE PRESTACIÓN DE SERVICIOS
-                </div>
-                
+                <div style="text-align: right; font-weight: bold; font-size: 10pt; margin-bottom: 5px;">DOCUMENTO NO AUTORIZADO PARA SU FIRMA</div>
+
                 <table class="table-legal">
+                    <tr><td colspan="8" class="bg-gray-simar">CONTRATO DE PRESTACIÓN DE SERVICIOS</td></tr>
+                    <tr><td class="bg-gray-simar" style="width: 15%; text-align: left;">FECHA</td><td colspan="7" style="padding-left: 5px;">[@DateTime.Now.ToString("dd/MM/yyyy")]</td></tr>
+                    
+                    <tr><td colspan="8" class="bg-gray-simar">EL PRESTADOR</td></tr>
+                    <tr><td class="bg-gray-simar" style="text-align: left;">RAZÓN SOCIAL</td><td colspan="7" style="font-weight: bold; padding-left: 5px;">SISTEMAS EN MANEJO Y ADMINISTRACION DE RESIDUOS S.A. DE C.V.</td></tr>
                     <tr>
-                        <td class="bg-gray-simar">EL PRESTADOR</td>
-                        <td>ADMINISTRACIÓN DE RESIDUOS S.A. DE C.V.</td>
-                        <td class="bg-gray-simar">FECHA</td>
-                        <td>@DateTime.Now.ToString("dd/MM/yyyy")</td>
+                        <td class="bg-gray-simar" style="text-align: left;">CONSTITUTIVA NÚMERO</td><td style="text-align: center;">556</td>
+                        <td class="bg-gray-simar" style="width: 10%;">FECHA</td><td style="text-align: center;">23 de octubre de 2008</td>
+                        <td class="bg-gray-simar" style="width: 15%;">CORREDOR PÚBLICO:</td><td style="text-align: center;">Número 08, Plaza Veracruz.</td>
+                        <td class="bg-gray-simar" style="width: 10%;">FOLIO MERCANTIL</td><td style="text-align: center;">19779*11</td>
                     </tr>
                     <tr>
-                        <td class="bg-gray-simar">RAZÓN SOCIAL CLIENTE</td>
-                        <td colspan="3">@Model.BusinessName</td>
+                        <td class="bg-gray-simar" style="text-align: left;">APODERADO</td><td colspan="3" style="font-weight: bold; text-align: center;">GUSTAVO CRUZ TORRES</td>
+                        <td colspan="2" class="bg-gray-simar">IDENTIFICACIÓN DEL APODERADO LEGAL</td><td colspan="2" style="text-align: center; font-size: 7pt;">Credencial para votar con fotografía expedida por el INE.</td>
                     </tr>
                     <tr>
-                        <td class="bg-gray-simar">RFC</td>
-                        <td>@Model.RFC</td>
-                        <td class="bg-gray-simar">VIGENCIA</td>
-                        <td>@Model.Validity</td>
+                        <td class="bg-gray-simar" style="text-align: left;">INSTRUMENTO NÚMERO</td><td style="text-align: center;">556</td>
+                        <td class="bg-gray-simar">FECHA</td><td style="text-align: center;">23 de octubre de 2008</td>
+                        <td class="bg-gray-simar">CORREDOR PÚBLICO:</td><td style="text-align: center;">Número 08, Plaza Veracruz.</td>
+                        <td class="bg-gray-simar">FOLIO MERCANTIL</td><td style="text-align: center;">19779*11</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar" style="text-align: left;">OBJETO SOCIAL</td>
+                        <td colspan="7" style="padding: 5px; text-align: justify;">Realizar la recolección de residuos peligrosos y no peligrosos, sea al gobierno federal, estatal o municipal, se tratare de sus órganos centrales o descentralizados así como otra persona física o moral de nacionalidad mexicana o extranjera.</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar" style="text-align: left;">DOMICILIO</td>
+                        <td colspan="5" style="padding: 5px;">Calle Pípila, N.E. 126, José Cardel, Xalapa, Ver. C.P. :91030</td>
+                        <td class="bg-gray-simar">R.F.C.</td><td style="font-weight: bold; text-align: center;">SMA0810239L9</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar" style="text-align: left;">DECLARACIONES</td>
+                        <td colspan="7" style="padding: 5px; text-align: justify; font-size: 7.5pt;">
+                            <strong>a.</strong> Es una sociedad anónima de capital variable...<br>
+                            <strong>b.</strong> Su apoderado legal, cuenta con las facultades...<br>
+                            <strong>c.</strong> Cuenta con los recursos humanos y materiales...<br>
+                            <strong>d.</strong> Cuenta con los recursos económicos...<br>
+                            <strong>e.</strong> Es su intención celebrar el presente contrato...
+                        </td>
+                    </tr>
+
+                    <tr><td colspan="8" class="bg-gray-simar">"EL CLIENTE"</td></tr>
+                    <tr><td class="bg-gray-simar" style="text-align: left;">RAZÓN SOCIAL</td><td colspan="7" style="font-weight: bold; padding-left: 5px;">@Model.BusinessName</td></tr>
+                    <tr><td class="bg-gray-simar" style="text-align: left;">APODERADO LEGAL</td><td colspan="7" style="font-weight: bold; padding-left: 5px;">@Model.Representative</td></tr>
+                    <tr>
+                        <td class="bg-gray-simar" style="text-align: left;">OBJETO SOCIAL</td>
+                        <td colspan="7" style="padding: 5px; text-align: justify; white-space: pre-wrap;" id="viewObjetoSocial">@Model.ClientObjetoSocial</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar" style="text-align: left;">DOMICILIO</td>
+                        <td colspan="5" style="padding: 5px;">@Model.Address</td>
+                        <td class="bg-gray-simar">R.F.C.</td><td style="font-weight: bold; text-align: center;">@Model.RFC</td>
+                    </tr>
+                    <tr>
+                        <td class="bg-gray-simar" style="text-align: left;">DECLARACIONES</td>
+                        <td colspan="7" style="padding: 5px; text-align: justify; font-size: 7.5pt; white-space: pre-wrap;" id="viewDeclaraciones">@Model.ClientDeclaraciones</td>
                     </tr>
                 </table>
 
-                <div class="section-header">DECLARACIONES</div>
-                <div class="legal-body">
-                    <p><strong>I. EL PRESTADOR DECLARA:</strong> Que es una sociedad mercantil legalmente constituida...</p>
-                </div>
-
                 <div class="section-header">CLÁUSULAS</div>
-                <div class="legal-body">
-                    <partial name="BodyContract" model="Model" />
-                </div>
+                <partial name="BodyContract" model="Model" />
             </div>
 
-            <div class="pdf-page" style="font-size: 9pt;">
-                <div style="text-align: justify; margin-bottom: 15px;">
-                    <strong>ANEXO 1 DENOMINADO "ALCANCES DEL SERVICIO"</strong>, EL CUAL FORMA PARTE DEL CONTRATO DE PRESTACIÓN DE SERVICIOS, CELEBRADO EL [@DateTime.Now.ToString("dd/MM/yyyy")], ENTRE SISTEMAS EN MANEJO Y ADMINISTRACION DE RESIDUOS S.A. DE C.V. Y @Model.BusinessName
-                </div>
-
-                <div class="legal-body">
-                    <p><strong>I) EL PRESTADOR</strong> ejecutará con personal que le es propio, los servicios de recolección de residuos a EL CLIENTE. EL PRESTADOR, de acuerdo con las necesidades expuestas por EL CLIENTE y tomando la experiencia en la prestación de servicios en proyectos similares, señala que la prestación de los "SERVICIOS" consistirá en la <strong>RECOLECCIÓN DE RESIDUOS DE MANEJO ESPECIAL (RME) EN LAS INSTALACIONES DE "EL CLIENTE"</strong>...</p>
-                    
-                    <p><strong>II) Para efectos del presente contrato se entenderá por:</strong></p>
-                    <p><strong>GESTION INTEGRAL DE RESIDUOS DE MANEJO ESPECIAL (RME)</strong>, en forma enunciativa más no limitativa se refiere a las actividades siguientes:</p>
-
-                    <p><strong>1. Operación.</strong> - Una vez que los residuos de manejo especial han sido recolectados...</p>
-                    <p><strong>2.- Separación.</strong> - Residuos especiales que ingresan al almacén temporal son separados en los siguientes grupos: <br>
-                        1. Metal ferroso y aluminio. <br>
-                        2. Cartón. <br>
-                        3. Envases de tereftalato de polietileno. <br>
-                        4. Residuos electrónicos. <br>
-                        5. Madera; y <br>
-                        6. Otros no especificados de manejo especial.
-                    </p>
-                    <p><strong>3.- Pesado y registro en bitácora.</strong> - Una vez realizada la correcta separación...</p>
-                    <p><strong>4.- Envasado de los residuos.</strong> - Los residuos de manejo especial serán envasados de acuerdo con sus características físicas, principalmente el estado físico, así como a la cantidad de su generación:</p>
-                </div>
-
-                <div id="preview-anexo-1"></div>
-
-                <div class="legal-body" style="margin-top: 15px;">
-                    <p><strong>5.- Transporte Externo y disposición final de RME.</strong> Esta actividad consiste en realizar la recolección de los residuos de conformidad con el Plan de Manejo...</p>
-                </div>
-            </div>
-
-            <div class="pdf-page">
-                <div class="section-header">ANEXO 2: CALENDARIO Y PAGOS</div>
-                <div id="preview-anexo-2"></div>
-
-                <div class="section-header" style="margin-top:40px;">ANEXO 3: TIEMPOS DE EJECUCIÓN</div>
-                <div id="preview-anexo-3"></div>
-
-                <div class="section-header" style="margin-top:40px;">ANEXO 4: SERVICIOS EXTRAORDINARIOS</div>
-                <div id="preview-anexo-4"></div>
-
+            <div class="pdf-page" id="pageAnexoExtras" style="display: none;">
+                <div class="section-header">ANEXO ÚNICO: CATÁLOGO DE SERVICIOS EXTRAORDINARIOS</div>
+                <p class="legal-body text-justify">De conformidad con la Cláusula Quinta, en caso de requerir servicios adicionales a los descritos en las cláusulas operativas, se aplicarán los siguientes costos autorizados:</p>
+                
+                <div id="preview-anexo-extras"></div>
+                
                 <table class="sig-table" style="width: 100%; margin-top: 80px;">
-                    <tr><td colspan="2" style="text-align:center; color:red; font-weight:bold; margin-bottom:10px;">LAS PARTES</td></tr>
+                    <tr><td colspan="2" style="text-align:center; font-weight:bold; margin-bottom:10px;">LAS PARTES</td></tr>
                     <tr>
                         <td style="text-align: center; width: 50%;">
-                            <span style="color:red; font-weight:bold;">EL PRESTADOR</span>
-                            <div class="sig-line">GUSTAVO CRUZ TORRES</div>
-                            <span style="color:red; font-size: 8pt;">Apoderado Legal</span>
+                            <span style="font-weight:bold;">EL PRESTADOR</span><div class="sig-line">GUSTAVO CRUZ TORRES</div>
                         </td>
                         <td style="text-align: center; width: 50%;">
-                            <span style="color:red; font-weight:bold;">EL CLIENTE</span>
-                            <div class="sig-line">@Model.Representative</div>
-                            <span style="color:red; font-size: 8pt;">Apoderado Legal</span>
+                            <span style="font-weight:bold;">EL CLIENTE</span><div class="sig-line">@Model.Representative</div>
                         </td>
                     </tr>
                 </table>
@@ -237,32 +183,87 @@
         </div>
     }
 
-    <div class="modal fade" id="modalAnexo" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal fade" id="modalConfig" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-semibold" id="anexoTitle">Editar Anexo</h5>
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-simar-dark"><i class="bi bi-gear-fill me-2"></i> Configuración Integral del Contrato</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div id="anexoAlert" class="alert alert-warning d-none"></div>
+                <div class="modal-body p-4">
                     
-                    <div class="table-responsive mb-3">
-                        <table class="table table-bordered table-editable mb-0" id="anexoTable">
-                            <thead class="table-light" id="anexoTableHeader"></thead>
-                            <tbody id="anexoTableBody"></tbody>
+                    <h6 class="fw-bold mb-3 border-bottom pb-2 text-simar-green">1. Declaraciones del Cliente</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label-simar">Objeto Social</label>
+                            <textarea class="form-control" id="modObjetoSocial" rows="3">@Model.ClientObjetoSocial</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-simar">Declaraciones Específicas</label>
+                            <textarea class="form-control" id="modDeclaraciones" rows="3">@Model.ClientDeclaraciones</textarea>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-3 border-bottom pb-2 text-simar-green">2. Variables Comerciales</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label-simar">Duración del Contrato</label>
+                            <input type="text" class="form-control" id="modDuration" value="@Model.ContractDuration">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-simar">Fecha del Primer Servicio</label>
+                            <input type="date" class="form-control" id="modFirstService" value="@Model.FirstServiceDate">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-simar">Precio Total del Contrato ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="modTotalPrice" value="@Model.TotalPrice">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                        <h6 class="fw-bold mb-0 text-simar-green">3. Tabla Operativa (Servicios y Residuos)</h6>
+                        <button type="button" class="btn btn-sm btn-dark" onclick="addServiceRow()"><i class="bi bi-plus"></i> Añadir Servicio</button>
+                    </div>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-editable">
+                            <thead class="table-light text-center" style="font-size:0.85rem">
+                                <tr><th>Tipo de Residuo</th><th>Unidad</th><th>Periodicidad</th><th>Vehículos</th><th>Técnicos</th><th>Dir. Servicio</th><th>Almacén Destino</th><th></th></tr>
+                            </thead>
+                            <tbody id="modServicesBody"></tbody>
                         </table>
                     </div>
-                    
-                    <button type="button" class="btn-simar-outline-gray btn-sm" onclick="addRow()">
-                        <i class="bi bi-plus-circle"></i> Agregar Fila
-                    </button>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                        <h6 class="fw-bold mb-0 text-simar-green">4. Desglose de Pagos</h6>
+                        <button type="button" class="btn btn-sm btn-dark" onclick="addPaymentRow()"><i class="bi bi-plus"></i> Añadir Pago</button>
+                    </div>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-editable" style="max-width: 800px;">
+                            <thead class="table-light text-center" style="font-size:0.85rem">
+                                <tr><th>Concepto del Pago</th><th>Monto ($)</th><th>Fecha de Pago</th><th style="width: 50px;"></th></tr>
+                            </thead>
+                            <tbody id="modPaymentsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                        <h6 class="fw-bold mb-0 text-warning">5. Anexo Único: Servicios Extraordinarios</h6>
+                        <button type="button" class="btn btn-sm btn-warning" onclick="addExtraRow()"><i class="bi bi-plus"></i> Añadir Servicio Extra</button>
+                    </div>
+                    <p class="small text-muted mb-2">Si agregas filas aquí, se generará una página adicional al final del PDF con el catálogo de extras.</p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-editable">
+                            <thead class="table-light text-center" style="font-size:0.85rem">
+                                <tr><th>Descripción del Extra</th><th>Costo Unitario ($)</th><th>Cantidad Autorizada</th><th style="width: 50px;"></th></tr>
+                            </thead>
+                            <tbody id="modExtrasBody"></tbody>
+                        </table>
+                    </div>
+
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn-simar-primary" onclick="saveAnexo()">
-                        <i class="bi bi-check2-circle"></i> Guardar y Actualizar Vista
-                    </button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn-simar-primary" onclick="saveConfiguration()"><i class="bi bi-check-circle me-1"></i> Aplicar y Actualizar PDF</button>
                 </div>
             </div>
         </div>
@@ -270,385 +271,114 @@
 </form>
 
 <script>
-    // --- LÓGICA DEL BUSCADOR (Se mantiene igual) ---
-    const quotations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Quotations));
-    let selectedId = @Model.QuotationId;
-
-    const searchInput = document.getElementById('searchInput');
-    const optionsList = document.getElementById('optionsList');
-    const hiddenInput = document.getElementById('selectedQuotationId');
-    const previewBtn = document.getElementById('previewBtn');
-
-    function renderOptions(filtered) {
-        optionsList.innerHTML = '';
-        if (filtered.length === 0) {
-            optionsList.innerHTML = '<div class="no-results">No se encontraron resultados</div>';
-        } else {
-            filtered.forEach(q => {
-                const div = document.createElement('div');
-                div.className = `option-item ${q.Id === selectedId ? 'selected' : ''}`;
-                div.textContent = q.Name;
-                div.onmousedown = (e) => { e.preventDefault(); selectItem(q); };
-                optionsList.appendChild(div);
-            });
-        }
-        optionsList.classList.add('show');
-    }
-
-    function selectItem(q) {
-        selectedId = q.Id;
-        hiddenInput.value = q.Id;
-        searchInput.value = q.Name;
-        optionsList.classList.remove('show');
-        if (previewBtn) previewBtn.disabled = false;
-    }
-
-    if(searchInput) {
-        searchInput.addEventListener('focus', () => {
-            renderOptions(quotations.filter(x => x.Name.toLowerCase().includes(searchInput.value.toLowerCase())));
-        });
-        searchInput.addEventListener('input', () => {
-            renderOptions(quotations.filter(x => x.Name.toLowerCase().includes(searchInput.value.toLowerCase())));
-        });
-        searchInput.addEventListener('blur', () => {
-            setTimeout(() => optionsList.classList.remove('show'), 200);
+    function filterQuotations() {
+        let input = document.getElementById("tableSearchInput").value.toLowerCase();
+        document.querySelectorAll("#quotationsTable tbody tr").forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
         });
     }
 
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('#selectContainer') && optionsList) {
-            optionsList.classList.remove('show');
-        }
-    });
-
-    function downloadPDF() {
-        const contractContent = document.getElementById('contract-wrapper').innerHTML;
-        document.body.innerHTML = contractContent;
-        window.print();
-        setTimeout(() => location.reload(), 500);
+    function selectQuotationAndPreview(id) {
+        document.getElementById('selectedQuotationId').value = id;
+        let form = document.getElementById('mainForm');
+        let actionInput = document.createElement('input'); actionInput.type = 'hidden'; actionInput.name = 'action'; actionInput.value = 'preview';
+        form.appendChild(actionInput);
+        form.submit();
     }
 
-    const dbResiduosExterna = [
-        { id: 101, name: "Metal ferroso", estado: "Sólido", forma: "A granel bajo techo" },
-        { id: 102, name: "Aluminio", estado: "Sólido", forma: "A granel bajo techo" },
-        { id: 103, name: "Cartón", estado: "Sólido", forma: "Apilados en pacas 'flejadas'" },
-        { id: 104, name: "Neumáticos de desecho", estado: "Sólido", forma: "Apilado horizontalmente" },
-        { id: 105, name: "Plásticos", estado: "Sólido", forma: "Contenedor" },
-        { id: 106, name: "Bandas de hule", estado: "Sólido", forma: "Bolsa plástica" }
-    ];
-
-    let anexoData = {
-        1: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Anexo1Items)),
-        2: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Anexo2Payments)),
-        3: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Anexo3Steps)),
-        4: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Anexo4Extras))
-    };
-
-    let currentAnexoType = 0;
-    const basePrice = @Model.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+    let services = @Html.Raw(Model.ServicesJsonHidden ?? "[]");
+    let payments = @Html.Raw(Model.PaymentsJsonHidden ?? "[]");
+    let extras = @Html.Raw(Model.ExtrasJsonHidden ?? "[]");
 
     document.addEventListener("DOMContentLoaded", () => {
         if (@(Model.ShowPreview ? "true" : "false")) {
-            renderPreviewPDF();
+            renderLegalTables();
         }
     });
 
-    function openAnexoModal(type) {
-        currentAnexoType = type;
-        const title = document.getElementById('anexoTitle');
-        const thead = document.getElementById('anexoTableHeader');
-        const alertBox = document.getElementById('anexoAlert');
-        alertBox.classList.add('d-none');
+    function openConfigModal() {
+        const sBody = document.getElementById('modServicesBody'); sBody.innerHTML = '';
+        services.forEach(s => appendServiceRow(s.WasteType, s.WasteUnit, s.Frequency, s.Vehicles, s.Technicians, s.ServiceAddress, s.WarehouseAddress));
+        
+        const pBody = document.getElementById('modPaymentsBody'); pBody.innerHTML = '';
+        payments.forEach(p => appendPaymentRow(p.Description, p.Amount, p.PaymentDate));
 
-        if (type === 1) {
-            title.innerText = "Anexo 1: Configurar Envasado de Residuos";
-            thead.innerHTML = "<tr><th>Tipo de residuo</th><th>Estado físico</th><th>Forma de almacenado</th><th style='width:50px'></th></tr>";
-        } else if (type === 2) {
-            title.innerText = "Anexo 2: Calendario y Pagos";
-            thead.innerHTML = "<tr><th>Concepto</th><th>Monto ($)</th><th>Fecha</th><th style='width:50px'></th></tr>";
-        } else if (type === 3) {
-            title.innerText = "Anexo 3: Tiempos de Ejecución";
-            thead.innerHTML = "<tr><th>Fase Operativa</th><th>Duración</th><th style='width:50px'></th></tr>";
-        } else if (type === 4) {
-            title.innerText = "Anexo 4: Servicios Extraordinarios";
-            thead.innerHTML = "<tr><th>Descripción</th><th>Costo Unitario ($)</th><th>Cantidad</th><th style='width:50px'></th></tr>";
-            alertBox.innerHTML = `<strong>Aviso legal:</strong> El total no debe exceder el 10% del contrato ($${(basePrice * 0.10).toFixed(2)})`;
-            alertBox.classList.remove('d-none');
+        const eBody = document.getElementById('modExtrasBody'); eBody.innerHTML = '';
+        extras.forEach(e => appendExtraRow(e.Description, e.UnitCost, e.Quantity));
+
+        new bootstrap.Modal(document.getElementById('modalConfig')).show();
+    }
+
+    function appendServiceRow(w, u, f, v, t, sa, wa) {
+        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" value="${w}"></td><td><input type="text" value="${u}"></td><td><input type="text" value="${f}"></td><td><input type="number" value="${v}"></td><td><input type="number" value="${t}"></td><td><input type="text" value="${sa}"></td><td><input type="text" value="${wa}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+    }
+
+    function appendPaymentRow(d, a, pd) {
+        document.getElementById('modPaymentsBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" value="${d}"></td><td><input type="number" step="0.01" value="${a}"></td><td><input type="date" value="${pd}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+    }
+
+    function appendExtraRow(d, u, q) {
+        document.getElementById('modExtrasBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" value="${d}"></td><td><input type="number" step="0.01" value="${u}"></td><td><input type="number" value="${q}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+    }
+
+    function addServiceRow() { appendServiceRow('','', '', 1, 1, '', ''); }
+    function addPaymentRow() { appendPaymentRow('', 0, ''); }
+    function addExtraRow() { appendExtraRow('', 0, 1); }
+
+    function saveConfiguration() {
+        let objSocial = document.getElementById('modObjetoSocial').value;
+        let decs = document.getElementById('modDeclaraciones').value;
+        document.getElementById('hidObjetoSocial').value = objSocial;
+        document.getElementById('hidDeclaraciones').value = decs;
+        document.getElementById('viewObjetoSocial').innerText = objSocial;
+        document.getElementById('viewDeclaraciones').innerText = decs;
+
+        document.getElementById('hidDuration').value = document.getElementById('modDuration').value;
+        document.getElementById('hidFirstService').value = document.getElementById('modFirstService').value;
+        document.getElementById('hidTotalPrice').value = document.getElementById('modTotalPrice').value;
+        
+        document.getElementById('lblDuration').innerText = document.getElementById('modDuration').value;
+        
+        let fd = new Date(document.getElementById('modFirstService').value + "T00:00:00");
+        document.getElementById('lblFirstService').innerText = isNaN(fd) ? "Pendiente" : fd.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        let tp = parseFloat(document.getElementById('modTotalPrice').value);
+        document.getElementById('lblTotalPrice').innerText = tp.toLocaleString('es-MX', {style: 'currency', currency: 'MXN'});
+
+        services = []; document.querySelectorAll('#modServicesBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value }); });
+        document.getElementById('hidServicesJson').value = JSON.stringify(services);
+
+        payments = []; document.querySelectorAll('#modPaymentsBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); payments.push({ Description: i[0].value, Amount: parseFloat(i[1].value), PaymentDate: i[2].value }); });
+        document.getElementById('hidPaymentsJson').value = JSON.stringify(payments);
+
+        extras = []; document.querySelectorAll('#modExtrasBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); extras.push({ Description: i[0].value, UnitCost: parseFloat(i[1].value), Quantity: parseInt(i[2].value) }); });
+        document.getElementById('hidExtrasJson').value = JSON.stringify(extras);
+
+        renderLegalTables();
+        bootstrap.Modal.getInstance(document.getElementById('modalConfig')).hide();
+    }
+
+    function renderLegalTables() {
+        let sHtml = '';
+        services.forEach(s => { sHtml += `<tr><td>${s.WasteType}</td><td>${s.WasteUnit}</td><td>${s.Frequency}</td><td style="text-align:center">${s.Vehicles} / ${s.Technicians}</td><td>${s.ServiceAddress}</td><td>${s.WarehouseAddress}</td></tr>`; });
+        document.getElementById('preview-services-body').innerHTML = sHtml;
+
+        let pHtml = '';
+        payments.forEach(p => { 
+            let dateStr = new Date(p.PaymentDate + "T00:00:00").toLocaleDateString('es-MX');
+            pHtml += `<tr><td>${p.Description}</td><td style="text-align:right">$${p.Amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td style="text-align:center">${dateStr}</td></tr>`; 
+        });
+        document.getElementById('preview-payments-body').innerHTML = pHtml;
+
+        if(extras.length > 0) {
+            document.getElementById('pageAnexoExtras').style.display = 'block';
+            let eHtml = `<table class="table-legal" style="font-size: 8pt; margin-top: 10px; margin-bottom: 20px;"><tr class="bg-gray-simar" style="text-align:center"><td>Descripción</td><td style="width:20%">Costo Unit.</td><td style="width:15%">Cant.</td><td style="width:20%">Subtotal</td></tr>`;
+            let total = 0;
+            extras.forEach(x => { let sub = x.UnitCost * x.Quantity; total += sub; eHtml += `<tr><td>${x.Description}</td><td style="text-align:right">$${x.UnitCost.toLocaleString('en-US', {minimumFractionDigits:2})}</td><td style="text-align:center">${x.Quantity}</td><td style="text-align:right">$${sub.toLocaleString('en-US', {minimumFractionDigits:2})}</td></tr>`; });
+            eHtml += `<tr><td colspan="3" style="text-align:right; font-weight:bold; background-color:#E6E6E6;">TOTAL SERVICIOS EXTRAORDINARIOS:</td><td style="text-align:right; font-weight:bold;">$${total.toLocaleString('en-US', {minimumFractionDigits:2})}</td></tr></table>`;
+            document.getElementById('preview-anexo-extras').innerHTML = eHtml;
+        } else {
+            document.getElementById('pageAnexoExtras').style.display = 'none';
         }
-
-        renderModalTable();
-        new bootstrap.Modal(document.getElementById('modalAnexo')).show();
-    }
-
-    function getResiduosOptions(selectedId) {
-        let options = `<option value="">-- Seleccionar Residuo --</option>`;
-        dbResiduosExterna.forEach(r => {
-            const selected = (r.id == selectedId) ? "selected" : "";
-            options += `<option value="${r.id}" ${selected}>${r.name}</option>`;
-        });
-        return options;
-    }
-
-    function renderModalTable() {
-        const tbody = document.getElementById('anexoTableBody');
-        tbody.innerHTML = "";
-        const data = anexoData[currentAnexoType];
-
-        const localDate = new Date();
-        localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-        const todayStr = localDate.toISOString().split('T')[0];
-
-        data.forEach((item, index) => {
-            const tr = document.createElement('tr');
-            if (currentAnexoType === 1) {
-                tr.innerHTML = `
-                    <td>
-                        <select class="form-select" style="width:100%; border:1px solid #ccc; padding:4px;" onchange="autoFillResiduo(this)">
-                            ${getResiduosOptions(item.ExternalResiduoId)}
-                        </select>
-                        <input type="hidden" class="residuo-name" value="${item.NombreResiduo || ''}">
-                    </td>
-                    <td><input type="text" class="estado-fisico" value="${item.EstadoFisico || ''}"></td>
-                    <td><input type="text" class="forma-almacenado" value="${item.FormaAlmacenado || ''}"></td>`;
-            } else if (currentAnexoType === 2) {
-                let d = item.PaymentDate ? new Date(item.PaymentDate).toISOString().split('T')[0] : '';
-                tr.innerHTML = `<td><input type="text" value="${item.Concept || ''}"></td>
-                                <td><input type="number" step="0.01" value="${item.Amount || item.Monto || 0}"></td>
-                                <td><input type="date" min="${todayStr}" value="${d}"></td>`;
-            } else if (currentAnexoType === 3) {
-                let d = item.StartDate ? new Date(item.StartDate).toISOString().split('T')[0] : '';
-                tr.innerHTML = `<td><input type="text" value="${item.Phase || item.Fase || ''}"></td>
-                                <td><input type="date" min="${todayStr}" value="${d}"></td>`;
-            } else if (currentAnexoType === 4) {
-                tr.innerHTML = `<td><input type="text" value="${item.Description || ''}"></td>
-                                <td><input type="number" step="0.01" value="${item.UnitCost || 0}"></td>
-                                <td><input type="number" value="${item.Quantity || 1}"></td>`;
-            }
-            tr.innerHTML += `<td><button type="button" class="btn btn-sm btn-danger" onclick="deleteRow(this)"><i class="bi bi-trash"></i></button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function autoFillResiduo(selectElement) {
-        const id = parseInt(selectElement.value);
-        const tr = selectElement.closest('tr');
-        const residuo = dbResiduosExterna.find(r => r.id === id);
-        
-        if(residuo) {
-            tr.querySelector('.residuo-name').value = residuo.name;
-            tr.querySelector('.estado-fisico').value = residuo.estado;
-            tr.querySelector('.forma-almacenado').value = residuo.forma;
-        }
-    }
-
-    function addRow() {
-        anexoData[currentAnexoType].push({});
-        renderModalTable();
-    }
-
-    function deleteRow(btn) {
-        const tr = btn.closest('tr');
-        const index = Array.from(tr.parentNode.children).indexOf(tr);
-        anexoData[currentAnexoType].splice(index, 1);
-        renderModalTable();
-    }
-
-    function saveAnexo() {
-        const tbody = document.getElementById('anexoTableBody');
-        const rows = tbody.querySelectorAll('tr');
-        let newData = [];
-        const alertBox = document.getElementById('anexoAlert');
-        alertBox.classList.add('d-none');
-
-        let hasError = false;
-        let dateError = false;
-        
-        // 1. Calculamos la fecha de hoy blindada contra zonas horarias
-        const localDate = new Date();
-        localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-        const todayStr = localDate.toISOString().split('T')[0];
-        const todayDateObj = new Date(todayStr + 'T00:00:00'); // Objeto matemático de hoy
-
-        rows.forEach(tr => {
-            const inputs = tr.querySelectorAll('input:not([type="hidden"]), select');
-            inputs.forEach(i => {
-                
-                // Regla A: Que no esté vacío
-                if (!i.value || i.value.trim() === "") {
-                    i.style.border = "1px solid red";
-                    hasError = true;
-                } 
-                // Regla B: Si es un campo de fecha (verificando de dos formas por si el navegador falla)
-                else if (i.type === 'date' || i.getAttribute('type') === 'date') {
-                    const inputDateObj = new Date(i.value + 'T00:00:00'); // Objeto matemático del usuario
-                    
-                    if (inputDateObj < todayDateObj) {
-                        i.style.border = "1px solid red";
-                        dateError = true;
-                    } else {
-                        i.style.border = "1px solid #ccc";
-                    }
-                } 
-                // Regla C: Todo está bien
-                else {
-                    i.style.border = "1px solid #ccc";
-                }
-            });
-        });
-
-        if (hasError || dateError) {
-            if (dateError) {
-                alertBox.innerText = "Error: Las fechas no pueden ser anteriores al día de hoy.";
-            } else {
-                alertBox.innerText = "Error: Todos los campos son obligatorios.";
-            }
-            alertBox.classList.remove('d-none', 'alert-warning');
-            alertBox.classList.add('alert-danger');
-            return;
-        }
-
-        // --- (A partir de aquí es exactamente igual que lo que ya tenías) ---
-        rows.forEach(tr => {
-            const inputs = tr.querySelectorAll('input, select');
-            
-            if (currentAnexoType === 1) {
-                newData.push({
-                    ExternalResiduoId: parseInt(tr.querySelector('select').value),
-                    NombreResiduo: tr.querySelector('.residuo-name').value,
-                    EstadoFisico: tr.querySelector('.estado-fisico').value,
-                    FormaAlmacenado: tr.querySelector('.forma-almacenado').value
-                });
-            } 
-            else if (currentAnexoType === 2) {
-                newData.push({
-                    Concept: inputs[0].value,
-                    Amount: parseFloat(inputs[1].value),
-                    PaymentDate: inputs[2].value,
-                    IsBilled: false 
-                });
-            } 
-            else if (currentAnexoType === 3) {
-                newData.push({
-                    Phase: inputs[0].value,
-                    StartDate: inputs[1].value,
-                    EndDate: inputs[1].value,
-                    Deliverable: "Pendiente"
-                });
-            } 
-            else if (currentAnexoType === 4) {
-                newData.push({
-                    Description: inputs[0].value,
-                    UnitCost: parseFloat(inputs[1].value),
-                    Quantity: parseInt(inputs[2].value)
-                });
-            }
-        });
-
-        if (currentAnexoType === 4) {
-            const totalExtra = newData.reduce((sum, item) => sum + (item.UnitCost * item.Quantity), 0);
-            if (totalExtra > (basePrice * 0.10)) {
-                alertBox.innerText = `Criterio de Aceptación: El total de extras ($${totalExtra.toFixed(2)}) no puede exceder el 10% del contrato ($${(basePrice * 0.10).toFixed(2)}).`;
-                alertBox.classList.remove('d-none');
-                return;
-            }
-        }
-
-        anexoData[currentAnexoType] = newData;
-        document.getElementById('AnexosJsonHidden').value = JSON.stringify(anexoData);
-
-        bootstrap.Modal.getInstance(document.getElementById('modalAnexo')).hide();
-        renderPreviewPDF();
-    }
-
-    function renderPreviewPDF() {
-        let html1 = `
-            <table class="table-legal">
-                <tr class="bg-gray-simar">
-                    <td style="width:5%">No.</td>
-                    <td>Tipo de residuo</td>
-                    <td>Estado físico</td>
-                    <td>Forma de almacenado</td>
-                </tr>`;
-        
-        anexoData[1].forEach((x, index) => {
-            html1 += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${x.NombreResiduo || 'No seleccionado'}</td>
-                    <td>${x.EstadoFisico || ''}</td>
-                    <td>${x.FormaAlmacenado || ''}</td>
-                </tr>`;
-        });
-        document.getElementById('preview-anexo-1').innerHTML = html1 + `</table>`;
-
-        // --- ANEXO 2: PAGOS ---
-        let html2 = `
-            <table class="table-legal">
-                <tr class="bg-gray-simar">
-                    <td>Concepto</td>
-                    <td>Monto</td>
-                    <td>Fecha</td>
-                </tr>`;
-        
-        anexoData[2].forEach(x => {
-            // Ajuste de fecha para evitar desfases de zona horaria en el preview
-            let f = x.PaymentDate ? new Date(x.PaymentDate + 'T00:00:00').toLocaleDateString() : 'Pendiente';
-            html2 += `
-                <tr>
-                    <td>${x.Concept || ''}</td>
-                    <td>$${(x.Amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                    <td>${f}</td>
-                </tr>`;
-        });
-        document.getElementById('preview-anexo-2').innerHTML = html2 + `</table>`;
-
-        // --- ANEXO 3: TIEMPOS ---
-        let html3 = `
-            <table class="table-legal">
-                <tr class="bg-gray-simar">
-                    <td>Fase Operativa</td>
-                    <td>Fecha Inicio</td>
-                </tr>`;
-        
-        anexoData[3].forEach(x => {
-            let f = x.StartDate ? new Date(x.StartDate + 'T00:00:00').toLocaleDateString() : 'Pendiente';
-            html3 += `
-                <tr>
-                    <td>${x.Phase || ''}</td>
-                    <td>${f}</td>
-                </tr>`;
-        });
-        document.getElementById('preview-anexo-3').innerHTML = html3 + `</table>`;
-
-        // --- ANEXO 4: EXTRAS ---
-        let html4 = `
-            <table class="table-legal">
-                <tr class="bg-gray-simar">
-                    <td>Descripción</td>
-                    <td>Costo Unit.</td>
-                    <td>Cant.</td>
-                    <td>Subtotal</td>
-                </tr>`;
-        
-        let totalExtra = 0;
-        anexoData[4].forEach(x => {
-            let subt = (x.UnitCost || 0) * (x.Quantity || 1);
-            totalExtra += subt;
-            html4 += `
-                <tr>
-                    <td>${x.Description || ''}</td>
-                    <td>$${(x.UnitCost || 0).toFixed(2)}</td>
-                    <td>${x.Quantity || 1}</td>
-                    <td>$${subt.toFixed(2)}</td>
-                </tr>`;
-        });
-        
-        html4 += `
-            <tr class="bg-gray-simar">
-                <td colspan="3" style="text-align:right">TOTAL EXTRAORDINARIOS (Máx 10%):</td>
-                <td>$${totalExtra.toFixed(2)}</td>
-            </tr>`;
-        
-        document.getElementById('preview-anexo-4').innerHTML = html4 + `</table>`;
     }
 </script>

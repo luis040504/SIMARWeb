@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace ContractsService.Models;
@@ -17,10 +16,47 @@ public class Contract
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Status { get; set; } = "Pendiente de firma";
 
-    public List<Anexo1Scope> Anexo1Items { get; set; } = new();
-    public List<Anexo2Payment> Anexo2Payments { get; set; } = new();
-    public List<Anexo3Schedule> Anexo3Steps { get; set; } = new();
-    public List<Anexo4Extra> Anexo4Extras { get; set; } = new();
+    // --- NUEVOS CAMPOS MANUALES ---
+    public string ClientObjetoSocial { get; set; } = "";
+    public string ClientDeclaraciones { get; set; } = "";
+    public string ContractDuration { get; set; } = "";
+    public DateTime? FirstServiceDate { get; set; }
+
+    // --- LAS NUEVAS 3 TABLAS DINÁMICAS ---
+    public List<ContractServiceItem> Services { get; set; } = new();
+    public List<ContractPaymentItem> Payments { get; set; } = new();
+    public List<ContractExtra> Extras { get; set; } = new();
+}
+
+public class ContractServiceItem
+{
+    public int Id { get; set; }
+    public int ContractId { get; set; }
+    public string WasteType { get; set; } = "";
+    public string WasteUnit { get; set; } = "";
+    public string Frequency { get; set; } = "";
+    public int Vehicles { get; set; }
+    public int Technicians { get; set; }
+    public string ServiceAddress { get; set; } = "";
+    public string WarehouseAddress { get; set; } = "";
+}
+
+public class ContractPaymentItem
+{
+    public int Id { get; set; }
+    public int ContractId { get; set; }
+    public string Description { get; set; } = "";
+    public decimal Amount { get; set; }
+    public DateTime PaymentDate { get; set; }
+}
+
+public class ContractExtra
+{
+    public int Id { get; set; }
+    public int ContractId { get; set; }
+    public string Description { get; set; } = "";
+    public decimal UnitCost { get; set; }
+    public int Quantity { get; set; }
 }
 
 public class AuditLog
@@ -29,45 +65,4 @@ public class AuditLog
     public string Action { get; set; } = "";
     public string Details { get; set; } = "";
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-}
-
-public class Anexo1Scope
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public int ExternalResiduoId { get; set; }
-    public string NombreResiduo { get; set; } = "";
-    public string EstadoFisico { get; set; } = "";
-    public string FormaAlmacenado { get; set; } = "";
-}
-
-public class Anexo2Payment
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public string Concept { get; set; } = "";
-    public decimal Amount { get; set; }
-    public DateTime PaymentDate { get; set; }
-    public bool IsBilled { get; set; } = false;
-}
-
-public class Anexo3Schedule
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public string Phase { get; set; } = "";
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public string Deliverable { get; set; } = "";
-}
-
-public class Anexo4Extra
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public int? ExternalResiduoId { get; set; } 
-    public string Description { get; set; } = "";
-    public decimal UnitCost { get; set; }
-    public int Quantity { get; set; }
-    public decimal Subtotal => UnitCost * Quantity;
 }

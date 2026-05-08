@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ContractsService.Migrations
 {
     /// <inheritdoc />
-    public partial class AddContractValidations : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,7 +36,11 @@ namespace ContractsService.Migrations
                     ClientId = table.Column<int>(type: "int", nullable: false),
                     TotalBasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientObjetoSocial = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientDeclaraciones = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContractDuration = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FirstServiceDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -44,91 +48,69 @@ namespace ContractsService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Anexo1Scope",
+                name: "ContractExtras",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ContractId = table.Column<int>(type: "int", nullable: false),
-                    ExternalResiduoId = table.Column<int>(type: "int", nullable: false),
-                    NombreResiduo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EstadoFisico = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FormaAlmacenado = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Anexo1Scope", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Anexo1Scope_Contracts_ContractId",
-                        column: x => x.ContractId,
-                        principalTable: "Contracts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Anexo2Payment",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ContractId = table.Column<int>(type: "int", nullable: false),
-                    Concept = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsBilled = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Anexo2Payment", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Anexo2Payment_Contracts_ContractId",
-                        column: x => x.ContractId,
-                        principalTable: "Contracts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Anexo3Schedule",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ContractId = table.Column<int>(type: "int", nullable: false),
-                    Phase = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Deliverable = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Anexo3Schedule", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Anexo3Schedule_Contracts_ContractId",
-                        column: x => x.ContractId,
-                        principalTable: "Contracts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Anexo4Extra",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ContractId = table.Column<int>(type: "int", nullable: false),
-                    ExternalResiduoId = table.Column<int>(type: "int", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UnitCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Anexo4Extra", x => x.Id);
+                    table.PrimaryKey("PK_ContractExtras", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Anexo4Extra_Contracts_ContractId",
+                        name: "FK_ContractExtras_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContractPayments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ContractId = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractPayments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractPayments_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContractServices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ContractId = table.Column<int>(type: "int", nullable: false),
+                    WasteType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WasteUnit = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Frequency = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Vehicles = table.Column<int>(type: "int", nullable: false),
+                    Technicians = table.Column<int>(type: "int", nullable: false),
+                    ServiceAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WarehouseAddress = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractServices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractServices_Contracts_ContractId",
                         column: x => x.ContractId,
                         principalTable: "Contracts",
                         principalColumn: "Id",
@@ -136,23 +118,18 @@ namespace ContractsService.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Anexo1Scope_ContractId",
-                table: "Anexo1Scope",
+                name: "IX_ContractExtras_ContractId",
+                table: "ContractExtras",
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Anexo2Payment_ContractId",
-                table: "Anexo2Payment",
+                name: "IX_ContractPayments_ContractId",
+                table: "ContractPayments",
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Anexo3Schedule_ContractId",
-                table: "Anexo3Schedule",
-                column: "ContractId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Anexo4Extra_ContractId",
-                table: "Anexo4Extra",
+                name: "IX_ContractServices_ContractId",
+                table: "ContractServices",
                 column: "ContractId");
         }
 
@@ -160,19 +137,16 @@ namespace ContractsService.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Anexo1Scope");
-
-            migrationBuilder.DropTable(
-                name: "Anexo2Payment");
-
-            migrationBuilder.DropTable(
-                name: "Anexo3Schedule");
-
-            migrationBuilder.DropTable(
-                name: "Anexo4Extra");
-
-            migrationBuilder.DropTable(
                 name: "AuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "ContractExtras");
+
+            migrationBuilder.DropTable(
+                name: "ContractPayments");
+
+            migrationBuilder.DropTable(
+                name: "ContractServices");
 
             migrationBuilder.DropTable(
                 name: "Contracts");

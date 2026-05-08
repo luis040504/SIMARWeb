@@ -6,30 +6,35 @@ namespace ClienteWeb.Pages.Contracts.Generate
 {
     public class GenerateModel : PageModel
     {
-        [BindProperty]
-        public string AnexosJsonHidden { get; set; } = "";
-        
-        [BindProperty]
-        public int QuotationId { get; set; }
+        private readonly HttpClient _httpClient;
 
+        public GenerateModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClient = httpClientFactory.CreateClient("ContractsApi");
+        }
+
+        [BindProperty] public int QuotationId { get; set; }
         public List<Quotation> Quotations { get; set; } = new();
 
+        // DATOS DEL CLIENTE Y PORTADA LEGAL
         [BindProperty] public string BusinessName { get; set; } = "";
         [BindProperty] public string RFC { get; set; } = "";
         [BindProperty] public string Address { get; set; } = "";
         [BindProperty] public string Representative { get; set; } = "";
-        [BindProperty] public string ServiceDetails { get; set; } = "";
-        [BindProperty] public decimal Price { get; set; }
-        [BindProperty] public string PaymentMethod { get; set; } = "";
-        [BindProperty] public string Validity { get; set; } = "";
+        
+        // CAMPOS MANUALES (Modificables en el panel)
+        [BindProperty] public string ClientObjetoSocial { get; set; } = "";
+        [BindProperty] public string ClientDeclaraciones { get; set; } = "";
+        [BindProperty] public string ContractDuration { get; set; } = "";
+        [BindProperty] public string FirstServiceDate { get; set; } = "";
+        [BindProperty] public decimal TotalPrice { get; set; }
+
+        // CAMPOS OCULTOS PARA LAS TABLAS (JSON)
+        [BindProperty] public string ServicesJsonHidden { get; set; } = "[]";
+        [BindProperty] public string PaymentsJsonHidden { get; set; } = "[]";
+        [BindProperty] public string ExtrasJsonHidden { get; set; } = "[]";
 
         public bool ShowPreview { get; set; }
-
-        // Standardized properties for the frontend to map correctly
-        public List<Anexo1Scope> Anexo1Items { get; set; } = new();
-        public List<Anexo2Payment> Anexo2Payments { get; set; } = new();
-        public List<Anexo3Schedule> Anexo3Steps { get; set; } = new();
-        public List<Anexo4Extra> Anexo4Extras { get; set; } = new();
 
         public void OnGet() => LoadQuotations();
 
@@ -46,92 +51,113 @@ namespace ClienteWeb.Pages.Contracts.Generate
                     RFC = quotation.RFC;
                     Address = quotation.Address;
                     Representative = quotation.Representative;
-                    ServiceDetails = quotation.ServiceDetails;
-                    Price = quotation.Price;
-                    PaymentMethod = quotation.PaymentMethod;
-                    Validity = quotation.Validity;
+                    TotalPrice = quotation.Price;
+                    
+                    // Valores por defecto para el Panel de Configuración
+                    ClientObjetoSocial = "La administración y prestación de servicios de mantenimiento...";
+                    ClientDeclaraciones = "a. Es una sociedad anónima de capital variable...\nb. Su apoderado legal, cuenta con las facultades...";
+                    ContractDuration = "12 (Doce) meses contados a partir de la firma";
+                    FirstServiceDate = DateTime.Now.AddDays(5).ToString("yyyy-MM-dd");
 
-                    // Initialize with empty lists (No mocks)
-                    Anexo1Items = new List<Anexo1Scope>();
-                    Anexo2Payments = new List<Anexo2Payment>();
-                    Anexo3Steps = new List<Anexo3Schedule>();
-                    Anexo4Extras = new List<Anexo4Extra>();
+                    // Mock Inicial de Tablas
+                    var servicesList = new List<ContractServiceItem> {
+                        new ContractServiceItem { WasteType = quotation.ServiceDetails, WasteUnit = "Kilogramos", Frequency = "Semanal", Vehicles = 1, Technicians = 2, ServiceAddress = quotation.Address, WarehouseAddress = "Bodega Central SIMAR" }
+                    };
+                    var paymentsList = new List<ContractPaymentItem> {
+                        new ContractPaymentItem { Description = "Pago Mensual Operativo", Amount = quotation.Price / 12, PaymentDate = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd") }
+                    };
+                    var extrasList = new List<ContractExtra>(); // Usamos la clase nueva
+
+                    ServicesJsonHidden = JsonSerializer.Serialize(servicesList);
+                    PaymentsJsonHidden = JsonSerializer.Serialize(paymentsList);
+                    ExtrasJsonHidden = JsonSerializer.Serialize(extrasList);
 
                     ShowPreview = true;
                 }
             }
         }
 
+        public async Task<IActionResult> OnPostDownloadPdfAsync()
+        {
+            try
+            {
+                // 1. Deserializamos con las clases correctas
+                var services = string.IsNullOrEmpty(ServicesJsonHidden) ? new List<ContractServiceItem>() : JsonSerializer.Deserialize<List<ContractServiceItem>>(ServicesJsonHidden);
+                var payments = string.IsNullOrEmpty(PaymentsJsonHidden) ? new List<ContractPaymentItem>() : JsonSerializer.Deserialize<List<ContractPaymentItem>>(PaymentsJsonHidden);
+                var extras = string.IsNullOrEmpty(ExtrasJsonHidden) ? new List<ContractExtra>() : JsonSerializer.Deserialize<List<ContractExtra>>(ExtrasJsonHidden);
+
+                DateTime? firstService = DateTime.TryParse(FirstServiceDate, out var fsd) ? fsd : null;
+
+                // 2. Armamos el objeto EXACTAMENTE como lo espera la nueva API
+                var newContract = new 
+                {
+                    ClientId = QuotationId > 0 ? QuotationId : 15,
+                    TotalBasePrice = TotalPrice,
+                    ClientObjetoSocial = ClientObjetoSocial,
+                    ClientDeclaraciones = ClientDeclaraciones,
+                    ContractDuration = ContractDuration,
+                    FirstServiceDate = firstService,
+                    Services = services,
+                    Payments = payments,
+                    Extras = extras
+                };
+
+                var response = await _httpClient.PostAsJsonAsync("/api/contracts", newContract);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var createdContract = await response.Content.ReadFromJsonAsync<ContractResponseDto>();
+                    if (createdContract != null && createdContract.Id > 0)
+                    {
+                        var pdfResponse = await _httpClient.GetAsync($"/api/contracts/{createdContract.Id}/download");
+                        if (pdfResponse.IsSuccessStatusCode)
+                        {
+                            var pdfBytes = await pdfResponse.Content.ReadAsByteArrayAsync();
+                            return File(pdfBytes, "application/pdf", $"{createdContract.Folio}.pdf");
+                        }
+                    }
+                    return RedirectToPage("/Contracts/Consult"); 
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    ModelState.AddModelError(string.Empty, $"Error de la API: {error}");
+                    LoadQuotations();
+                    ShowPreview = true;
+                    return Page();
+                }
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Hubo un error de conexión con el servidor.");
+                LoadQuotations();
+                return Page();
+            }
+        }
+
         private void LoadQuotations()
         {
-            // Logic to load dropdown items from Database
-            Quotations = new List<Quotation> {
-                new Quotation { Id = 1, Name = "Client A - Quotation" }
+            Quotations = new List<Quotation> { 
+                new Quotation { Id = 10, ClientName = "Comercializadora del Sur S.A.", ServiceType = "Recolección RME", DateApproved = "2026-04-20" },
+                new Quotation { Id = 11, ClientName = "Hospital General Xalapa", ServiceType = "Residuos Biológico Infecciosos", DateApproved = "2026-04-25" }
             };
         }
 
-private QuotationDetail? GetQuotationFromDatabase(int id)
-{
-    // SI YA TIENES TU DB CONECTADA, USA ESTO:
-    // return _dbContext.QuotationDetails.FirstOrDefault(q => q.Id == id);
-
-    // SI AÚN NO LA TIENES, DEJA ESTO PARA QUE LA VISTA PREVIA FUNCIONE HOY:
-    return new QuotationDetail {
-        Id = id,
-        BusinessName = "Empresa X",
-        RFC = "XAXX010101000",
-        Address = "Av. Principal 123",
-        Representative = "JUAN PÉREZ",
-        ServiceDetails = "Recolección general",
-        Price = 12500,
-        PaymentMethod = "Transferencia",
-        Validity = "12 meses",
-        // Iniciamos la lista vacía para que el frontend no marque error
-        Anexo1Items = new List<Anexo1Scope>() 
-    };
-}
+        private QuotationDetail? GetQuotationFromDatabase(int id)
+        {
+            if(id == 10) return new QuotationDetail { Id = 10, BusinessName = "Comercializadora del Sur S.A. de C.V.", RFC = "CSU010203XYZ", Address = "Av. Lázaro Cárdenas 100", Representative = "JUAN PÉREZ", ServiceDetails = "Cartón y Plástico PET", Price = 120000 };
+            if(id == 11) return new QuotationDetail { Id = 11, BusinessName = "Hospital General Xalapa", RFC = "HGX990101ABC", Address = "Calle Salud Sur 45", Representative = "DRA. MARÍA LÓPEZ", ServiceDetails = "Residuos RPBI", Price = 250000 };
+            return null;
+        }
     }
 
-    // --- DOMAIN CLASSES (Fully English to match Frontend JS) ---
-
-    public class Quotation { public int Id { get; set; } public string Name { get; set; } = ""; }
-
-    public class QuotationDetail {
-        public int Id { get; set; }
-        public string BusinessName { get; set; } = "";
-        public string RFC { get; set; } = "";
-        public string Address { get; set; } = "";
-        public string Representative { get; set; } = "";
-        public string ServiceDetails { get; set; } = "";
-        public decimal Price { get; set; }
-        public string PaymentMethod { get; set; } = "";
-        public string Validity { get; set; } = "";
-        // Adding this to avoid null errors when calling in OnPost
-        public List<Anexo1Scope> Anexo1Items { get; set; } = new();
-    }
-
-    public class Anexo1Scope { 
-        public int ExternalResiduoId { get; set; }
-        public string NombreResiduo { get; set; } = ""; 
-        public string EstadoFisico { get; set; } = ""; 
-        public string FormaAlmacenado { get; set; } = ""; 
-    }
-
-    public class Anexo2Payment { 
-        public string Concept { get; set; } = ""; 
-        public decimal Amount { get; set; } 
-        public DateTime PaymentDate { get; set; } 
-    }
-
-    public class Anexo3Schedule { 
-        public string Phase { get; set; } = ""; 
-        public DateTime StartDate { get; set; } 
-    }
-
-    public class Anexo4Extra { 
-        public string Description { get; set; } = ""; 
-        public decimal UnitCost { get; set; } 
-        public int Quantity { get; set; } 
-        public decimal Total => UnitCost * Quantity; 
-    }
+    // --- NUEVAS CLASES DE DOMINIO QUE COINCIDEN CON LA API ---
+    public class ContractServiceItem { public string WasteType { get; set; } = ""; public string WasteUnit { get; set; } = ""; public string Frequency { get; set; } = ""; public int Vehicles { get; set; } public int Technicians { get; set; } public string ServiceAddress { get; set; } = ""; public string WarehouseAddress { get; set; } = ""; }
+    public class ContractPaymentItem { public string Description { get; set; } = ""; public decimal Amount { get; set; } public string PaymentDate { get; set; } = ""; }
+    public class ContractExtra { public string Description { get; set; } = ""; public decimal UnitCost { get; set; } public int Quantity { get; set; } public decimal Total => UnitCost * Quantity; }
+    
+    public class Quotation { public int Id { get; set; } public string ClientName { get; set; } = ""; public string ServiceType { get; set; } = ""; public string DateApproved { get; set; } = ""; }
+    public class QuotationDetail { public int Id { get; set; } public string BusinessName { get; set; } = ""; public string RFC { get; set; } = ""; public string Address { get; set; } = ""; public string Representative { get; set; } = ""; public string ServiceDetails { get; set; } = ""; public decimal Price { get; set; } }
+    
+    public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
 }
