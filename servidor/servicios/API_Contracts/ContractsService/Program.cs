@@ -12,6 +12,7 @@ builder.Services.AddScoped<IContractService, ContractService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
@@ -25,10 +26,19 @@ app.UseHttpsRedirection();
 
 app.MapPost("/api/contracts", async (Contract contractRequest, IContractService contractService) =>
 {
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(contractRequest);
+    bool isValid = System.ComponentModel.DataAnnotations.Validator.TryValidateObject(contractRequest, validationContext, validationResults, true);
+    
+    if (!isValid)
+    {
+        var errors = validationResults.Select(v => v.ErrorMessage);
+        return Results.BadRequest(new { error = "Errores de validación", detalles = errors });
+    }
+
     try
     {
         var result = await contractService.CreateContractAsync(contractRequest);
-        
         return Results.Created($"/api/contracts/{result.Id}", result);
     }
     catch (ArgumentException ex)

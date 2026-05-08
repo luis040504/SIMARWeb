@@ -24,11 +24,6 @@ public class ContractService : IContractService
 
     public async Task<ContractResponseDto> CreateContractAsync(Contract request)
     {
-        if (request.Anexo3Steps.Any(step => step.EndDate < step.StartDate))
-        {
-            throw new ArgumentException("Rango de fechas inválido: La fecha de fin no puede ser anterior a la de inicio.");
-        }
-
         request.Folio = $"CON-{DateTime.Now:yyyyMM}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
         request.CreatedAt = DateTime.UtcNow;
         request.Status = "Pendiente de firma";
@@ -39,40 +34,30 @@ public class ContractService : IContractService
         var audit = new AuditLog
         {
             Action = "Create Contract",
-            Details = $"Contrato {request.Folio} (ID: {request.Id}) creado para el Cliente ID: {request.ClientId}"
+            Details = $"Contrato {request.Folio} creado para el Cliente ID: {request.ClientId}"
         };
         _context.AuditLogs.Add(audit);
         await _context.SaveChangesAsync();
 
-        return new ContractResponseDto 
-        { 
-            Id = request.Id, 
-            Folio = request.Folio,
-            Message = "Contrato creado exitosamente."
-        };
+        return new ContractResponseDto { Id = request.Id, Folio = request.Folio, Message = "Contrato creado exitosamente." };
     }
 
     public async Task<List<ContractListDto>> GetContractsAsync(string? search, string? status, DateTime? dateFilter)
     {
-        var query = _context.Contracts.AsQueryable();
+        var query = _context.Contracts.Include(c => c.Payments).AsQueryable();
 
         if (!string.IsNullOrEmpty(search))
         {
             query = query.Where(c => c.Folio.Contains(search) || c.ClientId.ToString() == search);
-
-            if (!string.IsNullOrEmpty(status))
-            {
-                query = query.Where(c => c.Status == status);
-            }
-
-            if (dateFilter.HasValue)
-            {
-                query = query.Where(c => c.Anexo3Steps.Any(s => dateFilter >= s.StartDate && dateFilter <= s.EndDate));
-            }
         }
-        else if (!string.IsNullOrEmpty(status))
+        if (!string.IsNullOrEmpty(status))
         {
             query = query.Where(c => c.Status == status);
+        }
+        if (dateFilter.HasValue)
+        {
+            // Busca contratos cuyo primer servicio sea en la fecha seleccionada
+            query = query.Where(c => c.FirstServiceDate.HasValue && c.FirstServiceDate.Value.Date == dateFilter.Value.Date);
         }
 
         return await query.Select(c => new ContractListDto
@@ -82,118 +67,73 @@ public class ContractService : IContractService
             ClientId = c.ClientId,
             Status = c.Status,
             CreatedAt = c.CreatedAt,
-            ExpirationDate = c.Anexo3Steps.Max(s => (DateTime?)s.EndDate) ?? DateTime.MinValue
+            // Tomamos la fecha del último pago como posible expiración, o la de inicio
+            ExpirationDate = c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue)
         }).ToListAsync();
     }
 
     public async Task<ContractListDto> GetContractByIdAsync(int id)
     {
-        var contract = await _context.Contracts
-            .Include(c => c.Anexo3Steps)
-            .FirstOrDefaultAsync(c => c.Id == id);
-
+        var contract = await _context.Contracts.Include(c => c.Payments).FirstOrDefaultAsync(c => c.Id == id);
         if (contract == null) throw new KeyNotFoundException("Contrato no encontrado.");
 
         return new ContractListDto
         {
-            Id = contract.Id,
-            Folio = contract.Folio,
-            ClientId = contract.ClientId,
-            Status = contract.Status,
-            CreatedAt = contract.CreatedAt,
-            ExpirationDate = contract.Anexo3Steps.Any() ? contract.Anexo3Steps.Max(s => s.EndDate) : DateTime.MinValue
+            Id = contract.Id, Folio = contract.Folio, ClientId = contract.ClientId, Status = contract.Status, CreatedAt = contract.CreatedAt,
+            ExpirationDate = contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue)
         };
     }
 
     public async Task<ContractResponseDto> UpdateContractAsync(int id, Contract request)
     {
-        var existingContract = await _context.Contracts
-            .Include(c => c.Anexo1Items)
-            .Include(c => c.Anexo2Payments)
-            .Include(c => c.Anexo3Steps)
-            .Include(c => c.Anexo4Extras)
+        var existing = await _context.Contracts
+            .Include(c => c.Services).Include(c => c.Payments).Include(c => c.Extras)
             .FirstOrDefaultAsync(c => c.Id == id);
 
-        if (existingContract == null) throw new KeyNotFoundException("Contrato no encontrado.");
+        if (existing == null) throw new KeyNotFoundException("Contrato no encontrado.");
 
-        existingContract.Status = request.Status;
-        existingContract.TotalBasePrice = request.TotalBasePrice;
+        existing.Status = request.Status;
+        existing.TotalBasePrice = request.TotalBasePrice;
+        existing.ClientObjetoSocial = request.ClientObjetoSocial;
+        existing.ClientDeclaraciones = request.ClientDeclaraciones;
+        existing.ContractDuration = request.ContractDuration;
+        existing.FirstServiceDate = request.FirstServiceDate;
 
-        existingContract.Anexo1Items.RemoveAll(e => !request.Anexo1Items.Any(r => r.Id == e.Id && e.Id != 0));
-        foreach (var item in request.Anexo1Items)
-        {
-            var existing = existingContract.Anexo1Items.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
-            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
-            else existingContract.Anexo1Items.Add(item);
+        // Actualizar Servicios
+        existing.Services.RemoveAll(e => !request.Services.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Services) {
+            var exItem = existing.Services.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (exItem != null) _context.Entry(exItem).CurrentValues.SetValues(item); else existing.Services.Add(item);
         }
 
-        existingContract.Anexo2Payments.RemoveAll(e => !request.Anexo2Payments.Any(r => r.Id == e.Id && e.Id != 0));
-        foreach (var item in request.Anexo2Payments)
-        {
-            var existing = existingContract.Anexo2Payments.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
-            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
-            else existingContract.Anexo2Payments.Add(item);
+        // Actualizar Pagos
+        existing.Payments.RemoveAll(e => !request.Payments.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Payments) {
+            var exItem = existing.Payments.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (exItem != null) _context.Entry(exItem).CurrentValues.SetValues(item); else existing.Payments.Add(item);
         }
 
-        existingContract.Anexo3Steps.RemoveAll(e => !request.Anexo3Steps.Any(r => r.Id == e.Id && e.Id != 0));
-        foreach (var item in request.Anexo3Steps)
-        {
-            if (item.EndDate < item.StartDate) throw new ArgumentException("Rango de fechas inválido en Anexo 3.");
-            var existing = existingContract.Anexo3Steps.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
-            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
-            else existingContract.Anexo3Steps.Add(item);
+        // Actualizar Extras
+        existing.Extras.RemoveAll(e => !request.Extras.Any(r => r.Id == e.Id && e.Id != 0));
+        foreach (var item in request.Extras) {
+            var exItem = existing.Extras.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
+            if (exItem != null) _context.Entry(exItem).CurrentValues.SetValues(item); else existing.Extras.Add(item);
         }
-
-        existingContract.Anexo4Extras.RemoveAll(e => !request.Anexo4Extras.Any(r => r.Id == e.Id && e.Id != 0));
-        foreach (var item in request.Anexo4Extras)
-        {
-            var existing = existingContract.Anexo4Extras.FirstOrDefault(e => e.Id == item.Id && e.Id != 0);
-            if (existing != null) _context.Entry(existing).CurrentValues.SetValues(item);
-            else existingContract.Anexo4Extras.Add(item);
-        }
-
-        _context.AuditLogs.Add(new AuditLog
-        {
-            Action = "Update Contract Full",
-            Details = $"Contrato {existingContract.Folio} actualizado (incluyendo anexos)."
-        });
 
         await _context.SaveChangesAsync();
-
-        return new ContractResponseDto
-        {
-            Id = existingContract.Id,
-            Folio = existingContract.Folio,
-            Message = "Contrato actualizado exitosamente."
-        };
+        return new ContractResponseDto { Id = existing.Id, Folio = existing.Folio, Message = "Contrato actualizado exitosamente." };
     }
 
     public async Task<(byte[] Content, string ContentType, string FileName)> GetContractPdfAsync(int id)
     {
         if (id <= 0) throw new ArgumentException("ID inválido");
-
         var contract = await _context.Contracts.FindAsync(id);
         if (contract == null) throw new KeyNotFoundException("Contract not found");
 
         byte[] pdfBuffer = System.Text.Encoding.UTF8.GetBytes($"Contrato {contract.Folio}");
-        
         return (pdfBuffer, "application/pdf", $"{contract.Folio}.pdf");
     }
 }
 
-public class ContractListDto
-{
-    public int Id { get; set; }
-    public string Folio { get; set; } = "";
-    public int ClientId { get; set; }
-    public string Status { get; set; } = "";
-    public DateTime CreatedAt { get; set; }
-    public DateTime ExpirationDate { get; set; }
-}
-
-public class ContractResponseDto
-{
-    public int Id { get; set; }
-    public string Folio { get; set; } = "";
-    public string Message { get; set; } = "";
-}
+public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } }
+public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
