@@ -25,6 +25,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+              .WithExposedHeaders("Content-Disposition");
+    });
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -39,6 +48,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseHttpsRedirection();
 
 app.MapPost("/api/contracts", async (Contract contractRequest, IContractService contractService) =>
@@ -86,6 +96,19 @@ app.MapGet("/api/contracts/{id:int}", async (int id, IContractService contractSe
         return Results.NotFound(new { error = ex.Message });
     }
 }).WithName("GetContractById");
+
+app.MapGet("/api/contracts/{id:int}/detail", async (int id, IContractService contractService) =>
+{
+    try
+    {
+        var detail = await contractService.GetContractFullDetailAsync(id);
+        return Results.Ok(detail);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { error = ex.Message });
+    }
+}).WithName("GetContractFullDetail");
 
 app.MapPut("/api/contracts/{id:int}", async (int id, Contract contractRequest, IContractService contractService) =>
 {

@@ -9,6 +9,7 @@ public interface IContractService
     Task<ContractResponseDto> CreateContractAsync(Contract request);
     Task<List<ContractListDto>> GetContractsAsync(string? search, string? status, DateTime? dateFilter);
     Task<ContractListDto> GetContractByIdAsync(int id);
+    Task<ContractFullDetailDto> GetContractFullDetailAsync(int id);
     Task<ContractResponseDto> UpdateContractAsync(int id, Contract request);
     Task<(byte[] Content, string ContentType, string FileName)> GetContractPdfAsync(int id);
 }
@@ -83,6 +84,38 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
         };
     }
 
+    public async Task<ContractFullDetailDto> GetContractFullDetailAsync(int id)
+    {
+        var contract = await _context.Contracts
+            .Include(c => c.Services)
+            .Include(c => c.Payments)
+            .Include(c => c.Extras)
+            .FirstOrDefaultAsync(c => c.Id == id);
+        if (contract == null) throw new KeyNotFoundException("Contrato no encontrado.");
+
+        var quotation = await _context.Quotations.FindAsync(contract.ClientId);
+
+        return new ContractFullDetailDto
+        {
+            Id = contract.Id,
+            Folio = contract.Folio,
+            ClientId = contract.ClientId,
+            ClientName = quotation?.ClientName ?? $"Cliente #{contract.ClientId}",
+            ClientRfc = quotation?.ClientRfc ?? "",
+            Representative = quotation?.ContactName ?? "",
+            Status = contract.Status,
+            CreatedAt = contract.CreatedAt,
+            TotalBasePrice = contract.TotalBasePrice,
+            ClientObjetoSocial = contract.ClientObjetoSocial,
+            ClientDeclaraciones = contract.ClientDeclaraciones,
+            ContractDuration = contract.ContractDuration,
+            FirstServiceDate = contract.FirstServiceDate,
+            Services = contract.Services,
+            Payments = contract.Payments,
+            Extras = contract.Extras
+        };
+    }
+
     public async Task<ContractResponseDto> UpdateContractAsync(int id, Contract request)
     {
         var existing = await _context.Contracts
@@ -145,3 +178,23 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
 
 public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } }
 public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
+
+public class ContractFullDetailDto
+{
+    public int Id { get; set; }
+    public string Folio { get; set; } = "";
+    public int ClientId { get; set; }
+    public string ClientName { get; set; } = "";
+    public string ClientRfc { get; set; } = "";
+    public string Representative { get; set; } = "";
+    public string Status { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public decimal TotalBasePrice { get; set; }
+    public string ClientObjetoSocial { get; set; } = "";
+    public string ClientDeclaraciones { get; set; } = "";
+    public string ContractDuration { get; set; } = "";
+    public DateTime? FirstServiceDate { get; set; }
+    public List<ContractServiceItem> Services { get; set; } = new();
+    public List<ContractPaymentItem> Payments { get; set; } = new();
+    public List<ContractExtra> Extras { get; set; } = new();
+}

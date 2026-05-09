@@ -11,7 +11,6 @@
         border: 1px solid #ddd; page-break-after: always;
     }
     
-    /* Estilos Legales */
     .table-legal { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 8.5pt; }
     .table-legal td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
     .bg-gray-simar { background-color: #E6E6E6; font-weight: bold; text-align: center; }
@@ -19,7 +18,6 @@
     .legal-body { font-size: 9.5pt; text-align: justify; line-height: 1.45; color: #222; }
     .sig-line { border-top: 1px solid #000; width: 80%; margin: 45px auto 8px auto; text-align: center; font-weight: bold; }
     
-    /* Buscador y Modal */
     .table-editable input, .table-editable textarea { width: 100%; border: 1px solid #ccc; padding: 4px; border-radius: 4px; font-size: 0.85rem; }
     .search-box-local { display: flex; border: 1px solid var(--simar-border); border-radius: 8px; overflow: hidden; background: white; max-width: 400px; }
     .search-box-local input { border: none; padding: 10px 15px; width: 100%; outline: none; }
@@ -409,7 +407,6 @@
     }
 
     function prepareDownload() {
-        // Sync configuration values to hidden fields before form submit
         services = []; 
         document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
             let i = tr.querySelectorAll('input'); 
@@ -438,67 +435,70 @@
         if (extras.length > 0) document.getElementById('hidExtrasJson').value = JSON.stringify(extras);
     }
 
+    var API_BASE = '@Model.ApiBaseUrl';
+
     async function saveAndDownloadPdf() {
-        // Preparar los datos del formulario
         prepareDownload();
 
-        // Deshabilitar botones para evitar doble envío
         var btn = document.getElementById('btnDownloadPdf');
         var originalHtml = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Procesando...';
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
         document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = true; });
 
         try {
-            // Construir FormData del formulario
             var form = document.getElementById('mainForm');
             var formData = new FormData(form);
-            formData.append('handler', 'DownloadPdf');
 
-            // Obtener el token anti-falsificación
-            var token = form.querySelector('input[name="__RequestVerificationToken"]');
-
-            var response = await fetch(window.location.pathname + '?handler=DownloadPdf', {
+            var saveResponse = await fetch(window.location.pathname + '?handler=DownloadPdf', {
                 method: 'POST',
                 body: formData
             });
 
-            if (response.ok) {
-                var contentType = response.headers.get('Content-Type');
-                if (contentType && contentType.includes('application/pdf')) {
-                    // Descargar el PDF
-                    var blob = await response.blob();
-                    var disposition = response.headers.get('Content-Disposition');
-                    var fileName = 'Contrato.pdf';
-                    if (disposition) {
-                        var match = disposition.match(/filename[^;=\n]*=(['"]?)([^'"\n;]*)/i);
-                        if (match && match[2]) fileName = match[2];
-                    }
+            var result = await saveResponse.json();
 
-                    var link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(link.href);
-
-                    // Redirigir a consulta después de descargar
-                    setTimeout(function() {
-                        window.location.href = '/Contracts/Consult';
-                    }, 500);
-                    return;
-                }
+            if (!result.success) {
+                alert(result.error || 'Error al guardar el contrato.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = false; });
+                return;
             }
 
-            // Si la respuesta no fue un PDF (error de guardado), recargar para mostrar errores
-            alert('Ocurrió un error al guardar o descargar el contrato. Intente nuevamente.');
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-            document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = false; });
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Descargando PDF...';
+
+            var pdfController = new AbortController();
+            var pdfTimeout = setTimeout(function() { pdfController.abort(); }, 30000);
+            var pdfResponse = await fetch(API_BASE + '/api/contracts/' + result.contractId + '/download', { signal: pdfController.signal });
+            clearTimeout(pdfTimeout);
+            if (pdfResponse.ok) {
+                var blob = await pdfResponse.blob();
+                var fileName = 'Contrato_' + result.contractId + '.pdf';
+                var disposition = pdfResponse.headers.get('Content-Disposition');
+                if (disposition) {
+                    var match = disposition.match(/filename[^;=\n]*=(['"]?)([^'"\n;]*)/i);
+                    if (match && match[2]) fileName = match[2];
+                }
+
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                link.dataset.loading = 'false';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                setTimeout(function() {
+                    URL.revokeObjectURL(link.href);
+                    window.location.href = '/Contracts/Consult';
+                }, 1500);
+            } else {
+                alert('El contrato se guardó pero no se pudo descargar el PDF.');
+                window.location.href = '/Contracts/Consult';
+            }
 
         } catch (err) {
-            alert('Error de conexión: ' + err.message);
+            alert('Error: ' + err.message);
             btn.disabled = false;
             btn.innerHTML = originalHtml;
             document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = false; });

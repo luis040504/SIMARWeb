@@ -8,9 +8,12 @@ namespace ClienteWeb.Pages.Contracts.Generate
     {
         private readonly HttpClient _httpClient;
 
+        public string ApiBaseUrl { get; private set; } = "";
+
         public GenerateModel(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient("ContractsApi");
+            ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
         }
 
         [BindProperty] public int QuotationId { get; set; }
@@ -40,7 +43,6 @@ namespace ClienteWeb.Pages.Contracts.Generate
 
         public async Task<IActionResult> OnPostAsync(string action)
         {
-            // LIMPIAMOS LOS ERRORES DE VALIDACIÓN INVISIBLES
             ModelState.Clear(); 
             
             await LoadQuotationsAsync();
@@ -83,11 +85,9 @@ namespace ClienteWeb.Pages.Contracts.Generate
             return Page();
         }
 
-        // SOLO GUARDAR
-        // BOTÓN 1: Solo Guardar en BD
         public async Task<IActionResult> OnPostSaveOnlyAsync()
         {
-            ModelState.Clear(); // <--- Limpiamos errores fantasma
+            ModelState.Clear();
 
             var savedContractId = await SaveContractToApiAsync();
             if (savedContractId > 0)
@@ -97,7 +97,6 @@ namespace ClienteWeb.Pages.Contracts.Generate
             return Page(); 
         }
 
-        // BOTÓN 2: Guardar y Descargar PDF desde el backend
         public async Task<IActionResult> OnPostDownloadPdfAsync()
         {
             ModelState.Clear();
@@ -105,32 +104,10 @@ namespace ClienteWeb.Pages.Contracts.Generate
             var savedContractId = await SaveContractToApiAsync();
             if (savedContractId > 0)
             {
-                try
-                {
-                    // Descargar el PDF directamente desde el endpoint del backend
-                    var pdfResponse = await _httpClient.GetAsync($"/api/contracts/{savedContractId}/download");
-                    if (pdfResponse.IsSuccessStatusCode)
-                    {
-                        var pdfBytes = await pdfResponse.Content.ReadAsByteArrayAsync();
-                        var fileName = pdfResponse.Content.Headers.ContentDisposition?.FileName?.Trim('"') 
-                                       ?? $"Contrato_{savedContractId}.pdf";
-                        
-                        return File(pdfBytes, "application/pdf", fileName);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Si falla la descarga del PDF, al menos el contrato ya se guardó
-                }
-
-                // Si no se pudo descargar el PDF, al menos redirigir a consulta
-                return Redirect("/Contracts/Consult");
+                return new JsonResult(new { success = true, contractId = savedContractId });
             }
             
-            // Si falló el guardado, mostrar errores en la misma página
-            ShowPreview = true;
-            await LoadQuotationsAsync();
-            return Page(); 
+            return new JsonResult(new { success = false, error = "Error al guardar el contrato." });
         }
 
         private async Task<int> SaveContractToApiAsync()

@@ -180,8 +180,8 @@
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
                                     <button type="button" class="btn-simar-icon"
-                                            onclick="openDetailModal('@contract.Id', '@contract.Client', '@contract.StartDate.ToShortDateString()', '@contract.EndDate.ToShortDateString()', '@contract.Status')"
-                                            title="Ver Detalle">
+                                            onclick="openDetailModal(@contract.DbId)"
+                                            title="Ver Vista Previa">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                     @if (contract.Status == "Activo" || contract.Status == "Pendiente de firma")
@@ -192,9 +192,9 @@
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     }
-                                    <a class="btn-simar-icon" href="#" title="Descargar PDF">
+                                    <button type="button" class="btn-simar-icon" onclick="downloadPdf(@contract.DbId)" title="Descargar PDF">
                                         <i class="bi bi-file-earmark-pdf"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -291,7 +291,7 @@
             </div>
             <div class="modal-footer bg-white border-top-0">
                 <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn-simar-primary">
+                <button type="button" class="btn-simar-primary" id="btnModalDownload" onclick="downloadPdfFromModal()">
                     <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
                 </button>
             </div>
@@ -301,6 +301,9 @@
 
 @section Scripts {
     <script>
+        var currentModalDbId = null;
+        var API_BASE = '@Model.ApiBaseUrl';
+
         function openUpdateModal(id, client, startDate, endDate, status) {
             document.getElementById('modalUpdateError').classList.add('d-none');
 
@@ -335,51 +338,177 @@
             document.getElementById('formUpdate').submit();
         }
 
-        function openDetailModal(id, client, startDate, endDate, status) {
-            const content = `
-                <div class="contract-header">
-                    CONTRATO DE PRESTACIÓN DE SERVICIOS
-                </div>
-
-                <p>
-                    En la ciudad de <strong>Xalapa, Veracruz</strong>, se celebra el contrato entre 
-                    <strong>SIMAR S.A. de C.V.</strong> y <strong>${client}</strong>.
-                </p>
-
-                <p>
-                    <span class="clause-title">PRIMERA. OBJETO</span>
-                    Prestación de servicios profesionales.
-                </p>
-
-                <p>
-                    <span class="clause-title">SEGUNDA. VIGENCIA</span>
-                    Del <strong>${startDate}</strong> al <strong>${endDate}</strong>.
-                </p>
-
-                <p>
-                    <span class="clause-title">TERCERA. ESTATUS</span>
-                    Estado actual: <strong>${status}</strong>.
-                </p>
-
-                <div class="firma-container">
-                    <div>
-                        ___________________________<br/>
-                        EL CLIENTE<br/>
-                        ${client}
-                    </div>
-
-                    <div>
-                        ___________________________<br/>
-                        EL PRESTADOR<br/>
-                        SIMAR S.A. de C.V.
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('contractContent').innerHTML = content;
+        async function openDetailModal(dbId) {
+            currentModalDbId = dbId;
+            var contentDiv = document.getElementById('contractContent');
+            contentDiv.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-success" role="status"></div><p class="mt-3 text-muted">Cargando contrato...</p></div>';
 
             var modal = new bootstrap.Modal(document.getElementById('modalViewContract'));
             modal.show();
+
+            try {
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
+                var response = await fetch(API_BASE + '/api/contracts/' + dbId + '/detail', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('No se pudo cargar el contrato');
+                var c = await response.json();
+
+                var fechaCreacion = new Date(c.createdAt).toLocaleDateString('es-MX');
+                var fechaPrimerServicio = c.firstServiceDate ? new Date(c.firstServiceDate).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Pendiente';
+
+                // Tabla de servicios
+                var servicesRows = '';
+                if (c.services && c.services.length > 0) {
+                    c.services.forEach(function(s) {
+                        servicesRows += '<tr><td>' + esc(s.wasteType) + '</td><td>' + esc(s.wasteUnit) + '</td><td>' + esc(s.frequency) + '</td><td class="text-center">' + s.vehicles + ' / ' + s.technicians + '</td><td>' + esc(s.serviceAddress) + '</td><td>' + esc(s.warehouseAddress) + '</td></tr>';
+                    });
+                } else {
+                    servicesRows = '<tr><td colspan="6" class="text-center text-muted">Sin servicios registrados</td></tr>';
+                }
+
+                // Tabla de pagos
+                var paymentsRows = '';
+                if (c.payments && c.payments.length > 0) {
+                    c.payments.forEach(function(p) {
+                        paymentsRows += '<tr><td>' + esc(p.description) + '</td><td class="text-center">$' + p.amount.toFixed(2) + '</td><td class="text-center">' + new Date(p.paymentDate).toLocaleDateString('es-MX') + '</td></tr>';
+                    });
+                } else {
+                    paymentsRows = '<tr><td colspan="3" class="text-center text-muted">Sin pagos registrados</td></tr>';
+                }
+
+                // Tabla de extras
+                var extrasHtml = '';
+                if (c.extras && c.extras.length > 0) {
+                    var totalExtras = 0;
+                    var extrasRows = '';
+                    c.extras.forEach(function(x) {
+                        var sub = x.unitCost * x.quantity;
+                        totalExtras += sub;
+                        extrasRows += '<tr><td>' + esc(x.description) + '</td><td class="text-center">$' + x.unitCost.toFixed(2) + '</td><td class="text-center">' + x.quantity + '</td><td class="text-center">$' + sub.toFixed(2) + '</td></tr>';
+                    });
+                    extrasHtml = '<div style="page-break-before:always; margin-top:30px;"><div style="background:#000;color:#fff;padding:7px;text-align:center;font-weight:bold;">ANEXO ÚNICO: CATÁLOGO DE SERVICIOS EXTRAORDINARIOS</div><p style="margin-top:10px;">De conformidad con la Cláusula Cuarta, en caso de requerir servicios adicionales a los descritos en las cláusulas operativas, se aplicarán los siguientes costos autorizados:</p><table class="table table-bordered" style="font-size:10pt;"><thead style="background:#e6e6e6;"><tr><th>Descripción</th><th>Costo Unit.</th><th>Cant.</th><th>Subtotal</th></tr></thead><tbody>' + extrasRows + '</tbody><tfoot><tr style="background:#e6e6e6;"><td colspan="3" class="text-end fw-bold">TOTAL:</td><td class="text-center fw-bold">$' + totalExtras.toFixed(2) + '</td></tr></tfoot></table></div>';
+                }
+
+                var html = `
+                    <div style="text-align:right; font-weight:bold; font-size:10pt; margin-bottom:8px;">CONTRATO DE PRESTACIÓN DE SERVICIOS</div>
+
+                    <table class="table table-bordered" style="font-size:9pt;">
+                        <tr style="background:#e6e6e6;"><td colspan="8" class="text-center fw-bold">CONTRATO DE PRESTACIÓN DE SERVICIOS</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">FECHA</td><td colspan="7">[${fechaCreacion}]</td></tr>
+                        <tr style="background:#e6e6e6;"><td colspan="8" class="text-center fw-bold">EL PRESTADOR</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">RAZÓN SOCIAL</td><td colspan="7" class="fw-bold">SISTEMAS EN MANEJO Y ADMINISTRACION DE RESIDUOS S.A. DE C.V.</td></tr>
+                        <tr>
+                            <td style="background:#e6e6e6;" class="fw-bold">CONSTITUTIVA N°</td><td>556</td>
+                            <td style="background:#e6e6e6;" class="fw-bold">FECHA</td><td>23 oct 2008</td>
+                            <td style="background:#e6e6e6;" class="fw-bold">CORREDOR</td><td>N° 08, Veracruz</td>
+                            <td style="background:#e6e6e6;" class="fw-bold">FOLIO</td><td>19779*11</td>
+                        </tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">APODERADO</td><td colspan="3" class="fw-bold text-center">GUSTAVO CRUZ TORRES</td><td style="background:#e6e6e6;" colspan="2" class="fw-bold">IDENTIFICACIÓN</td><td colspan="2">Credencial INE</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">OBJETO SOCIAL</td><td colspan="7">Realizar la recolección de residuos peligrosos y no peligrosos...</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">DOMICILIO</td><td colspan="5">Calle Pípila, N.E. 126, José Cardel, Xalapa, Ver. C.P.:91030</td><td style="background:#e6e6e6;" class="fw-bold">R.F.C.</td><td class="fw-bold">SMA0810239L9</td></tr>
+                        <tr style="background:#e6e6e6;"><td colspan="8" class="text-center fw-bold">"EL CLIENTE"</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">RAZÓN SOCIAL</td><td colspan="7" class="fw-bold">${esc(c.clientName)}</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">APODERADO LEGAL</td><td colspan="7" class="fw-bold">${esc(c.representative)}</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">OBJETO SOCIAL</td><td colspan="7">${esc(c.clientObjetoSocial)}</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">DOMICILIO</td><td colspan="5">Pendiente de captura</td><td style="background:#e6e6e6;" class="fw-bold">R.F.C.</td><td class="fw-bold">${esc(c.clientRfc)}</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">DECLARACIONES</td><td colspan="7">${esc(c.clientDeclaraciones)}</td></tr>
+                    </table>
+
+                    <div style="background:#000; color:#fff; padding:7px; text-align:center; font-weight:bold; margin-top:15px;">CLÁUSULAS</div>
+
+                    <div style="margin-top:10px;">
+                        <p><strong>PRIMERA. - OBJETO Y ALCANCES OPERATIVOS.</strong></p>
+                        <p>En virtud del presente instrumento, <strong>EL PRESTADOR</strong> se obliga a prestar a <strong>EL CLIENTE</strong> el servicio de recolección, transporte y disposición final de residuos, de conformidad con las especificaciones técnicas y operativas detalladas en la siguiente tabla de servicios:</p>
+                        <table class="table table-bordered" style="font-size:9pt;">
+                            <thead style="background:#e6e6e6;"><tr><th>Tipo de Residuo</th><th>Unidad</th><th>Periodicidad</th><th>Veh./Téc.</th><th>Dirección</th><th>Almacén</th></tr></thead>
+                            <tbody>${servicesRows}</tbody>
+                        </table>
+                        <p>Las partes acuerdan que el primer servicio operativo de recolección se llevará a cabo el día <strong>${fechaPrimerServicio}</strong>.</p>
+
+                        <p style="margin-top:15px;"><strong>SEGUNDA. - CONTRAPRESTACIÓN Y CONDICIONES DE PAGO.</strong></p>
+                        <p>Como contraprestación, <strong>EL CLIENTE</strong> pagará a <strong>EL PRESTADOR</strong> la cantidad total de <strong>$${c.totalBasePrice.toFixed(2)} MXN</strong> (más IVA).</p>
+                        <table class="table table-bordered" style="font-size:9pt; max-width:500px; margin:0 auto;">
+                            <thead style="background:#e6e6e6;"><tr><th>Concepto</th><th>Monto (MXN)</th><th>Fecha de Pago</th></tr></thead>
+                            <tbody>${paymentsRows}</tbody>
+                        </table>
+
+                        <p style="margin-top:15px;"><strong>TERCERA. - VIGENCIA.</strong></p>
+                        <p>La vigencia del presente instrumento será de <strong>${esc(c.contractDuration)}</strong>.</p>
+
+                        <p style="margin-top:15px;"><strong>CUARTA. - SERVICIOS EXTRAORDINARIOS.</strong></p>
+                        <p>En caso de servicios adicionales, se aplicarán los costos del <strong>ANEXO ÚNICO</strong>.</p>
+
+                        <p style="margin-top:15px;"><strong>QUINTA. - RESPONSABILIDAD LABORAL Y CONFIDENCIALIDAD.</strong></p>
+                        <p><strong>EL PRESTADOR</strong> será el único responsable de sus empleados. Ambas partes mantendrán confidencialidad por 10 años.</p>
+
+                        <p style="margin-top:15px;"><strong>SEXTA. - JURISDICCIÓN.</strong></p>
+                        <p>Las partes se someten a la jurisdicción de los Tribunales Federales aplicables en los Estados Unidos Mexicanos.</p>
+                    </div>
+
+                    <div style="margin-top:50px; text-align:center;"><strong>LAS PARTES</strong></div>
+                    <div style="display:flex; justify-content:space-around; margin-top:10px; text-align:center;">
+                        <div>
+                            <div style="font-weight:bold; margin-bottom:45px;">EL PRESTADOR</div>
+                            <div style="border-top:1px solid #000; padding-top:5px; width:200px; margin:0 auto;">
+                                <strong>GUSTAVO CRUZ TORRES</strong><br/>
+                                <small>Apoderado Legal SIMAR S.A. de C.V.</small>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-weight:bold; margin-bottom:45px;">EL CLIENTE</div>
+                            <div style="border-top:1px solid #000; padding-top:5px; width:200px; margin:0 auto;">
+                                <strong>${esc(c.representative)}</strong><br/>
+                                <small>Apoderado Legal</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${extrasHtml}
+                `;
+
+                contentDiv.innerHTML = html;
+            } catch (err) {
+                contentDiv.innerHTML = '<div class="text-center p-5 text-danger"><i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i><p class="mt-3">' + err.message + '</p></div>';
+            }
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        async function downloadPdf(dbId) {
+            try {
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+                var response = await fetch(API_BASE + '/api/contracts/' + dbId + '/download', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('Error al descargar');
+                var blob = await response.blob();
+                var disposition = response.headers.get('Content-Disposition');
+                var fileName = 'Contrato.pdf';
+                if (disposition) {
+                    var match = disposition.match(/filename[^;=\n]*=(['"]?)([^'"\n;]*)/i);
+                    if (match && match[2]) fileName = match[2];
+                }
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                link.dataset.loading = 'false';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(function() { URL.revokeObjectURL(link.href); }, 1000);
+            } catch (err) {
+                alert('No se pudo descargar el PDF: ' + err.message);
+            }
+        }
+
+        function downloadPdfFromModal() {
+            if (currentModalDbId) downloadPdf(currentModalDbId);
         }
     </script>
 }

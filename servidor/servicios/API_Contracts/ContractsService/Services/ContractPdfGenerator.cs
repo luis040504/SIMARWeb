@@ -5,10 +5,6 @@ using ContractsService.Models;
 
 namespace ContractsService.Services;
 
-/// <summary>
-/// Genera el PDF del contrato de prestación de servicios replicando
-/// el formato legal de la vista previa del frontend.
-/// </summary>
 public static class ContractPdfGenerator
 {
     private static readonly string GrayBg = "#E6E6E6";
@@ -23,7 +19,6 @@ public static class ContractPdfGenerator
 
         var document = Document.Create(container =>
         {
-            // --- PÁGINA PRINCIPAL ---
             container.Page(page =>
             {
                 page.Size(PageSizes.Letter);
@@ -57,7 +52,6 @@ public static class ContractPdfGenerator
                 });
             });
 
-            // --- PÁGINA ANEXO (solo si hay extras) ---
             if (contract.Extras != null && contract.Extras.Count > 0)
             {
                 container.Page(page =>
@@ -110,20 +104,16 @@ public static class ContractPdfGenerator
                 c.RelativeColumn(12);
             });
 
-            // Título
             CellText(table.Cell().ColumnSpan(8).Element(GrayCell), "CONTRATO DE PRESTACIÓN DE SERVICIOS", 9, bold: true);
 
-            // Fecha
             CellText(table.Cell().Element(GrayLeftCell), "FECHA", 8.5f, bold: true);
             CellText(table.Cell().ColumnSpan(7).Element(DataCell), $"[{contract.CreatedAt:dd/MM/yyyy}]", 8.5f);
 
-            // === EL PRESTADOR ===
             CellText(table.Cell().ColumnSpan(8).Element(GrayCell), "EL PRESTADOR", 8.5f, bold: true);
 
             CellText(table.Cell().Element(GrayLeftCell), "RAZÓN SOCIAL", 8.5f, bold: true);
             CellText(table.Cell().ColumnSpan(7).Element(DataCell), "SISTEMAS EN MANEJO Y ADMINISTRACION DE RESIDUOS S.A. DE C.V.", 8.5f, bold: true);
 
-            // Constitutiva
             CellText(table.Cell().Element(GrayLeftCell), "CONSTITUTIVA NÚMERO", 7.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), "556", 8f);
             CellText(table.Cell().Element(GrayCell), "FECHA", 7.5f, bold: true);
@@ -133,13 +123,11 @@ public static class ContractPdfGenerator
             CellText(table.Cell().Element(GrayCell), "FOLIO MERCANTIL", 7.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), "19779*11", 7.5f);
 
-            // Apoderado
             CellText(table.Cell().Element(GrayLeftCell), "APODERADO", 8.5f, bold: true);
             CellText(table.Cell().ColumnSpan(3).Element(CenterCell), "GUSTAVO CRUZ TORRES", 8.5f, bold: true);
             CellText(table.Cell().ColumnSpan(2).Element(GrayCell), "IDENTIFICACIÓN DEL APODERADO LEGAL", 7f, bold: true);
             CellText(table.Cell().ColumnSpan(2).Element(CenterCell), "Credencial para votar con fotografía expedida por el INE.", 7f);
 
-            // Instrumento
             CellText(table.Cell().Element(GrayLeftCell), "INSTRUMENTO NÚMERO", 7.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), "556", 8f);
             CellText(table.Cell().Element(GrayCell), "FECHA", 7.5f, bold: true);
@@ -149,18 +137,15 @@ public static class ContractPdfGenerator
             CellText(table.Cell().Element(GrayCell), "FOLIO MERCANTIL", 7.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), "19779*11", 7.5f);
 
-            // Objeto Social Prestador
             CellText(table.Cell().Element(GrayLeftCell), "OBJETO SOCIAL", 8.5f, bold: true);
             CellText(table.Cell().ColumnSpan(7).Element(DataCell),
                 "Realizar la recolección de residuos peligrosos y no peligrosos, sea al gobierno federal, estatal o municipal, se tratare de sus órganos centrales o descentralizados así como otra persona física o moral de nacionalidad mexicana o extranjera.", 8f);
 
-            // Domicilio Prestador
             CellText(table.Cell().Element(GrayLeftCell), "DOMICILIO", 8.5f, bold: true);
             CellText(table.Cell().ColumnSpan(5).Element(DataCell), "Calle Pípila, N.E. 126, José Cardel, Xalapa, Ver. C.P. :91030", 8f);
             CellText(table.Cell().Element(GrayCell), "R.F.C.", 8.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), "SMA0810239L9", 8.5f, bold: true);
 
-            // Declaraciones Prestador
             CellText(table.Cell().Element(GrayLeftCell), "DECLARACIONES", 8.5f, bold: true);
             table.Cell().ColumnSpan(7).Element(DataCell).Column(c =>
             {
@@ -171,7 +156,6 @@ public static class ContractPdfGenerator
                 DeclLine(c, "e.", "Es su intención celebrar el presente contrato...");
             });
 
-            // === EL CLIENTE ===
             CellText(table.Cell().ColumnSpan(8).Element(GrayCell), "\"EL CLIENTE\"", 8.5f, bold: true);
 
             CellText(table.Cell().Element(GrayLeftCell), "RAZÓN SOCIAL", 8.5f, bold: true);
@@ -197,7 +181,6 @@ public static class ContractPdfGenerator
     {
         float bs = 9.5f;
 
-        // --- PRIMERA ---
         ClauseTitle(col, "PRIMERA. - OBJETO Y ALCANCES OPERATIVOS.", bs);
         col.Item().PaddingTop(5).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f)).Text(t =>
         {
@@ -220,7 +203,6 @@ public static class ContractPdfGenerator
 
         col.Item().PaddingTop(12);
 
-        // --- SEGUNDA ---
         ClauseTitle(col, "SEGUNDA. - CONTRAPRESTACIÓN Y CONDICIONES DE PAGO.", bs);
         col.Item().PaddingTop(5).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f)).Text(t =>
         {
@@ -250,7 +232,6 @@ public static class ContractPdfGenerator
 
         col.Item().PaddingTop(12);
 
-        // --- TERCERA ---
         ClauseTitle(col, "TERCERA. - VIGENCIA.", bs);
         col.Item().PaddingTop(5).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f)).Text(t =>
         {
@@ -261,7 +242,6 @@ public static class ContractPdfGenerator
 
         col.Item().PaddingTop(12);
 
-        // --- CUARTA ---
         ClauseTitle(col, "CUARTA. - SERVICIOS EXTRAORDINARIOS.", bs);
         col.Item().PaddingTop(5).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f)).Text(t =>
         {
@@ -274,7 +254,6 @@ public static class ContractPdfGenerator
 
         col.Item().PaddingTop(12);
 
-        // --- QUINTA ---
         ClauseTitle(col, "QUINTA. - RESPONSABILIDAD LABORAL Y CONFIDENCIALIDAD.", bs);
         col.Item().PaddingTop(5).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f)).Text(t =>
         {
@@ -284,12 +263,10 @@ public static class ContractPdfGenerator
 
         col.Item().PaddingTop(12);
 
-        // --- SEXTA ---
         ClauseTitle(col, "SEXTA. - JURISDICCIÓN.", bs);
         col.Item().PaddingTop(5).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f))
             .Text("Para la interpretación y cumplimiento del presente Contrato, las partes se someten a la jurisdicción de los Tribunales Federales aplicables en los Estados Unidos Mexicanos, renunciando al fuero que pudiera corresponderles por razón de sus domicilios.");
 
-        // --- Cierre ---
         col.Item().PaddingTop(25).DefaultTextStyle(s => s.FontSize(bs).LineHeight(1.45f)).Text(t =>
         {
             t.Span("Las partes manifiestan que, al elaborar el presente Contrato, su voluntad no se vio influenciada por algún vicio del consentimiento, por lo que, enteradas de su contenido, alcance y fuerza legal, lo suscriben por duplicado el día ");
@@ -297,7 +274,6 @@ public static class ContractPdfGenerator
             t.Span(".");
         });
 
-        // --- Firmas ---
         col.Item().PaddingTop(40);
         BuildSignatureBlock(col, representative);
     }
@@ -430,7 +406,6 @@ public static class ContractPdfGenerator
         });
     }
 
-    // --- HELPERS ---
     private static void CellText(IContainer container, string text, float fontSize, bool bold = false)
     {
         container.DefaultTextStyle(s =>

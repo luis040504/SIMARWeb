@@ -8,9 +8,12 @@ namespace ClienteWeb.Pages.Contracts.Consult
     {
         private readonly HttpClient _httpClient;
 
+        public string ApiBaseUrl { get; private set; } = "";
+
         public ConsultModel(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient("ContractsApi");
+            ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
         }
 
         [BindProperty(SupportsGet = true)]
