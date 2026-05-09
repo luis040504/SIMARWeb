@@ -64,6 +64,25 @@ class ClientService:
     def get_clients_by_name(self, name: str):
         return client_repository.get_clients_by_name(self.db, name)
     
+    def get_active_clients_by_businessName(self, bname: str):
+        return client_repository.get_active_clients_by_businessName(self.db, bname)
+    
+    def get_inactive_clients_by_businessName(self, bname: str):
+        return client_repository.get_inactive_clients_by_businessName(self.db, bname)
+
+    def get_clients_by_businessName(self, bname: str):
+        return client_repository.get_clients_by_businessName(self.db, bname)
+    
+    def get_active_clients_by_rfc(self, rfc: str):
+        return client_repository.get_active_clients_by_rfc(self.db, rfc)
+    
+    def get_inactive_clients_by_rfc(self, rfc: str):
+        return client_repository.get_inactive_clients_by_rfc(self.db, rfc)
+
+    def get_clients_by_rfc(self, rfc: str):
+        return client_repository.get_clients_by_rfc(self.db, rfc)
+    
+
     def search_clients(self, query: str):
         return client_repository.search_clients(self.db, query)
     

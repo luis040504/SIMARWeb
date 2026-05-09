@@ -16,6 +16,8 @@ def get_client_by_user(db: Session, user_id: UUID):
 def create_client(db: Session, client: schemas.ClientCreate):
     db_client = models.Clientes(
         name=client.name,
+        businessName = client.businessName,
+        contactEmail = client.contactEmail,
         phone=client.phone,
         address=client.address,
         rfc=client.rfc,
@@ -37,6 +39,12 @@ def update_client(db: Session, client_id: int, client_update: schemas.ClientUpda
     # Solo actualiza los campos que fueron enviados
     if client_update.name is not None:
         db_client.name = client_update.name
+
+    if client_update.businessName is not None:
+        db_client.businessName = client_update.businessName
+
+    if client_update.contactEmail is not None:
+        db_client.contactEmail = client_update.contactEmail
 
     if client_update.phone is not None:
         db_client.phone = client_update.phone
@@ -101,6 +109,40 @@ def get_clients_by_name(db: Session, name: str):
         models.Clientes.name.ilike(f"%{name}%")
     ).all()
 
+def get_active_clients_by_businessName(db: Session, bname: str):
+    return db.query(models.Clientes).filter(
+        models.Clientes.status == StatusEnum.activo,
+        models.Clientes.businessName.ilike(f"%{bname}%")
+    ).all()
+
+def get_inactive_clients_by_businessName(db: Session, bname: str):
+    return db.query(models.Clientes).filter(
+        models.Clientes.status == StatusEnum.inactivo,
+        models.Clientes.businessName.ilike(f"%{bname}%")
+    ).all()
+
+def get_clients_by_businessName(db: Session, bname: str):
+    return db.query(models.Clientes).filter(
+        models.Clientes.businessName.ilike(f"%{bname}%")
+    ).all()
+
+def get_active_clients_by_rfc(db: Session, rfc: str):
+    return db.query(models.Clientes).filter(
+        models.Clientes.status == StatusEnum.activo,
+        models.Clientes.rfc.ilike(f"%{rfc}%")
+    ).all()
+
+def get_inactive_clients_by_rfc(db: Session, rfc: str):
+    return db.query(models.Clientes).filter(
+        models.Clientes.status == StatusEnum.inactivo,
+        models.Clientes.rfc.ilike(f"%{rfc}%")
+    ).all()
+
+def get_clients_by_rfc(db: Session, rfc: str):
+    return db.query(models.Clientes).filter(
+        models.Clientes.rfc.ilike(f"%{rfc}%")
+    ).all()
+
 
 def get_all_clients(db: Session):
     return db.query(models.Clientes).all()
@@ -112,6 +154,8 @@ def search_clients(db: Session, query: str):
     
     filters = [
         models.Clientes.name.ilike(f"%{query}%"),
+        models.Clientes.businessName.ilike(f"%{query}%"),
+        models.Clientes.contactEmail.ilike(f"%{query}%"),
         models.Clientes.phone.ilike(f"%{query}%"),
         models.Clientes.address.ilike(f"%{query}%"),
         models.Clientes.rfc.ilike(f"%{query}%"),

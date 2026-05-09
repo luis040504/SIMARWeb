@@ -9,10 +9,9 @@
         <div class="col-md-8 col-lg-6">
             <div class="card-simar shadow-lg">
                 <div class="card-simar-header d-flex align-items-center py-3">
-                    <a asp-page="/Index" class="btn-simar-icon me-3 text-decoration-none" title="Volver al listado">
+                    <a href="/consultar" class="btn-simar-icon me-3 text-decoration-none" title="Volver a la consulta">
                         <i class="bi bi-arrow-left"></i>
                     </a>
-
                     <div class="text-start">
                         <h4 class="text-simar-dark mb-0">REGISTRO DE PERSONAL</h4>
                     </div>
@@ -20,7 +19,16 @@
 
                 <div class="card-body p-4 p-md-5">
                     <form method="post" id="registroForm">
+                        @if (!ModelState.IsValid && ModelState.ErrorCount > 0)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                                <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>No se pudo completar el registro</strong>
+                                <div asp-validation-summary="ModelOnly" class="mb-0 mt-1"></div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
 
+                        <!-- Credenciales -->
                         <div id="paso1" class="seccion-paso activa">
                             <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">1. Credenciales de Acceso</h5>
                             <div class="mb-3">
@@ -31,10 +39,12 @@
                             <div class="mb-3">
                                 <label class="form-label-simar" asp-for="Input.UserName">Nombre de Usuario</label>
                                 <input asp-for="Input.UserName" class="form-control-simar" placeholder="Username" />
+                                <span asp-validation-for="Input.UserName" class="text-danger small"></span>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label-simar" asp-for="Input.Password">Contraseña</label>
                                 <input asp-for="Input.Password" type="password" class="form-control-simar" />
+                                <span asp-validation-for="Input.Password" class="text-danger small"></span>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center">
@@ -47,54 +57,69 @@
                             </div>
                         </div>
 
+                        <!-- Información Personal -->
                         <div id="paso2" class="seccion-paso d-none">
                             <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">2. Información Personal</h5>
-
                             <div class="mb-3">
                                 <label class="form-label-simar">Nombre Completo</label>
                                 <input asp-for="Input.NombreCompleto" class="form-control-simar" />
+                                <span asp-validation-for="Input.NombreCompleto" class="text-danger small"></span>
                             </div>
-
                             <div class="row mb-3">
                                 <div class="col-6">
                                     <label class="form-label-simar">CURP</label>
-                                    <input asp-for="Input.Curp" class="form-control-simar" />
+                                    <input asp-for="Input.Curp" class="form-control-simar" maxlength="18" oninput="this.value = this.value.toUpperCase()" />
+                                    <span asp-validation-for="Input.Curp" class="text-danger small"></span>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label-simar">RFC</label>
-                                    <input asp-for="Input.Rfc" class="form-control-simar" />
+                                    <input asp-for="Input.Rfc" class="form-control-simar" maxlength="13" oninput="this.value = this.value.toUpperCase()" />
+                                    <span asp-validation-for="Input.Rfc" class="text-danger small"></span>
                                 </div>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label-simar">Domicilio Completo</label>
                                 <input asp-for="Input.Direccion" class="form-control-simar" />
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="form-label-simar">Fecha de Nacimiento</label>
+                                    <input asp-for="Input.Birthday" type="date" class="form-control-simar"
+                                           max="@DateTime.Now.AddYears(-18).ToString("yyyy-MM-dd")" />
+                                    <span asp-validation-for="Input.Birthday" class="text-danger small"></span>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label-simar">Teléfono</label>
+                                    <input asp-for="Input.Phone" type="tel" class="form-control-simar" placeholder="10 dígitos" maxlength="10" />
+                                    <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                                </div>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-6">
                                     <label class="form-label-simar">Salario Mensual (MXN)</label>
-                                    <input asp-for="Input.Salario" class="form-control-simar" />
+                                    <input asp-for="Input.Salario" type="number" step="0.01" class="form-control-simar" />
+                                    <span asp-validation-for="Input.Salario" class="text-danger small"></span>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label-simar">Género</label>
-                                    <select asp-for="Input.Genero" class="form-select-simar">
+                                    <select asp-for="Input.Genre" class="form-select-simar">
                                         <option value="Masculino">Masculino</option>
                                         <option value="Femenino">Femenino</option>
                                         <option value="Otro">Otro</option>
                                     </select>
                                 </div>
                             </div>
-
                             <div class="mb-4">
                                 <label class="form-label-simar">Rol en SIMAR</label>
                                 <select asp-for="Input.RolSeleccionado" id="selectorRol" class="form-select-simar" onchange="mostrarCamposEspecificos()">
                                     <option value="">-- Seleccionar --</option>
-                                    <option value="Seller">Vendedor</option>
-                                    <option value="Technical">Técnico</option>
-                                    <option value="Driver">Chofer</option>
-                                    <option value="Manager">Gerente</option>
+                                    <option value="vendedor">Vendedor</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="chofer">Chofer</option>
+                                    <option value="administrador">Administrador</option>
                                 </select>
+                                <span asp-validation-for="Input.RolSeleccionado" class="text-danger small"></span>
                             </div>
 
                             <div class="d-flex justify-content-between">
@@ -103,27 +128,30 @@
                             </div>
                         </div>
 
+                        <!-- Detalles Específicos -->
                         <div id="paso3" class="seccion-paso d-none">
-                            <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">3. Detalles Específicos</h5>
-
-                            <div id="camposProfesionales" class="filter-section-simar d-none">
-                                <h6 class="text-simar-dark">Información de Cédula</h6>
-                                <input asp-for="Input.ProfessionalID" class="form-control-simar" placeholder="Ingrese ID Profesional" />
-                            </div>
+                            <h5 class="text-simar-green mb-4 border-bottom-simar pb-2">3. Validación Final</h5>
 
                             <div id="camposDriver" class="filter-section-simar d-none">
-                                <h6 class="text-simar-dark">Licencia de Conducir</h6>
-                                <input asp-for="Input.NumLicencia" class="form-control-simar mb-2" placeholder="Número de licencia" />
-                                <select asp-for="Input.TipoLicencia" class="form-select-simar">
-                                    <option value="A">Tipo A (Auto)</option>
-                                    <option value="B">Tipo B (Carga)</option>
-                                    <option value="E">Tipo E (Residuos Peligrosos)</option>
-                                </select>
+                                <h6 class="text-simar-dark mb-3"><i class="bi bi-card-checklist me-2"></i>Licencia de Conducir</h6>
+                                <div class="mb-3">
+                                    <label class="small text-muted">Número de licencia</label>
+                                    <input asp-for="Input.LicenseNumber" class="form-control-simar" placeholder="Ej. A12345678" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="small text-muted">Tipo de licencia</label>
+                                    <select asp-for="Input.LicenseType" class="form-select-simar">
+                                        <option value="A">Tipo A (Particular)</option>
+                                        <option value="B">Tipo B (Carga)</option>
+                                        <option value="E">Tipo E (Residuos Peligrosos)</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="empty-state-simar py-4" id="noSelection">
-                                <i class="bi bi-info-circle"></i>
-                                <p>Por favor seleccione un rol en el paso anterior para ver los requisitos.</p>
+                                <i class="bi bi-person-check text-success" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Todo listo para registrar</h6>
+                                <p class="small text-muted">Haga clic en Finalizar para completar el proceso.</p>
                             </div>
 
                             <div class="d-flex justify-content-between mt-5">
@@ -131,7 +159,6 @@
                                 <button type="submit" class="btn-simar-primary">Finalizar Registro <i class="bi bi-check-all"></i></button>
                             </div>
                         </div>
-
                     </form>
                 </div>
             </div>
@@ -139,32 +166,45 @@
     </div>
 </div>
 
-<script>
-    function irAPaso(paso) {
-        document.querySelectorAll('.seccion-paso').forEach(s => s.classList.add('d-none'));
-        document.getElementById('paso' + paso).classList.remove('d-none');
-        window.scrollTo(0,0);
-    }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function irAPaso(paso) {
+            if (paso > 1) {
+                const step1Valid = $('#Input_Email').valid() && $('#Input_UserName').valid() && $('#Input_Password').valid();
+                if (paso === 2 && !step1Valid) return;
 
-    function mostrarCamposEspecificos() {
-        const rol = document.getElementById('selectorRol').value;
-        const listaProfesionales = ["Seller", "Technical", "Manager", "Owner", "Accountant"];
+                if (paso === 3) {
+                   const step2Valid = $('#Input_NombreCompleto').valid() &&
+                                      $('#Input_Curp').valid() &&
+                                      $('#Input_Rfc').valid() &&
+                                      $('#Input_Birthday').valid() &&
+                                      $('#Input_Phone').valid() &&
+                                      $('#Input_Salario').valid() &&
+                                      $('#selectorRol').valid();
 
-        const divProf = document.getElementById('camposProfesionales');
-        const divDriver = document.getElementById('camposDriver');
-        const noSelection = document.getElementById('noSelection');
+                   if(!step2Valid) return;
+                }
+            }
 
-        // Reset
-        divProf.classList.add('d-none');
-        divDriver.classList.add('d-none');
-        noSelection.classList.add('d-none');
-
-        if (listaProfesionales.includes(rol)) {
-            divProf.classList.remove('d-none');
-        } else if (rol === "Driver") {
-            divDriver.classList.remove('d-none');
-        } else {
-            noSelection.classList.remove('d-none');
+            document.querySelectorAll('.seccion-paso').forEach(s => s.classList.add('d-none'));
+            document.getElementById('paso' + paso).classList.remove('d-none');
+            window.scrollTo(0,0);
         }
-    }
-</script>
+
+        function mostrarCamposEspecificos() {
+            const rol = document.getElementById('selectorRol').value;
+            const divDriver = document.getElementById('camposDriver');
+            const noSelection = document.getElementById('noSelection');
+
+            divDriver.classList.add('d-none');
+            noSelection.classList.add('d-none');
+
+            if (rol === "chofer") {
+                divDriver.classList.remove('d-none');
+            } else {
+                noSelection.classList.remove('d-none');
+            }
+        }
+    </script>
+}

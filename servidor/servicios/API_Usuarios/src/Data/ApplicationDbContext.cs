@@ -14,12 +14,13 @@ namespace API_Usuarios.src.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.HasPostgresEnum<RoleEnum>("role_enum");
 
             modelBuilder.Entity<Usuario>(entity =>
             {
                 entity.Property(u => u.Role)
                 .HasColumnName("role")
-                .HasColumnType("character varying"); 
+                .HasColumnType("role_enum");
             });
         }
     }

@@ -1,4 +1,6 @@
 using API_Empleados.src.Data;
+// 1. --- AGREGA ESTA LÍNEA PARA LOS SERVICIOS ---
+using API_Empleados.src.Services; 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -35,9 +37,10 @@ builder.Services.AddAuthentication(config =>
     };
 });
 
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<EmployeeService>();
 
 builder.Services.AddCors(options =>
 {

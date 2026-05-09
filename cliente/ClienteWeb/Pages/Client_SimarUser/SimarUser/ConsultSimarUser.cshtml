@@ -32,10 +32,10 @@
                 <label class="form-label-simar">Filtrar por Rol</label>
                 <select id="rolFiltro" class="form-select-simar" onchange="filtrarTabla()">
                     <option value="">-- Todos los Roles --</option>
-                    <option value="Seller">Vendedor</option>
-                    <option value="Technical">Técnico</option>
-                    <option value="Driver">Chofer</option>
-                    <option value="Owner">Dueño</option>
+                    <option value="vendedor">Vendedor</option>
+                    <option value="tecnico">Técnico</option>
+                    <option value="chofer">Chofer</option>
+                    <option value="administrador">Administrador</option>
                 </select>
             </div>
         </div>
@@ -45,37 +45,77 @@
         <table class="table-simar" id="tablaUsuarios">
             <thead>
                 <tr>
-                    <th>Usuario</th>
-                    <th>Nombre Completo</th>
+                    <th>Empleado y Correo</th>
                     <th>Rol / Puesto</th>
                     <th>CURP / RFC</th>
+                    <th>Contacto</th>
                     <th>Salario (MXN)</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="fw-bold">Admin_Simar</td>
-                    <td>Luis Enrique López</td>
-                    <td><span class="badge-simar badge-simar-vehiculo">Owner</span></td>
-                    <td>
-                        <div class="small text-muted">C: LOAL88053662</div>
-                        <div class="small text-muted">R: RFC-9988</div>
-                    </td>
-                    <td class="fw-bold">$25,000</td>
-                    <td class="text-center">
-                        <div class="d-flex justify-content-center gap-2">
-                            <button class="btn-simar-icon"
-                                    onclick="prepararEdicion('Admin_Simar', 'luis@simar.com', 'Luis Enrique López', 'Masculino', 'LOAL880536', 'RFC-9988', 'Av. Siempre Viva 123', 'Owner', 25000, 'CEDULA123', '')"
-                                    title="Ver Expediente">
-                                <i class="bi bi-file-earmark-person"></i>
-                            </button>
-                            <button class="btn-simar-icon text-danger" onclick="confirmarBaja('Admin_Simar')" title="Dar de baja">
-                                <i class="bi bi-person-x"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+                @if (Model.EmpleadosCompletos != null && Model.EmpleadosCompletos.Any())
+                {
+                    @foreach (var emp in Model.EmpleadosCompletos)
+                    {
+                        string iconoRol = "bi-person-badge";
+                        string rolBuscado = emp.RoleName?.ToLower() ?? "";
+
+                        if (rolBuscado.Contains("chofer")) iconoRol = "bi-truck";
+                        else if (rolBuscado.Contains("vend")) iconoRol = "bi-shop";
+                        else if (rolBuscado.Contains("tec")) iconoRol = "bi-tools";
+                        else if (rolBuscado.Contains("admin") || rolBuscado.Contains("dueño")) iconoRol = "bi-shield-lock-fill";
+                        else if (rolBuscado.Contains("conta")) iconoRol = "bi-calculator";
+
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-simar-dark">@emp.FullName</div>
+                                <div class="small text-muted"><i class="bi bi-envelope"></i> @emp.Email</div>
+                                <span class="d-none">@emp.Username</span>
+                            </td>
+
+                            <td>
+                                <span class="badge-simar badge-simar-vehiculo">
+                                    <i class="bi @iconoRol me-1"></i> @emp.RoleName.ToUpper()
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="small fw-semibold text-secondary">C: @emp.Curp</div>
+                                <div class="small text-muted">R: @emp.Rfc</div>
+                            </td>
+
+                            <td>
+                                <div class="small text-muted"><i class="bi bi-telephone"></i> @(emp.Phone ?? "N/A")</div>
+                                <div class="small text-muted"><i class="bi bi-geo-alt"></i> @(emp.Address ?? "N/A")</div>
+                            </td>
+
+                            <td class="fw-bold text-success">@emp.Salary.ToString("C")</td>
+
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn-simar-icon"
+                                            onclick="prepararEdicion('@emp.UserId', '@emp.Username', '@emp.Email', '@emp.FullName', '@emp.Genre', '@emp.Curp', '@emp.Rfc', '@emp.Address', '@emp.Phone', '@(emp.Birthday?.ToString("yyyy-MM-dd"))', '@emp.RoleName', @emp.Salary, '', '')"
+                                            title="Ver Expediente">
+                                        <i class="bi bi-file-earmark-person"></i>
+                                    </button>
+                                    <button class="btn-simar-icon text-danger" onclick="confirmarBaja('@emp.UserId', '@emp.FullName')" title="Dar de baja">
+                                        <i class="bi bi-person-x"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            No hay empleados registrados en el sistema.
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
@@ -128,7 +168,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-simar">Correo Electrónico</label>
-                                <input type="email" id="editEmail" class="form-control-simar" />
+                                <input type="email" id="editEmail" class="form-control-simar bg-light" readonly />
                             </div>
                         </div>
 
@@ -148,11 +188,19 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-simar">CURP</label>
-                                <input type="text" id="editCurp" class="form-control-simar" />
+                                <input type="text" id="editCurp" class="form-control-simar bg-light" maxlength="18" readonly />
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-simar">RFC</label>
-                                <input type="text" id="editRfc" class="form-control-simar" />
+                                <input type="text" id="editRfc" class="form-control-simar bg-light" maxlength="13" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-simar">Fecha de Nacimiento</label>
+                                <input type="date" id="editBirthday" class="form-control-simar" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-simar">Teléfono</label>
+                                <input type="tel" id="editPhone" class="form-control-simar" />
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label-simar">Domicilio</label>
@@ -164,27 +212,33 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label-simar">Rol en SIMAR</label>
-                                <select id="editRol" class="form-select-simar" onchange="actualizarCamposDinamicosEdit()">
-                                    <option value="Seller">Seller</option>
-                                    <option value="Technical">Technical</option>
-                                    <option value="Driver">Driver</option>
-                                    <option value="Manager">Manager</option>
-                                    <option value="Owner">Owner</option>
-                                    <option value="Accountant">Accountant</option>
+                                <select id="editRol" class="form-select-simar bg-light" disabled>
+                                    <option value="vendedor">Vendedor</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="chofer">Chofer</option>
+                                    <option value="administrador">Administrador</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-simar">Salario Mensual ($ MXN)</label>
-                                <input type="number" id="editSalario" class="form-control-simar" />
+                                <input type="number" step="0.01" id="editSalario" class="form-control-simar" />
                             </div>
 
-                            <div class="col-12 d-none" id="divEditProf">
-                                <label class="form-label-simar text-simar-green fw-bold">ID Profesional (Cédula)</label>
-                                <input type="text" id="editProfessionalID" class="form-control-simar border-success" />
-                            </div>
                             <div class="col-12 d-none" id="divEditDriver">
-                                <label class="form-label-simar text-warning fw-bold">Número de Licencia</label>
-                                <input type="text" id="editNumLicencia" class="form-control-simar border-warning" />
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label-simar text-warning fw-bold">Número de Licencia</label>
+                                        <input type="text" id="editNumLicencia" class="form-control-simar border-warning" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label-simar text-warning fw-bold">Tipo de Licencia</label>
+                                        <select id="editTipoLicencia" class="form-select-simar border-warning">
+                                            <option value="A">Tipo A</option>
+                                            <option value="B">Tipo B</option>
+                                            <option value="E">Tipo E</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -200,87 +254,141 @@
     </div>
 </div>
 
-<script>
-    // FILTRADO
-    function filtrarTabla() {
-        const busqueda = document.getElementById('busquedaInput').value.toLowerCase();
-        const rolSeleccionado = document.getElementById('rolFiltro').value.toLowerCase();
-        const filas = document.querySelector('#tablaUsuarios tbody').getElementsByTagName('tr');
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // FILTRADO
+        function filtrarTabla() {
+            const busqueda = document.getElementById('busquedaInput').value.toLowerCase();
+            const rolSeleccionado = document.getElementById('rolFiltro').value.toLowerCase();
+            const filas = document.querySelector('#tablaUsuarios tbody').getElementsByTagName('tr');
 
-        for (let fila of filas) {
-            const username = fila.cells[0].textContent.toLowerCase();
-            const nombre = fila.cells[1].textContent.toLowerCase();
-            const rol = fila.cells[2].textContent.toLowerCase();
-            const coincideBusqueda = username.includes(busqueda) || nombre.includes(busqueda);
-            const coincideRol = rolSeleccionado === "" || rol.includes(rolSeleccionado);
-            fila.style.display = (coincideBusqueda && coincideRol) ? "" : "none";
+            for (let fila of filas) {
+                if(fila.cells.length < 2) continue;
+
+                const informacionPrincipal = fila.cells[0].textContent.toLowerCase();
+                const rol = fila.cells[1].textContent.toLowerCase();
+
+                const coincideBusqueda = informacionPrincipal.includes(busqueda);
+                const coincideRol = rolSeleccionado === "" || rol.includes(rolSeleccionado);
+
+                fila.style.display = (coincideBusqueda && coincideRol) ? "" : "none";
+            }
         }
-    }
 
-    // Modal de edicion
-    function prepararEdicion(username, email, nombre, genero, curp, rfc, direccion, rol, salario, profId, numLic) {
-        document.getElementById('txtUsuarioTitulo').textContent = username;
-        document.getElementById('editUsername').value = username;
-        document.getElementById('editEmail').value = email;
-        document.getElementById('editNombre').value = nombre;
-        document.getElementById('editGenero').value = genero;
-        document.getElementById('editCurp').value = curp;
-        document.getElementById('editRfc').value = rfc;
-        document.getElementById('editDireccion').value = direccion;
-        document.getElementById('editRol').value = rol;
-        document.getElementById('editSalario').value = salario;
-        document.getElementById('editProfessionalID').value = profId || "";
-        document.getElementById('editNumLicencia').value = numLic || "";
+        let idUsuarioParaEditar = ""; 
 
-        desactivarCampos();
-        actualizarCamposDinamicosEdit();
+        function prepararEdicion(id, username, email, nombre, genero, curp, rfc, direccion, phone, birthday, rol, salario, numLic, tipoLic) 
+        {
+            idUsuarioParaEditar = id;
 
-        var modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
-        modal.show();
-    }
+            document.getElementById('txtUsuarioTitulo').textContent = username;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editNombre').value = nombre;
+            document.getElementById('editGenero').value = genero || "Otro";
+            document.getElementById('editCurp').value = curp;
+            document.getElementById('editRfc').value = rfc;
+            document.getElementById('editDireccion').value = direccion || "";
+            document.getElementById('editPhone').value = phone || "";
+            document.getElementById('editBirthday').value = birthday || "";
+            document.getElementById('editRol').value = rol.toLowerCase();
+            document.getElementById('editSalario').value = salario;
+            document.getElementById('editNumLicencia').value = numLic || "";
+            document.getElementById('editTipoLicencia').value = tipoLic || "A";
 
-    function actualizarCamposDinamicosEdit() {
-        const rol = document.getElementById('editRol').value;
-        const listaProf = ["Seller", "Technical", "Manager", "Owner", "Accountant"];
+            desactivarCampos();
+            actualizarCamposDinamicosEdit();
 
-        const divProf = document.getElementById('divEditProf');
-        const divDriver = document.getElementById('divEditDriver');
+            var modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
+            modal.show();
+        }
 
-        divProf.classList.toggle('d-none', !listaProf.includes(rol));
-        divDriver.classList.toggle('d-none', rol !== "Driver");
-    }
+        document.getElementById('formEditar').addEventListener('submit', async function (e) {
+            e.preventDefault(); 
 
-    function activarCampos() {
-        document.getElementById('formCampos').disabled = false;
-        document.getElementById('btnHabilitarEdicion').classList.add('d-none');
-        document.getElementById('footerGuardar').classList.remove('d-none');
-    }
+            const datosActualizados = {
+                fullName: document.getElementById('editNombre').value,
+                address: document.getElementById('editDireccion').value,
+                phone: document.getElementById('editPhone').value,
+                genre: document.getElementById('editGenero').value,
+                salary: parseFloat(document.getElementById('editSalario').value),
+                licenseNumber: document.getElementById('editNumLicencia').value || null
+            };
 
-    function desactivarCampos() {
-        document.getElementById('formCampos').disabled = true;
-        document.getElementById('btnHabilitarEdicion').classList.remove('d-none');
-        document.getElementById('footerGuardar').classList.add('d-none');
-    }
+            try {
+                const url = `http://localhost:8008/api/employees/${idUsuarioParaEditar}`;
 
-    function toggleCamposEspeciales() {
-        const rol = document.getElementById('editRol').value;
-        const divLicencia = document.getElementById('divEditLicencia');
-        divLicencia.classList.toggle('d-none', rol !== "Driver");
-    }
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosActualizados)
+                });
 
-    // Desactivar
-    let usuarioParaBaja = "";
-    function confirmarBaja(usuario) {
-        usuarioParaBaja = usuario;
-        document.getElementById('nombreUsuarioBaja').textContent = usuario;
-        new bootstrap.Modal(document.getElementById('modalBaja')).show();
-    }
+                if (response.ok) {
+                    Swal.fire('¡Éxito!', 'Los datos del empleado han sido actualizados.', 'success')
+                        .then(() => location.reload());
+                } else {
+                    const errorData = await response.json();
+                    Swal.fire('Error', errorData.mensaje || 'No se pudo actualizar la información.', 'error');
+                }
+            } catch (error) {
+                console.error("Error en la petición:", error);
+                Swal.fire('Error de Conexión', 'No se pudo contactar con el servidor.', 'error');
+            }
+        });
 
-    function ejecutarBaja() {
-        alert("Usuario " + usuarioParaBaja + " desactivado.");
-        location.reload();
-    }
-</script>
+        function actualizarCamposDinamicosEdit() {
+            const rol = document.getElementById('editRol').value;
+            const divDriver = document.getElementById('divEditDriver');
+            divDriver.classList.toggle('d-none', rol !== "chofer");
+        }
+
+        function activarCampos() {
+            document.getElementById('formCampos').disabled = false;
+            document.getElementById('btnHabilitarEdicion').classList.add('d-none');
+            document.getElementById('footerGuardar').classList.remove('d-none');
+        }
+
+        function desactivarCampos() {
+            document.getElementById('formCampos').disabled = true;
+            document.getElementById('btnHabilitarEdicion').classList.remove('d-none');
+            document.getElementById('footerGuardar').classList.add('d-none');
+        }
+
+        // --- Baja empleado ---
+        let idUsuarioParaBaja = "";
+        let nombreUsuarioParaBaja = "";
+
+        function confirmarBaja(id, nombre) {
+            idUsuarioParaBaja = id;
+            nombreUsuarioParaBaja = nombre;
+            document.getElementById('nombreUsuarioBaja').textContent = nombre;
+            new bootstrap.Modal(document.getElementById('modalBaja')).show();
+        }
+
+        async function ejecutarBaja() {
+            bootstrap.Modal.getInstance(document.getElementById('modalBaja')).hide();
+
+            try {
+                const url = `http://localhost:8008/api/employees/${idUsuarioParaBaja}/status?newState=0`;
+                const response = await fetch(url, { method: 'PATCH' });
+
+                if (response.ok) {
+                    Swal.fire('¡Baja Exitosa!', `El empleado ${nombreUsuarioParaBaja} fue desactivado.`, 'success')
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('Error', 'No se pudo desactivar al empleado. Verifica la consola.', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error de Conexión', 'No se pudo contactar con el microservicio.', 'error');
+            }
+        }
+    </script>
+}
 
 @section Styles {
     <style>

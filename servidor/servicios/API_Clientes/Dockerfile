@@ -18,8 +18,8 @@ COPY ./alembic.ini .
 COPY ./alembic ./alembic
 
 # Expose the port the app runs on
-EXPOSE 8002
+EXPOSE 8005
 
 # Define the command to run the application
 # We will override this with 'command:' in docker-compose to run the migration first
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8005"]

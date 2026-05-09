@@ -147,6 +147,55 @@ def get_clients_by_name(
     return client_service.get_clients_by_name(name)
 
 
+@app.get("/client/active/businessname/{bname}", response_model=list[client_schemas.Client])
+def get_active_clients_by_businessName(
+    bname: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_active_clients_by_businessName(bname)
+
+
+@app.get("/client/inactive/businessname/{bname}", response_model=list[client_schemas.Client])
+def get_inactive_clients_by_businessName(
+    bname: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_inactive_clients_by_businessName(bname)
+
+
+@app.get("/client/businessname/{bname}", response_model=list[client_schemas.Client])
+def get_clients_by_businessName(
+    bname: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_clients_by_businessName(bname)
+
+
+@app.get("/client/active/rfc/{rfc}", response_model=list[client_schemas.Client])
+def get_active_clients_by_rfc(
+    rfc: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_active_clients_by_rfc(rfc)
+
+
+@app.get("/client/inactive/rfc/{rfc}", response_model=list[client_schemas.Client])
+def get_inactive_clients_by_rfc(
+    rfc: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_inactive_clients_by_rfc(rfc)
+
+
+@app.get("/client/rfc/{rfc}", response_model=list[client_schemas.Client])
+def get_clients_by_rfc(
+    rfc: str,
+    client_service: ClientService = Depends(get_client_service)
+):
+    return client_service.get_clients_by_rfc(rfc)
+
+
+
 @app.post("/client/id/{client_id}/certificate", response_model=client_schemas.Client)
 async def upload_sat_certificate(
     client_id: int,
@@ -157,8 +206,9 @@ async def upload_sat_certificate(
     # 1) Verificar existencia
     client = client_service.get_client_by_id(client_id)
 
-    # 2) Validar tipo de archivo
+    # 2) Validar tipo MIME
     allowed_types = ["application/pdf", "application/xml"]
+
     if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=400,
@@ -167,36 +217,85 @@ async def upload_sat_certificate(
 
     # 3) Generar nombre único
     _, ext = os.path.splitext(file.filename)
+
     if not ext:
         ext = ".pdf"
+
+    ext = ext.lower()
 
     filename = f"{uuid.uuid4().hex}{ext}"
     save_path = STATIC_CLIENTS_DIR / filename
 
-    # 4) Guardar archivo
+    # 4) Leer archivo
     try:
         content = await file.read()
-        save_path.write_bytes(content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error reading file: {e}"
+        )
 
-    # 5) (Opcional) borrar anterior
+    # 5) Validar tamaño
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File exceeds maximum size of 5MB"
+        )
+
+    # 6) Validar contenido real
+    if ext == ".pdf":
+        if not content.startswith(b"%PDF"):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid PDF file"
+            )
+
+    elif ext == ".xml":
+        stripped = content.lstrip()
+
+        if not (
+            stripped.startswith(b"<?xml") or
+            stripped.startswith(b"<")
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid XML file"
+            )
+
+    # 7) Borrar archivo anterior
     try:
         old_file = client.urlSatCertificate
+
         if old_file:
             old_filename = old_file.split("/")[-1]
-            old_path = STATIC_CLIENTS_DIR / old_file
+            old_path = STATIC_CLIENTS_DIR / old_filename
+
             if old_path.exists() and old_filename != filename:
                 old_path.unlink()
+
     except Exception:
         pass
 
-    # 6) Guardar path
+    # 8) Guardar archivo
+    try:
+        save_path.write_bytes(content)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error saving file: {e}"
+        )
+
+    # 9) Guardar path en BD
     file_path = f"/static/clientes/{filename}"
 
     updated_client = client_service.update_client(
         client_id,
-        client_schemas.ClientUpdate(urlSatCertificate=file_path)
+        client_schemas.ClientUpdate(
+            urlSatCertificate=file_path
+        )
     )
 
     return updated_client
