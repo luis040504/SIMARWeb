@@ -102,6 +102,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
         }
     }
 
+    // Clases auxiliares para mapear la respuesta de la API
     public class Contract
     {
         public int DbId { get; set; }

@@ -19,6 +19,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
         [BindProperty] public int QuotationId { get; set; }
         public List<QuotationListItem> Quotations { get; set; } = new();
 
+        // DATOS DEL CLIENTE Y PORTADA LEGAL
         [BindProperty] public string BusinessName { get; set; } = "";
         [BindProperty] public string RFC { get; set; } = "";
         [BindProperty] public string Address { get; set; } = "";
