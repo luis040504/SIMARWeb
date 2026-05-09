@@ -69,3 +69,44 @@ INSERT INTO roles (name_role, description, permissions) VALUES
     '["routes.view", "delivery.update", "personal.view"]'
 )
 ON CONFLICT (name_role) DO NOTHING;
+
+
+DO $$ 
+DECLARE 
+    role_id_admin UUID;
+BEGIN
+    SELECT id_role INTO role_id_admin FROM roles WHERE name_role = 'administrador';
+
+    INSERT INTO employees (
+        user_id, 
+        professional_id, 
+        full_name, 
+        address, 
+        birthday, 
+        curp, 
+        rfc, 
+        phone, 
+        genre, 
+        salary, 
+        state, 
+        id_role
+    )
+    VALUES (
+        '00000000-0000-0000-0000-000000000001', 
+        'EMP-001',                            
+        'Administrador Root SIMAR',           
+        'Av. Principal No. 123, Col. Centro',  
+        '1990-01-01',                         
+        'ROOT000000HDFRRR01',                 
+        'ROOT000000AA1',                      
+        '2281000000',                         
+        'Masculino',                          
+        75000.00,                             
+        1,                                    
+        role_id_admin                         
+    ) ON CONFLICT (user_id) DO NOTHING;
+
+    -- Nota: Al ser administrador, no necesita registro en driver_details 
+    -- a menos que también fuera a manejar vehículos.
+
+END $$;
