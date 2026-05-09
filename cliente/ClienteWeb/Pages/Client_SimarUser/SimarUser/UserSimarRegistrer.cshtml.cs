@@ -108,7 +108,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.SimarUser
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["Mensaje"] = "Empleado registrado con éxito.";
-                    return RedirectToPage("/consultar");
+                    return RedirectToPage("/Index");
                 }
 
                 // === Validacion Duplicados ===
