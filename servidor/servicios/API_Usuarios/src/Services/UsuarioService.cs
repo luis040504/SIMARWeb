@@ -147,7 +147,8 @@ namespace API_Usuarios.src.Services
 
             usuario.Username = dto.Username;
             usuario.Email = dto.Email;
-    
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
             // Actualizamos el rol si viene en el DTO
             if (!string.IsNullOrEmpty(dto.Role))
             {

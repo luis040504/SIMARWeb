@@ -356,7 +356,9 @@
             </div>
 
             <!-- FORM -->
-            <form id="registroForm" enctype="multipart/form-data">
+            <form method="post" id="registroForm" enctype="multipart/form-data">
+
+                @Html.AntiForgeryToken()
 
                 <!-- BODY -->
                 <div class="modal-body">
@@ -640,44 +642,45 @@
 
 
 <script>
+
     async function registrarCliente() {
 
-        const form = document.getElementById("registroForm");
+        const fileInput = document.getElementById("regCertificado");
+        const file = fileInput.files[0];
 
-        const userData = {
+        const data = {
             Email: document.getElementById("regEmail").value,
-            Username: document.getElementById("regUsername").value,
+            UserName: document.getElementById("regUsername").value,
             Password: document.getElementById("regPassword").value,
-            Role: "Cliente"
-        };
+            Role: "cliente",
 
-        const clientData = {
-            name: document.getElementById("regNombre").value,
-            businessName: document.getElementById("regRazonSocial").value,
-            contactEmail: document.getElementById("regEmailContacto").value,
-            phone: document.getElementById("regTelefono").value,
-            address: document.getElementById("regDireccion").value,
-            rfc: document.getElementById("regRFC").value,
-            semarnatNum: document.getElementById("regSemarnat").value
+            Name: document.getElementById("regNombre").value,
+            BusinessName: document.getElementById("regRazonSocial").value,
+            ContactEmail: document.getElementById("regEmailContacto").value,
+            Phone: document.getElementById("regTelefono").value,
+            Address: document.getElementById("regDireccion").value,
+            RFC: document.getElementById("regRFC").value,
+            SemarnatNum: document.getElementById("regSemarnat").value
         };
-
-        const file = document.getElementById("regCertificado").files[0];
 
         try {
 
-            // 🔥 1. REGISTRAR TODO (usuario + cliente)
+            // 🔥 DESACTIVA botón mientras carga (evita doble submit)
+            const btn = document.querySelector("#registroForm button[type='submit']");
+            if (btn) btn.disabled = true;
+
+            // 🔥 1. REGISTRO COMPLETO EN RAZOR HANDLER
             const response = await fetch("?handler=RegistrarCliente", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    user: userData,
-                    client: clientData
-                })
+                body: JSON.stringify(data)
             });
 
             const result = await response.json();
+
+            console.log("RESPUESTA:", result);
 
             if (result.expired) {
                 alert("Sesión expirada");
@@ -686,27 +689,27 @@
             }
 
             if (!result.success) {
-                alert(result.message || "Error al registrar");
+                alert(result.message || "Error al registrar cliente");
+                if (btn) btn.disabled = false;
                 return;
             }
 
             const clientId = result.clientId;
 
-            // 🔥 2. SUBIR CERTIFICADO (si existe)
+            // 🔥 2. SUBIR CERTIFICADO SI EXISTE
             if (file) {
 
                 const formData = new FormData();
                 formData.append("file", file);
 
-                const certResponse = await fetch(
-                    `?handler=SubirCertificado&id=${clientId}`,
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
+                const certResponse = await fetch(`?handler=SubirCertificado&id=${clientId}`, {
+                    method: "POST",
+                    body: formData
+                });
 
                 const certResult = await certResponse.json();
+
+                console.log("CERT:", certResult);
 
                 if (!certResult.success) {
                     alert("Cliente creado, pero falló el certificado");
@@ -715,15 +718,21 @@
                 }
             }
 
+            // 🔥 3. ÉXITO
             alert("Cliente registrado correctamente");
 
             location.reload();
 
         } catch (error) {
-            console.error(error);
-            alert("Error inesperado");
+            console.error("ERROR REGISTRO:", error);
+            alert("Error inesperado al registrar cliente");
+
+        } finally {
+            const btn = document.querySelector("#registroForm button[type='submit']");
+            if (btn) btn.disabled = false;
         }
     }
+
 </script>
 
 <script>

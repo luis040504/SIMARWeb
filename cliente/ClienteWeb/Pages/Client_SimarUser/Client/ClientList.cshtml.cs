@@ -75,7 +75,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         //  REGISTRAR NUEVO CLIENTE
         // =========================================
 
-        public async Task<IActionResult> OnPostRegistrarClienteAsync([FromBody] RegisterClientInput input)
+        public async Task<IActionResult> OnPostRegistrarClienteAsync(RegisterClientInput input)
         {
             try
             {
@@ -102,7 +102,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                 };
 
                 var userResponse = await _usuariosApi.PostAsJsonAsync(
-                    "/api/usuarios/registro-completo",
+                    "/api/usuarios/registro-simple",
                     userData
                 );
 
