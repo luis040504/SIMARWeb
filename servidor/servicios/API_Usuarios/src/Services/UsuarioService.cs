@@ -111,5 +111,73 @@ namespace API_Usuarios.src.Services
             .FirstOrDefaultAsync();
             return usuarioId == Guid.Empty ? null : usuarioId;
         }
+
+        // 1. Registro Simple: Solo datos de la DB de usuarios y devuelve el ID
+        public async Task<Guid> RegistrarUsuarioSimpleAsync(UsuarioRegistroSimpleDto dto)
+        {
+            // Creamos la entidad Usuario con los datos mínimos
+            var nuevoUsuario = new Usuario
+            {
+                IdUser = Guid.NewGuid(),
+                Username = dto.Username,
+                Email = dto.Email,
+                // Hasheamos la contraseña antes de guardar
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                // Convertimos el string del DTO al Enum de la base de datos
+                Role = Enum.TryParse<RoleEnum>(dto.Role.ToLower(), out var roleResult) 
+                ? roleResult 
+                : RoleEnum.cliente, // Por defecto si falla el parse
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.Usuarios.Add(nuevoUsuario);
+            await _context.SaveChangesAsync();
+
+            return nuevoUsuario.IdUser; // Retornamos el GUID recién generado
+        }
+
+        // 2. Modificar información del usuario
+        public async Task<bool> ActualizarUsuarioAsync(Guid id, UsuarioUpdateDto dto)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+    
+            if (usuario == null) return false; // Si no existe, avisamos al controlador
+
+            usuario.Username = dto.Username;
+            usuario.Email = dto.Email;
+    
+            // Actualizamos el rol si viene en el DTO
+            if (!string.IsNullOrEmpty(dto.Role))
+            {
+                usuario.Role = Enum.TryParse<RoleEnum>(dto.Role.ToLower(), out var roleResult) 
+                ? roleResult 
+                : usuario.Role;
+            }
+
+            usuario.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // 3. Consultar un usuario por su ID
+        public async Task<UsuarioSimpleResponseDto?> ObtenerPorIdAsync(Guid id)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+    
+            if (usuario == null) return null;
+
+            return new UsuarioSimpleResponseDto
+            {
+                IdUser = usuario.IdUser,
+                Username = usuario.Username,
+                Email = usuario.Email,
+                Role = usuario.Role.ToString(),
+                IsActive = usuario.IsActive,
+                CreatedAt = usuario.CreatedAt
+            };
+        }
     }
 }

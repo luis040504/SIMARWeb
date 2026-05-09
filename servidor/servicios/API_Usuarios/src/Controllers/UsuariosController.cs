@@ -66,6 +66,56 @@ namespace API_Usuarios.src.Controllers
             return NotFound(new { mensaje = "Usuario no encontrado" });
         }
         return Ok(new { id_user = id });
+        }
+
+        // Registro solo lo de usuario
+        // POST: api/usuarios/registro-simple
+        [HttpPost("registro-simple")]
+        public async Task<IActionResult> RegistroSimple([FromBody] UsuarioRegistroSimpleDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        try
+        {
+            var id = await _usuarioService.RegistrarUsuarioSimpleAsync(dto);
+            return Ok(new { id_user = id });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { mensaje = "Error al registrar usuario", detalle = ex.Message });
+        }
+    }
+
+    // Consultar por id
+    // GET: api/usuarios/{id}
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUsuarioPorId(Guid id)
+    {
+        var usuarioDto = await _usuarioService.ObtenerPorIdAsync(id);
+
+        if (usuarioDto == null)
+        {
+            return NotFound(new { mensaje = "Usuario no encontrado" });
+        }
+
+        return Ok(usuarioDto);
+    }
+
+    // Modificar
+    // PUT: api/usuarios/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> ActualizarUsuario(Guid id, [FromBody] UsuarioUpdateDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var resultado = await _usuarioService.ActualizarUsuarioAsync(id, dto);
+
+        if (!resultado)
+        {
+            return NotFound(new { mensaje = "No se pudo actualizar: Usuario no encontrado" });
+        }
+
+        return Ok(new { mensaje = "Información de usuario actualizada con éxito" });
     }
 
     }
