@@ -1,0 +1,193 @@
+﻿@page "/inicio"
+@model ClienteWeb.Pages.Client_SimarUser.Client.LoginModel
+@{
+    ViewData["Title"] = "Bienvenido a SIMAR";
+}
+
+<style>
+    /* Desactivar Sidebar del Layout para ancho completo */
+    #sidebar, .sidebar, .sidebar-simar, .nav-lateral {
+        display: none !important;
+    }
+
+    main, .content-wrapper, #main-content, .body-content {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    body {
+        background-color: #f8faf9;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hero-simar {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+        color: white;
+        padding: 30px 0;
+        border-bottom: 5px solid #00c02b;
+        margin-bottom: 25px;
+    }
+
+    .card-portal {
+        background: white;
+        border: none;
+        border-radius: 25px;
+        padding: 50px 30px;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        height: 100%;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    }
+
+        .card-portal:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+
+    .icon-circle-portal {
+        width: 90px;
+        height: 90px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        font-size: 3rem;
+    }
+
+    .bg-soft-green {
+        background-color: #e6f9ed;
+        color: #00c02b;
+    }
+
+    .bg-soft-blue {
+        background-color: #eef2f7;
+        color: #2c3e50;
+    }
+
+    /* Estilos de formulario */
+    .form-control-simar {
+        height: 50px;
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+        padding-left: 45px;
+    }
+
+    .input-icon-group {
+        position: relative;
+    }
+
+        .input-icon-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+            z-index: 1;
+        }
+
+    .btn-simar-success {
+        background-color: #00c02b;
+        border: none;
+        transition: all 0.3s;
+    }
+
+        .btn-simar-success:hover {
+            background-color: #009923;
+            transform: translateY(-2px);
+        }
+
+    /* Separador */
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 20px 0;
+    }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .divider span {
+            padding: 0 10px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+    /* Alerta de error */
+    .alert-custom {
+        border-radius: 12px;
+        border-left: 4px solid #dc3545;
+    }
+
+</style>
+
+
+
+<div class="container-fluid p-0">
+    <header class="hero-simar shadow-sm">
+        <div class="container text-center">
+            <div class="mb-3"><i class="bi bi-recycle fs-1 text-white"></i></div>
+            <h1 class="fw-bold mb-2">Sistema SIMAR</h1>
+            <p class="lead opacity-75 mb-0">Control de Residuos y Administración Operativa</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="row g-5 justify-content-center">
+
+            <!-- Tarjeta de Inicio de Sesión -->
+            <div class="col-lg-5 col-md-6">
+                <div class="card-portal border">
+                    <div class="icon-circle-portal bg-soft-green">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3 text-center">Iniciar Sesión</h2>
+                    <p class="text-muted mb-4 text-center">Ingrese sus credenciales para acceder al sistema</p>
+
+                    <!-- Mostrar mensaje de error si existe -->
+                    @if (TempData["Mensaje"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius: 12px; border-left: 4px solid #dc3545;">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Error:</strong> @TempData["Mensaje"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <!-- Formulario de Login directo -->
+                    <form method="post" id="loginFormDirecto">
+                        <div class="mb-4 input-icon-group">
+                            <i class="bi bi-person"></i>
+                            <input asp-for="Input.Identifier" type =" text" class="form-control form-control-simar" id="identifier" name="identifier" placeholder="Usuario o Correo electrónico" required>
+                        </div>
+                        <div class="mb-4 input-icon-group">
+                            <i class="bi bi-lock"></i>
+                            <input asp-for="Input.Password" type="password" class="form-control form-control-simar" id="password" name="password" placeholder="Contraseña" required>
+                        </div>
+                        <!--<div class="mb-3 text-end"> -->
+                        <!--  <a href="#" class="text-decoration-none small" style="color: #00c02b;">¿Olvidó su contraseña?</a> -->
+                        <!--</div> -->
+                        <button type="submit" class="btn btn-simar-success w-100 py-3 fw-bold rounded-pill shadow-sm">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Acceder
+                        </button>
+                    </form>
+
+                    <!--<div class="divider my-4">-->
+                    <!--   <span>o</span> -->
+                    <!--</div>-->
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

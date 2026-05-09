@@ -14,6 +14,8 @@ class Clientes(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
+    businessName = Column(String(100), nullable=False)#razon social
+    contactEmail = Column(String(100), nullable=False)#correo de contacto
     phone = Column(String(100), nullable=True)
     registerDate = Column(DateTime(timezone=True), server_default=func.now())
     address = Column(String(100), nullable=True)

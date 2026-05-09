@@ -181,35 +181,41 @@
 
     <!-- 🔎 Buscador -->
     <div class="search-container">
-        <form method="get" class="d-flex gap-2">
-            <div class="search-box flex-grow-1">
-                <div class="d-flex">
-                    <input type="text" name="Search" class="form-control"
-                           placeholder="Buscar por nombre, Email, teléfono..."
-                           value="@Model.Search">
-
-                    <button type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
+        <div class="search-box flex-grow-1">
+            <div class="d-flex">
+                <input type="text" name="Search" class="form-control"
+                       placeholder="Buscar por nombre, email, teléfono, dirección, RFC..."
+                       value="@Model.Search"
+                       oninput="filtrarClientes()">
+                <button type="button" onclick="buscarConDebounce()">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
+        </div>
 
-            @if (!string.IsNullOrEmpty(Model.Search))
-            {
-                <a asp-page="Index" class="btn-simar-outline">
-                    <i class="bi bi-x-circle"></i>
-                </a>
-            }
-        </form>
+        <button type="button" id="btnLimpiar" class="btn-simar-outline" onclick="limpiarFiltro()" style="display: none; white-space: nowrap;">
+            <i class="bi bi-x-circle"></i> Limpiar
+        </button>
     </div>
 
     <!-- 🔽 Combo -->
     <div class="select-container">
         <select class="form-select-simar">
-            <option>Ordenar por</option>
-            <option>Nombre</option>
-            <option>Fecha de registro</option>
-            <option>Status</option>
+            <option value="default">Ordenar por</option>
+            <option value="nombre">Nombre</option>
+            <option value="razonSocial">Razón Social</option>
+            <option value="email">Email de contacto</option>
+            <option value="telefono">Teléfono</option>
+            <option value="fecha">Fecha de registro</option>
+            <option value="estatus">Estatus</option>
+        </select>
+    </div>
+
+    <!-- Select para dirección de ordenamiento -->
+    <div class="select-container">
+        <select id="orderDirectionSelect" class="form-select-simar">
+            <option value="asc">Ascendente</option>
+            <option value="desc">Descendente</option>
         </select>
     </div>
 
@@ -228,7 +234,8 @@
         <thead>
             <th>ID</th>
             <th>Nombre</th>
-            <th>Email</th>
+            <th>Razon social</th>
+            <th>Email de contacto</th>
             <th>Teléfono</th>
             <th>Fecha Registro</th>
             <th>Estatus</th>
@@ -240,21 +247,26 @@
             {
                 <tr id="cliente-@cliente.Id"
                     data-email="@cliente.Email"
+                    data-emailContacto="@cliente.ContactEmail"
                     data-username="@cliente.UserName"
-                    data-password="@cliente.Password"
+                    data-razonSocial="@cliente.BusinessName"
                     data-nombre="@cliente.Name"
-                    data-telefono="@cliente.PhoneNumber"
+                    data-telefono="@cliente.Phone"
                     data-direccion="@cliente.Address"
                     data-rfc="@cliente.RFC"
                     data-fecha="@cliente.RegisterDate.ToShortDateString()"
-                    data-semarnat="@cliente.SemarnatGeneratedNumber"
+                    data-semarnat="@cliente.SemarnatNum"
                     data-status="@cliente.Status"
-                    data-certificado="@cliente.SatCertificateUrl">
+                    data-idUser="@cliente.IdUser"
+                    data-certificado='@(string.IsNullOrEmpty(cliente.UrlSatCertificate)
+                        ? ""
+                        : $"http://localhost:8005{cliente.UrlSatCertificate}")'>
 
                     <td>@cliente.Id</td>
                     <td>@cliente.Name</td>
-                    <td>@cliente.Email</td>
-                    <td>@cliente.PhoneNumber</td>
+                    <td>@cliente.BusinessName</td>
+                    <td>@cliente.ContactEmail</td>
+                    <td>@cliente.Phone</td>
                     <td>@cliente.RegisterDate.ToShortDateString()</td>
                     <td class="status
                         @(cliente.Status == "activo" ? "status-activo" : "status-inactivo")">
@@ -293,7 +305,7 @@
                                 {
                                     <li>
                                         <button class="dropdown-item text-danger btn-delete"
-                                                onclick="confirmarAccion(@cliente.Id, 'desactivar')">
+                                                onclick="cambiarEstado(@cliente.Id, 'desactivar')">
                                             <i class="bi bi-person-x me-2"></i> Desactivar
                                         </button>
                                     </li>
@@ -302,7 +314,7 @@
                                 {
                                     <li>
                                         <button class="dropdown-item-simar-desactivar"
-                                                onclick="confirmarAccion(@cliente.Id, 'activar')">
+                                                onclick="cambiarEstado(@cliente.Id, 'activar')">
                                             <i class="bi bi-person-check me-2"></i> Activar
                                         </button>
                                     </li>
@@ -344,7 +356,7 @@
             </div>
 
             <!-- FORM -->
-            <form method="post" id="registroForm" enctype="multipart/form-data">
+            <form id="registroForm" enctype="multipart/form-data">
 
                 <!-- BODY -->
                 <div class="modal-body">
@@ -353,18 +365,18 @@
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: *</strong>
-                            <input type="email" name="Email" id="regEmail" class="form-control" placeholder="Email" required />
+                            <input asp-for="Input.Email" type="email" class="form-control" name="Email" id="regEmail" placeholder="Email" required />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username: *</strong>
-                            <input type="text" name="UserName" id="regUsername" class="form-control" placeholder="Username" required />
+                            <input asp-for="Input.UserName" type="text" name="UserName" id="regUsername" class="form-control" placeholder="Username" required />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña *:</strong>
                             <div class="input-group">
-                                <input type="password" name="Password" id="regPassword" class="form-control" placeholder="Contraseña" required />
+                                <input asp-for="Input.Password" type="password" name="Password" id="regPassword" class="form-control" placeholder="Contraseña" required />
                                 <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('regPassword', this)">
                                     <i class="bi bi-eye"></i>
                                 </button>
@@ -373,32 +385,42 @@
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre Completo: *</strong>
-                            <input type="text" name="Name" id="regNombre" class="form-control" placeholder="Nombre completo" required />
+                            <input asp-for="Input.Name" type="text" name="Name" id="regNombre" class="form-control" placeholder="Nombre completo" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social: *</strong>
+                            <input asp-for="Input.BusinessName" type="text" name="BusinessName" id="regRazonSocial" class="form-control" placeholder="Razon social" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email de contacto: *</strong>
+                            <input asp-for="Input.ContactEmail" type="text" name="EmailContact" id="regEmailContacto" class="form-control" placeholder="Email contacto" required />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i>Teléfono:</strong>
-                            <input type="text" name="PhoneNumber" id="regTelefono" class="form-control" placeholder="Teléfono" />
+                            <input asp-for="Input.Phone" type="text" name="PhoneNumber" id="regTelefono" class="form-control" placeholder="Teléfono" />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-geo-alt-fill me-1" style="color: var(--simar-green);"></i>Dirección:</strong>
-                            <input type="text" name="Address" id="regDireccion" class="form-control" placeholder="Dirección" />
+                            <input asp-for="Input.Address" type="text" name="Address" id="regDireccion" class="form-control" placeholder="Dirección" />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i> RFC: *</strong>
-                            <input type="text" name="RFC" id="regRFC" class="form-control" placeholder="RFC" required />
+                            <input asp-for="Input.RFC" type="text" name="RFC" id="regRFC" class="form-control" placeholder="RFC" required />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i>Número de Semarnat:</strong>
-                            <input type="text" name="SemarnatNumber" id="regSemarnat" class="form-control" placeholder="Número de SEMARNAT" />
+                            <input asp-for="Input.SemarnatNum" type="text" name="SemarnatNumber" id="regSemarnat" class="form-control" placeholder="Número de SEMARNAT" />
                         </div>
 
                         <div class="col-12">
                             <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT:</strong>
-                            <input type="file" name="CertificadoFile" id="regCertificado" class="form-control" />
+                            <input asp-for="CertificadoFile" type="file" name="CertificadoFile" id="regCertificado" class="form-control" />
                         </div>
 
                     </div>
@@ -408,7 +430,7 @@
                 <!-- FOOTER -->
                 <div class="modal-footer">
                     <button type="button" class="btn-simar-outline" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
-                    <button type="submit" class="btn-simar-primary"><i class="bi bi-check-circle me-1"></i>Registrar</button>
+                    <button type="button" class="btn-simar-primary" onclick="registrarCliente()" ><i class="bi bi-check-circle me-1"></i>Registrar</button>
                 </div>
 
             </form>
@@ -447,18 +469,18 @@
                     </div>
 
                     <div class="col-md-6">
-                        <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i> Contraseña:</strong>
-                        <div class="input-group">
-                            <input type="password" id="detallePassword" class="form-control" value="" readonly style="background-color: #f8f9fa;" />
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordDetalle('detallePassword', this)">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
+                        <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre:</strong>
+                        <div id="detalleNombre"></div>
                     </div>
 
                     <div class="col-md-6">
-                        <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i>Nombre:</strong>
-                        <div id="detalleNombre"></div>
+                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
+                        <div id="detalleRazonSocial"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email de contacto:</strong>
+                        <div id="detalleEmailContacto"></div>
                     </div>
 
                     <div class="col-md-6">
@@ -493,7 +515,7 @@
 
                     <div class="campo">
                         <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT:</strong>
-                        <a id="detalleCertificado" href="#" target="_blank">Descargar</a>
+                        <a id="detalleCertificado" href="#" target="_blank">Ver documento</a>
                     </div>
 
                 </div>
@@ -504,10 +526,10 @@
             <div class="modal-footer">
                 <button class="btn-simar-outline" data-bs-dismiss="modal">Cerrar</button>
 
-                <a id="btnHistorial"
-                   class="btn-simar-primary">
-                    <i class="bi bi-clock-history"></i> Historial de servicios
-                </a>
+                <!--<a id="btnHistorial"-->
+                <!--  class="btn-simar-primary">-->
+                <!--  <i class="bi bi-clock-history"></i> Historial de servicios-->
+                <!--</a>-->
             </div>
 
         </div>
@@ -528,95 +550,230 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <!-- BODY -->
-            <div class="modal-body">
+            <div>
 
-                <input type="hidden" id="editId" />
+                <!-- BODY -->
+                <div class="modal-body">
 
-                <div class="row g-3">
+                    <input type="hidden" id="editId" />
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
-                        <input type="text" id="editUsername" class="form-control" placeholder="Username" />
-                    </div>
+                    <div class="row g-3">
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
-                        <input type="text" id="editEmail" class="form-control" placeholder="Email" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
-                        <div class="input-group">
-                            <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
-                                <i class="bi bi-eye"></i>
-                            </button>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
+                            <input type="text" id="editUsername" class="form-control" placeholder="Username" />
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i> Nombre:</strong>
-                        <input type="text" id="editNombre" class="form-control" placeholder="Nombre" />
-                    </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
+                            <input type="text" id="editEmail" class="form-control" placeholder="Email" />
+                        </div>
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i> Teléfono:</strong>
-                        <input type="text" id="editTelefono" class="form-control" placeholder="Teléfono" />
-                    </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
+                            <div class="input-group">
+                                <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-geo-alt-fill me-1" style="color: var(--simar-green);"></i> Dirección:</strong>
-                        <input type="text" id="editDireccion" class="form-control" placeholder="Dirección" />
-                    </div>
+                        <!--pendiente de agregar para editar ^ ^-->
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i>RFC:</strong>
-                        <input type="text" id="editRFC" class="form-control" placeholder="RFC" />
-                    </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i> Nombre:</strong>
+                            <input asp-for="EditInput.Name" type="text" id="editNombre" class="form-control" placeholder="Nombre" />
+                        </div>
 
-                    <div class="col-md-6">
-                        <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Semarnat:</strong>
-                        <input type="text" id="editSemarnat" class="form-control" placeholder="SEMARNAT" />
-                    </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
+                            <input asp-for="EditInput.BusinessName" type="text" id="editRazonSocial" class="form-control" placeholder="Razon social" required />
+                        </div>
 
-                    <div class="col-12">
-                        <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT</strong>
-                        <input type="file" id="editCertificado" class="form-control" />
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email de contacto:</strong>
+                            <input asp-for="EditInput.ContactEmail" type="text" id="editEmailContacto" class="form-control" placeholder="Email contacto" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i> Teléfono:</strong>
+                            <input asp-for="EditInput.Phone" type="text" id="editTelefono" class="form-control" placeholder="Teléfono" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-geo-alt-fill me-1" style="color: var(--simar-green);"></i> Dirección:</strong>
+                            <input asp-for="EditInput.Address" type="text" id="editDireccion" class="form-control" placeholder="Dirección" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-file-text-fill me-1" style="color: var(--simar-green);"></i>RFC:</strong>
+                            <input asp-for="EditInput.RFC" type="text" id="editRFC" class="form-control" placeholder="RFC" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Semarnat:</strong>
+                            <input asp-for="EditInput.SemarnatNum" type="text" id="editSemarnat" class="form-control" placeholder="SEMARNAT" />
+                        </div>
+
+                        <div class="col-12">
+                            <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT</strong>
+                            <input asp-for="CertificadoFile" type="file" id="editCertificado" class="form-control" />
+                        </div>
+
                     </div>
 
                 </div>
 
-            </div>
+                <!-- FOOTER -->
+                <div class="modal-footer">
+                    <button class="btn-simar-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" onclick="guardarEdicion()" class="btn-simar-primary">Guardar</button>
+                </div>
 
-            <!-- FOOTER -->
-            <div class="modal-footer">
-                <button class="btn-simar-outline" data-bs-dismiss="modal">Cancelar</button>
-                <button onclick="guardarEdicion()" class="btn-simar-primary">Guardar</button>
             </div>
-
         </div>
     </div>
 </div>
 
 
 
-<!-- simulacion desactivacion -->
+
 <script>
-    let clienteSeleccionado = null;
-    let tipoAccion = null;
+    async function registrarCliente() {
 
-    function confirmarAccion(id, accion) {
-        clienteSeleccionado = id;
-        tipoAccion = accion;
+        const form = document.getElementById("registroForm");
 
-        let mensaje = accion === "desactivar"
-            ? "¿Está seguro de desactivar al cliente seleccionado?"
-            : "¿Está seguro de activar al cliente seleccionado?";
+        const userData = {
+            Email: document.getElementById("regEmail").value,
+            Username: document.getElementById("regUsername").value,
+            Password: document.getElementById("regPassword").value,
+            Role: "Cliente"
+        };
 
-        document.getElementById("mensajeModal").innerText = mensaje;
-        document.getElementById("modalDesactivar").style.display = "flex";
+        const clientData = {
+            name: document.getElementById("regNombre").value,
+            businessName: document.getElementById("regRazonSocial").value,
+            contactEmail: document.getElementById("regEmailContacto").value,
+            phone: document.getElementById("regTelefono").value,
+            address: document.getElementById("regDireccion").value,
+            rfc: document.getElementById("regRFC").value,
+            semarnatNum: document.getElementById("regSemarnat").value
+        };
+
+        const file = document.getElementById("regCertificado").files[0];
+
+        try {
+
+            // 🔥 1. REGISTRAR TODO (usuario + cliente)
+            const response = await fetch("?handler=RegistrarCliente", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user: userData,
+                    client: clientData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.expired) {
+                alert("Sesión expirada");
+                window.location.href = "/Inicio";
+                return;
+            }
+
+            if (!result.success) {
+                alert(result.message || "Error al registrar");
+                return;
+            }
+
+            const clientId = result.clientId;
+
+            // 🔥 2. SUBIR CERTIFICADO (si existe)
+            if (file) {
+
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const certResponse = await fetch(
+                    `?handler=SubirCertificado&id=${clientId}`,
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+                const certResult = await certResponse.json();
+
+                if (!certResult.success) {
+                    alert("Cliente creado, pero falló el certificado");
+                    location.reload();
+                    return;
+                }
+            }
+
+            alert("Cliente registrado correctamente");
+
+            location.reload();
+
+        } catch (error) {
+            console.error(error);
+            alert("Error inesperado");
+        }
     }
+</script>
+
+<script>
+    document.getElementById("registroForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        const response = await fetch("?handler=Registrar", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert("Cliente registrado");
+            location.reload();
+        } else {
+            alert(data.message || "Error");
+        }
+    });
+</script>
+
+<!-- desactivacion -->
+<script>
+
+    function cambiarEstado(id, accion) {
+
+        fetch(`/Client_SimarUser/Client/ClientList?handler=CambiarEstado&id=${id}&accion=${accion}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.expired) {
+                alert("Tu sesión expiró");
+                window.location.href = "/inicio";
+                return;
+            }
+
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "Error");
+            }
+        });
+    }
+    
 
     function cerrarModal() {
         document.getElementById("modalDesactivar").style.display = "none";
@@ -658,21 +815,6 @@
         }
     }
 
-    function irAPaso(paso) {
-        document.querySelectorAll('.seccion-paso')
-            .forEach(s => s.classList.remove('activa'));
-
-        document.getElementById('paso' + paso)
-            .classList.add('activa');
-    }
-
-    function irAPaso(paso) {
-        document.querySelectorAll('.seccion-paso')
-            .forEach(s => s.classList.remove('activa'));
-
-        document.getElementById('paso' + paso)
-            .classList.add('activa');
-    }
 </script>
 
 <script>
@@ -691,37 +833,57 @@
             link.style.display = "none";
         }
 
-        document.getElementById("detalleEmail").innerText = fila.dataset.email;
-        document.getElementById("detalleUsername").innerText = fila.dataset.username;
-        document.getElementById("detalleNombre").innerText = fila.dataset.nombre;
-        document.getElementById("detalleTelefono").innerText = fila.dataset.telefono;
-        document.getElementById("detalleDireccion").innerText = fila.dataset.direccion;
-        document.getElementById("detalleRFC").innerText = fila.dataset.rfc;
-        document.getElementById("detalleFecha").innerText = fila.dataset.fecha;
-        document.getElementById("detalleSemarnat").innerText = fila.dataset.semarnat;
-        document.getElementById("detalleStatus").innerText = fila.dataset.status;
-
-        // Para la contraseña (input en lugar de div)
-        const passwordInput = document.getElementById("detallePassword");
-        if (passwordInput) {
-            passwordInput.value = fila.dataset.password || '';
-            passwordInput.type = 'password'; // Asegurar que esté oculta al abrir
-            // Resetear el ícono del botón
-            const toggleButton = passwordInput.parentElement.querySelector('button');
-            if (toggleButton) {
-                const icon = toggleButton.querySelector('i');
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
-            }
-        }
+        document.getElementById("detalleEmail").innerText = fila.getAttribute("data-email") || 'N/A';
+        document.getElementById("detalleUsername").innerText = fila.getAttribute("data-username") || 'N/A';
+        document.getElementById("detalleNombre").innerText = fila.getAttribute("data-nombre") || 'N/A';
+        document.getElementById("detalleRazonSocial").innerText = fila.getAttribute("data-razonSocial") || 'N/A';
+        document.getElementById("detalleEmailContacto").innerText = fila.getAttribute("data-emailContacto") || 'N/A';
+        document.getElementById("detalleTelefono").innerText = fila.getAttribute("data-telefono") || 'N/A';
+        document.getElementById("detalleDireccion").innerText = fila.getAttribute("data-direccion") || 'N/A';
+        document.getElementById("detalleRFC").innerText = fila.getAttribute("data-rfc") || 'N/A';
+        document.getElementById("detalleFecha").innerText = fila.getAttribute("data-fecha") || 'N/A';
+        document.getElementById("detalleSemarnat").innerText = fila.getAttribute("data-semarnat") || 'N/A';
+        document.getElementById("detalleStatus").innerText = fila.getAttribute("data-status") || 'N/A';
 
         // botón historial
-        document.getElementById("btnHistorial").href = "/Client_SimarUser/Client/ServicesHistory/" + id;
+        //document.getElementById("btnHistorial").href = "/Client_SimarUser/Client/ServicesHistory/" + id;
 
 
         let modal = new bootstrap.Modal(document.getElementById('modalDetalle'));
         modal.show();
     }
+</script>
+
+<script>
+
+    function validarArchivoPDF(inputId) {
+
+        const archivo = document.getElementById(inputId).files[0];
+
+        if (!archivo) {
+            return true;
+        }
+
+        const maxSize = 5 * 1024 * 1024;
+
+        if (archivo.size > maxSize) {
+            alert("El archivo no puede exceder los 5 MB");
+            return false;
+        }
+
+        const extension = archivo.name
+            .split('.')
+            .pop()
+            .toLowerCase();
+
+        if (extension !== "pdf") {
+            alert("Solo se permiten archivos PDF");
+            return false;
+        }
+
+        return true;
+    }
+
 </script>
 
 <script>
@@ -734,9 +896,10 @@
         document.getElementById("editId").value = id;
 
         document.getElementById("editNombre").value = filaActual.getAttribute("data-nombre");
+        document.getElementById("editRazonSocial").value = filaActual.getAttribute("data-razonSocial");
         document.getElementById("editUsername").value = filaActual.getAttribute("data-username");
-        document.getElementById("editPassword").value = filaActual.getAttribute("data-password");
         document.getElementById("editEmail").value = filaActual.getAttribute("data-email");
+        document.getElementById("editEmailContacto").value = filaActual.getAttribute("data-emailContacto");
         document.getElementById("editTelefono").value = filaActual.getAttribute("data-telefono");
         document.getElementById("editDireccion").value = filaActual.getAttribute("data-direccion");
         document.getElementById("editRFC").value = filaActual.getAttribute("data-rfc");
@@ -750,22 +913,133 @@
         document.getElementById("modalEditar").style.display = "none";
     }
 
-    function guardarEdicion() {
+    function guardarEdicion(){
+        const updatedData = {};
 
-        // Actualizar visualmente la tabla (simulación)
-        filaActual.querySelector("td:nth-child(2)").innerText = document.getElementById("editNombre").value;
-        filaActual.querySelector("td:nth-child(3)").innerText = document.getElementById("editEmail").value;
-        filaActual.querySelector("td:nth-child(4)").innerText = document.getElementById("editTelefono").value;
+        updatedData.id = parseInt(document.getElementById("editId").value);
 
-        // Actualizar data-* (IMPORTANTE)
-        filaActual.setAttribute("data-nombre", document.getElementById("editNombre").value);
-        filaActual.setAttribute("data-email", document.getElementById("editEmail").value);
-        filaActual.setAttribute("data-telefono", document.getElementById("editTelefono").value);
-        filaActual.setAttribute("data-direccion", document.getElementById("editDireccion").value);
-        filaActual.setAttribute("data-rfc", document.getElementById("editRFC").value);
-        filaActual.setAttribute("data-semarnat", document.getElementById("editSemarnat").value);
+        const nombreNuevo = document.getElementById("editNombre").value;
+        const nombreOriginal = filaActual.getAttribute("data-nombre");
 
-        alert("Cliente actualizado (simulado)");
+        if (nombreNuevo !== nombreOriginal) {
+            updatedData.name = nombreNuevo;
+        }
+
+        const telefonoNuevo = document.getElementById("editTelefono").value;
+        const telefonoOriginal = filaActual.getAttribute("data-telefono");
+
+        if (telefonoNuevo !== telefonoOriginal) {
+            updatedData.phone = telefonoNuevo;
+        }
+
+        const direccionNueva = document.getElementById("editDireccion").value;
+        const direccionOriginal = filaActual.getAttribute("data-direccion");
+
+        if (direccionNueva !== direccionOriginal) {
+            updatedData.address = direccionNueva;
+        }
+
+        const razonSocialNueva = document.getElementById("editRazonSocial").value;
+        const razonSocialOriginal = filaActual.getAttribute("data-razonSocial");
+
+        if (razonSocialNueva !== razonSocialOriginal) {
+            updatedData.businessName = razonSocialNueva;
+        }
+
+        const emailContactoNueva = document.getElementById("editEmailContacto").value;
+        const emailContactoOriginal = filaActual.getAttribute("data-emailContacto");
+
+        if (emailContactoNueva !== emailContactoOriginal) {
+            updatedData.contactEmail = emailContactoNueva;
+        }
+
+        const rfcNueva = document.getElementById("editRFC").value;
+        const rfcOriginal = filaActual.getAttribute("data-rfc");
+
+        if (rfcNueva !== rfcOriginal) {
+            updatedData.RFC = rfcNueva;
+        }
+
+        const semarnatNumNueva = document.getElementById("editSemarnat").value;
+        const semarnatNumOriginal = filaActual.getAttribute("data-semarnat");
+
+        if (semarnatNumNueva !== semarnatNumOriginal) {
+            updatedData.SemarnatNum = semarnatNumNueva;
+        }
+        
+
+
+        const certificado = document.getElementById("editCertificado").files[0];
+
+        if (certificado) {
+
+            if (!validarArchivoPDF("editCertificado")) {
+                return;
+            }
+        }
+
+
+        // Si no hay cambios ni certificado
+        if (Object.keys(updatedData).length === 1 && !certificado) {
+            alert("No se realizaron cambios");
+            return;
+        }
+
+        fetch('/Client_SimarUser/Client/ClientList?handler=Editar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedData)
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.expired) {
+                alert("Tu sesión expiró");
+                window.location.href = "/inicio";
+                return;
+            }
+
+            if (!data.success) {
+                alert(data.message || "Error");
+                return;
+            }
+
+            // Si NO hay certificado
+            if (!certificado) {
+                alert("Cliente actualizado");
+                location.reload();
+                return;
+            }
+
+            // Subir certificado
+            const formData = new FormData();
+
+            formData.append("file", certificado);
+
+            fetch(`/Client_SimarUser/Client/ClientList?handler=ActualizarCertificado&id=${updatedData.id}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(certData => {
+
+                if (certData.expired) {
+                    alert("Tu sesión expiró");
+                    window.location.href = "/inicio";
+                    return;
+                }
+
+                if (!certData.success) {
+                    alert("Cliente actualizado, pero falló el certificado");
+                    return;
+                }
+
+                alert("Cliente y certificado actualizados");
+                location.reload();
+            });
+        });
 
     }
 </script>
@@ -799,5 +1073,273 @@
             icon.classList.remove('bi-eye-slash');
             icon.classList.add('bi-eye');
         }
+    }
+</script>
+
+
+<script>
+
+    let timeoutId;
+
+    function buscarConDebounce() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            filtrarClientes();
+        }, 300);
+    }
+
+    // Función para filtrar clientes en tiempo real (sin recargar página)
+    function filtrarClientes() {
+        const searchTerm = document.querySelector('input[name="Search"]').value.toLowerCase().trim();
+        const tbody = document.querySelector('.table-custom tbody');
+        const filas = tbody.querySelectorAll('tr');
+        const filtrarClientesOriginal = filtrarClientes;
+        if (typeof filtrarClientesOriginal === 'function') {
+            window.filtrarClientes = function() {
+                filtrarClientesOriginal();
+                // Después de filtrar, restaurar el orden actual
+                if (currentSort !== 'default') {
+                    ordenarTabla();
+                }
+            };
+        }
+        let resultadosEncontrados = 0;
+
+        filas.forEach(fila => {
+            // Obtener texto de todas las columnas importantes (excluyendo acciones)
+            const nombre = fila.querySelector('td:nth-child(2)')?.innerText.toLowerCase() || '';
+            const razonSocial = fila.querySelector('td:nth-child(3)')?.innerText.toLowerCase() || '';
+            const emailContacto = fila.querySelector('td:nth-child(4)')?.innerText.toLowerCase() || '';
+            const telefono = fila.querySelector('td:nth-child(5)')?.innerText.toLowerCase() || '';
+            const status = fila.querySelector('td:nth-child(7)')?.innerText.toLowerCase() || '';
+
+            // También buscar en atributos data-* (dirección, RFC, SEMARNAT, etc.)
+            const direccion = fila.getAttribute('data-direccion')?.toLowerCase() || '';
+            const rfc = fila.getAttribute('data-rfc')?.toLowerCase() || '';
+            const semarnat = fila.getAttribute('data-semarnat')?.toLowerCase() || '';
+            const username = fila.getAttribute('data-username')?.toLowerCase() || '';
+            const email = fila.getAttribute('data-email')?.toLowerCase() || '';
+
+            // Verificar si el término de búsqueda está en algún campo
+            const coincide = searchTerm === '' ||
+                nombre.includes(searchTerm) ||
+                razonSocial.includes(searchTerm) ||
+                emailContacto.includes(searchTerm) ||
+                telefono.includes(searchTerm) ||
+                status.includes(searchTerm) ||
+                direccion.includes(searchTerm) ||
+                rfc.includes(searchTerm) ||
+                semarnat.includes(searchTerm) ||
+                username.includes(searchTerm) ||
+                email.includes(searchTerm);
+
+            if (coincide) {
+                fila.style.display = '';
+                resultadosEncontrados++;
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+
+        // Mostrar mensaje si no hay resultados
+        mostrarMensajeSinResultados(resultadosEncontrados, searchTerm);
+    }
+
+    function mostrarMensajeSinResultados(cantidad, searchTerm) {
+        const tbody = document.querySelector('.table-custom tbody');
+        let mensajeRow = document.getElementById('sinResultadosRow');
+
+        if (cantidad === 0 && searchTerm !== '') {
+            if (!mensajeRow) {
+                mensajeRow = document.createElement('tr');
+                mensajeRow.id = 'sinResultadosRow';
+                mensajeRow.innerHTML = `
+                    <td colspan="8" style="text-align: center; padding: 40px;">
+                        <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
+                        <p style="margin-top: 10px;">No se encontraron clientes que coincidan con "<strong>${searchTerm}</strong>"</p>
+                    </td>
+                `;
+                tbody.appendChild(mensajeRow);
+            } else {
+                mensajeRow.querySelector('td p strong').innerText = searchTerm;
+                mensajeRow.style.display = '';
+            }
+        } else if (mensajeRow) {
+            mensajeRow.remove();
+        }
+    }
+
+    // Limpiar filtro y mostrar todos los clientes
+    function limpiarFiltro() {
+        const searchInput = document.querySelector('input[name="Search"]');
+        searchInput.value = '';
+        filtrarClientes();
+
+        // Ocultar botón de limpiar
+        const limpiarBtn = document.querySelector('.btn-simar-outline');
+        if (limpiarBtn) limpiarBtn.style.display = 'none';
+    }
+
+    // Eventos
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.querySelector('input[name="Search"]');
+        const searchForm = document.querySelector('.search-container form');
+        const limpiarBtn = document.querySelector('.btn-simar-outline');
+
+        if (searchInput) {
+            // Filtro en tiempo real mientras escribes
+            searchInput.addEventListener('input', function() {
+                filtrarClientes();
+
+                // Mostrar/ocultar botón de limpiar
+                if (limpiarBtn) {
+                    limpiarBtn.style.display = this.value ? 'inline-block' : 'none';
+                }
+            });
+        }
+
+        if (searchForm) {
+            // Prevenir envío del formulario (para no recargar la página)
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                filtrarClientes();
+            });
+        }
+
+        if (limpiarBtn) {
+            limpiarBtn.style.display = 'none';
+        }
+    });
+</script>
+
+<script>
+        // Variables para el ordenamiento
+    let currentSort = 'default';
+    let currentDirection = 'asc';
+
+    // Función principal para ordenar la tabla
+    function ordenarTabla() {
+        const sortBy = document.getElementById('sortSelect')?.value || 'default';
+        const direction = document.getElementById('orderDirectionSelect')?.value || 'asc';
+
+        if (sortBy === 'default') {
+            restaurarOrdenOriginal();
+            return;
+        }
+
+        currentSort = sortBy;
+        currentDirection = direction;
+
+        const tbody = document.querySelector('.table-custom tbody');
+        const filas = Array.from(tbody.querySelectorAll('tr'));
+
+        // Filtrar filas que no sean el mensaje de "sin resultados"
+        const filasValidas = filas.filter(fila => fila.id !== 'sinResultadosRow');
+
+        // Ordenar las filas
+        filasValidas.sort((a, b) => {
+            let valorA, valorB;
+
+            switch(sortBy) {
+                case 'nombre':
+                    valorA = a.querySelector('td:nth-child(2)')?.innerText.toLowerCase() || '';
+                    valorB = b.querySelector('td:nth-child(2)')?.innerText.toLowerCase() || '';
+                    break;
+                case 'razonSocial':
+                    valorA = a.querySelector('td:nth-child(3)')?.innerText.toLowerCase() || '';
+                    valorB = b.querySelector('td:nth-child(3)')?.innerText.toLowerCase() || '';
+                    break;
+                case 'email':
+                    valorA = a.querySelector('td:nth-child(4)')?.innerText.toLowerCase() || '';
+                    valorB = b.querySelector('td:nth-child(4)')?.innerText.toLowerCase() || '';
+                    break;
+                case 'telefono':
+                    valorA = a.querySelector('td:nth-child(5)')?.innerText || '';
+                    valorB = b.querySelector('td:nth-child(5)')?.innerText || '';
+                    break;
+                case 'fecha':
+                    valorA = new Date(a.querySelector('td:nth-child(6)')?.innerText);
+                    valorB = new Date(b.querySelector('td:nth-child(6)')?.innerText);
+                    break;
+                case 'estatus':
+                    valorA = a.querySelector('td:nth-child(7)')?.innerText.toLowerCase() || '';
+                    valorB = b.querySelector('td:nth-child(7)')?.innerText.toLowerCase() || '';
+                    break;
+                default:
+                    return 0;
+            }
+
+            // Comparar según la dirección
+            let comparacion = 0;
+            if (valorA < valorB) comparacion = -1;
+            if (valorA > valorB) comparacion = 1;
+
+            return direction === 'asc' ? comparacion : -comparacion;
+        });
+
+        // Reordenar el DOM
+        filasValidas.forEach(fila => tbody.appendChild(fila));
+
+        // Actualizar iconos de ordenamiento
+        actualizarIconosOrdenamiento(sortBy, direction);
+    }
+
+    // Función para restaurar el orden original (por ID)
+    function restaurarOrdenOriginal() {
+        const tbody = document.querySelector('.table-custom tbody');
+        const filas = Array.from(tbody.querySelectorAll('tr'));
+        const filasValidas = filas.filter(fila => fila.id !== 'sinResultadosRow');
+
+        // Ordenar por ID (extraer el número del ID del atributo data-id o del texto)
+        filasValidas.sort((a, b) => {
+            const idA = parseInt(a.id?.split('-')[1] || 0);
+            const idB = parseInt(b.id?.split('-')[1] || 0);
+            return idA - idB;
+        });
+
+        filasValidas.forEach(fila => tbody.appendChild(fila));
+        limpiarIconosOrdenamiento();
+    }
+
+    // Función para actualizar iconos en los encabezados
+    function actualizarIconosOrdenamiento(sortBy, direction) {
+        limpiarIconosOrdenamiento();
+
+        const headers = document.querySelectorAll('.table-custom thead th');
+        const indexMap = {
+            'nombre': 1,
+            'razonSocial': 2,
+            'email': 3,
+            'telefono': 4,
+            'fecha': 5,
+            'estatus': 6
+        };
+
+        const columnaIndex = indexMap[sortBy];
+        if (columnaIndex !== undefined && headers[columnaIndex]) {
+            const icono = document.createElement('i');
+            icono.className = `bi bi-arrow-${direction === 'asc' ? 'up' : 'down'}-short ms-1`;
+            icono.style.fontSize = '1.2rem';
+            headers[columnaIndex].appendChild(icono);
+        }
+    }
+
+    // Función para limpiar iconos de ordenamiento
+    function limpiarIconosOrdenamiento() {
+        const headers = document.querySelectorAll('.table-custom thead th');
+        headers.forEach(th => {
+            const iconos = th.querySelectorAll('i.bi-arrow-up-short, i.bi-arrow-down-short');
+            iconos.forEach(icono => icono.remove());
+        });
+    }
+
+    // Función para ordenar combinada con el filtro de búsqueda
+    function ordenarYFiltrar() {
+        // Aplicar filtro de búsqueda si existe
+        if (typeof filtrarClientes === 'function') {
+            filtrarClientes();
+        }
+        // Luego ordenar
+        ordenarTabla();
     }
 </script>
