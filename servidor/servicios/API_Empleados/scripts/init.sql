@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS roles (
 -- 2. TABLA DE EMPLEADOS
 CREATE TABLE IF NOT EXISTS employees (
     user_id UUID PRIMARY KEY, -- Proviene de API_Usuarios
+    professional_id VARCHAR(10) NOT NULL UNIQUE,
     full_name VARCHAR(150) NOT NULL,
     address TEXT,
     birthday DATE,
@@ -26,17 +27,11 @@ CREATE TABLE IF NOT EXISTS employees (
     manager_id UUID REFERENCES employees(user_id)
 );
 
--- 3. TABLA DE CHOFER (Especialidad)
+-- 3. TABLA DE CHOFER
 CREATE TABLE IF NOT EXISTS driver_details (
     employee_id UUID PRIMARY KEY REFERENCES employees(user_id) ON DELETE CASCADE,
     license_number VARCHAR(50) NOT NULL,
     license_type VARCHAR(10) NOT NULL
-);
-
--- 4. TABLA DE STAFF PROFESIONAL (Especialidad)
-CREATE TABLE IF NOT EXISTS professional_staff (
-    employee_id UUID PRIMARY KEY REFERENCES employees(user_id) ON DELETE CASCADE,
-    professional_id VARCHAR(50) NOT NULL 
 );
 
 ---

@@ -9,9 +9,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Employee> Employees { get; set; }
     public DbSet<DriverDetail> DriverDetails { get; set; }
-    public DbSet<ProfessionalStaff> ProfessionalStaff { get; set; }
-    
-    // Nueva tabla registrada
     public DbSet<Role> Roles { get; set; } 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
