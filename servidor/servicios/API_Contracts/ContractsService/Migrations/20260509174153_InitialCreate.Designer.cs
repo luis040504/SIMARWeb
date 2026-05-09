@@ -12,11 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContractsService.Migrations
 {
     [DbContext(typeof(ContractsDbContext))]
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
-    [Migration("20260509164709_InitialCreate")]
-========
-    [Migration("20260508153023_InitialCreate")]
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
+    [Migration("20260509174153_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -29,33 +25,6 @@ namespace ContractsService.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
-========
-            modelBuilder.Entity("ContractsService.Models.AuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Details")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AuditLogs");
-                });
-
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
             modelBuilder.Entity("ContractsService.Models.Contract", b =>
                 {
                     b.Property<int>("Id")
@@ -64,13 +33,10 @@ namespace ContractsService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
                     b.Property<string>("ClientAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-========
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
                     b.Property<string>("ClientDeclaraciones")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -78,24 +44,18 @@ namespace ContractsService.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
                     b.Property<string>("ClientName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-========
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
                     b.Property<string>("ClientObjetoSocial")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
                     b.Property<string>("ClientRfc")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-========
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
                     b.Property<string>("ContractDuration")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -201,12 +161,9 @@ namespace ContractsService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("decimal(18,2)");
 
-========
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
                     b.Property<int>("Technicians")
                         .HasColumnType("int");
 
@@ -232,7 +189,6 @@ namespace ContractsService.Migrations
                     b.ToTable("ContractServices");
                 });
 
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.Designer.cs
             modelBuilder.Entity("ContractsService.Models.Quotation", b =>
                 {
                     b.Property<int>("Id")
@@ -291,8 +247,6 @@ namespace ContractsService.Migrations
                     b.ToTable("Quotations");
                 });
 
-========
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.Designer.cs
             modelBuilder.Entity("ContractsService.Models.ContractExtra", b =>
                 {
                     b.HasOne("ContractsService.Models.Contract", null)

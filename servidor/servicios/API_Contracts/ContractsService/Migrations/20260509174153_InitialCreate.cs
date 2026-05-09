@@ -22,13 +22,10 @@ namespace ContractsService.Migrations
                     TotalBasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.cs
                     ClientName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientRfc = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Representative = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
-========
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.cs
                     ClientObjetoSocial = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientDeclaraciones = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContractDuration = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -40,7 +37,6 @@ namespace ContractsService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.cs
                 name: "Quotations",
                 columns: table => new
                 {
@@ -68,11 +64,6 @@ namespace ContractsService.Migrations
                 name: "ContractExtras",
                 columns: table => new
                 {
-========
-                name: "ContractExtras",
-                columns: table => new
-                {
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.cs
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ContractId = table.Column<int>(type: "int", nullable: false),
@@ -126,12 +117,8 @@ namespace ContractsService.Migrations
                     Vehicles = table.Column<int>(type: "int", nullable: false),
                     Technicians = table.Column<int>(type: "int", nullable: false),
                     ServiceAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.cs
                     WarehouseAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
-========
-                    WarehouseAddress = table.Column<string>(type: "nvarchar(max)", nullable: false)
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.cs
                 },
                 constraints: table =>
                 {
@@ -164,7 +151,6 @@ namespace ContractsService.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-<<<<<<<< HEAD:servidor/servicios/API_Contracts/ContractsService/Migrations/20260509164709_InitialCreate.cs
                 name: "ContractExtras");
 
             migrationBuilder.DropTable(
@@ -175,18 +161,6 @@ namespace ContractsService.Migrations
 
             migrationBuilder.DropTable(
                 name: "Quotations");
-========
-                name: "AuditLogs");
->>>>>>>> 2091ac394baf4f9e506f285c8fe6f16b2f139557:servidor/servicios/API_Contracts/ContractsService/Migrations/20260508153023_InitialCreate.cs
-
-            migrationBuilder.DropTable(
-                name: "ContractExtras");
-
-            migrationBuilder.DropTable(
-                name: "ContractPayments");
-
-            migrationBuilder.DropTable(
-                name: "ContractServices");
 
             migrationBuilder.DropTable(
                 name: "Contracts");

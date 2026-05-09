@@ -361,18 +361,27 @@
                 var servicesRows = '';
                 if (c.services && c.services.length > 0) {
                     c.services.forEach(function(s) {
-                        servicesRows += '<tr><td>' + esc(s.wasteType) + '</td><td>' + esc(s.wasteUnit) + '</td><td>' + esc(s.frequency) + '</td><td class="text-center">' + s.vehicles + ' / ' + s.technicians + '</td><td>' + esc(s.serviceAddress) + '</td><td>' + esc(s.warehouseAddress) + '</td></tr>';
+                        servicesRows += '<tr><td>' + esc(s.wasteType) + '</td><td>' + esc(s.wasteUnit) + '</td><td>' + esc(s.frequency) + '</td><td class="text-center">' + s.vehicles + ' / ' + s.technicians + '</td><td>' + esc(s.serviceAddress) + '</td><td>' + esc(s.warehouseAddress) + '</td><td class="text-end">$' + (s.subtotal || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td></tr>';
                     });
                 } else {
-                    servicesRows = '<tr><td colspan="6" class="text-center text-muted">Sin servicios registrados</td></tr>';
+                    servicesRows = '<tr><td colspan="7" class="text-center text-muted">Sin servicios registrados</td></tr>';
                 }
 
                 // Tabla de pagos
                 var paymentsRows = '';
+                var subtotalPagos = 0;
                 if (c.payments && c.payments.length > 0) {
                     c.payments.forEach(function(p) {
-                        paymentsRows += '<tr><td>' + esc(p.description) + '</td><td class="text-center">$' + p.amount.toFixed(2) + '</td><td class="text-center">' + new Date(p.paymentDate).toLocaleDateString('es-MX') + '</td></tr>';
+                        paymentsRows += '<tr><td>' + esc(p.description) + '</td><td class="text-center">$' + p.amount.toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td><td class="text-center">' + new Date(p.paymentDate).toLocaleDateString('es-MX') + '</td></tr>';
+                        subtotalPagos += p.amount;
                     });
+
+                    var iva = subtotalPagos * 0.16;
+                    var total = subtotalPagos + iva;
+
+                    paymentsRows += '<tr style="background:#f8f9fa;"><td class="text-end fw-bold">SUBTOTAL:</td><td class="text-center fw-bold">$' + subtotalPagos.toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td><td></td></tr>';
+                    paymentsRows += '<tr style="background:#f8f9fa;"><td class="text-end fw-bold">IVA (16%):</td><td class="text-center fw-bold">$' + iva.toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td><td></td></tr>';
+                    paymentsRows += '<tr style="background:#e6e6e6;"><td class="text-end fw-bold">TOTAL:</td><td class="text-center fw-bold text-success">$' + total.toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td><td></td></tr>';
                 } else {
                     paymentsRows = '<tr><td colspan="3" class="text-center text-muted">Sin pagos registrados</td></tr>';
                 }
@@ -421,13 +430,13 @@
                         <p><strong>PRIMERA. - OBJETO Y ALCANCES OPERATIVOS.</strong></p>
                         <p>En virtud del presente instrumento, <strong>EL PRESTADOR</strong> se obliga a prestar a <strong>EL CLIENTE</strong> el servicio de recolección, transporte y disposición final de residuos, de conformidad con las especificaciones técnicas y operativas detalladas en la siguiente tabla de servicios:</p>
                         <table class="table table-bordered" style="font-size:9pt;">
-                            <thead style="background:#e6e6e6;"><tr><th>Tipo de Residuo</th><th>Unidad</th><th>Periodicidad</th><th>Veh./Téc.</th><th>Dirección</th><th>Almacén</th></tr></thead>
+                            <thead style="background:#e6e6e6;"><tr><th>Tipo de Residuo</th><th>Unidad</th><th>Periodicidad</th><th>Veh./Téc.</th><th>Dirección</th><th>Almacén</th><th class="text-end">Subtotal</th></tr></thead>
                             <tbody>${servicesRows}</tbody>
                         </table>
                         <p>Las partes acuerdan que el primer servicio operativo de recolección se llevará a cabo el día <strong>${fechaPrimerServicio}</strong>.</p>
 
                         <p style="margin-top:15px;"><strong>SEGUNDA. - CONTRAPRESTACIÓN Y CONDICIONES DE PAGO.</strong></p>
-                        <p>Como contraprestación, <strong>EL CLIENTE</strong> pagará a <strong>EL PRESTADOR</strong> la cantidad total de <strong>$${c.totalBasePrice.toFixed(2)} MXN</strong> (más IVA).</p>
+                        <p>Como contraprestación, <strong>EL CLIENTE</strong> pagará a <strong>EL PRESTADOR</strong> la cantidad total de <strong>$${c.totalBasePrice.toLocaleString('en-US', {minimumFractionDigits: 2})} MXN</strong> (más IVA).</p>
                         <table class="table table-bordered" style="font-size:9pt; max-width:500px; margin:0 auto;">
                             <thead style="background:#e6e6e6;"><tr><th>Concepto</th><th>Monto (MXN)</th><th>Fecha de Pago</th></tr></thead>
                             <tbody>${paymentsRows}</tbody>
