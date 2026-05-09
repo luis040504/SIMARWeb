@@ -1,4 +1,5 @@
 const { promisePool: db } = require('../config/database');
+const { generarFolio } = require('../services/folioService');
 
 class Manifest {
 
@@ -6,16 +7,7 @@ class Manifest {
 
     static async findAll(filters = {}) {
         let query = `
-            SELECT
-                m.id,
-                m.numero_manifiesto,
-                m.tipo,
-                m.estado,
-                m.razon_social,
-                m.municipio,
-                m.fecha_manifiesto,
-                m.razon_social_transportista,
-                m.fecha_creacion
+            SELECT m.*
             FROM manifiestos m
             WHERE m.activo = TRUE
         `;
@@ -45,6 +37,14 @@ class Manifest {
             query += ' AND m.fecha_manifiesto <= ?';
             params.push(filters.fecha_hasta);
         }
+        if (filters.id_cliente !== undefined && filters.id_cliente !== null && filters.id_cliente !== '') {
+            query += ' AND m.id_cliente = ?';
+            params.push(Number(filters.id_cliente));
+        }
+        if (filters.contrato_id !== undefined && filters.contrato_id !== null && filters.contrato_id !== '') {
+            query += ' AND m.contrato_id = ?';
+            params.push(Number(filters.contrato_id));
+        }
 
         query += ' ORDER BY m.fecha_creacion DESC';
 
@@ -73,11 +73,18 @@ class Manifest {
     // ─── CREAR ────────────────────────────────────────────────────────────────
 
     static async create(data) {
+        if (!data.tipo) throw new Error('tipo es requerido para generar el folio.');
+        // id_cliente = 0 representa clientes externos/no registrados en el sistema
+
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
 
-            const fields = this._buildFields(data);
+            // El folio se genera aquí — id_cliente=0 agrupa a todos los clientes externos
+            const clienteIdParaFolio = data.id_cliente || 0;
+            const numero_manifiesto = await generarFolio(clienteIdParaFolio, data.tipo, conn);
+
+            const fields = this._buildFields({ ...data, numero_manifiesto });
             const [result] = await conn.query(
                 `INSERT INTO manifiestos (${fields.columns}) VALUES (${fields.placeholders})`,
                 fields.values
@@ -104,6 +111,7 @@ class Manifest {
             await conn.beginTransaction();
 
             const fields = this._buildFields(data);
+            if (!fields.updates) throw new Error('No se proporcionaron campos válidos para actualizar.');
             await conn.query(
                 `UPDATE manifiestos SET ${fields.updates}, fecha_actualizacion = NOW() WHERE id = ?`,
                 [...fields.values, id]
@@ -178,6 +186,8 @@ class Manifest {
 
     static _buildFields(data) {
         const map = {
+            id_cliente: data.id_cliente,
+            contrato_id: data.contrato_id,
             numero_manifiesto: data.numero_manifiesto,
             tipo: data.tipo,
             estado: data.estado,

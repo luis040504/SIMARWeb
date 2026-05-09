@@ -34,8 +34,9 @@ namespace API_Empleados.src.DTOs
         [Required(ErrorMessage = "Es necesario especificar un nombre de rol")]
         public string RoleName { get; set; } = string.Empty;
     
+        // solo para el chofer
         public string? LicenseNumber { get; set; }
         public string? LicenseType { get; set; }
-        public string? ProfessionalId { get; set; }
+        
     }
 }

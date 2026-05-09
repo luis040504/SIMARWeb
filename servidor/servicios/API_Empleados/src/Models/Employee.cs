@@ -1,15 +1,22 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace API_Empleados.src.Models;
 
 [Table("employees")]
+[Index(nameof(ProfessionalId), IsUnique = true)]
 public class Employee
 {
     [Key]
     [Column("user_id")]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid UserId { get; set; }
+
+    [Required]
+    [Column("professional_id")]
+    [StringLength(10)]
+    public string ProfessionalId { get; set; } = string.Empty;
 
     [Column("full_name")]
     [MaxLength(150)]

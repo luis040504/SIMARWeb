@@ -38,9 +38,8 @@ namespace API_Usuarios.src.DTOs
 
         public decimal Salario { get; set; }
 
-        // Campos opcionales según especialidad
-        public string? ProfessionalId { get; set; }
         public string? LicenseNumber { get; set; }
         public string? LicenseType { get; set; }
+        
     }
 }

@@ -21,8 +21,5 @@ namespace API_Empleados.src.DTOs
         // Para Choferes
         public string? LicenseNumber { get; set; }
         public string? LicenseType { get; set; }
-
-        // Para Personal Administrativo/Técnico etc
-        public string? ProfessionalId { get; set; } 
     }
 }

@@ -13,7 +13,9 @@ const manifestController = {
                 tipo:         req.query.tipo,
                 estado:       req.query.estado,
                 fecha_desde:  req.query.fecha_desde,
-                fecha_hasta:  req.query.fecha_hasta
+                fecha_hasta:  req.query.fecha_hasta,
+                id_cliente:   req.query.id_cliente,
+                contrato_id:  req.query.contrato_id
             };
             const data = await Manifest.findAll(filters);
             res.json({ success: true, data, count: data.length });
@@ -36,7 +38,20 @@ const manifestController = {
     // POST /api/manifiestos
     async create(req, res) {
         try {
-            const manifest = await Manifest.create(req.body);
+            const { tipo } = req.body;
+
+            const tiposValidos = ['especial', 'peligroso'];
+            if (!tiposValidos.includes(tipo)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'tipo debe ser "especial" (RME) o "peligroso" (RP).'
+                });
+            }
+
+            // id_cliente = 0 cuando el cliente no está registrado en el sistema
+            const body = { ...req.body, id_cliente: req.body.id_cliente || 0 };
+
+            const manifest = await Manifest.create(body);
             res.status(201).json({ success: true, data: manifest });
         } catch (err) {
             res.status(500).json({ success: false, message: 'Error interno del servidor' });
@@ -50,6 +65,10 @@ const manifestController = {
             if (!manifest) return res.status(404).json({ success: false, message: 'Manifiesto no encontrado' });
             res.json({ success: true, data: manifest });
         } catch (err) {
+            console.error('[PUT /manifiestos/:id]', err.message);
+            if (err.message.includes('campos válidos')) {
+                return res.status(400).json({ success: false, message: err.message });
+            }
             res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },

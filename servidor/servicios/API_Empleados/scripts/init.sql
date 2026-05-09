@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS roles (
 -- 2. TABLA DE EMPLEADOS
 CREATE TABLE IF NOT EXISTS employees (
     user_id UUID PRIMARY KEY, -- Proviene de API_Usuarios
+    professional_id VARCHAR(10) NOT NULL UNIQUE,
     full_name VARCHAR(150) NOT NULL,
     address TEXT,
     birthday DATE,
@@ -26,17 +27,11 @@ CREATE TABLE IF NOT EXISTS employees (
     manager_id UUID REFERENCES employees(user_id)
 );
 
--- 3. TABLA DE CHOFER (Especialidad)
+-- 3. TABLA DE CHOFER
 CREATE TABLE IF NOT EXISTS driver_details (
     employee_id UUID PRIMARY KEY REFERENCES employees(user_id) ON DELETE CASCADE,
     license_number VARCHAR(50) NOT NULL,
     license_type VARCHAR(10) NOT NULL
-);
-
--- 4. TABLA DE STAFF PROFESIONAL (Especialidad)
-CREATE TABLE IF NOT EXISTS professional_staff (
-    employee_id UUID PRIMARY KEY REFERENCES employees(user_id) ON DELETE CASCADE,
-    professional_id VARCHAR(50) NOT NULL 
 );
 
 ---
@@ -74,3 +69,44 @@ INSERT INTO roles (name_role, description, permissions) VALUES
     '["routes.view", "delivery.update", "personal.view"]'
 )
 ON CONFLICT (name_role) DO NOTHING;
+
+
+DO $$ 
+DECLARE 
+    role_id_admin UUID;
+BEGIN
+    SELECT id_role INTO role_id_admin FROM roles WHERE name_role = 'administrador';
+
+    INSERT INTO employees (
+        user_id, 
+        professional_id, 
+        full_name, 
+        address, 
+        birthday, 
+        curp, 
+        rfc, 
+        phone, 
+        genre, 
+        salary, 
+        state, 
+        id_role
+    )
+    VALUES (
+        '00000000-0000-0000-0000-000000000001', 
+        'EMP-001',                            
+        'Administrador Root SIMAR',           
+        'Av. Principal No. 123, Col. Centro',  
+        '1990-01-01',                         
+        'ROOT000000HDFRRR01',                 
+        'ROOT000000AA1',                      
+        '2281000000',                         
+        'Masculino',                          
+        75000.00,                             
+        1,                                    
+        role_id_admin                         
+    ) ON CONFLICT (user_id) DO NOTHING;
+
+    -- Nota: Al ser administrador, no necesita registro en driver_details 
+    -- a menos que también fuera a manejar vehículos.
+
+END $$;
