@@ -21,9 +21,11 @@ namespace API_Usuarios.src.Models
         [StringLength(100)]
         public string Email { get; set; } = string.Empty;
 
+        // ... 
         [Required]
         [Column("role")]
-        public string Role { get; set; } = "empleado"; 
+        public RoleEnum Role { get; set; } = RoleEnum.empleado; // <--- Ahora es tipo RoleEnum
+// ...
 
         [Required]
         [Column("password_hash")]
