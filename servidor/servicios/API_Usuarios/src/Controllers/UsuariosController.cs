@@ -15,8 +15,15 @@ namespace API_Usuarios.src.Controllers
             _usuarioService = usuarioService;
         }
 
-        // === CREAR/REGISTRAR USUARIO/EMPLEADO ===
+        // === CONSULTAR TODOS LOS USUARIOS ===
+        [HttpGet]
+        public async Task<IActionResult> ObtenerUsuarios()
+        {
+            var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+            return Ok(usuarios);
+        }
 
+        // === CREAR/REGISTRAR USUARIO/EMPLEADO ===
         [HttpPost("registro-completo")]
         public async Task<IActionResult> Registrar([FromBody] RegistroRequestDto dto)
         {
@@ -24,23 +31,19 @@ namespace API_Usuarios.src.Controllers
 
             string rolLimpio = dto.RolSeleccionado?.Trim().ToLower() ?? "";
 
+            string[] rolesPermitidos = { "administrador", "vendedor", "tecnico", "dueño", "contador", "chofer", "cliente" };
+            
+            if (!rolesPermitidos.Contains(rolLimpio))
+            {
+                return BadRequest(new { mensaje = $"El rol '{dto.RolSeleccionado}' no es válido en el sistema." });
+            }
+
             if (rolLimpio == "chofer")
             {
                 if (string.IsNullOrWhiteSpace(dto.LicenseNumber) || string.IsNullOrWhiteSpace(dto.LicenseType))
                 {
                     return BadRequest(new { mensaje = "Para el rol Chofer, el número y tipo de licencia son obligatorios." });
                 }
-            }
-            else if (new[] { "administrador", "vendedor", "tecnico", "dueño", "contador" }.Contains(rolLimpio))
-            {
-                if (string.IsNullOrWhiteSpace(dto.ProfessionalId))
-                {
-                    return BadRequest(new { mensaje = $"Para el rol {dto.RolSeleccionado}, la Cédula/ID Profesional es obligatoria." });
-                }
-            }
-            else if (rolLimpio != "cliente")
-            {
-                return BadRequest(new { mensaje = $"El rol '{dto.RolSeleccionado}' no es válido en el sistema." });
             }
 
             var exito = await _usuarioService.RegistrarUsuarioCompletoAsync(dto);

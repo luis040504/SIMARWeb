@@ -56,8 +56,7 @@ namespace API_Usuarios.src.Services
                         Phone = dto.Phone,
                         Genre = dto.Genre,
                         Salary = dto.Salario,
-                        RoleName = dto.RolSeleccionado.ToLower().Trim(), 
-                        ProfessionalId = dto.ProfessionalId,
+                        RoleName = dto.RolSeleccionado.ToLower().Trim(),
                         LicenseNumber = dto.LicenseNumber,
                         LicenseType = dto.LicenseType
                     };
@@ -69,7 +68,6 @@ namespace API_Usuarios.src.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        // --- DIAGNÓSTICO DE ERROR 400 ---
                         var errorDetail = await response.Content.ReadAsStringAsync();
                         Console.WriteLine("*********************************************");
                         Console.WriteLine($"FALLO EN API EMPLEADOS: {response.StatusCode}");
@@ -93,6 +91,22 @@ namespace API_Usuarios.src.Services
                 await transaction.RollbackAsync();
                 return false;
             }
+        }
+
+        public async Task<List<UsuarioResponseDto>> ObtenerUsuariosAsync()
+        {
+            // ¡AQUÍ ESTÁ EL CAMBIO! Cambiamos _context.Users por _context.Usuarios
+            return await _context.Usuarios
+            .Select(u => new UsuarioResponseDto
+            {
+                // OJO: Si te marca error aquí, revisa si en tu modelo Usuario.cs 
+                // la propiedad se llama Id_User, id_user, o simplemente Id. 
+                // Pon la que corresponda a tu modelo.
+                Id_User = u.IdUser, 
+                Username = u.Username,
+                Email = u.Email
+            })
+            .ToListAsync();
         }
     }
 }
