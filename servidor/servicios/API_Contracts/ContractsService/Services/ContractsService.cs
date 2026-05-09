@@ -22,23 +22,22 @@ public class ContractService : IContractService
         _context = context;
     }
 
-    public async Task<ContractResponseDto> CreateContractAsync(Contract request)
+public async Task<ContractResponseDto> CreateContractAsync(Contract request)
     {
         request.Folio = $"CON-{DateTime.Now:yyyyMM}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
         request.CreatedAt = DateTime.UtcNow;
         request.Status = "Pendiente de firma";
 
         _context.Contracts.Add(request);
-        await _context.SaveChangesAsync();
 
-        var audit = new AuditLog
+        var quote = await _context.Quotations.FindAsync(request.ClientId);
+        if (quote != null) 
         {
-            Action = "Create Contract",
-            Details = $"Contrato {request.Folio} creado para el Cliente ID: {request.ClientId}"
-        };
-        _context.AuditLogs.Add(audit);
-        await _context.SaveChangesAsync();
+            quote.Status = "contracted";
+        }
 
+        await _context.SaveChangesAsync();
+        
         return new ContractResponseDto { Id = request.Id, Folio = request.Folio, Message = "Contrato creado exitosamente." };
     }
 
@@ -127,10 +126,19 @@ public class ContractService : IContractService
     public async Task<(byte[] Content, string ContentType, string FileName)> GetContractPdfAsync(int id)
     {
         if (id <= 0) throw new ArgumentException("ID inválido");
-        var contract = await _context.Contracts.FindAsync(id);
+        
+        var contract = await _context.Contracts
+            .Include(c => c.Services)
+            .Include(c => c.Payments)
+            .Include(c => c.Extras)
+            .FirstOrDefaultAsync(c => c.Id == id);
+            
         if (contract == null) throw new KeyNotFoundException("Contract not found");
 
-        byte[] pdfBuffer = System.Text.Encoding.UTF8.GetBytes($"Contrato {contract.Folio}");
+        // Obtener datos del cliente desde la cotización vinculada
+        var quotation = await _context.Quotations.FindAsync(contract.ClientId);
+
+        byte[] pdfBuffer = ContractPdfGenerator.Generate(contract, quotation);
         return (pdfBuffer, "application/pdf", $"{contract.Folio}.pdf");
     }
 }

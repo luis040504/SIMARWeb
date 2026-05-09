@@ -36,6 +36,11 @@
 
 <form method="post" id="mainForm">
     <input type="hidden" name="QuotationId" id="selectedQuotationId" value="@Model.QuotationId" />
+    
+    <input type="hidden" asp-for="BusinessName" />
+    <input type="hidden" asp-for="RFC" />
+    <input type="hidden" asp-for="Address" />
+    <input type="hidden" asp-for="Representative" />
     <input type="hidden" id="hidServicesJson" name="ServicesJsonHidden" value="@Model.ServicesJsonHidden" />
     <input type="hidden" id="hidPaymentsJson" name="PaymentsJsonHidden" value="@Model.PaymentsJsonHidden" />
     <input type="hidden" id="hidExtrasJson" name="ExtrasJsonHidden" value="@Model.ExtrasJsonHidden" />
@@ -47,6 +52,20 @@
     <input type="hidden" id="hidTotalPrice" name="TotalPrice" value="@Model.TotalPrice" />
 
     <div class="container-fluid-simar d-print-none">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px; border-left: 5px solid #dc3545;">
+                <h6 class="alert-heading fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>No se pudo procesar el contrato</h6>
+                <ul class="mb-0 small">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
         <div class="mb-3">
             <a href="/Contracts/Consult" class="btn-simar-outline-gray" style="text-decoration: none;"><i class="bi bi-arrow-left"></i> Regresar a Consulta</a>
         </div>
@@ -84,8 +103,15 @@
                     </div>
                     <div class="col-lg-5 text-end d-flex gap-2">
                         <button type="submit" name="action" value="cancel" class="btn-simar-outline-gray w-100"><i class="bi bi-arrow-repeat me-1"></i> Cancelar</button>
-                        <button type="button" class="btn btn-outline-primary w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar Contrato</button>
-                        <button type="submit" asp-page-handler="DownloadPdf" class="btn-simar-primary w-100"><i class="bi bi-download me-1"></i> Descargar PDF</button>
+                        <button type="button" class="btn btn-outline-primary w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar</button>
+                        
+                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-success w-100" onclick="prepareDownload()">
+                            <i class="bi bi-save me-1"></i> Solo Guardar
+                        </button>
+
+                        <button type="button" id="btnDownloadPdf" class="btn-simar-primary w-100" onclick="saveAndDownloadPdf()">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Guardar y Descargar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -379,6 +405,103 @@
             document.getElementById('preview-anexo-extras').innerHTML = eHtml;
         } else {
             document.getElementById('pageAnexoExtras').style.display = 'none';
+        }
+    }
+
+    function prepareDownload() {
+        // Sync configuration values to hidden fields before form submit
+        services = []; 
+        document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
+            let i = tr.querySelectorAll('input'); 
+            if (i.length >= 7) {
+                services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value }); 
+            }
+        });
+        if (services.length > 0) document.getElementById('hidServicesJson').value = JSON.stringify(services);
+
+        payments = []; 
+        document.querySelectorAll('#modPaymentsBody tr').forEach(tr => { 
+            let i = tr.querySelectorAll('input'); 
+            if (i.length >= 3) {
+                payments.push({ Description: i[0].value, Amount: parseFloat(i[1].value), PaymentDate: i[2].value }); 
+            }
+        });
+        if (payments.length > 0) document.getElementById('hidPaymentsJson').value = JSON.stringify(payments);
+
+        extras = []; 
+        document.querySelectorAll('#modExtrasBody tr').forEach(tr => { 
+            let i = tr.querySelectorAll('input'); 
+            if (i.length >= 3) {
+                extras.push({ Description: i[0].value, UnitCost: parseFloat(i[1].value), Quantity: parseInt(i[2].value) }); 
+            }
+        });
+        if (extras.length > 0) document.getElementById('hidExtrasJson').value = JSON.stringify(extras);
+    }
+
+    async function saveAndDownloadPdf() {
+        // Preparar los datos del formulario
+        prepareDownload();
+
+        // Deshabilitar botones para evitar doble envío
+        var btn = document.getElementById('btnDownloadPdf');
+        var originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Procesando...';
+        document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = true; });
+
+        try {
+            // Construir FormData del formulario
+            var form = document.getElementById('mainForm');
+            var formData = new FormData(form);
+            formData.append('handler', 'DownloadPdf');
+
+            // Obtener el token anti-falsificación
+            var token = form.querySelector('input[name="__RequestVerificationToken"]');
+
+            var response = await fetch(window.location.pathname + '?handler=DownloadPdf', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                var contentType = response.headers.get('Content-Type');
+                if (contentType && contentType.includes('application/pdf')) {
+                    // Descargar el PDF
+                    var blob = await response.blob();
+                    var disposition = response.headers.get('Content-Disposition');
+                    var fileName = 'Contrato.pdf';
+                    if (disposition) {
+                        var match = disposition.match(/filename[^;=\n]*=(['"]?)([^'"\n;]*)/i);
+                        if (match && match[2]) fileName = match[2];
+                    }
+
+                    var link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+
+                    // Redirigir a consulta después de descargar
+                    setTimeout(function() {
+                        window.location.href = '/Contracts/Consult';
+                    }, 500);
+                    return;
+                }
+            }
+
+            // Si la respuesta no fue un PDF (error de guardado), recargar para mostrar errores
+            alert('Ocurrió un error al guardar o descargar el contrato. Intente nuevamente.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = false; });
+
+        } catch (err) {
+            alert('Error de conexión: ' + err.message);
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            document.querySelectorAll('#mainForm button[type="submit"]').forEach(function(b) { b.disabled = false; });
         }
     }
 </script>

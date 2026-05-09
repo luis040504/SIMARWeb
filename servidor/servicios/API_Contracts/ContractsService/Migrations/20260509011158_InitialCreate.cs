@@ -12,21 +12,6 @@ namespace ContractsService.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AuditLogs",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Details = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Contracts",
                 columns: table => new
                 {
@@ -45,6 +30,29 @@ namespace ContractsService.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Contracts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Quotations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false),
+                    Folio = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientRfc = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContactName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContactPhone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContactEmail = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ValidityDays = table.Column<int>(type: "int", nullable: false),
+                    Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ServicesRawJson = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Quotations", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -137,9 +145,6 @@ namespace ContractsService.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AuditLogs");
-
-            migrationBuilder.DropTable(
                 name: "ContractExtras");
 
             migrationBuilder.DropTable(
@@ -147,6 +152,9 @@ namespace ContractsService.Migrations
 
             migrationBuilder.DropTable(
                 name: "ContractServices");
+
+            migrationBuilder.DropTable(
+                name: "Quotations");
 
             migrationBuilder.DropTable(
                 name: "Contracts");
