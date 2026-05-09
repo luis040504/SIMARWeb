@@ -53,5 +53,20 @@ namespace API_Usuarios.src.Controllers
     
             return BadRequest(new { mensaje = "Error al procesar el registro (el correo, usuario o CURP podrían estar duplicados)" });
         }
+
+
+        // Obtener usuario por id
+        [HttpGet("buscar-id/{username}")]
+        public async Task<IActionResult> ObtenerIdPorUsername(string username)
+        {
+        var id = await _usuarioService.ObtenerIdPorUsernameAsync(username);
+
+        if (id == null)
+        {
+            return NotFound(new { mensaje = "Usuario no encontrado" });
+        }
+        return Ok(new { id_user = id });
+    }
+
     }
 }

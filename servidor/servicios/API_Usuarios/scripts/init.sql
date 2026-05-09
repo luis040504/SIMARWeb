@@ -13,5 +13,20 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (username, email, role, password_hash) 
-VALUES ('admin_root', 'admin@simar.com', 'administrador', '$2b$12$KlSdkTSRu6zq/9hQdFYyrue1DD7IDuyjJfgjZXNj1kCgz2ysdlbCK'); #prueba_password123!
+-- Inserción en la base de datos de Usuarios
+INSERT INTO users (
+    id_user, 
+    username, 
+    email, 
+    role, 
+    password_hash, 
+    is_active
+) 
+VALUES (
+    '00000000-0000-0000-0000-000000000001', 
+    'admin_root', 
+    'admin@simar.com', 
+    'empleado',
+    '$2b$12$KlSdkTSRu6zq/9hQdFYyrue1DD7IDuyjJfgjZXNj1kCgz2ysdlbCK', -- prueba_password123!
+    TRUE
+) ON CONFLICT (username) DO NOTHING;

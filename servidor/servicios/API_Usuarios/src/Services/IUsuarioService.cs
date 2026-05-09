@@ -7,5 +7,7 @@ namespace API_Usuarios.src.Services
         Task<bool> RegistrarUsuarioCompletoAsync(RegistroRequestDto registroDto);
 
         Task<List<UsuarioResponseDto>> ObtenerUsuariosAsync();
+
+        Task<Guid?> ObtenerIdPorUsernameAsync(string username);
     }
 }

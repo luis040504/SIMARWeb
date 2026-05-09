@@ -95,18 +95,24 @@ namespace API_Usuarios.src.Services
 
         public async Task<List<UsuarioResponseDto>> ObtenerUsuariosAsync()
         {
-            // ¡AQUÍ ESTÁ EL CAMBIO! Cambiamos _context.Users por _context.Usuarios
             return await _context.Usuarios
             .Select(u => new UsuarioResponseDto
             {
-                // OJO: Si te marca error aquí, revisa si en tu modelo Usuario.cs 
-                // la propiedad se llama Id_User, id_user, o simplemente Id. 
-                // Pon la que corresponda a tu modelo.
                 Id_User = u.IdUser, 
                 Username = u.Username,
                 Email = u.Email
             })
             .ToListAsync();
+        }
+
+        public async Task<Guid?> ObtenerIdPorUsernameAsync(string username)
+        {
+            var usuario = await _context.Users
+            .Where(u => u.Username.ToLower() == username.ToLower())
+            .Select(u => u.IdUser) 
+            .FirstOrDefaultAsync();
+
+            return usuario == Guid.Empty ? null : usuario;
         }
     }
 }
