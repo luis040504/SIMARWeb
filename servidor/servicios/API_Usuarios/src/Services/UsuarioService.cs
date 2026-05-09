@@ -25,8 +25,6 @@ namespace API_Usuarios.src.Services
 
     try
     {
-        // 1. DETERMINAR EL ENUM (Para la base de datos de Usuarios)
-        // Convertimos el string que viene del DTO al Enum que espera el modelo
         RoleEnum macroRol;
         
         if (dto.RolSeleccionado.Equals("cliente", StringComparison.OrdinalIgnoreCase))
@@ -35,7 +33,6 @@ namespace API_Usuarios.src.Services
         }
         else
         {
-            // Cualquier otro (admin, vendedor, etc.) entra como 'empleado' en users_db
             macroRol = RoleEnum.empleado;
         }
 
@@ -44,15 +41,13 @@ namespace API_Usuarios.src.Services
             Username = dto.Username,
             Email = dto.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            Role = macroRol, // <--- AHORA SÍ COINCIDEN LOS TIPOS (Enum = Enum)
+            Role = macroRol, 
             IsActive = true
         };
 
         _context.Usuarios.Add(nuevoUsuario);
         await _context.SaveChangesAsync();
 
-        // 2. LÓGICA PARA EL MICROSERVICIO DE EMPLEADOS
-        // Seguimos usando RoleEnum.empleado para decidir si mandamos el payload
         if (macroRol == RoleEnum.empleado)
         {
             var empleadoPayload = new
@@ -68,7 +63,6 @@ namespace API_Usuarios.src.Services
                 Phone = dto.Phone,
                 Genre = dto.Genre,
                 Salary = dto.Salario,
-                // Aquí mandamos el rol específico (vendedor, tecnico, etc.) como string
                 RoleName = dto.RolSeleccionado.ToLower().Trim(), 
                 LicenseNumber = dto.LicenseNumber,
                 LicenseType = dto.LicenseType
@@ -82,7 +76,6 @@ namespace API_Usuarios.src.Services
             if (!response.IsSuccessStatusCode)
             {
                 var errorDetail = await response.Content.ReadAsStringAsync();
-                // ... (tus logs de error)
                 await transaction.RollbackAsync();
                 return false;
             }
@@ -93,7 +86,6 @@ namespace API_Usuarios.src.Services
     }
     catch (Exception ex)
     {
-        // ... (tus logs de error)
         await transaction.RollbackAsync();
         return false;
     }
