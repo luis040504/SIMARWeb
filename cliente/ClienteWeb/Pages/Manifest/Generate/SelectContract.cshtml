@@ -1,0 +1,69 @@
+@page
+@model ClienteWeb.Pages.Manifest.Generate.SelectContractModel
+@{
+    ViewData["Title"] = "Seleccionar cliente";
+    var tipoLabel = Model.Tipo == "peligroso" ? "Peligroso (RP)" : "Especial (RME)";
+    var generatePage = Model.Tipo == "peligroso"
+        ? "/Manifest/Generate/HazardousWaste"
+        : "/Manifest/Generate/SpecialWaste";
+}
+
+<div class="container mt-4">
+    <h4>Nuevo manifiesto — @tipoLabel</h4>
+    <p class="text-muted">Selecciona el contrato del cliente para pre-llenar los datos del generador, o continúa sin cliente registrado.</p>
+
+    @if (Model.ApiError is not null)
+    {
+        <div class="alert alert-warning">@Model.ApiError</div>
+    }
+
+    @if (Model.Contratos.Count == 0 && Model.ApiError is null)
+    {
+        <div class="alert alert-info">No hay contratos activos disponibles. Solo los contratos con estatus <strong>Activo</strong> pueden generar manifiestos.</div>
+    }
+    else if (Model.Contratos.Count > 0)
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Folio contrato</th>
+                        <th>Cliente</th>
+                        <th>Estatus</th>
+                        <th>Vigencia</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Contratos)
+                    {
+                        <tr>
+                            <td><strong>@c.Folio</strong></td>
+                            <td>@c.ClienteNombre</td>
+                            <td>
+                                <span class="badge @(c.Status.ToLower() == "activo" ? "bg-success" : "bg-secondary")">
+                                    @c.Status
+                                </span>
+                            </td>
+                            <td>@(c.ExpirationDate.HasValue ? c.ExpirationDate.Value.ToString("dd/MM/yyyy") : "—")</td>
+                            <td>
+                                <a href="@generatePage?contratoId=@c.ContratoId&clienteId=@c.ClienteId"
+                                   class="btn btn-sm btn-primary"
+                                   data-loading-text="Cargando datos del cliente...">
+                                    Seleccionar
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <hr />
+    <p class="text-muted small">¿El cliente no está registrado en el sistema?</p>
+    <a href="@generatePage" class="btn btn-outline-secondary">
+        Continuar sin cliente registrado
+    </a>
+    <a href="/Manifest/Consult" class="btn btn-link ms-2">Cancelar</a>
+</div>

@@ -291,6 +291,39 @@
                 padding: 0.3rem 0.8rem;
             }
         }
+
+        /* ── Loading overlay ── */
+        #simar-loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        #simar-loading-overlay.visible {
+            display: flex;
+        }
+        .simar-spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #e0ead8;
+            border-top-color: var(--simar-green);
+            border-radius: 50%;
+            animation: simar-spin 0.75s linear infinite;
+        }
+        @@keyframes simar-spin {
+            to { transform: rotate(360deg); }
+        }
+        #simar-loading-overlay p {
+            color: var(--simar-dark);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 0;
+        }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -400,6 +433,11 @@
                         <span class="nav-label">Vehículos</span>
                     </a>
 
+                    <a asp-page="/WasteCatalog/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-recycle me-3"></i>
+                        <span class="nav-label">Catálogo de Residuos</span>
+                    </a>
+
                     <a asp-page="/Recolecciones/Index"
                        class="list-group-item list-group-item-simar d-flex align-items-center">
                         <i class="bi bi-truck me-3"></i>
@@ -476,6 +514,12 @@
         </footer>
     </main>
 
+    <!-- Loading overlay -->
+    <div id="simar-loading-overlay" role="status" aria-live="polite">
+        <div class="simar-spinner"></div>
+        <p id="simar-loading-msg">Procesando...</p>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -518,5 +562,56 @@
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        (function () {
+            var overlay = document.getElementById('simar-loading-overlay');
+            var msg     = document.getElementById('simar-loading-msg');
+            var timer   = null;
+            var DELAY   = 400; // ms antes de mostrar el overlay
+
+            function scheduleShow(text) {
+                cancelPending();
+                timer = setTimeout(function () {
+                    msg.textContent = text || 'Procesando...';
+                    overlay.classList.add('visible');
+                }, DELAY);
+            }
+
+            function cancelPending() {
+                if (timer) { clearTimeout(timer); timer = null; }
+            }
+
+            function hide() {
+                cancelPending();
+                overlay.classList.remove('visible');
+            }
+
+            // Cancelar si la página carga rápido o el usuario vuelve atrás
+            document.addEventListener('DOMContentLoaded', hide);
+            window.addEventListener('pageshow', hide);
+
+            // Forms: programar overlay al enviar
+            document.addEventListener('submit', function () {
+                var active = document.activeElement;
+                if (active && active.dataset.loading === 'false') return;
+                var text = (active && active.dataset.loadingText) || 'Guardando...';
+                scheduleShow(text);
+            });
+
+            // Links de navegación real
+            document.addEventListener('click', function (e) {
+                var el = e.target.closest('a[href]');
+                if (!el) return;
+                var href = el.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('javascript')) return;
+                if (el.dataset.bsToggle) return;
+                if (el.target === '_blank') return;
+                if (el.dataset.loading === 'false') return;
+                var text = el.dataset.loadingText || 'Cargando...';
+                scheduleShow(text);
+            });
+        })();
+    </script>
 </body>
 </html>

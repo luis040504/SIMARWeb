@@ -8,7 +8,7 @@ services:
     image: nginx:1.25.5
     container_name: simar_api_gateway
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
@@ -204,6 +204,47 @@ services:
     restart: unless-stopped
 
   # ============================================
+  # MICROSERVICIO: CATÁLOGO DE RESIDUOS
+  # ============================================
+  catalog_api:
+    build:
+      context: ./servicios/API_WasteCatalog
+      dockerfile: Dockerfile
+    container_name: simar_catalog_api
+    ports:
+      - "8013:8010"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8010
+      - ConnectionStrings__DefaultConnection=Server=sqlserver_catalog;Database=CatalogDb;User=sa;Password=${CATALOG_DB_PASSWORD};TrustServerCertificate=True;
+    depends_on:
+      - sqlserver_catalog
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # MICROSERVICIO: AUDITORÍA
+  # ============================================
+  audit_api:
+    build:
+      context: ./servicios/API_Audit
+      dockerfile: Dockerfile
+    container_name: simar_audit_api
+    ports:
+      - "8009:8009"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8009
+      - ConnectionStrings__DefaultConnection=Server=sqlserver_audit;Database=AuditDB;User=sa;Password=${AUDIT_DB_PASSWORD};TrustServerCertificate=True;
+      - ApiKey__Value=${AUDIT_API_KEY}
+    depends_on:
+      - sqlserver_audit
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
   # MICROSERVICIO: EMPLEADOS
   # ============================================
   empleados_api:
@@ -232,7 +273,7 @@ services:
       dockerfile: Dockerfile
     container_name: simar_facturacion_api
     ports:
-      - "8009:8009"
+      - "8019:8009"
     env_file:
       - .env
     environment:
@@ -379,14 +420,14 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - MONGO_INITDB_DATABASE=${MONGODB_DB}
     ports:
-      - "8013:27017"
+      - "8018:27017"
     volumes:
       - mongo_facturacion_data:/data/db
     networks:
       - simar_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -438,6 +479,40 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  # ============================================
+  # SQL SERVER - CATÁLOGO
+  # ============================================
+  sqlserver_catalog:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: simar_sqlserver_catalog
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${CATALOG_DB_PASSWORD}
+    ports:
+      - "1436:1433"
+    volumes:
+      - sqlserver_catalog_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
+
+  # ============================================
+  # SQL SERVER - AUDITORÍA
+  # ============================================
+  sqlserver_audit:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: simar_sqlserver_audit
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${AUDIT_DB_PASSWORD}
+    ports:
+      - "1435:1433"
+    volumes:
+      - sqlserver_audit_data:/var/opt/mssql
+    networks:
+      - simar_network
+    restart: unless-stopped
 
   # ============================================
   # SQL SERVER - CONTRATOS
@@ -522,6 +597,8 @@ services:
 # VOLÚMENES
 # ============================================
 volumes:
+  sqlserver_catalog_data:
+  sqlserver_audit_data:
   mysql_vehiculos_data:
   mysql_manifiestos_data:
   manifiestos_uploads:
@@ -535,9 +612,9 @@ volumes:
   db_users_data:
   client_files:
 
-# ============================================
-# REDES
-# ============================================
+    # ============================================
+    # REDES
+    # ============================================
 networks:
   simar_network:
     driver: bridge
