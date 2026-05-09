@@ -23,12 +23,13 @@ public class ContractService : IContractService
         _context = context;
     }
 
-public async Task<ContractResponseDto> CreateContractAsync(Contract request)
+    public async Task<ContractResponseDto> CreateContractAsync(Contract request)
     {
         request.Folio = $"CON-{DateTime.Now:yyyyMM}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
         request.CreatedAt = DateTime.UtcNow;
         request.Status = "Pendiente de firma";
 
+        // Dejar los datos del cliente persistidos en el contrato
         _context.Contracts.Add(request);
 
         var quote = await _context.Quotations.FindAsync(request.ClientId);
@@ -48,16 +49,20 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
 
         if (!string.IsNullOrEmpty(search))
         {
-            query = query.Where(c => c.Folio.Contains(search) || c.ClientId.ToString() == search);
+            query = query.Where(c => c.Folio.Contains(search) || c.ClientName.Contains(search));
         }
+        
         if (!string.IsNullOrEmpty(status))
         {
             query = query.Where(c => c.Status == status);
         }
+        
         if (dateFilter.HasValue)
         {
-            // Busca contratos cuyo primer servicio sea en la fecha seleccionada
-            query = query.Where(c => c.FirstServiceDate.HasValue && c.FirstServiceDate.Value.Date == dateFilter.Value.Date);
+            var filterDate = dateFilter.Value.Date;
+            query = query.Where(c => 
+                c.CreatedAt.Date <= filterDate && 
+                c.Payments.Any(p => p.PaymentDate.Date >= filterDate));
         }
 
         return await query.Select(c => new ContractListDto
@@ -65,9 +70,9 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
             Id = c.Id,
             Folio = c.Folio,
             ClientId = c.ClientId,
+            ClientName = c.ClientName,
             Status = c.Status,
             CreatedAt = c.CreatedAt,
-            // Tomamos la fecha del último pago como posible expiración, o la de inicio
             ExpirationDate = c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue)
         }).ToListAsync();
     }
@@ -93,16 +98,15 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
             .FirstOrDefaultAsync(c => c.Id == id);
         if (contract == null) throw new KeyNotFoundException("Contrato no encontrado.");
 
-        var quotation = await _context.Quotations.FindAsync(contract.ClientId);
-
         return new ContractFullDetailDto
         {
             Id = contract.Id,
             Folio = contract.Folio,
             ClientId = contract.ClientId,
-            ClientName = quotation?.ClientName ?? $"Cliente #{contract.ClientId}",
-            ClientRfc = quotation?.ClientRfc ?? "",
-            Representative = quotation?.ContactName ?? "",
+            ClientName = contract.ClientName,
+            ClientRfc = contract.ClientRfc,
+            Representative = contract.Representative,
+            ClientAddress = contract.ClientAddress,
             Status = contract.Status,
             CreatedAt = contract.CreatedAt,
             TotalBasePrice = contract.TotalBasePrice,
@@ -126,6 +130,10 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
 
         existing.Status = request.Status;
         existing.TotalBasePrice = request.TotalBasePrice;
+        existing.ClientName = request.ClientName;
+        existing.ClientRfc = request.ClientRfc;
+        existing.Representative = request.Representative;
+        existing.ClientAddress = request.ClientAddress;
         existing.ClientObjetoSocial = request.ClientObjetoSocial;
         existing.ClientDeclaraciones = request.ClientDeclaraciones;
         existing.ContractDuration = request.ContractDuration;
@@ -168,16 +176,12 @@ public async Task<ContractResponseDto> CreateContractAsync(Contract request)
             
         if (contract == null) throw new KeyNotFoundException("Contract not found");
 
-        // Obtener datos del cliente desde la cotización vinculada
-        var quotation = await _context.Quotations.FindAsync(contract.ClientId);
-
-        byte[] pdfBuffer = ContractPdfGenerator.Generate(contract, quotation);
+        byte[] pdfBuffer = ContractPdfGenerator.Generate(contract);
         return (pdfBuffer, "application/pdf", $"{contract.Folio}.pdf");
     }
 }
 
-public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } }
-public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
+public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } }public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
 
 public class ContractFullDetailDto
 {
@@ -187,6 +191,7 @@ public class ContractFullDetailDto
     public string ClientName { get; set; } = "";
     public string ClientRfc { get; set; } = "";
     public string Representative { get; set; } = "";
+    public string ClientAddress { get; set; } = "";
     public string Status { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public decimal TotalBasePrice { get; set; }

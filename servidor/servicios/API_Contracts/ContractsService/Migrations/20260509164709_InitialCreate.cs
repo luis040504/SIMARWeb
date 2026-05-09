@@ -22,6 +22,10 @@ namespace ContractsService.Migrations
                     TotalBasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientRfc = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Representative = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientObjetoSocial = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientDeclaraciones = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContractDuration = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -48,7 +52,8 @@ namespace ContractsService.Migrations
                     Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ServicesRawJson = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ServicesRawJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Frequency = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -112,7 +117,8 @@ namespace ContractsService.Migrations
                     Vehicles = table.Column<int>(type: "int", nullable: false),
                     Technicians = table.Column<int>(type: "int", nullable: false),
                     ServiceAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    WarehouseAddress = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    WarehouseAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -167,13 +167,14 @@ app.MapPost("/api/quotations/sync", async (JsonDocument rawJson, ContractsDbCont
             Subtotal = root.GetProperty("subtotal").GetDecimal(),
             Total = root.GetProperty("total").GetDecimal(),
             CreatedAt = createdAtDate,
-            ServicesRawJson = root.GetProperty("services").GetRawText()
+            ServicesRawJson = root.GetProperty("services").GetRawText(),
+            Frequency = root.GetProperty("frequency").GetProperty("description").GetString() ?? ""
         };
 
         db.Quotations.Add(mirroredQuote);
         await db.SaveChangesAsync();
 
-        return Results.Ok(new { message = "Cotización sincronizada correctamente en la BD Espejo." });
+        return Results.Ok(new { message = "Cotización sincronizada correctamente en la BD." });
     }
     catch (Exception ex)
     {

@@ -112,7 +112,7 @@
                 <label class="form-label-simar">Búsqueda por Cliente</label>
                 <div class="search-box">
                     <input type="text" name="Search" class="form-control" 
-                        placeholder="Nombre del cliente o RFC..." value="@Model.Search">
+                        placeholder="Nombre del cliente o Folio..." value="@Model.Search">
                     <button type="submit">
                         <i class="bi bi-search"></i>
                     </button>
@@ -411,7 +411,7 @@
                         <tr><td style="background:#e6e6e6;" class="fw-bold">RAZÓN SOCIAL</td><td colspan="7" class="fw-bold">${esc(c.clientName)}</td></tr>
                         <tr><td style="background:#e6e6e6;" class="fw-bold">APODERADO LEGAL</td><td colspan="7" class="fw-bold">${esc(c.representative)}</td></tr>
                         <tr><td style="background:#e6e6e6;" class="fw-bold">OBJETO SOCIAL</td><td colspan="7">${esc(c.clientObjetoSocial)}</td></tr>
-                        <tr><td style="background:#e6e6e6;" class="fw-bold">DOMICILIO</td><td colspan="5">Pendiente de captura</td><td style="background:#e6e6e6;" class="fw-bold">R.F.C.</td><td class="fw-bold">${esc(c.clientRfc)}</td></tr>
+                        <tr><td style="background:#e6e6e6;" class="fw-bold">DOMICILIO</td><td colspan="5">${esc(c.clientAddress || 'Pendiente de captura')}</td><td style="background:#e6e6e6;" class="fw-bold">R.F.C.</td><td class="fw-bold">${esc(c.clientRfc)}</td></tr>
                         <tr><td style="background:#e6e6e6;" class="fw-bold">DECLARACIONES</td><td colspan="7">${esc(c.clientDeclaraciones)}</td></tr>
                     </table>
 

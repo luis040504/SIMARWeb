@@ -11,11 +11,12 @@ public static class ContractPdfGenerator
     private static readonly string Black = "#000000";
     private static readonly string White = "#FFFFFF";
 
-    public static byte[] Generate(Contract contract, Quotation? quotation)
+    public static byte[] Generate(Contract contract)
     {
-        string clientName = quotation?.ClientName ?? $"Cliente #{contract.ClientId}";
-        string clientRfc = quotation?.ClientRfc ?? "";
-        string representative = quotation?.ContactName ?? "";
+        string clientName = contract.ClientName;
+        string clientRfc = contract.ClientRfc;
+        string representative = contract.Representative;
+        string clientAddress = contract.ClientAddress;
 
         var document = Document.Create(container =>
         {
@@ -168,7 +169,7 @@ public static class ContractPdfGenerator
             CellText(table.Cell().ColumnSpan(7).Element(DataCell), contract.ClientObjetoSocial ?? "", 8f);
 
             CellText(table.Cell().Element(GrayLeftCell), "DOMICILIO", 8.5f, bold: true);
-            CellText(table.Cell().ColumnSpan(5).Element(DataCell), "Pendiente de captura", 8f);
+            CellText(table.Cell().ColumnSpan(5).Element(DataCell), string.IsNullOrEmpty(contract.ClientAddress) ? "Pendiente de captura" : contract.ClientAddress, 8f);
             CellText(table.Cell().Element(GrayCell), "R.F.C.", 8.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), clientRfc, 8.5f, bold: true);
 
@@ -288,8 +289,9 @@ public static class ContractPdfGenerator
                 c.RelativeColumn(10);
                 c.RelativeColumn(15);
                 c.RelativeColumn(12);
-                c.RelativeColumn(24);
-                c.RelativeColumn(24);
+                c.RelativeColumn(20);
+                c.RelativeColumn(20);
+                c.RelativeColumn(13);
             });
 
             CellText(table.Cell().Element(GrayCell), "Tipo de Residuo", 8, bold: true);
@@ -298,6 +300,7 @@ public static class ContractPdfGenerator
             CellText(table.Cell().Element(GrayCell), "Vehículos / Técnicos", 7, bold: true);
             CellText(table.Cell().Element(GrayCell), "Dirección de Recolección", 7.5f, bold: true);
             CellText(table.Cell().Element(GrayCell), "Almacén Destino", 7.5f, bold: true);
+            CellText(table.Cell().Element(GrayCell), "Subtotal", 8, bold: true);
 
             if (contract.Services != null)
             {
@@ -309,6 +312,7 @@ public static class ContractPdfGenerator
                     CellText(table.Cell().Element(CenterCell), $"{s.Vehicles} / {s.Technicians}", 8);
                     CellText(table.Cell().Element(DataCell), s.ServiceAddress, 8);
                     CellText(table.Cell().Element(DataCell), s.WarehouseAddress, 8);
+                    CellText(table.Cell().Element(CenterCell), $"${s.Subtotal:N2}", 8);
                 }
             }
         });
@@ -320,14 +324,16 @@ public static class ContractPdfGenerator
         {
             table.ColumnsDefinition(c =>
             {
-                c.RelativeColumn(40);
-                c.RelativeColumn(30);
+                c.RelativeColumn(45);
+                c.RelativeColumn(25);
                 c.RelativeColumn(30);
             });
 
             CellText(table.Cell().Element(GrayCell), "Concepto / Desglose", 8, bold: true);
             CellText(table.Cell().Element(GrayCell), "Monto (MXN)", 8, bold: true);
             CellText(table.Cell().Element(GrayCell), "Fecha de Pago", 8, bold: true);
+
+            decimal subtotalPagos = 0;
 
             if (contract.Payments != null)
             {
@@ -336,8 +342,25 @@ public static class ContractPdfGenerator
                     CellText(table.Cell().Element(DataCell), p.Description, 8);
                     CellText(table.Cell().Element(CenterCell), $"${p.Amount:N2}", 8);
                     CellText(table.Cell().Element(CenterCell), p.PaymentDate.ToString("dd/MM/yyyy"), 8);
+                    
+                    subtotalPagos += p.Amount;
                 }
             }
+
+            decimal iva = subtotalPagos * 0.16m;
+            decimal total = subtotalPagos + iva;
+
+            CellText(table.Cell().Element(DataCell), "SUBTOTAL", 8, bold: true);
+            CellText(table.Cell().Element(CenterCell), $"${subtotalPagos:N2}", 8, bold: true);
+            CellText(table.Cell().Element(CenterCell), "", 8); // Celda vacía
+
+            CellText(table.Cell().Element(DataCell), "IVA (16%)", 8, bold: true);
+            CellText(table.Cell().Element(CenterCell), $"${iva:N2}", 8, bold: true);
+            CellText(table.Cell().Element(CenterCell), "", 8); 
+
+            CellText(table.Cell().Element(GrayLeftCell), "TOTAL", 8, bold: true);
+            CellText(table.Cell().Element(GrayCell), $"${total:N2}", 8, bold: true);
+            CellText(table.Cell().Element(GrayCell), "", 8); 
         });
     }
 

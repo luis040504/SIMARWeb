@@ -48,9 +48,15 @@ namespace ClienteWeb.Pages.Contracts.Consult
         private async Task LoadContractsAsync()
         {
             var url = "/api/contracts?";
-            if (!string.IsNullOrEmpty(Search)) url += $"search={Search}&";
-            if (!string.IsNullOrEmpty(Status)) url += $"status={Status}&";
-            if (DateFilter.HasValue) url += $"dateFilter={DateFilter.Value:yyyy-MM-dd}";
+            
+            if (!string.IsNullOrEmpty(Search)) 
+                url += $"search={Uri.EscapeDataString(Search)}&";
+                
+            if (!string.IsNullOrEmpty(Status)) 
+                url += $"status={Uri.EscapeDataString(Status)}&";
+                
+            if (DateFilter.HasValue) 
+                url += $"dateFilter={DateFilter.Value:yyyy-MM-dd}";
 
             try
             {
@@ -62,7 +68,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
                     {
                         Id = c.Folio,
                         DbId = c.Id,
-                        Client = c.ClientId.ToString(),
+                        Client = !string.IsNullOrEmpty(c.ClientName) ? c.ClientName : "Cliente Desconocido", 
                         StartDate = c.CreatedAt,
                         EndDate = c.ExpirationDate,
                         Status = c.Status
@@ -72,6 +78,8 @@ namespace ClienteWeb.Pages.Contracts.Consult
             catch (Exception ex)
             {
                 Contracts = new List<Contract>();
+                // Descomenta esto si quieres ver el error real temporalmente
+                // ErrorMessage = $"Error técnico: {ex.Message}"; 
                 ErrorMessage = "No se pudo conectar con el servidor de contratos.";
             }
         }
@@ -94,7 +102,6 @@ namespace ClienteWeb.Pages.Contracts.Consult
         }
     }
 
-    // Clases auxiliares para mapear la respuesta de la API
     public class Contract
     {
         public int DbId { get; set; }
@@ -110,6 +117,9 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public int Id { get; set; }
         public string Folio { get; set; } = "";
         public int ClientId { get; set; }
+        
+        public string ClientName { get; set; } = ""; 
+        
         public string Status { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public DateTime ExpirationDate { get; set; }

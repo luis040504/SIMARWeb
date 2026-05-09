@@ -18,6 +18,10 @@ public class Contract
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Status { get; set; } = "Pendiente de firma";
 
+    public string ClientName { get; set; } = "";
+    public string ClientRfc { get; set; } = "";
+    public string Representative { get; set; } = "";
+    public string ClientAddress { get; set; } = "";
     public string ClientObjetoSocial { get; set; } = "";
     public string ClientDeclaraciones { get; set; } = "";
     public string ContractDuration { get; set; } = "";
@@ -28,7 +32,7 @@ public class Contract
     public List<ContractExtra> Extras { get; set; } = new();
 }
 
-public class ContractServiceItem { public int Id { get; set; } public int ContractId { get; set; } public string WasteType { get; set; } = ""; public string WasteUnit { get; set; } = ""; public string Frequency { get; set; } = ""; public int Vehicles { get; set; } public int Technicians { get; set; } public string ServiceAddress { get; set; } = ""; public string WarehouseAddress { get; set; } = ""; }
+public class ContractServiceItem { public int Id { get; set; } public int ContractId { get; set; } public string WasteType { get; set; } = ""; public string WasteUnit { get; set; } = ""; public string Frequency { get; set; } = ""; public int Vehicles { get; set; } public int Technicians { get; set; } public string ServiceAddress { get; set; } = ""; public string WarehouseAddress { get; set; } = ""; public decimal Subtotal { get; set; } }
 public class ContractPaymentItem { public int Id { get; set; } public int ContractId { get; set; } public string Description { get; set; } = ""; public decimal Amount { get; set; } public DateTime PaymentDate { get; set; } }
 public class ContractExtra { public int Id { get; set; } public int ContractId { get; set; } public string Description { get; set; } = ""; public decimal UnitCost { get; set; } public int Quantity { get; set; } }
 
@@ -48,6 +52,6 @@ public class Quotation
     public decimal Subtotal { get; set; }
     public decimal Total { get; set; }
     public DateTime CreatedAt { get; set; } 
-    
     public string ServicesRawJson { get; set; } = "[]"; 
+    public string Frequency { get; set; } = "";
 }

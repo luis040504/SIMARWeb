@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContractsService.Migrations
 {
     [DbContext(typeof(ContractsDbContext))]
-    [Migration("20260509011158_InitialCreate")]
+    [Migration("20260509164709_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -33,6 +33,10 @@ namespace ContractsService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ClientAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ClientDeclaraciones")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -40,7 +44,15 @@ namespace ContractsService.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ClientObjetoSocial")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientRfc")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -55,6 +67,10 @@ namespace ContractsService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Folio")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Representative")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -145,6 +161,9 @@ namespace ContractsService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("Technicians")
                         .HasColumnType("int");
 
@@ -199,6 +218,10 @@ namespace ContractsService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Folio")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Frequency")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

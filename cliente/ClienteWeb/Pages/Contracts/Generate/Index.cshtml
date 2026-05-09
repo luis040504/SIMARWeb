@@ -100,10 +100,11 @@
                         <p class="text-muted small mb-0">Utiliza el botón de configuración para modificar el objeto social, declaraciones y tablas antes de descargar el documento legal.</p>
                     </div>
                     <div class="col-lg-5 text-end d-flex gap-2">
-                        <button type="submit" name="action" value="cancel" class="btn-simar-outline-gray w-100"><i class="bi bi-arrow-repeat me-1"></i> Cancelar</button>
-                        <button type="button" class="btn btn-outline-primary w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar</button>
+                        <button type="submit" name="action" value="cancel" formnovalidate class="btn-simar-outline-gray w-100"><i class="bi bi-arrow-repeat me-1"></i> Cancelar</button>
                         
-                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-success w-100" onclick="prepareDownload()">
+                        <button type="button" class="btn-simar-outline-gray w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar</button>
+                        
+                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-outline-gray w-100" onclick="prepareDownload()">
                             <i class="bi bi-save me-1"></i> Solo Guardar
                         </button>
 
@@ -215,7 +216,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    
+                    <div id="configError" class="alert alert-danger d-none small py-2 mb-3" role="alert">
+                        <i class="bi bi-exclamation-circle-fill me-1"></i> Por favor, completa todos los campos de texto y fechas antes de aplicar.
+                    </div>
                     <h6 class="fw-bold mb-3 border-bottom pb-2 text-simar-green">1. Declaraciones del Cliente</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
@@ -251,7 +254,7 @@
                     <div class="table-responsive mb-4">
                         <table class="table table-bordered table-editable">
                             <thead class="table-light text-center" style="font-size:0.85rem">
-                                <tr><th>Tipo de Residuo</th><th>Unidad</th><th>Periodicidad</th><th>Vehículos</th><th>Técnicos</th><th>Dir. Servicio</th><th>Almacén Destino</th><th></th></tr>
+                                <tr><th>Tipo de Residuo</th><th>Unidad</th><th>Periodicidad</th><th>Vehículos</th><th>Técnicos</th><th>Dir. Servicio</th><th>Almacén Destino</th><th>Subtotal ($)</th><th></th></tr>
                             </thead>
                             <tbody id="modServicesBody"></tbody>
                         </table>
@@ -321,8 +324,11 @@
     });
 
     function openConfigModal() {
+        document.getElementById('configError').classList.add('d-none');
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
         const sBody = document.getElementById('modServicesBody'); sBody.innerHTML = '';
-        services.forEach(s => appendServiceRow(s.WasteType, s.WasteUnit, s.Frequency, s.Vehicles, s.Technicians, s.ServiceAddress, s.WarehouseAddress));
+        services.forEach(s => appendServiceRow(s.WasteType, s.WasteUnit, s.Frequency, s.Vehicles, s.Technicians, s.ServiceAddress, s.WarehouseAddress, s.Subtotal));
         
         const pBody = document.getElementById('modPaymentsBody'); pBody.innerHTML = '';
         payments.forEach(p => appendPaymentRow(p.Description, p.Amount, p.PaymentDate));
@@ -333,43 +339,114 @@
         new bootstrap.Modal(document.getElementById('modalConfig')).show();
     }
 
-    function appendServiceRow(w, u, f, v, t, sa, wa) {
-        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" value="${w}"></td><td><input type="text" value="${u}"></td><td><input type="text" value="${f}"></td><td><input type="number" value="${v}"></td><td><input type="number" value="${t}"></td><td><input type="text" value="${sa}"></td><td><input type="text" value="${wa}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+    function appendServiceRow(w, u, f, v, t, sa, wa, sub) {
+        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" class="form-control form-control-sm" value="${w}"></td><td><input type="text" class="form-control form-control-sm" value="${u}"></td><td><input type="text" class="form-control form-control-sm" value="${f}"></td><td><input type="number" class="form-control form-control-sm" value="${v}"></td><td><input type="number" class="form-control form-control-sm" value="${t}"></td><td><input type="text" class="form-control form-control-sm" value="${sa}"></td><td><input type="text" class="form-control form-control-sm" value="${wa}"></td><td><input type="number" step="0.01" class="form-control form-control-sm" value="${sub || 0}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
     }
 
     function appendPaymentRow(d, a, pd) {
-        document.getElementById('modPaymentsBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" value="${d}"></td><td><input type="number" step="0.01" value="${a}"></td><td><input type="date" value="${pd}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+        document.getElementById('modPaymentsBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" class="form-control form-control-sm" value="${d}"></td><td><input type="number" step="0.01" class="form-control form-control-sm" value="${a}"></td><td><input type="date" class="form-control form-control-sm" value="${pd}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
     }
 
     function appendExtraRow(d, u, q) {
-        document.getElementById('modExtrasBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" value="${d}"></td><td><input type="number" step="0.01" value="${u}"></td><td><input type="number" value="${q}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+        document.getElementById('modExtrasBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" class="form-control form-control-sm" value="${d}"></td><td><input type="number" step="0.01" class="form-control form-control-sm" value="${u}"></td><td><input type="number" class="form-control form-control-sm" value="${q}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
     }
 
-    function addServiceRow() { appendServiceRow('','', '', 1, 1, '', ''); }
+    function addServiceRow() { appendServiceRow('','', '', 1, 1, '', '', 0); }
     function addPaymentRow() { appendPaymentRow('', 0, ''); }
     function addExtraRow() { appendExtraRow('', 0, 1); }
 
     function saveConfiguration() {
-        let objSocial = document.getElementById('modObjetoSocial').value;
-        let decs = document.getElementById('modDeclaraciones').value;
+        let errors = [];
+        
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+        function validateInput(id, fieldName) {
+            let el = document.getElementById(id);
+            let val = el.value.trim();
+            if (!val) {
+                el.classList.add('is-invalid');
+                errors.push(`Falta: ${fieldName}`);
+            }
+            return val;
+        }
+
+        let objSocial = validateInput('modObjetoSocial', 'Objeto Social');
+        let decs = validateInput('modDeclaraciones', 'Declaraciones');
+        let duration = validateInput('modDuration', 'Duración del Contrato');
+        let firstDate = validateInput('modFirstService', 'Fecha del Primer Servicio');
+        let price = validateInput('modTotalPrice', 'Precio Total');
+
+        let sRows = document.querySelectorAll('#modServicesBody tr');
+        if (sRows.length === 0) {
+            errors.push("El contrato debe tener al menos un (1) Servicio.");
+        } else {
+            let tableHasErrors = false;
+            sRows.forEach(tr => {
+                tr.querySelectorAll('input').forEach(inp => {
+                    if (!inp.value.trim()) {
+                        inp.classList.add('is-invalid');
+                        tableHasErrors = true;
+                    }
+                });
+            });
+            if (tableHasErrors) errors.push("Hay celdas vacías en la tabla de Servicios.");
+        }
+
+        let pRows = document.querySelectorAll('#modPaymentsBody tr');
+        if (pRows.length === 0) {
+            errors.push("El contrato debe tener al menos un (1) Pago.");
+        } else {
+            let tableHasErrors = false;
+            pRows.forEach(tr => {
+                tr.querySelectorAll('input').forEach(inp => {
+                    if (!inp.value.trim()) {
+                        inp.classList.add('is-invalid');
+                        tableHasErrors = true;
+                    }
+                });
+            });
+            if (tableHasErrors) errors.push("Hay celdas vacías en la tabla de Pagos.");
+        }
+
+        let eRows = document.querySelectorAll('#modExtrasBody tr');
+        let extrasHaveErrors = false;
+        eRows.forEach(tr => {
+            tr.querySelectorAll('input').forEach(inp => {
+                if (!inp.value.trim()) {
+                    inp.classList.add('is-invalid');
+                    extrasHaveErrors = true;
+                }
+            });
+        });
+        if (extrasHaveErrors) errors.push("Hay celdas vacías en la tabla de Anexo (Extras). Bórrelas si no las usará.");
+
+        let errorAlert = document.getElementById('configError');
+        if (errors.length > 0) {
+            errorAlert.innerHTML = `<strong><i class="bi bi-exclamation-circle-fill me-1"></i> Por favor corrige los siguientes errores:</strong><br><ul class="mb-0 mt-1 pl-3"><li>${errors.join('</li><li>')}</li></ul>`;
+            errorAlert.classList.remove('d-none');
+            return;
+        }
+
+        errorAlert.classList.add('d-none');
+
         document.getElementById('hidObjetoSocial').value = objSocial;
         document.getElementById('hidDeclaraciones').value = decs;
         document.getElementById('viewObjetoSocial').innerText = objSocial;
         document.getElementById('viewDeclaraciones').innerText = decs;
 
-        document.getElementById('hidDuration').value = document.getElementById('modDuration').value;
-        document.getElementById('hidFirstService').value = document.getElementById('modFirstService').value;
-        document.getElementById('hidTotalPrice').value = document.getElementById('modTotalPrice').value;
+        document.getElementById('hidDuration').value = duration;
+        document.getElementById('hidFirstService').value = firstDate;
+        document.getElementById('hidTotalPrice').value = price;
         
-        document.getElementById('lblDuration').innerText = document.getElementById('modDuration').value;
+        document.getElementById('lblDuration').innerText = duration;
         
-        let fd = new Date(document.getElementById('modFirstService').value + "T00:00:00");
+        let fd = new Date(firstDate + "T00:00:00");
         document.getElementById('lblFirstService').innerText = isNaN(fd) ? "Pendiente" : fd.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
         
-        let tp = parseFloat(document.getElementById('modTotalPrice').value);
+        let tp = parseFloat(price);
         document.getElementById('lblTotalPrice').innerText = tp.toLocaleString('es-MX', {style: 'currency', currency: 'MXN'});
 
-        services = []; document.querySelectorAll('#modServicesBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value }); });
+        services = []; document.querySelectorAll('#modServicesBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value, Subtotal: parseFloat(i[7].value || 0) }); });
         document.getElementById('hidServicesJson').value = JSON.stringify(services);
 
         payments = []; document.querySelectorAll('#modPaymentsBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); payments.push({ Description: i[0].value, Amount: parseFloat(i[1].value), PaymentDate: i[2].value }); });
@@ -379,27 +456,38 @@
         document.getElementById('hidExtrasJson').value = JSON.stringify(extras);
 
         renderLegalTables();
-        bootstrap.Modal.getInstance(document.getElementById('modalConfig')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('modalConfig')).show();
     }
 
     function renderLegalTables() {
         let sHtml = '';
-        services.forEach(s => { sHtml += `<tr><td>${s.WasteType}</td><td>${s.WasteUnit}</td><td>${s.Frequency}</td><td style="text-align:center">${s.Vehicles} / ${s.Technicians}</td><td>${s.ServiceAddress}</td><td>${s.WarehouseAddress}</td></tr>`; });
+        services.forEach(s => { sHtml += `<tr><td>${s.WasteType}</td><td>${s.WasteUnit}</td><td>${s.Frequency}</td><td style="text-align:center">${s.Vehicles} / ${s.Technicians}</td><td>${s.ServiceAddress}</td><td>${s.WarehouseAddress}</td><td style="text-align:right">$${(s.Subtotal || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td></tr>`; });
         document.getElementById('preview-services-body').innerHTML = sHtml;
 
         let pHtml = '';
+        let subtotalPagos = 0;
+        
         payments.forEach(p => { 
             let dateStr = new Date(p.PaymentDate + "T00:00:00").toLocaleDateString('es-MX');
             pHtml += `<tr><td>${p.Description}</td><td style="text-align:right">$${p.Amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td style="text-align:center">${dateStr}</td></tr>`; 
+            subtotalPagos += p.Amount;
         });
+
+        let iva = subtotalPagos * 0.16;
+        let total = subtotalPagos + iva;
+
+        pHtml += `<tr class="bg-light"><td style="text-align:right; font-weight:bold;">SUBTOTAL:</td><td style="text-align:right; font-weight:bold;">$${subtotalPagos.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td></td></tr>`;
+        pHtml += `<tr class="bg-light"><td style="text-align:right; font-weight:bold;">IVA (16%):</td><td style="text-align:right; font-weight:bold;">$${iva.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td></td></tr>`;
+        pHtml += `<tr class="bg-gray-simar"><td style="text-align:right; font-weight:bold;">TOTAL:</td><td style="text-align:right; font-weight:bold; color: #198754;">$${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td></td></tr>`;
+
         document.getElementById('preview-payments-body').innerHTML = pHtml;
 
         if(extras.length > 0) {
             document.getElementById('pageAnexoExtras').style.display = 'block';
             let eHtml = `<table class="table-legal" style="font-size: 8pt; margin-top: 10px; margin-bottom: 20px;"><tr class="bg-gray-simar" style="text-align:center"><td>Descripción</td><td style="width:20%">Costo Unit.</td><td style="width:15%">Cant.</td><td style="width:20%">Subtotal</td></tr>`;
-            let total = 0;
-            extras.forEach(x => { let sub = x.UnitCost * x.Quantity; total += sub; eHtml += `<tr><td>${x.Description}</td><td style="text-align:right">$${x.UnitCost.toLocaleString('en-US', {minimumFractionDigits:2})}</td><td style="text-align:center">${x.Quantity}</td><td style="text-align:right">$${sub.toLocaleString('en-US', {minimumFractionDigits:2})}</td></tr>`; });
-            eHtml += `<tr><td colspan="3" style="text-align:right; font-weight:bold; background-color:#E6E6E6;">TOTAL SERVICIOS EXTRAORDINARIOS:</td><td style="text-align:right; font-weight:bold;">$${total.toLocaleString('en-US', {minimumFractionDigits:2})}</td></tr></table>`;
+            let totalExtras = 0;
+            extras.forEach(x => { let sub = x.UnitCost * x.Quantity; totalExtras += sub; eHtml += `<tr><td>${x.Description}</td><td style="text-align:right">$${x.UnitCost.toLocaleString('en-US', {minimumFractionDigits:2})}</td><td style="text-align:center">${x.Quantity}</td><td style="text-align:right">$${sub.toLocaleString('en-US', {minimumFractionDigits:2})}</td></tr>`; });
+            eHtml += `<tr><td colspan="3" style="text-align:right; font-weight:bold; background-color:#E6E6E6;">TOTAL SERVICIOS EXTRAORDINARIOS:</td><td style="text-align:right; font-weight:bold;">$${totalExtras.toLocaleString('en-US', {minimumFractionDigits:2})}</td></tr></table>`;
             document.getElementById('preview-anexo-extras').innerHTML = eHtml;
         } else {
             document.getElementById('pageAnexoExtras').style.display = 'none';
@@ -410,8 +498,8 @@
         services = []; 
         document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
             let i = tr.querySelectorAll('input'); 
-            if (i.length >= 7) {
-                services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value }); 
+            if (i.length >= 8) {
+                services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value, Subtotal: parseFloat(i[7].value || 0) }); 
             }
         });
         if (services.length > 0) document.getElementById('hidServicesJson').value = JSON.stringify(services);
