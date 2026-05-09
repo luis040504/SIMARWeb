@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep -E \"\\\\.cs$\")",
       "Bash(xargs grep *)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(docker-compose up *)"
     ]
   }
 }

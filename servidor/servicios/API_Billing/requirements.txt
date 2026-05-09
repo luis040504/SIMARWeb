@@ -3,3 +3,4 @@ uvicorn
 motor
 python-dotenv
 httpx
+python-multipart
