@@ -3,28 +3,12 @@
   "WorkspaceRootPath": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\services\\clientesapiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\services\\clientesapiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\pages\\client_simaruser\\client\\clientlist.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\pages\\client_simaruser\\client\\clientlist.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\pages\\client_simaruser\\client\\clientlist.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\pages\\client_simaruser\\client\\clientlist.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\models\\clientdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\models\\clientdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\models\\registroempleadodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\models\\registroempleadodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\pages\\client_simaruser\\client\\clientlist.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\pages\\client_simaruser\\client\\clientlist.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\pages\\client_simaruser\\simaruser\\usersimarregistrer.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -35,12 +19,28 @@
       "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\pages\\client_simaruser\\simaruser\\usersimarregistrer.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\pages\\client_simaruser\\client\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\pages\\client_simaruser\\client\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\pages\\client_simaruser\\client\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\pages\\client_simaruser\\client\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\services\\clientesapiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\services\\clientesapiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\models\\clientdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\models\\clientdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\models\\registroempleadodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|solutionrelative:cliente\\clienteweb\\models\\registroempleadodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{76D04BFD-5C4A-13DA-AD50-4D80C1D13C49}|cliente\\ClienteWeb\\ClienteWeb.csproj|c:\\docs\\proyectos\\github\\simar\\simarweb\\cliente\\clienteweb\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
@@ -150,7 +150,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -162,24 +162,28 @@
             },
             {
               "$type": "Bookmark",
+              "Name": "ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}"
+            },
+            {
+              "$type": "Bookmark",
               "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ClientesApiService.cs",
-              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
-              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
-              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
-              "RelativeToolTip": "cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-09T20:33:16.067Z",
+              "DocumentIndex": 0,
+              "Title": "ClientList.cshtml",
+              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
+              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
+              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
+              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
+              "ViewState": "AgIAANUCAAAAAAAAAAAIwOwCAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-01T06:19:11.862Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 8,
               "Title": "ClientDto.cs",
               "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\models\\ClientDto.cs",
               "RelativeDocumentMoniker": "cliente\\ClienteWeb\\models\\ClientDto.cs",
@@ -191,32 +195,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "ClientList.cshtml.cs",
               "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml.cs",
               "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml.cs",
               "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml.cs",
               "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml.cs",
-              "ViewState": "AgIAADIAAAAAAAAAAAAuwEcAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAE4CAAAAAAAAAAAswGACAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-01T06:19:24.733Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ClientList.cshtml",
-              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
-              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
-              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
-              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\ClientList.cshtml",
-              "ViewState": "AgIAAKYCAAAAAAAAAAAIwLUCAAAXAAAAAAAAAA==",
+              "DocumentIndex": 6,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
+              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
+              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
+              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
+              "ViewState": "AgIAAIcAAAAAAAAAAAAAAI4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-05-01T06:19:11.862Z"
+              "WhenOpened": "2026-05-08T20:09:35.406Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 3,
               "Title": "UserSimarRegistrer.cshtml",
               "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml",
               "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml",
@@ -224,11 +229,37 @@
               "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-05-08T23:51:00.766Z"
+              "WhenOpened": "2026-05-08T23:51:00.766Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
+              "Title": "UserSimarRegistrer.cshtml.cs",
+              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
+              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
+              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
+              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
+              "ViewState": "AgIAAIEAAAAAAAAAAAA6wB4AAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-09T11:51:20.552Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ClientesApiService.cs",
+              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
+              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
+              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
+              "RelativeToolTip": "cliente\\ClienteWeb\\Services\\ClientesApiService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-09T20:33:16.067Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Program.cs",
               "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Program.cs",
@@ -240,24 +271,21 @@
               "EditorCaption": ""
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "UserSimarRegistrer.cshtml.cs",
-              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
-              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
-              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
-              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\SimarUser\\UserSimarRegistrer.cshtml.cs",
-              "ViewState": "AgIAABUAAAAAAAAAAAAmwB4AAAApAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-09T11:51:20.552Z"
-            },
-            {
               "$type": "Document",
               "DocumentIndex": 5,
+              "Title": "Login.cshtml.cs",
+              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
+              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
+              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
+              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAgwDMAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-09T00:12:42.759Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "RegistroEmpleadoDTO.cs",
               "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\models\\RegistroEmpleadoDTO.cs",
               "RelativeDocumentMoniker": "cliente\\ClienteWeb\\models\\RegistroEmpleadoDTO.cs",
@@ -266,18 +294,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-09T11:11:27.181Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "Login.cshtml",
-              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
-              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
-              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
-              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAI4AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-05-08T20:09:35.406Z"
             },
             {
               "$type": "Document",
@@ -290,18 +306,6 @@
               "ViewState": "AgIAAB4AAAAAAAAAAAAAAEEBAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-05-09T02:11:10.48Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "Login.cshtml.cs",
-              "DocumentMoniker": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
-              "RelativeDocumentMoniker": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
-              "ToolTip": "C:\\docs\\proyectos\\GitHub\\simar\\SIMARWeb\\cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
-              "RelativeToolTip": "cliente\\ClienteWeb\\Pages\\Client_SimarUser\\Client\\Login.cshtml.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAQwCMAAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-09T00:12:42.759Z"
             },
             {
               "$type": "Document",

@@ -1,10 +1,11 @@
-using ClienteWeb.Models;
+﻿using ClienteWeb.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ClienteWeb.Pages.Client_SimarUser.Client
 {
@@ -35,7 +36,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         public IFormFile? CertificadoFile { get; set; }
 
 
-        // consultar clientes al cargar la p�gina
+        // consultar clientes al cargar la página
         public async Task<IActionResult> OnGetAsync()
         {
             var rol = HttpContext.Session.GetString("Rol");
@@ -47,19 +48,67 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
 
             try
             {
-                
-                var response = await _clientesApi.GetAsync("/client/all");
 
-                if (response.IsSuccessStatusCode)
+                // 1. Obtener todos los clientes
+                var clientesResponse = await _clientesApi.GetAsync("/client/all");
+
+                if (!clientesResponse.IsSuccessStatusCode)
                 {
-                    var clientes = await response.Content
-                        .ReadFromJsonAsync<List<ClienteOutput>>();
+                    return Page();
+                }
 
-                    if (clientes != null)
+                var clientes = await clientesResponse.Content
+                    .ReadFromJsonAsync<List<ClienteOutput>>();
+
+                if (clientes == null || !clientes.Any())
+                {
+                    Clientes = new List<ClienteOutput>();
+                    return Page();
+                }
+
+                // 2. Obtener usuarios asociados a los clientes
+                var userIds = clientes
+                    .Where(c => !string.IsNullOrEmpty(c.IdUser))
+                    .Select(c => c.IdUser)
+                    .Distinct()
+                    .ToList();
+
+                var usuariosDict = new Dictionary<string, UsuarioSimpleResponseDto>();
+
+                foreach (var userId in userIds)
+                {
+                    try
                     {
-                        Clientes = clientes;
+                        var userResponse = await _usuariosApi.GetAsync($"/api/usuarios/{userId}");
+
+                        if (userResponse.IsSuccessStatusCode)
+                        {
+                            var usuario = await userResponse.Content
+                                .ReadFromJsonAsync<UsuarioSimpleResponseDto>();
+
+                            if (usuario != null)
+                            {
+                                usuariosDict[userId] = usuario;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al obtener usuario {userId}: {ex.Message}");
                     }
                 }
+
+                // 3. Enriquecer los clientes con datos del usuario
+                foreach (var cliente in clientes)
+                {
+                    if (!string.IsNullOrEmpty(cliente.IdUser) && usuariosDict.TryGetValue(cliente.IdUser, out var usuario))
+                    {
+                        cliente.UserName = usuario.Username;
+                        cliente.Email = usuario.Email;
+                    }
+                }
+
+                Clientes = clientes;
 
                 return Page();
             }
@@ -68,17 +117,26 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                 Console.WriteLine(ex.Message);
                 return Page();
             }
-        }
+        }       
 
 
         // =========================================
         //  REGISTRAR NUEVO CLIENTE
         // =========================================
 
-        public async Task<IActionResult> OnPostRegistrarClienteAsync(RegisterClientInput input)
+        public async Task<IActionResult> OnPostRegistrarClienteAsync([FromForm] RegisterClientInput input)
         {
             try
             {
+
+                if (CertificadoFile != null)
+                {
+                    if (!ValidarArchivo(CertificadoFile, out string mensajeError))
+                    {
+                        return new JsonResult(new { success = false, message = mensajeError });
+                    }
+                }
+
                 var token = HttpContext.Session.GetString("JWT");
 
                 if (string.IsNullOrEmpty(token))
@@ -109,26 +167,34 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                 if (!userResponse.IsSuccessStatusCode)
                 {
                     var error = await userResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error al crear usuario: {error}");
 
                     return new JsonResult(new
                     {
                         success = false,
-                        message = error
+                        message = $"Error al crear usuario: {error}"
                     });
                 }
 
-                // 2. obtener id
-                var idResponse = await _usuariosApi.GetAsync(
-                    $"/api/usuarios/buscar-id/{input.UserName}"
-                );
+                var usuarioResponse = await userResponse.Content.ReadFromJsonAsync<UsuarioRegistroSimpleResponse>();
 
-                var userId = await idResponse.Content
-                    .ReadFromJsonAsync<UserIdResponse>();
+                if (usuarioResponse == null || usuarioResponse.IdUser == Guid.Empty)
+                {
+                    var responseContent = await userResponse.Content.ReadAsStringAsync();
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = $"No se pudo obtener el ID del usuario. Respuesta: {responseContent}"
+                    });
+                }
 
-                // 3. cliente
+                Guid userId = usuarioResponse.IdUser;
+
+
+                // 2. cliente
                 var clientData = new
                 {
-                    idUser = userId.IdUser,
+                    idUser = userId,
                     name = input.Name,
                     businessName = input.BusinessName,
                     contactEmail = input.ContactEmail,
@@ -146,7 +212,14 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
 
                 if (!clientResponse.IsSuccessStatusCode)
                 {
-                    return new JsonResult(new { success = false, message = "Error cliente" });
+                    var error = await clientResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error al crear cliente: {error}");
+
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = $"Error al crear cliente: {error}"
+                    });
                 }
 
                 var created = await clientResponse.Content
@@ -155,11 +228,12 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                 return new JsonResult(new
                 {
                     success = true,
-                    clientId = created.Id
+                    clientId = created?.Id
                 });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Excepción en registro: {ex.Message}");
                 return new JsonResult(new
                 {
                     success = false,
@@ -172,7 +246,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         // =========================================
         // EDITAR CLIENTE
         // =========================================
-        public async Task<IActionResult> OnPostEditarAsync()
+        /*public async Task<IActionResult> OnPostEditarAsync()
         {
             try
             {
@@ -194,7 +268,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                     return new JsonResult(new
                     {
                         success = false,
-                        message = "Datos vac�os"
+                        message = "Datos vacíos"
                     });
                 }
 
@@ -216,7 +290,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                     {
                         success = false,
                         expired = true,
-                        message = "La sesi�n expir�"
+                        message = "La sesión expiró"
                     });
                 }
 
@@ -243,8 +317,78 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                     message = ex.Message
                 });
             }
-        }
+        }*/
 
+
+        public async Task<IActionResult> OnPostEditarCompletoAsync()
+        {
+            try
+            {
+                Console.WriteLine("=== OnPostEditarCompletoAsync HA SIDO LLAMADO ===");
+
+                using var reader = new StreamReader(Request.Body);
+                var body = await reader.ReadToEndAsync();
+
+                Console.WriteLine($"Body recibido: {body}");
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var payload = JsonSerializer.Deserialize<EditarCompletoPayload>(body, options);
+
+                Console.WriteLine($"HasClientChanges: {payload?.HasClientChanges}");
+                Console.WriteLine($"HasUserChanges: {payload?.HasUserChanges}");
+                Console.WriteLine($"IdUser: {payload?.IdUser}");
+
+                if (payload == null)
+                {
+                    return new JsonResult(new { success = false, message = "Datos vacíos" });
+                }
+
+                var token = HttpContext.Session.GetString("JWT");
+                _clientesApi.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+
+                // 1. Actualizar CLIENTE solo si hay datos
+                if (payload.Cliente != null && payload.Cliente != null)
+                {
+                    var clientResponse = await _clientesApi.PutAsJsonAsync(
+                        $"/client/{payload.Cliente.Id}",
+                        payload.Cliente
+                    );
+
+                    if (!clientResponse.IsSuccessStatusCode)
+                    {
+                        var error = await clientResponse.Content.ReadAsStringAsync();
+                        return new JsonResult(new { success = false, message = $"Error al actualizar cliente: {error}" });
+                    }
+                }
+
+                // 2. Actualizar USUARIO solo si hay datos
+                if (payload.Usuario != null && payload.Usuario != null  && !string.IsNullOrEmpty(payload.IdUser))
+                {
+                    var userResponse = await _usuariosApi.PutAsJsonAsync(
+                        $"/api/usuarios/{payload.IdUser}",
+                        payload.Usuario
+                    );
+
+                    if (!userResponse.IsSuccessStatusCode)
+                    {
+                        var error = await userResponse.Content.ReadAsStringAsync();
+                        return new JsonResult(new { success = false, message = $"Error al actualizar usuario: {error}" });
+                    }
+                }
+
+                return new JsonResult(new { success = true, message = "Actualizado correctamente" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR en OnPostEditarCompletoAsync: {ex.Message}");
+                return new JsonResult(new { success = false, message = ex.Message });
+            }
+        }
 
         // =========================================
         // EDITAR Archivo SAT (CERTIFICADO)
@@ -258,7 +402,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                     return new JsonResult(new
                     {
                         success = false,
-                        message = "Archivo vac�o"
+                        message = "Archivo vacío"
                     });
                 }
 
@@ -398,7 +542,13 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
             {
                 if (file == null)
                 {
-                    return new JsonResult(new { success = false });
+                    return new JsonResult(new { success = false, message = "No se seleccionó ningún archivo" });
+                }
+
+                // Validar tamaño
+                if (!ValidarArchivo(file, out string mensajeError))
+                {
+                    return new JsonResult(new { success = false, message = mensajeError });
                 }
 
                 using var content = new MultipartFormDataContent();
@@ -425,8 +575,58 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                 return new JsonResult(new { success = false });
             }
         }
+
+
+        // Máximo 5 MB
+        private const long MaxFileSize = 5 * 1024 * 1024;
+
+        // Tipos de archivo permitidos
+        private readonly string[] AllowedFileTypes = { ".pdf" };
+
+        private bool ValidarArchivo(IFormFile file, out string mensajeError)
+        {
+            mensajeError = string.Empty;
+
+            if (file == null) return true;
+
+            // Validar tamaño
+            if (file.Length > MaxFileSize)
+            {
+                var sizeMB = file.Length / (1024.0 * 1024.0);
+                mensajeError = $"El archivo excede el tamaño máximo permitido de 5 MB (actual: {sizeMB:F2} MB)";
+                return false;
+            }
+
+            // Validar extensión
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedFileTypes.Contains(extension))
+            {
+                mensajeError = $"Tipo de archivo no permitido. Solo se permite: {string.Join(", ", AllowedFileTypes)}";
+                return false;
+            }
+
+            return true;
+        }
     }
 
+
+    public class EditarCompletoPayload
+        {
+            public EditClientInput Cliente { get; set; }
+            public EditUserInput Usuario { get; set; }
+            public string IdUser { get; set; }
+            public bool HasClientChanges { get; set; }
+            public bool HasUserChanges { get; set; }
+            public bool SoloCertificado { get; set; }
+            public int Id { get; set; }
+        }
+
+        public class EditUserInput
+        {
+            public string? Username { get; set; }
+            public string? Email { get; set; }
+            public string? Password { get; set; }
+        }
     public class RegistrarClienteRequest
     {
         public UserDto User { get; set; }
@@ -509,10 +709,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         public string IdUser { get; set; }
     }
 
-    public class UserIdResponse
-    {
-        public string IdUser { get; set; }
-    }
+  
 
     public class UserDto
     {
@@ -520,5 +717,29 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         public string Username { get; set; }
         public string Password { get; set; }
         public string Role { get; set; }
+    }
+
+    public class UsuarioRegistroSimpleResponse
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("id_user")]
+        public Guid IdUser { get; set; }
+    }
+
+    public class UsuarioSimpleResponseDto
+    {
+        public Guid IdUser { get; set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class UsuarioUpdateDto
+    {
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+        public string? Role { get; set; }
     }
 }

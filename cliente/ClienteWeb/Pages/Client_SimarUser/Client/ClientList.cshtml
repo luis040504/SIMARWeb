@@ -200,7 +200,7 @@
 
     <!-- 🔽 Combo -->
     <div class="select-container">
-        <select class="form-select-simar">
+        <select id="sortSelect" class="form-select-simar">
             <option value="default">Ordenar por</option>
             <option value="nombre">Nombre</option>
             <option value="razonSocial">Razón Social</option>
@@ -366,7 +366,7 @@
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: *</strong>
+                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: (para iniciar sesion) *</strong>
                             <input asp-for="Input.Email" type="email" class="form-control" name="Email" id="regEmail" placeholder="Email" required />
                         </div>
 
@@ -397,12 +397,12 @@
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email de contacto: *</strong>
-                            <input asp-for="Input.ContactEmail" type="text" name="EmailContact" id="regEmailContacto" class="form-control" placeholder="Email contacto" required />
+                            <input asp-for="Input.ContactEmail" type="text" name="ContactEmail" id="regEmailContacto" class="form-control" placeholder="Email contacto" required />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i>Teléfono:</strong>
-                            <input asp-for="Input.Phone" type="text" name="PhoneNumber" id="regTelefono" class="form-control" placeholder="Teléfono" />
+                            <input asp-for="Input.Phone" type="text" name="Phone" id="regTelefono" class="form-control" placeholder="Teléfono" />
                         </div>
 
                         <div class="col-md-6">
@@ -640,42 +640,61 @@
 
 
 
-
 <script>
-
     async function registrarCliente() {
+        // Validar campos requeridos
+        const email = document.getElementById("regEmail").value;
+        const username = document.getElementById("regUsername").value;
+        const password = document.getElementById("regPassword").value;
+        const name = document.getElementById("regNombre").value;
+        const businessName = document.getElementById("regRazonSocial").value;
+        const contactEmail = document.getElementById("regEmailContacto").value;
+        const rfc = document.getElementById("regRFC").value;
+
+        if (!email || !username || !password || !name || !businessName || !contactEmail || !rfc) {
+            alert("Por favor, complete todos los campos obligatorios (*)");
+            return;
+        }
 
         const fileInput = document.getElementById("regCertificado");
         const file = fileInput.files[0];
 
-        const data = {
-            Email: document.getElementById("regEmail").value,
-            UserName: document.getElementById("regUsername").value,
-            Password: document.getElementById("regPassword").value,
-            Role: "cliente",
+        // Crear FormData para enviar el archivo junto con los datos
+        const formData = new FormData();
+        formData.append("Input.Email", email);
+        formData.append("Input.UserName", username);
+        formData.append("Input.Password", password);
+        formData.append("Input.Role", "cliente");
+        formData.append("Input.Name", name);
+        formData.append("Input.BusinessName", businessName);
+        formData.append("Input.ContactEmail", contactEmail);
+        formData.append("Input.Phone", document.getElementById("regTelefono").value || "");
+        formData.append("Input.Address", document.getElementById("regDireccion").value || "");
+        formData.append("Input.RFC", rfc);
+        formData.append("Input.SemarnatNum", document.getElementById("regSemarnat").value || "");
 
-            Name: document.getElementById("regNombre").value,
-            BusinessName: document.getElementById("regRazonSocial").value,
-            ContactEmail: document.getElementById("regEmailContacto").value,
-            Phone: document.getElementById("regTelefono").value,
-            Address: document.getElementById("regDireccion").value,
-            RFC: document.getElementById("regRFC").value,
-            SemarnatNum: document.getElementById("regSemarnat").value
-        };
+        if (file) {
+            formData.append("CertificadoFile", file);
+        }
+
+        // Obtener el token antifalsificación
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
         try {
+            // Desactivar botón mientras carga
+            const btn = document.querySelector("#registroForm .btn-simar-primary");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Registrando...';
+            }
 
-            // 🔥 DESACTIVA botón mientras carga (evita doble submit)
-            const btn = document.querySelector("#registroForm button[type='submit']");
-            if (btn) btn.disabled = true;
-
-            // 🔥 1. REGISTRO COMPLETO EN RAZOR HANDLER
+            // Enviar al handler correcto
             const response = await fetch("?handler=RegistrarCliente", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "RequestVerificationToken": token
                 },
-                body: JSON.stringify(data)
+                body: formData
             });
 
             const result = await response.json();
@@ -683,54 +702,74 @@
             console.log("RESPUESTA:", result);
 
             if (result.expired) {
-                alert("Sesión expirada");
+                alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
                 window.location.href = "/Inicio";
                 return;
             }
 
             if (!result.success) {
                 alert(result.message || "Error al registrar cliente");
-                if (btn) btn.disabled = false;
                 return;
             }
 
-            const clientId = result.clientId;
-
-            // 🔥 2. SUBIR CERTIFICADO SI EXISTE
-            if (file) {
-
-                const formData = new FormData();
-                formData.append("file", file);
-
-                const certResponse = await fetch(`?handler=SubirCertificado&id=${clientId}`, {
-                    method: "POST",
-                    body: formData
-                });
-
-                const certResult = await certResponse.json();
-
-                console.log("CERT:", certResult);
-
-                if (!certResult.success) {
-                    alert("Cliente creado, pero falló el certificado");
-                    location.reload();
-                    return;
-                }
-            }
-
-            // 🔥 3. ÉXITO
+            // Éxito
             alert("Cliente registrado correctamente");
+
+            // Cerrar modal y recargar la página
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalRegistro'));
+            if (modal) modal.hide();
 
             location.reload();
 
         } catch (error) {
             console.error("ERROR REGISTRO:", error);
-            alert("Error inesperado al registrar cliente");
-
+            alert("Error inesperado al registrar cliente: " + error.message);
         } finally {
-            const btn = document.querySelector("#registroForm button[type='submit']");
-            if (btn) btn.disabled = false;
+            const btn = document.querySelector("#registroForm .btn-simar-primary");
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Registrar';
+            }
         }
+    }
+
+     // Límite de peso (ejemplo: 5 MB)
+    const MAX_FILE_SIZE_MB = 5;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+    function validarTamañoArchivo(fileInputId) {
+        const fileInput = document.getElementById(fileInputId);
+        const file = fileInput.files[0];
+
+        if (!file) return true; // No hay archivo, no hay error
+
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            const tamañoMB = (file.size / (1024 * 1024)).toFixed(2);
+            alert(`El archivo es demasiado grande (${tamañoMB} MB). El límite máximo es ${MAX_FILE_SIZE_MB} MB.`);
+            fileInput.value = ''; // Limpiar el input
+            return false;
+        }
+
+        return true;
+    }
+
+    // También validar tipo de archivo (opcional)
+    function validarTipoArchivo(fileInputId) {
+        const fileInput = document.getElementById(fileInputId);
+        const file = fileInput.files[0];
+
+        if (!file) return true;
+
+        const tiposPermitidos = ['application/pdf', 'application/msword',
+                                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+        if (!tiposPermitidos.includes(file.type)) {
+            alert(`Tipo de archivo no permitido. Solo se permiten: PDF, DOC, DOCX`);
+            fileInput.value = '';
+            return false;
+        }
+
+        return true;
     }
 
 </script>
@@ -898,6 +937,8 @@
 <script>
     let filaActual = null;
 
+    let usuarioOriginal = {}; // Guardar valores originales del usu
+
     function abrirModalEditar(id) {
 
         filaActual = document.getElementById("cliente-" + id);
@@ -914,6 +955,12 @@
         document.getElementById("editRFC").value = filaActual.getAttribute("data-rfc");
         document.getElementById("editSemarnat").value = filaActual.getAttribute("data-semarnat");
 
+        // Guardar valores originales del usuario
+        usuarioOriginal = {
+            username: filaActual.getAttribute("data-username") || '',
+            email: filaActual.getAttribute("data-email") || ''
+        };
+
         let modal = new bootstrap.Modal(document.getElementById('modalEditar'));
         modal.show();
     }
@@ -923,9 +970,16 @@
     }
 
     function guardarEdicion(){
+
+        console.log("=== guardarEdicion() ha sido llamada ===");
+
+
         const updatedData = {};
+        const userData = {};
+
 
         updatedData.id = parseInt(document.getElementById("editId").value);
+        const idUser = filaActual.getAttribute("data-idUser");
 
         const nombreNuevo = document.getElementById("editNombre").value;
         const nombreOriginal = filaActual.getAttribute("data-nombre");
@@ -977,6 +1031,23 @@
         }
         
 
+        // --- Usuario: solo campos modificados ---
+        const nuevoUsername = document.getElementById("editUsername").value;
+        const usernameOriginal = filaActual.getAttribute("data-username");
+        if (nuevoUsername !== usernameOriginal) {
+            userData.username = nuevoUsername;
+        }
+
+        const nuevoEmail = document.getElementById("editEmail").value;
+        const emailOriginal = filaActual.getAttribute("data-email");
+        if (nuevoEmail !== emailOriginal) {
+            userData.email = nuevoEmail;
+        }
+
+        const nuevaPassword = document.getElementById("editPassword").value;
+        if (nuevaPassword && nuevaPassword.trim() !== "") {
+            userData.password = nuevaPassword;
+        }
 
         const certificado = document.getElementById("editCertificado").files[0];
 
@@ -988,18 +1059,54 @@
         }
 
 
-        // Si no hay cambios ni certificado
-        if (Object.keys(updatedData).length === 1 && !certificado) {
+        // Verificar si hay cambios
+        const hasClientChanges = Object.keys(updatedData).length > 1; // más de solo id
+        const hasUserChanges = Object.keys(userData).length > 0;
+
+        if (!hasClientChanges && !hasUserChanges && !certificado) {
             alert("No se realizaron cambios");
             return;
         }
 
-        fetch('/Client_SimarUser/Client/ClientList?handler=Editar', {
+        // Construir payload (solo incluir lo que tiene datos)
+        const payload = {
+            hasClientChanges: hasClientChanges,
+            hasUserChanges: hasUserChanges,
+            idUser: idUser
+        };
+
+        if (hasClientChanges) {
+            payload.cliente = updatedData;
+        }
+
+        if (hasUserChanges) {
+            payload.usuario = userData;
+            payload.idUser = idUser;
+        }
+
+        // Si solo hay certificado sin cambios en datos
+        if (!hasClientChanges && !hasUserChanges && certificado) {
+            payload.soloCertificado = true;
+            payload.id = updatedData.id;
+        }
+
+        console.log("URL del fetch:", '/Client_SimarUser/Client/ClientList?handler=EditarCompleto');
+
+        // Antes del fetch
+        console.log("Payload a enviar:", JSON.stringify(payload));
+
+        // Validar que no esté vacío
+        if (Object.keys(payload).length === 0) {
+            alert("No hay datos para enviar");
+            return;
+        }
+
+        fetch('/Client_SimarUser/Client/ClientList?handler=EditarCompleto', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedData)
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
@@ -1011,43 +1118,41 @@
             }
 
             if (!data.success) {
-                alert(data.message || "Error");
+                alert(data.message || "Error al actualizar");
                 return;
             }
 
-            // Si NO hay certificado
-            if (!certificado) {
-                alert("Cliente actualizado");
+            if (certificado) {
+                const formData = new FormData();
+                formData.append("file", certificado);
+
+                fetch(`/Client_SimarUser/Client/ClientList?handler=ActualizarCertificado&id=${updatedData.id}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(certData => {
+                    if (certData.expired) {
+                        alert("Tu sesión expiró");
+                        window.location.href = "/inicio";
+                        return;
+                    }
+                    if (!certData.success) {
+                        alert("Cliente actualizado, pero falló el certificado");
+                        return;
+                    }
+                    alert("Cliente y certificado actualizados");
+                    location.reload();
+                });
+            } else {
+                alert("Cliente actualizado correctamente");
                 location.reload();
-                return;
             }
 
-            // Subir certificado
-            const formData = new FormData();
-
-            formData.append("file", certificado);
-
-            fetch(`/Client_SimarUser/Client/ClientList?handler=ActualizarCertificado&id=${updatedData.id}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(certData => {
-
-                if (certData.expired) {
-                    alert("Tu sesión expiró");
-                    window.location.href = "/inicio";
-                    return;
-                }
-
-                if (!certData.success) {
-                    alert("Cliente actualizado, pero falló el certificado");
-                    return;
-                }
-
-                alert("Cliente y certificado actualizados");
-                location.reload();
-            });
+        })
+            .catch(error => {
+            console.error("Error:", error);
+            alert("Error inesperado al guardar");
         });
 
     }
@@ -1102,16 +1207,6 @@
         const searchTerm = document.querySelector('input[name="Search"]').value.toLowerCase().trim();
         const tbody = document.querySelector('.table-custom tbody');
         const filas = tbody.querySelectorAll('tr');
-        const filtrarClientesOriginal = filtrarClientes;
-        if (typeof filtrarClientesOriginal === 'function') {
-            window.filtrarClientes = function() {
-                filtrarClientesOriginal();
-                // Después de filtrar, restaurar el orden actual
-                if (currentSort !== 'default') {
-                    ordenarTabla();
-                }
-            };
-        }
         let resultadosEncontrados = 0;
 
         filas.forEach(fila => {
@@ -1152,6 +1247,11 @@
 
         // Mostrar mensaje si no hay resultados
         mostrarMensajeSinResultados(resultadosEncontrados, searchTerm);
+
+        // ✅ Después de filtrar, restaurar el orden actual (si hay uno seleccionado)
+        if (currentSort !== 'default') {
+            ordenarTabla();
+        }
     }
 
     function mostrarMensajeSinResultados(cantidad, searchTerm) {
@@ -1350,5 +1450,69 @@
         }
         // Luego ordenar
         ordenarTabla();
+    }
+
+        // Inicializar eventos cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        const sortSelect = document.getElementById('sortSelect');
+        const orderDirection = document.getElementById('orderDirectionSelect');
+
+        if (sortSelect) {
+            sortSelect.addEventListener('change', ordenarYFiltrar);
+            console.log("Evento change agregado a sortSelect");
+        } else {
+            console.error("No se encontró el elemento sortSelect");
+        }
+
+        if (orderDirection) {
+            orderDirection.addEventListener('change', ordenarYFiltrar);
+            console.log("Evento change agregado a orderDirectionSelect");
+        } else {
+            console.error("No se encontró el elemento orderDirectionSelect");
+        }
+
+        // Agregar ordenamiento por clic en encabezados
+        agregarOrdenamientoPorEncabezados();
+    });
+
+    // Función para ordenar haciendo clic en los encabezados
+    function agregarOrdenamientoPorEncabezados() {
+        const headers = document.querySelectorAll('.table-custom thead th');
+        const columnasMap = {
+            1: 'nombre',
+            2: 'razonSocial',
+            3: 'email',
+            4: 'telefono',
+            5: 'fecha',
+            6: 'estatus'
+        };
+
+        headers.forEach((header, index) => {
+            if (columnasMap[index]) {
+                header.style.cursor = 'pointer';
+                header.addEventListener('click', () => {
+                    const sortSelect = document.getElementById('sortSelect');
+                    const directionSelect = document.getElementById('orderDirectionSelect');
+
+                    if (sortSelect) {
+                        const campo = columnasMap[index];
+
+                        // Si ya está ordenado por este campo, cambiar dirección
+                        if (sortSelect.value === campo) {
+                            if (directionSelect) {
+                                directionSelect.value = directionSelect.value === 'asc' ? 'desc' : 'asc';
+                            }
+                        } else {
+                            sortSelect.value = campo;
+                            if (directionSelect) {
+                                directionSelect.value = 'asc';
+                            }
+                        }
+
+                        ordenarYFiltrar();
+                    }
+                });
+            }
+        });
     }
 </script>
