@@ -11,9 +11,9 @@ builder.Services.AddHttpClient<ManifestApiService>(client =>
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost/api/");
 }).AddHttpMessageHandler<BillingApiInterceptor>();
 
-builder.Services.AddHttpClient<ContratosApiService>(client =>
+builder.Services.AddHttpClient("ContractsApi", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ContratosApiBaseUrl"] ?? "http://localhost/api/contratos/");
+    client.BaseAddress = new Uri("http://localhost:8006"); 
 });
 
 builder.Services.AddHttpClient<ClientesApiService>(client =>
