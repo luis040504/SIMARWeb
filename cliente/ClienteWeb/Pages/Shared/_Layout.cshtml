@@ -592,7 +592,8 @@
             window.addEventListener('pageshow', hide);
 
             // Forms: programar overlay al enviar
-            document.addEventListener('submit', function () {
+            document.addEventListener('submit', function (e) {
+                if (e.defaultPrevented) return;
                 var active = document.activeElement;
                 if (active && active.dataset.loading === 'false') return;
                 var text = (active && active.dataset.loadingText) || 'Guardando...';

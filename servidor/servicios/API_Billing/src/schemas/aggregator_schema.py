@@ -7,6 +7,7 @@ class ClientSummarySchema(BaseModel):
     razon_social: str
     rfc: Optional[str] = None
     direccion_fiscal: Optional[str] = None
+    postal_code: Optional[str] = None
 
 class ContractSummarySchema(BaseModel):
     folio: str
@@ -20,11 +21,12 @@ class ResidueDetailSchema(BaseModel):
     unidad: str
 
 class ReadyToBillSchema(BaseModel):
-    manifest_id: int
-    numero_manifiesto: str
+    manifest_id: Optional[int] = 0
+    numero_manifiesto: Optional[str] = "N/A"
     fecha_servicio: date
     tipo_residuo: str
     cliente: ClientSummarySchema
     contrato: Optional[ContractSummarySchema] = None
     detalles_servicio: List[ResidueDetailSchema]
     total_estimado: float
+    source: str = "manifest" # 'manifest' o 'contract'

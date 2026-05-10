@@ -18,7 +18,7 @@ builder.Services.AddHttpClient<ClienteWeb.Services.IBillingService, ClienteWeb.S
 QuestPDF.Settings.License = LicenseType.Community;
 builder.Services.AddScoped<IInvoiceGeneratorService, InvoiceGeneratorService>();
 
-builder.Services.AddTransient<BillingApiInterceptor>();
+
 
 builder.Services.AddHttpClient<ManifestApiService>(client =>
 {

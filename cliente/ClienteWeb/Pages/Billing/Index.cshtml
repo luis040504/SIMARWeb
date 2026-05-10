@@ -111,7 +111,11 @@
                                         }
                                         else
                                         {
-                                            <span class="badge badge-simar badge-simar-programada">ID: @record.Id</span>
+                                            <span class="badge badge-simar @(record.Source == "contract" ? "bg-info text-white" : "badge-simar-programada")">
+                                                @if (record.Source == "contract") { <i class="bi bi-file-earmark-text me-1"></i> }
+                                                else { <i class="bi bi-tag me-1"></i> }
+                                                ID: @record.Id
+                                            </span>
                                         }
                                     </div>
                                     <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong class="text-simar-dark">@record.TaxId</strong></p>
@@ -745,7 +749,11 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                             document.getElementById('confirmDirtyBtn').onclick = function() {
                                 form.dataset.confirmed = 'true';
                                 confirmModal.hide();
-                                form.submit();
+                                if (typeof form.requestSubmit === 'function') {
+                                    form.requestSubmit();
+                                } else {
+                                    form.submit();
+                                }
                             };
                             return;
                         }

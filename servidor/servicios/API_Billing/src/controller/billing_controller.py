@@ -3,6 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 import os
 import httpx
+import re
 from ..config.database import facturas_collection
 from ..models.billing import Billing
 from ..schemas.billing_schema import BillingCreateSchema, BillingUpdateSchema, BillingFilterSchema
@@ -252,7 +253,8 @@ class BillingController:
                         id=0,
                         razon_social=razon_social,
                         rfc=None,
-                        direccion_fiscal=m.get("domicilio")
+                        direccion_fiscal=m.get("domicilio"),
+                        postal_code=m.get("codigo_postal") or (re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")).group(1) if re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")) else None)
                     )
 
                 # 3. Buscar contrato para precios
@@ -301,7 +303,81 @@ class BillingController:
                     cliente=client_info,
                     contrato=contract_info,
                     detalles_servicio=residues,
-                    total_estimado=total_estimated
+                    total_estimado=total_estimated,
+                    source="manifest"
                 ))
 
+            # 5. Obtener servicios directos de contratos activos/aceptados
+            try:
+                contract_services = await BillingController._get_services_from_contracts()
+                results.extend(contract_services)
+            except Exception:
+                pass
+
             return results
+
+    @staticmethod
+    async def _get_services_from_contracts():
+        """Recupera servicios de contratos activos o aceptados"""
+        contract_url = os.getenv("CONTRACTS_API_URL", "http://simar_contratos_api:8006")
+        results = []
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                # Obtener contratos con status Activo o Aceptado
+                statuses = ["Activo", "Aceptado"]
+                all_contracts_data = []
+                
+                for status in statuses:
+                    resp = await client.get(f"{contract_url}/api/contracts?status={status}")
+                    if resp.status_code == 200:
+                        all_contracts_data.extend(resp.json())
+                
+                for c_summary in all_contracts_data:
+                    contract_id = c_summary.get("id")
+                    
+                    # Obtener detalle completo para tener los servicios
+                    detail_resp = await client.get(f"{contract_url}/api/contracts/{contract_id}/detail")
+                    if detail_resp.status_code != 200:
+                        continue
+                        
+                    c_detail = detail_resp.json()
+                    
+                    client_info = ClientSummarySchema(
+                        id=c_detail.get("clientId"),
+                        razon_social=c_detail.get("clientName"),
+                        rfc=c_detail.get("clientRfc"),
+                        direccion_fiscal=c_detail.get("clientAddress"),
+                        postal_code=re.search(r'(\d{5})(?!\d)', c_detail.get("clientAddress", "")).group(1) if c_detail.get("clientAddress") and re.search(r'(\d{5})(?!\d)', c_detail.get("clientAddress", "")) else None
+                    )
+                    
+                    contract_info = ContractSummarySchema(
+                        folio=c_detail.get("folio"),
+                        precio_unitario=float(c_detail.get("totalBasePrice") or 0),
+                        metodo_pago="PPD", # Valor por defecto común para contratos
+                        condiciones=c_detail.get("contractDuration")
+                    )
+                    
+                    # Mapear los servicios definidos en el contrato
+                    for s in c_detail.get("services", []):
+                        results.append(ReadyToBillSchema(
+                            manifest_id=0,
+                            numero_manifiesto=f"CONTRATO: {c_detail.get('folio')}",
+                            fecha_servicio=c_detail.get("firstServiceDate") or datetime.now().date(),
+                            tipo_residuo=s.get("wasteType"),
+                            cliente=client_info,
+                            contrato=contract_info,
+                            detalles_servicio=[
+                                ResidueDetailSchema(
+                                    residuo=s.get("wasteType"),
+                                    cantidad=1.0,
+                                    unidad=s.get("wasteUnit")
+                                )
+                            ],
+                            total_estimado=float(s.get("subtotal") or 0),
+                            source="contract"
+                        ))
+            except Exception as e:
+                print(f"Error recuperando servicios de contratos: {e}")
+                
+        return results

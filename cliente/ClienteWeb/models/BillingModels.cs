@@ -215,6 +215,9 @@ namespace ClienteWeb.Models
 
         [JsonPropertyName("direccion_fiscal")]
         public string DireccionFiscal { get; set; }
+
+        [JsonPropertyName("postal_code")]
+        public string PostalCode { get; set; }
     }
 
     public class ContractSummary
@@ -269,5 +272,8 @@ namespace ClienteWeb.Models
 
         [JsonPropertyName("total_estimado")]
         public decimal TotalEstimado { get; set; }
+
+        [JsonPropertyName("source")]
+        public string Source { get; set; } // manifest or contract
     }
 }

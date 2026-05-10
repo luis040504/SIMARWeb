@@ -419,14 +419,15 @@ namespace ClienteWeb.Pages.Billing
                         var ready = await _billingService.GetReadyToBillAsync();
                         displayed.AddRange(ready.Select(r => new BillingRecord
                         {
-                            Id = r.ManifestId.ToString(),
+                            Id = r.Source == "contract" ? r.NumeroManifiesto : r.ManifestId.ToString(),
                             RecordType = "Service",
                             ClientName = r.Cliente.RazonSocial,
                             TaxId = r.Cliente.Rfc,
                             ServiceType = r.TipoResiduo,
                             Date = r.FechaServicio,
                             Amount = r.TotalEstimado,
-                            PostalCode = r.Cliente.DireccionFiscal?.Split(',').Last().Trim() // Simplificación
+                            PostalCode = r.Cliente.PostalCode, // Usando el campo directo
+                            Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto"
                         }));
                     }
                     else if (ActiveTab == "RejectedInvoices")
@@ -492,6 +493,7 @@ namespace ClienteWeb.Pages.Billing
         public string ProductCode { get; set; }
         public string UnitCode { get; set; }
         public string TaxObject { get; set; }
+        public string Source { get; set; }
     }
 
     public class InvoiceItemDto
