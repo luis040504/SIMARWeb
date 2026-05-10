@@ -1,10 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace ClienteWeb.Pages.Contracts.Consult
 {
     public class ConsultModel : PageModel
     {
+        private readonly HttpClient _httpClient;
+
+        public string ApiBaseUrl { get; private set; } = "";
+
+        public ConsultModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClient = httpClientFactory.CreateClient("ContractsApi");
+            ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
+        }
+
         [BindProperty(SupportsGet = true)]
         public string? Search { get; set; }
 
@@ -16,142 +27,102 @@ namespace ClienteWeb.Pages.Contracts.Consult
 
         public List<Contract> Contracts { get; set; } = new();
 
-        public void OnGet()
-        {
-            LoadContracts();
-        }
-
-        private void LoadContracts()
-        {
-            var allContracts = new List<Contract>
-            {
-                new Contract
-                {
-                    Id = "CON-001",
-                    Client = "Empresa X",
-                    StartDate = DateTime.Today,
-                    EndDate = DateTime.Today.AddMonths(12),
-                    Status = "Activo"
-                },
-                new Contract
-                {
-                    Id = "CON-002",
-                    Client = "Comercial Y",
-                    StartDate = DateTime.Today.AddMonths(-2),
-                    EndDate = DateTime.Today.AddMonths(10),
-                    Status = "Pendiente de firma"
-                },
-                new Contract
-                {
-                    Id = "CON-003",
-                    Client = "Industrias Z",
-                    StartDate = DateTime.Today.AddYears(-1),
-                    EndDate = DateTime.Today.AddMonths(-1),
-                    Status = "Vencido"
-                }
-            };
-
-            if (!string.IsNullOrEmpty(Search))
-            {
-                allContracts = allContracts
-                    .Where(c => c.Client.Contains(Search, StringComparison.OrdinalIgnoreCase) || 
-                                c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase)) // Dejamos el ID por si acaso
-                    .ToList();
-                    
-                // 2. Filtros secundarios (Solo aplican si ya se buscó por cliente)
-                if (!string.IsNullOrEmpty(Status))
-                {
-                    allContracts = allContracts
-                        .Where(c => c.Status == Status)
-                        .ToList();
-                }
-
-                // 3. NUEVO: Filtrar por Fecha (Contratos cuya vigencia abarca la fecha seleccionada)
-                if (DateFilter.HasValue)
-                {
-                    allContracts = allContracts
-                        .Where(c => c.StartDate.Date <= DateFilter.Value.Date && c.EndDate.Date >= DateFilter.Value.Date)
-                        .ToList();
-                }
-            }
-            else
-            {
-                Status = string.Empty;
-                DateFilter = null;
-            }
-
-            Contracts = allContracts;
-        }
-
-        [BindProperty]
-        public string UpdateId { get; set; } = "";
-
-        [BindProperty]
-        public string UpdateClient { get; set; } = "";
-
-        [BindProperty]
-        public DateTime UpdateStartDate { get; set; }
-
-        [BindProperty]
-        public DateTime UpdateEndDate { get; set; }
-
-        [BindProperty]
-        public string UpdateStatus { get; set; } = "";
-
-        [BindProperty]
-        public string ServiceConditions { get; set; } = "";
-
-        [BindProperty]
-        public string AdminObservations { get; set; } = "";
-
-        [BindProperty]
-        public Microsoft.AspNetCore.Http.IFormFile? PdfFile { get; set; }
+        [BindProperty] public string UpdateId { get; set; } = "";
+        [BindProperty] public string UpdateClient { get; set; } = "";
+        [BindProperty] public DateTime UpdateStartDate { get; set; }
+        [BindProperty] public DateTime UpdateEndDate { get; set; }
+        [BindProperty] public string UpdateStatus { get; set; } = "";
+        [BindProperty] public string ServiceConditions { get; set; } = "";
+        [BindProperty] public string AdminObservations { get; set; } = "";
+        [BindProperty] public Microsoft.AspNetCore.Http.IFormFile? PdfFile { get; set; }
 
         public bool ShowSuccessMessage { get; set; }
         public string ErrorMessage { get; set; } = "";
         public List<string> AuditTrail { get; set; } = new();
 
-        public IActionResult OnPostUpdate()
+        public async Task OnGetAsync()
         {
-            LoadContracts();
+            await LoadContractsAsync();
+        }
 
+        private async Task LoadContractsAsync()
+        {
+            var url = "/api/contracts?";
+            
+            if (!string.IsNullOrEmpty(Search)) 
+                url += $"search={Uri.EscapeDataString(Search)}&";
+                
+            if (!string.IsNullOrEmpty(Status)) 
+                url += $"status={Uri.EscapeDataString(Status)}&";
+                
+            if (DateFilter.HasValue) 
+                url += $"dateFilter={DateFilter.Value:yyyy-MM-dd}";
+
+            try
+            {
+                var apiResponse = await _httpClient.GetFromJsonAsync<List<ApiContractDto>>(url);
+
+                if (apiResponse != null)
+                {
+                    Contracts = apiResponse.Select(c => new Contract
+                    {
+                        Id = c.Folio,
+                        DbId = c.Id,
+                        Client = !string.IsNullOrEmpty(c.ClientName) ? c.ClientName : "Cliente Desconocido", 
+                        StartDate = c.CreatedAt,
+                        EndDate = c.ExpirationDate,
+                        Status = c.Status
+                    }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Contracts = new List<Contract>();
+                // Descomenta esto si quieres ver el error real temporalmente
+                // ErrorMessage = $"Error técnico: {ex.Message}"; 
+                ErrorMessage = "No se pudo conectar con el servidor de contratos.";
+            }
+        }
+
+        public async Task<IActionResult> OnPostUpdateAsync()
+        {
             if (UpdateEndDate <= UpdateStartDate)
             {
                 ErrorMessage = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
+                await LoadContractsAsync();
                 return Page();
             }
 
             ShowSuccessMessage = true;
-
             AuditTrail.Add($"Usuario: Administrador | Fecha de modificación: {DateTime.Now}");
             AuditTrail.Add($"Campos modificados: Fecha de término, Condiciones del servicio, Observaciones administrativas.");
 
-            if (PdfFile != null)
-            {
-                var extension = System.IO.Path.GetExtension(PdfFile.FileName).ToLower();
-                if (extension == ".pdf")
-                {
-                    AuditTrail.Add($"Archivo adjunto validado: {PdfFile.FileName} (Tamaño: {PdfFile.Length / 1024} KB).");
-                }
-                else
-                {
-                    ErrorMessage = "El archivo adjunto debe ser un PDF válido.";
-                    ShowSuccessMessage = false;
-                    AuditTrail.Clear();
-                    return Page();
-                }
-            }
-
+            await LoadContractsAsync();
             return Page();
         }
     }
 
+    // Clases auxiliares para mapear la respuesta de la API
     public class Contract
     {
+        public int DbId { get; set; }
         public string Id { get; set; } = "";
         public string Client { get; set; } = "";
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string Status { get; set; } = "";
+    }
+
+    public class ApiContractDto
+    {
+        public int Id { get; set; }
+        public string Folio { get; set; } = "";
+        public int ClientId { get; set; }
+        
+        public string ClientName { get; set; } = ""; 
+        
+        public string Status { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public DateTime ExpirationDate { get; set; }
     }
 }
