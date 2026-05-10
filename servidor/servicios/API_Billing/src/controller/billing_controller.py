@@ -234,16 +234,15 @@ class BillingController:
                 # 2. Buscar cliente por razón social
                 client_info = None
                 try:
-                    client_resp = await client.get(f"{client_url}/clientes?nombre={razon_social}")
+                    client_resp = await client.get(f"{client_url}/client/name/{razon_social}")
                     if client_resp.status_code == 200:
-                        c_list = client_resp.json()
-                        if isinstance(c_list, list) and len(c_list) > 0:
-                            c = c_list[0]
+                        c = client_resp.json()
+                        if c and isinstance(c, dict):
                             client_info = ClientSummarySchema(
                                 id=c.get("id"),
-                                razon_social=c.get("nombre"),
+                                razon_social=c.get("businessName"),
                                 rfc=c.get("rfc"),
-                                direccion_fiscal=c.get("direccion")
+                                direccion_fiscal=c.get("address")
                             )
                 except Exception:
                     pass
@@ -259,7 +258,7 @@ class BillingController:
                 # 3. Buscar contrato para precios
                 contract_info = None
                 try:
-                    contract_resp = await client.get(f"{contract_url}/contracts")
+                    contract_resp = await client.get(f"{contract_url}/api/contracts")
                     if contract_resp.status_code == 200:
                         contracts = contract_resp.json()
                         target_contract = next((c for c in contracts if c.get("client") == razon_social), None)

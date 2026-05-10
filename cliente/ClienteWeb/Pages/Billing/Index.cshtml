@@ -5,22 +5,7 @@
 }
 
 <div class="container-fluid-simar mt-4">
-    <!-- User Role Selector Simulator -->
-    <div class="card-simar mb-4 border-info">
-        <div class="card-body bg-light d-flex align-items-center justify-content-between rounded-3">
-            <div>
-                <h5 class="mb-0 text-info fw-bold"><i class="bi bi-person-badge me-2"></i> Simulador de Rol de Usuario</h5>
-                <small class="text-muted">Cambia el rol para ver las funcionalidades correspondientes.</small>
-            </div>
-            <form method="get" class="d-flex" id="roleForm">
-                <select class="form-select-simar border-info" name="Role" asp-for="Role" onchange="document.getElementById('roleForm').submit()">
-                    <option value="Admin">Administrador / Empleado</option>
-                    <option value="Client">Cliente Final</option>
-                </select>
-                <input type="hidden" name="ActiveTab" value="" />
-            </form>
-        </div>
-    </div>
+
 
     <!-- Main Content -->
     <div class="card-simar mb-4">
@@ -29,17 +14,17 @@
                 @if (Model.Role == "Admin")
                 {
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "RecentServices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RecentServices">
+                        <a class="nav-link @(Model.ActiveTab == "RecentServices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="RecentServices">
                             <i class="bi bi-file-earmark-text me-1"></i> Servicios Recientes
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "RejectedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RejectedInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "RejectedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="RejectedInvoices">
                             <i class="bi bi-exclamation-triangle me-1"></i> Prefacturas Rechazadas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "GeneratedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="GeneratedInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "GeneratedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="GeneratedInvoices">
                             <i class="bi bi-receipt me-1"></i> Facturas Generadas
                         </a>
                     </li>
@@ -47,12 +32,12 @@
                 else
                 {
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "PendingInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="PendingInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "PendingInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="PendingInvoices">
                             <i class="bi bi-clock-history me-1"></i> Prefacturas Pendientes
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "AcceptedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="AcceptedInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "AcceptedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="AcceptedInvoices">
                             <i class="bi bi-check-circle me-1"></i> Facturas Aceptadas
                         </a>
                     </li>
@@ -101,7 +86,7 @@
                     <h5 class="text-simar-green fw-bold mb-0 fs-4">
                         <i class="bi bi-funnel me-2"></i> Resultados de la Búsqueda
                     </h5>
-                    <a asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="@Model.ActiveTab" class="btn btn-simar-outline-gray">Limpiar Búsqueda</a>
+                    <a asp-page="./Index" asp-route-ActiveTab="@Model.ActiveTab" class="btn btn-simar-outline-gray">Limpiar Búsqueda</a>
                 </div>
             }
 
@@ -150,7 +135,7 @@
                                             {
                                                 <form method="post" asp-page-handler="PrepareModal">
                                                     <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Generate" />
@@ -161,7 +146,7 @@
 
                                                 <form method="post" asp-page-handler="UploadPhysicalInvoice" enctype="multipart/form-data">
                                                     <input type="hidden" name="selectedRecordIdUpload" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <div class="d-grid">
                                                         <label class="btn btn-simar-outline-gray justify-content-center w-100 mb-0" style="cursor: pointer;" for="upload_@record.Id">
@@ -175,7 +160,7 @@
                                             {
                                                 <form method="post" asp-page-handler="PrepareModal">
                                                     <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Edit" />
@@ -189,7 +174,7 @@
                                                 <div class="mb-2">
                                                     <form method="post" asp-page-handler="PrepareModal" class="w-100">
                                                         <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                        <input type="hidden" asp-for="Role" />
+                                                        
                                                         <input type="hidden" asp-for="ActiveTab" />
                                                         <input type="hidden" asp-for="SearchQuery" />
                                                         <input type="hidden" name="modalType" value="Details" />
@@ -202,7 +187,7 @@
                                                 {
                                                     <form method="post" asp-page-handler="Download" class="w-100">
                                                         <input type="hidden" name="id" value="@record.Id" />
-                                                        <input type="hidden" asp-for="Role" />
+                                                        
                                                         <input type="hidden" asp-for="ActiveTab" />
                                                         <button type="submit" class="btn btn-simar-primary justify-content-center w-100">
                                                             <i class="bi bi-download"></i> Descargar
@@ -216,7 +201,7 @@
                                             <div class="mb-2">
                                                 <form method="post" asp-page-handler="PrepareModal" class="w-100">
                                                     <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Details" />
@@ -229,7 +214,7 @@
                                             <div>
                                                 <form method="post" class="w-100 d-flex justify-content-between gap-2">
                                                     <input type="hidden" name="id" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     @if (record.Status == "Pending")
                                                     {
@@ -289,7 +274,7 @@
                     <h4 class="modal-title">
                         <i class="bi bi-clipboard-data me-2"></i> @modalTitle
                     </h4>
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
+                    <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
                 
                 <div class="@bgClass px-5 py-4 border-bottom">
@@ -318,7 +303,7 @@
 
                 <div class="modal-body modal-scrollable-simar p-5 pt-4 flex-grow-1 overflow-auto">
                     <input type="hidden" asp-for="SelectedRecordId" />
-                    <input type="hidden" asp-for="Role" />
+                    
                     <input type="hidden" asp-for="ActiveTab" />
                     <input type="hidden" asp-for="ItemsJson" id="ItemsJson" />
                     <input type="hidden" asp-for="ProductCode" />
@@ -510,7 +495,7 @@
                 </div>
 
                 <div class="modal-footer bg-light mt-auto">
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
+                    <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
                     <button type="submit" class="btn btn-simar-primary" id="confirmSubmitBtn" data-amount="@(Model.SelectedRecord?.Amount ?? 0)">
                         <i class="bi @iconClass"></i> Confirmar
                     </button>
@@ -533,7 +518,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     <h4 class="modal-title">
                         <i class="bi bi-file-text me-2"></i> Detalles de @documentNameDetails: @Model.SelectedRecord.InvoiceNumber
                     </h4>
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
+                    <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
                 <div class="modal-body modal-scrollable-simar p-4 flex-grow-1 overflow-auto">
                     @if (isPreInvoiceDetails)
@@ -580,7 +565,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                          </span>
                     </div>
                     <div>
-                        <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cerrar</a>
+                        <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cerrar</a>
                     </div>
                 </div>
             </div>
@@ -598,7 +583,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
           <div class="modal-dialog modal-dialog-centered">
             <form method="post" asp-page-handler="Reject" class="modal-content text-dark h-100 needs-validation" novalidate>
               <input type="hidden" name="id" value="@record.Id" />
-              <input type="hidden" asp-for="Role" />
+              
               <input type="hidden" asp-for="ActiveTab" />
               <div class="modal-header">
                 <h5 class="modal-title" id="rejectModalLabel-@record.Id">Rechazar Factura @record.InvoiceNumber</h5>

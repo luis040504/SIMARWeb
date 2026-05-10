@@ -15,14 +15,15 @@ namespace ClienteWeb.Pages.Billing
     {
         private readonly IBillingService _billingService;
         private readonly IInvoiceGeneratorService _pdfService;
+        private readonly HttpClient _clientesApi;
 
-        public IndexModel(IBillingService billingService, IInvoiceGeneratorService pdfService)
+        public IndexModel(IBillingService billingService, IInvoiceGeneratorService pdfService, IHttpClientFactory factory)
         {
             _billingService = billingService;
             _pdfService = pdfService;
+            _clientesApi = factory.CreateClient("ClientesApi");
         }
 
-        [BindProperty(SupportsGet = true)]
         public string Role { get; set; } = "Admin";
 
         [BindProperty(SupportsGet = true)]
@@ -65,6 +66,7 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task OnGetAsync()
         {
+            DetermineRole();
             SetDefaultTab();
             await LoadDataAsync();
             ActiveModal = "None";
@@ -72,6 +74,7 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task OnPostSearchAsync()
         {
+            DetermineRole();
             SetDefaultTab();
             await LoadDataAsync();
             ActiveModal = "None";
@@ -80,9 +83,10 @@ namespace ClienteWeb.Pages.Billing
         public async Task OnPostPrepareModalAsync(string modalType)
         {
             ActiveModal = modalType;
+            DetermineRole();
             SetDefaultTab();
             await LoadDataAsync(); 
-
+            ActiveModal = modalType; // Re-asegurar después de LoadData si fuera necesario
             if (!string.IsNullOrEmpty(SelectedRecordId))
             {
                 SelectedRecord = DisplayedRecords.FirstOrDefault(r => r.Id == SelectedRecordId);
@@ -113,10 +117,7 @@ namespace ClienteWeb.Pages.Billing
             }
         }
 
-        public IActionResult OnPostChangeRole(string newRole)
-        {
-            return RedirectToPage(new { Role = newRole });
-        }
+
 
         public async Task<IActionResult> OnPostGenerateAsync()
         {
@@ -152,12 +153,12 @@ namespace ClienteWeb.Pages.Billing
 
                 await _billingService.CreateInvoiceAsync(billingCreate);
                 StatusMessage = $"¡La prefactura para {BillingName} ha sido generada exitosamente!";
-                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
             }
             catch (BillingApiException ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
-                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
             }
         }
 
@@ -179,7 +180,7 @@ namespace ClienteWeb.Pages.Billing
             {
                 TempData["ErrorMessage"] = "Error: El archivo debe ser un PDF válido.";
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
 
         public async Task<IActionResult> OnPostEditAsync()
@@ -189,7 +190,7 @@ namespace ClienteWeb.Pages.Billing
                 if (string.IsNullOrEmpty(SelectedRecordId))
                 {
                     TempData["ErrorMessage"] = "No se ha seleccionado ninguna factura para editar.";
-                    return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                    return RedirectToPage(new { ActiveTab = this.ActiveTab });
                 }
 
                 var items = JsonSerializer.Deserialize<List<InvoiceItemDto>>(ItemsJson);
@@ -222,17 +223,17 @@ namespace ClienteWeb.Pages.Billing
 
                 await _billingService.UpdateInvoiceAsync(SelectedRecordId, billingUpdate);
                 StatusMessage = $"¡La prefactura de {BillingName} ha sido actualizada y reenviada exitosamente!";
-                return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+                return RedirectToPage(new { ActiveTab = "RejectedInvoices" });
             }
             catch (BillingApiException ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
-                return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+                return RedirectToPage(new { ActiveTab = "RejectedInvoices" });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error inesperado al actualizar: {ex.Message}";
-                return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
+                return RedirectToPage(new { ActiveTab = "RejectedInvoices" });
             }
         }
 
@@ -247,7 +248,7 @@ namespace ClienteWeb.Pages.Billing
             {
                 TempData["ErrorMessage"] = ex.Message;
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
 
         public async Task<IActionResult> OnPostRejectAsync(string id, List<string> rejectReasons)
@@ -262,7 +263,7 @@ namespace ClienteWeb.Pages.Billing
             {
                 TempData["ErrorMessage"] = ex.Message;
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
 
         public async Task<IActionResult> OnPostDownloadAsync(string id)
@@ -273,7 +274,7 @@ namespace ClienteWeb.Pages.Billing
                 if (invoice == null)
                 {
                     TempData["ErrorMessage"] = "No se pudo encontrar la factura para descargar.";
-                    return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                    return RedirectToPage(new { ActiveTab = this.ActiveTab });
                 }
 
                 var pdfBytes = _pdfService.GenerateInvoicePdf(invoice);
@@ -284,12 +285,30 @@ namespace ClienteWeb.Pages.Billing
             catch (BillingApiException ex)
             {
                 TempData["ErrorMessage"] = $"Error al obtener datos: {ex.Message}";
-                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error inesperado al generar PDF: {ex.Message}";
-                return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
+            }
+        }
+
+        private void DetermineRole()
+        {
+            var sessionRole = HttpContext.Session.GetString("Rol")?.ToLower();
+            
+            // Roles con permisos administrativos en facturación
+            var adminRoles = new[] { "administrador", "admin", "empleado", "contador", "dueño" };
+
+            if (adminRoles.Contains(sessionRole))
+            {
+                Role = "Admin";
+            }
+            else
+            {
+                // Por defecto para clientes o cualquier otro rol restringido
+                Role = "Client";
             }
         }
 
@@ -342,8 +361,30 @@ namespace ClienteWeb.Pages.Billing
         {
             try
             {
+                string rfcFilter = null;
+                if (Role != "Admin")
+                {
+                    var userId = HttpContext.Session.GetString("UserId");
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        try
+                        {
+                            var clientInfo = await _clientesApi.GetFromJsonAsync<ClienteOutput>($"client/user/{userId}");
+                            if (clientInfo != null)
+                            {
+                                rfcFilter = clientInfo.RFC;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error fetching client RFC: {ex.Message}");
+                        }
+                    }
+                }
+
                 var allInvoices = await _billingService.GetInvoicesAsync(
                     status: StatusFilter,
+                    receiverTaxId: rfcFilter,
                     searchQuery: SearchQuery
                 );
 
