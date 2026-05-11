@@ -7,7 +7,7 @@
     string hdrClass = esEspecial ? "consult-section-header especial" : "consult-section-header peligroso";
 }
 
-<form method="post">
+<form method="post" id="editForm">
     <input type="hidden" asp-for="Manifest.Id" />
     <input type="hidden" asp-for="Manifest.Type" />
     <input type="hidden" asp-for="Manifest.ManifestNumber" />
@@ -576,7 +576,7 @@
 @section Scripts {
 <script>
     document.getElementById('btnConfirmSave').addEventListener('click', function () {
-        document.querySelector('form').submit();
+        document.getElementById('editForm').submit();
     });
 
     function toggleSection(header) {

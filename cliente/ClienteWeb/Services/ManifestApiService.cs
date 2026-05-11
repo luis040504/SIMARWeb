@@ -142,8 +142,9 @@ public class ManifestApiService
             CorreoTransportista = model.TransporterEmail,
             TipoVehiculo = model.VehicleType,
             Placa = model.VehiclePlate,
+            LicenciaConductor = model.DriverLicense,
             RutaTransporte = model.TransportRoute,
-            NombreResponsableTransportista = model.TransporterResponsibleName,
+            NombreResponsableTransportista = string.IsNullOrEmpty(model.TransporterResponsibleName) ? model.DriverName : model.TransporterResponsibleName,
             FechaFirmaTransportista = model.TransporterSignDate?.ToString("yyyy-MM-dd"),
             NumeroAutorizacionDestinatario = model.ReceiverAuthorizationNumber,
             RazonSocialDestinatario = model.ReceiverSocialReason,
@@ -307,7 +308,7 @@ public class ManifestApiService
         await using var stream = file.OpenReadStream();
         var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-        content.Add(fileContent, "firma", file.FileName);
+        content.Add(fileContent, "pdf", file.FileName);
         var response = await _http.PostAsync($"manifiestos/{id}/firma", content);
         response.EnsureSuccessStatusCode();
     }
@@ -411,27 +412,34 @@ public class ManifestApiService
 
         if (dto.Residuos.HasValue && dto.Residuos.Value.ValueKind == JsonValueKind.Array)
         {
+            // La API devuelve los decimales como strings ("0.10"), se necesita AllowReadingFromString
+            var numOpts = new JsonSerializerOptions
+            {
+                NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
+                PropertyNameCaseInsensitive = true
+            };
+
             if (dto.Tipo == "especial")
             {
-                var list = dto.Residuos.Value.Deserialize<List<EspecialResidueApiDto>>();
+                var list = dto.Residuos.Value.Deserialize<List<EspecialResidueApiDto>>(numOpts);
                 if (list is not null)
                     vm.SpecialResidues = list.Select(r => new SpecialResidueItem
                     {
                         ResidueKey        = r.ClaveResiduo ?? "",
-                        ResidueName       = r.NombreResiduo,
+                        ResidueName       = r.NombreResiduo ?? "",
                         ContainerType     = r.TipoEnvase ?? "",
                         ContainerCapacity = r.Capacidad ?? "",
                         Weight            = r.Peso,
-                        Unit              = r.Unidad
+                        Unit              = r.Unidad ?? "kg"
                     }).ToList();
             }
             else
             {
-                var list = dto.Residuos.Value.Deserialize<List<PeligrosoResidueApiDto>>();
+                var list = dto.Residuos.Value.Deserialize<List<PeligrosoResidueApiDto>>(numOpts);
                 if (list is not null)
                     vm.HazardousResidues = list.Select(r => new HazardousResidueItem
                     {
-                        ResidueName       = r.NombreResiduo,
+                        ResidueName       = r.NombreResiduo ?? "",
                         IsCorrosive       = r.EsCorrosivo,
                         IsReactive        = r.EsReactivo,
                         IsExplosive       = r.EsExplosivo,
@@ -556,16 +564,16 @@ public class ManifestApiService
     private class EspecialResidueApiDto
     {
         [JsonPropertyName("clave_residuo")] public string? ClaveResiduo { get; set; }
-        [JsonPropertyName("nombre_residuo")] public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")] public string? NombreResiduo { get; set; }
         [JsonPropertyName("tipo_envase")]    public string? TipoEnvase { get; set; }
         [JsonPropertyName("capacidad")]      public string? Capacidad { get; set; }
         [JsonPropertyName("peso")]           public decimal Peso { get; set; }
-        [JsonPropertyName("unidad")]         public string Unidad { get; set; } = "kg";
+        [JsonPropertyName("unidad")]         public string? Unidad { get; set; }
     }
 
     private class PeligrosoResidueApiDto
     {
-        [JsonPropertyName("nombre_residuo")]  public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")]  public string? NombreResiduo { get; set; }
         [JsonPropertyName("es_corrosivo")]    public bool EsCorrosivo { get; set; }
         [JsonPropertyName("es_reactivo")]     public bool EsReactivo { get; set; }
         [JsonPropertyName("es_explosivo")]    public bool EsExplosivo { get; set; }
@@ -653,16 +661,16 @@ public class ManifestApiService
     private class EspecialResidueSendDto
     {
         [JsonPropertyName("clave_residuo")] public string? ClaveResiduo { get; set; }
-        [JsonPropertyName("nombre_residuo")] public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")] public string? NombreResiduo { get; set; }
         [JsonPropertyName("tipo_envase")]    public string? TipoEnvase { get; set; }
         [JsonPropertyName("capacidad")]      public string? Capacidad { get; set; }
         [JsonPropertyName("peso")]           public decimal Peso { get; set; }
-        [JsonPropertyName("unidad")]         public string Unidad { get; set; } = "kg";
+        [JsonPropertyName("unidad")]         public string? Unidad { get; set; }
     }
 
     private class PeligrosoResidueSendDto
     {
-        [JsonPropertyName("nombre_residuo")]   public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")]   public string? NombreResiduo { get; set; }
         [JsonPropertyName("es_corrosivo")]     public bool EsCorrosivo { get; set; }
         [JsonPropertyName("es_reactivo")]      public bool EsReactivo { get; set; }
         [JsonPropertyName("es_explosivo")]     public bool EsExplosivo { get; set; }
