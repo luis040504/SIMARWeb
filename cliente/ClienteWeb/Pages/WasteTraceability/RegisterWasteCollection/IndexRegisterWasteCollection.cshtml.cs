@@ -30,7 +30,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 
     public class IndexModel : PageModel
     {
-        private const string ServiciosApiUrl = "http://localhost:8005/api/servicios";
+        private const string ServiciosApiUrl = "http://localhost:8014/api/servicios";
         private readonly IHttpClientFactory _httpClientFactory;
 
         public IndexModel(IHttpClientFactory httpClientFactory)
@@ -76,13 +76,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                 else
                 {
                     Servicios = new List<ServicioRecoleccion>();
-                    ViewData["MensajeError"] = "No se pudieron cargar los servicios desde el backend.";
+                    ViewData["MensajeError"] = "No se pudieron obtener los servicios.";
                 }
             }
             catch (Exception)
             {
                 Servicios = new List<ServicioRecoleccion>();
-                ViewData["MensajeError"] = "Ocurrió un error al consultar el backend de servicios.";
+                ViewData["MensajeError"] = "Ocurrió un error al obtener los clientes.";
             }
         }
 

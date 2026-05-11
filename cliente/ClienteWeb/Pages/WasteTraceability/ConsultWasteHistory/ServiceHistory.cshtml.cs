@@ -83,7 +83,7 @@ namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
 
     public class ServiceHistoryModel : PageModel
     {
-        private const string ServiciosApiUrlTemplate = "http://localhost:8005/api/servicios/{0}";
+        private const string ServiciosApiUrlTemplate = "http://localhost:8014/api/servicios/{0}";
         private readonly IHttpClientFactory _httpClientFactory;
 
         public ServiceHistoryModel(IHttpClientFactory httpClientFactory)
@@ -141,7 +141,7 @@ namespace ClienteWeb.Pages.WasteTraceability.ConsultWasteHistory
             }
             catch (Exception)
             {
-                ErrorMessage = "Ocurrió un error al consultar el backend de servicios.";
+                ErrorMessage = "Ocurrió un error al consultar el registro de servicios.";
                 ServiciosHistorial = new List<ServicioHistorial>();
             }
         }

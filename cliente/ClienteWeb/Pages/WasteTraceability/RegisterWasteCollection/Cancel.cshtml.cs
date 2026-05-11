@@ -11,7 +11,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 {
     public class ConfirmModel : PageModel
     {
-        private const string ServiciosApiUrl = "http://localhost:8005/api/servicios";
+        private const string ServiciosApiUrl = "http://localhost:8014/api/servicios";
         private readonly IHttpClientFactory _httpClientFactory;
 
         public ConfirmModel(IHttpClientFactory httpClientFactory)
@@ -39,29 +39,29 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
         {
             if (Servicio == null || string.IsNullOrWhiteSpace(Servicio.Id))
             {
-                TempData["MensajeError"] = "No se identificó el servicio a confirmar.";
+                TempData["MensajeError"] = "No se identificó el servicio a cancelar.";
                 return RedirectToPage("IndexRegisterWasteCollection");
             }
 
             try
             {
                 using var httpClient = _httpClientFactory.CreateClient();
-                var requestUrl = $"{ServiciosApiUrl}/{Uri.EscapeDataString(Servicio.Id)}/confirmar-recoleccion";
+                var requestUrl = $"{ServiciosApiUrl}/{Uri.EscapeDataString(Servicio.Id)}/cancelar-recoleccion";
                 var response = await httpClient.PostAsync(requestUrl, null);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    TempData["MensajeError"] = "No se pudo confirmar la recolección en el backend.";
+                    TempData["MensajeError"] = "No se pudo cancelar la recolección.";
                     TempData["TipoError"] = response.StatusCode.ToString();
                     return RedirectToPage("IndexRegisterWasteCollection");
                 }
 
-                TempData["MensajeExito"] = "Servicio recolectado exitosamente.";
+                TempData["MensajeExito"] = "Recolección cancelada. Estado actualizado a 'Cancelada'.";
                 return RedirectToPage("IndexRegisterWasteCollection");
             }
             catch (Exception)
             {
-                TempData["MensajeError"] = "Ocurrió un error al confirmar la recolección.";
+                TempData["MensajeError"] = "Ocurrió un error al cancelar la recolección.";
                 return RedirectToPage("IndexRegisterWasteCollection");
             }
         }

@@ -30,7 +30,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteDestinationRecord
 
     public class DestinationConfirmModel : PageModel
     {
-        private const string ServiciosApiUrl = "http://localhost:8005/api/servicios";
+        private const string ServiciosApiUrl = "http://localhost:8014/api/servicios";
         private readonly IHttpClientFactory _httpClientFactory;
 
         public DestinationConfirmModel(IHttpClientFactory httpClientFactory)
@@ -70,12 +70,12 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteDestinationRecord
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    TempData["MensajeError"] = "No se pudo registrar la llegada al backend.";
+                    TempData["MensajeError"] = "No se pudo registrar la llegada de los residuos.";
                     TempData["TipoError"] = response.StatusCode.ToString();
                     return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
                 }
 
-                TempData["MensajeExito"] = "Llegada al destino registrada exitosamente. Estado actualizado a 'Residuos depositados'.";
+                TempData["MensajeExito"] = "Llegada registrada. Estado actualizado a 'Completada'.";
                 return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
             }
             catch (Exception)

@@ -206,28 +206,28 @@
         letter-spacing: 0.3px;
     }
     
-    .badge-asignado {
+    .badge-programada {
         background: rgba(255, 193, 7, 0.1);
         color: #856404;
         border: 1px solid rgba(255, 193, 7, 0.3);
     }
     
-    .badge-recolectado {
+    .badge-completada {
         background: rgba(0, 102, 204, 0.1);
         color: #0066cc;
         border: 1px solid rgba(0, 102, 204, 0.3);
     }
     
-    .badge-en-curso {
+    .badge-en-ruta {
         background: rgba(0, 102, 204, 0.1);
         color: #0066cc;
         border: 1px solid rgba(0, 102, 204, 0.3);
     }
     
-    .badge-concluido {
-        background: rgba(90, 173, 49, 0.1);
-        color: var(--simar-green);
-        border: 1px solid rgba(90, 173, 49, 0.3);
+    .badge-cancelada {
+        background: rgba(200, 200, 200, 0.1);
+        color: #666;
+        border: 1px solid rgba(200, 200, 200, 0.3);
     }
     
     /* Modal mejorado */
@@ -563,9 +563,9 @@
             <tbody>
                 @foreach (var servicio in Model.ServiciosHistorial)
                 {
-                    var estadoClass = servicio.Estado == "Asignado" ? "badge-asignado" : 
-                                      (servicio.Estado == "Recolectado" ? "badge-recolectado" :
-                                      (servicio.Estado == "En curso" ? "badge-en-curso" : "badge-concluido"));
+                    var estadoClass = servicio.Estado == "Programada" ? "badge-programada" : 
+                                      (servicio.Estado == "En ruta" ? "badge-en-ruta" :
+                                      (servicio.Estado == "Completada" ? "badge-completada" : "badge-cancelada"));
                     <tr onclick="abrirModalDetalle('@servicio.Id')" data-id="@servicio.Id">
                         <td><strong>#@servicio.Id</strong></td>
                         <td>@servicio.Manifiesto</td>
@@ -614,11 +614,11 @@
     
     function getBadgeClass(estado) {
         switch(estado) {
-            case 'Asignado': return 'badge-asignado';
-            case 'Recolectado': return 'badge-recolectado';
-            case 'En curso': return 'badge-en-curso';
-            case 'Concluido': return 'badge-concluido';
-            default: return 'badge-asignado';
+            case 'Programada': return 'badge-programada';
+            case 'En ruta': return 'badge-en-ruta';
+            case 'Completada': return 'badge-completada';
+            case 'Cancelada': return 'badge-cancelada';
+            default: return 'badge-programada';
         }
     }
     
@@ -627,19 +627,19 @@
         var botones = '';
         
         if (rol !== 'cliente') {
-            if (estado === 'Asignado') {
-                botones += `<button class="btn-simar-primary" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/Confirm'">
-                                <i class="bi bi-check-lg"></i> Registrar recolección
+            if (estado === 'Programada') {
+                botones += `<button class="btn-simar-primary" onclick="window.location.href='/WasteTraceability/RegisterWasteCollection/Cancel'">
+                                <i class="bi bi-check-lg"></i> Cancelar recolección
                             </button>`;
             }
 
-            if (estado === 'Recolectado') {
+            if (estado === 'Programada') {
                 botones += `<button class="btn-simar-warning" onclick="window.location.href='/WasteTraceability/RegisterWasteTransportRecord/TransportConfirm'">
                                 <i class="bi bi-truck"></i> Registrar inicio de ruta
                             </button>`;
             }
 
-            if (estado === 'En curso') {
+            if (estado === 'En ruta') {
                 botones += `<button class="btn-simar-success" onclick="window.location.href='/WasteTraceability/RegisterWasteDestinationRecord/DestinationConfirm'">
                                 <i class="bi bi-geo-alt"></i> Registrar llegada a destino
                             </button>`;

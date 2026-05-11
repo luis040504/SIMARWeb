@@ -6,6 +6,19 @@ from ..schemas.servicio_schema import ServicioCreate, ServicioUpdate, ServicioFi
 
 router = APIRouter()
 
+def normalize_servicio_dict(servicio_dict: dict) -> dict:
+    if 'fecha' in servicio_dict and 'fechaServicio' not in servicio_dict:
+        servicio_dict['fechaServicio'] = servicio_dict['fecha']
+    if 'vehiculos' in servicio_dict and servicio_dict.get('vehiculo') is None:
+        first = servicio_dict['vehiculos'][0] if servicio_dict['vehiculos'] else None
+        if first:
+            servicio_dict['vehiculo'] = first.get('vehiculo')
+            servicio_dict['conductor'] = first.get('chofer')
+            tecnico = first.get('tecnicos')
+            if tecnico:
+                servicio_dict['tecnico'] = ', '.join(tecnico)
+    return servicio_dict
+
 @router.get("/")
 async def get_all(
     cliente: Optional[str] = Query(None),
@@ -13,6 +26,9 @@ async def get_all(
     fechaInicio: Optional[datetime] = Query(None),
     fechaFin: Optional[datetime] = Query(None),
     contrato: Optional[str] = Query(None),
+    vehiculo: Optional[str] = Query(None),
+    chofer: Optional[str] = Query(None),
+    tecnico: Optional[str] = Query(None),
     search: Optional[str] = Query(None)
 ):
     """Obtener todos los servicios con filtros"""
@@ -22,12 +38,15 @@ async def get_all(
         fechaInicio=fechaInicio,
         fechaFin=fechaFin,
         contrato=contrato,
+        vehiculo=vehiculo,
+        chofer=chofer,
+        tecnico=tecnico,
         search=search
     )
     servicios = await ServicioController.get_all(filtro)
     return {
         "success": True,
-        "data": [s.model_dump(by_alias=True) for s in servicios],
+        "data": [normalize_servicio_dict(s.model_dump(by_alias=True)) for s in servicios],
         "count": len(servicios)
     }
 
@@ -46,7 +65,7 @@ async def get_by_cliente(
     servicios = await ServicioController.get_by_cliente(cliente, estado)
     return {
         "success": True,
-        "data": [s.model_dump(by_alias=True) for s in servicios],
+        "data": [normalize_servicio_dict(s.model_dump(by_alias=True)) for s in servicios],
         "count": len(servicios)
     }
 
@@ -54,19 +73,22 @@ async def get_by_cliente(
 async def get_by_id(servicio_id: str):
     """Obtener servicio por ID"""
     servicio = await ServicioController.get_by_id(servicio_id)
-    return {"success": True, "data": servicio.model_dump(by_alias=True)}
+    data = servicio.model_dump(by_alias=True)
+    return {"success": True, "data": normalize_servicio_dict(data)}
 
 @router.post("/")
 async def create(servicio: ServicioCreate):
     """Crear nuevo servicio"""
     new_servicio = await ServicioController.create(servicio)
-    return {"success": True, "data": new_servicio.model_dump(by_alias=True)}
+    data = new_servicio.model_dump(by_alias=True)
+    return {"success": True, "data": normalize_servicio_dict(data)}
 
 @router.put("/{servicio_id}")
 async def update(servicio_id: str, servicio: ServicioUpdate):
     """Actualizar servicio"""
     updated = await ServicioController.update(servicio_id, servicio)
-    return {"success": True, "data": updated.model_dump(by_alias=True)}
+    data = updated.model_dump(by_alias=True)
+    return {"success": True, "data": normalize_servicio_dict(data)}
 
 @router.delete("/{servicio_id}")
 async def delete(servicio_id: str):
@@ -74,34 +96,37 @@ async def delete(servicio_id: str):
     result = await ServicioController.delete(servicio_id)
     return {"success": True, **result}
 
-@router.post("/{servicio_id}/confirmar-recoleccion")
-async def confirmar_recoleccion(servicio_id: str):
-    """Confirmar recolección - cambia estado a Recolectado"""
-    servicio = await ServicioController.confirmar_recoleccion(servicio_id)
+@router.post("/{servicio_id}/cancelar-recoleccion")
+async def cancelar_recoleccion(servicio_id: str):
+    """Cancelar recolección - cambia estado a Cancelada"""
+    servicio = await ServicioController.cancelar_recoleccion(servicio_id)
+    data = servicio.model_dump(by_alias=True)
     return {
         "success": True,
-        "message": "Recolección confirmada exitosamente",
-        "data": servicio.model_dump(by_alias=True)
+        "message": "Recolección cancelada exitosamente",
+        "data": normalize_servicio_dict(data)
     }
 
 @router.post("/{servicio_id}/iniciar-transporte")
 async def iniciar_transporte(servicio_id: str):
-    """Iniciar transporte - cambia estado a En curso"""
+    """Iniciar transporte - cambia estado a En ruta"""
     servicio = await ServicioController.iniciar_transporte(servicio_id)
+    data = servicio.model_dump(by_alias=True)
     return {
         "success": True,
         "message": "Transporte iniciado exitosamente",
-        "data": servicio.model_dump(by_alias=True)
+        "data": normalize_servicio_dict(data)
     }
 
 @router.post("/{servicio_id}/registrar-llegada")
 async def registrar_llegada(servicio_id: str):
-    """Registrar llegada - cambia estado a Concluido"""
+    """Registrar llegada - cambia estado a Completada"""
     servicio = await ServicioController.registrar_llegada(servicio_id)
+    data = servicio.model_dump(by_alias=True)
     return {
         "success": True,
         "message": "Llegada registrada exitosamente",
-        "data": servicio.model_dump(by_alias=True)
+        "data": normalize_servicio_dict(data)
     }
 
 # ============================================

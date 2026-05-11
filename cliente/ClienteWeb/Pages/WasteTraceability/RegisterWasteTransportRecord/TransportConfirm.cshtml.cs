@@ -30,7 +30,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteTransportRecord
 
     public class TransportConfirmModel : PageModel
     {
-        private const string ServiciosApiUrl = "http://localhost:8005/api/servicios";
+        private const string ServiciosApiUrl = "http://localhost:8014/api/servicios";
         private readonly IHttpClientFactory _httpClientFactory;
 
         public TransportConfirmModel(IHttpClientFactory httpClientFactory)
@@ -70,12 +70,12 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteTransportRecord
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    TempData["MensajeError"] = "No se pudo iniciar el transporte en el backend.";
+                    TempData["MensajeError"] = "No se pudo iniciar el transporte de los residuos.";
                     TempData["TipoError"] = response.StatusCode.ToString();
                     return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
                 }
 
-                TempData["MensajeExito"] = "Inicio de transporte exitoso. Estado actualizado a 'Residuos en transporte'.";
+                TempData["MensajeExito"] = "Transporte iniciado. Estado actualizado a 'En ruta'.";
                 return RedirectToPage("../RegisterWasteCollection/IndexRegisterWasteCollection");
             }
             catch (Exception)

@@ -260,13 +260,13 @@ services:
       - "8014:8005"
     environment:
       - PORT=8005
-      - MONGODB_HOST=mongo_servicios
+      - MONGODB_HOST=mongo_recolecciones
       - MONGODB_PORT=27017
       - MONGODB_USER=root
       - MONGODB_PASSWORD=Simar123!
-      - MONGODB_DB=simar_servicios_db
+      - MONGODB_DB=simar_recolecciones_db
     depends_on:
-      mongo_servicios:
+      mongo_recolecciones:
         condition: service_healthy
     networks:
       - simar_network

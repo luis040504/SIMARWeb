@@ -9,13 +9,13 @@ MONGODB_HOST = os.getenv('MONGODB_HOST', 'localhost')
 MONGODB_PORT = int(os.getenv('MONGODB_PORT', 27017))
 MONGODB_USER = os.getenv('MONGODB_USER', 'root')
 MONGODB_PASSWORD = os.getenv('MONGODB_PASSWORD', 'Simar123!')
-MONGODB_DB = os.getenv('MONGODB_DB', 'simar_servicios_db')
+MONGODB_DB = os.getenv('MONGODB_DB', 'simar_recolecciones_db')
 
 MONGO_URI = f"mongodb://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_HOST}:{MONGODB_PORT}"
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 database = client[MONGODB_DB]
-servicios_collection = database['servicios']
+recolecciones_collection = database['recolecciones']
 
 async def test_connection():
     try:

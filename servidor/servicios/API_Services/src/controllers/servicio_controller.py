@@ -2,25 +2,33 @@ from fastapi import HTTPException, status
 from datetime import datetime
 from bson import ObjectId
 from typing import Optional
-from ..config.database import servicios_collection
+from ..config.database import recolecciones_collection
 from ..models.servicio import Servicio
 from ..schemas.servicio_schema import ServicioCreate, ServicioUpdate, ServicioFilter
 
 class ServicioController:
-    
+    ACTIVE_FILTER = {"$or": [{"activo": True}, {"activo": {"$exists": False}}]}
+
     @staticmethod
     async def get_all(filtro: Optional[ServicioFilter] = None):
         """Obtener todos los servicios con filtros"""
-        query = {"activo": True}
+        query = ServicioController.ACTIVE_FILTER.copy()
         
         if filtro:
             if filtro.search:
-                query["$or"] = [
-                    {"cliente": {"$regex": filtro.search, "$options": "i"}},
-                    {"direccion": {"$regex": filtro.search, "$options": "i"}},
-                    {"contrato": {"$regex": filtro.search, "$options": "i"}},
-                    {"manifiesto": {"$regex": filtro.search, "$options": "i"}}
-                ]
+                query = {
+                    "$and": [
+                        ServicioController.ACTIVE_FILTER,
+                        {
+                            "$or": [
+                                {"cliente": {"$regex": filtro.search, "$options": "i"}},
+                                {"direccion": {"$regex": filtro.search, "$options": "i"}},
+                                {"tipoResiduo": {"$regex": filtro.search, "$options": "i"}},
+                                {"observaciones": {"$regex": filtro.search, "$options": "i"}}
+                            ]
+                        }
+                    ]
+                }
             else:
                 if filtro.cliente:
                     query["cliente"] = {"$regex": filtro.cliente, "$options": "i"}
@@ -28,15 +36,24 @@ class ServicioController:
                     query["estado"] = filtro.estado
                 if filtro.contrato:
                     query["contrato"] = {"$regex": filtro.contrato, "$options": "i"}
+                elem_match = {}
+                if filtro.vehiculo:
+                    elem_match["vehiculo"] = {"$regex": filtro.vehiculo, "$options": "i"}
+                if filtro.chofer:
+                    elem_match["chofer"] = {"$regex": filtro.chofer, "$options": "i"}
+                if filtro.tecnico:
+                    elem_match["tecnicos"] = {"$regex": filtro.tecnico, "$options": "i"}
+                if elem_match:
+                    query["vehiculos"] = {"$elemMatch": elem_match}
             
             if filtro.fechaInicio or filtro.fechaFin:
-                query["fechaServicio"] = {}
+                query["fecha"] = {}
                 if filtro.fechaInicio:
-                    query["fechaServicio"]["$gte"] = filtro.fechaInicio
+                    query["fecha"]["$gte"] = filtro.fechaInicio
                 if filtro.fechaFin:
-                    query["fechaServicio"]["$lte"] = filtro.fechaFin
+                    query["fecha"]["$lte"] = filtro.fechaFin
         
-        cursor = servicios_collection.find(query).sort("fechaServicio", -1)
+        cursor = recolecciones_collection.find(query).sort("fecha", -1)
         servicios = await cursor.to_list(length=None)
         return [Servicio(**s) for s in servicios]
     
@@ -46,7 +63,7 @@ class ServicioController:
         if not ObjectId.is_valid(servicio_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
-        servicio = await servicios_collection.find_one({"_id": ObjectId(servicio_id), "activo": True})
+        servicio = await recolecciones_collection.find_one({"_id": ObjectId(servicio_id), **ServicioController.ACTIVE_FILTER})
         if not servicio:
             raise HTTPException(status_code=404, detail="Servicio no encontrado")
         
@@ -55,11 +72,11 @@ class ServicioController:
     @staticmethod
     async def get_by_cliente(cliente: str, estado: Optional[str] = None):
         """Obtener servicios por cliente"""
-        query = {"cliente": {"$regex": cliente, "$options": "i"}, "activo": True}
+        query = {**ServicioController.ACTIVE_FILTER, "cliente": {"$regex": cliente, "$options": "i"}}
         if estado:
             query["estado"] = estado
         
-        cursor = servicios_collection.find(query).sort("fechaServicio", -1)
+        cursor = recolecciones_collection.find(query).sort("fecha", -1)
         servicios = await cursor.to_list(length=None)
         return [Servicio(**s) for s in servicios]
     
@@ -74,11 +91,11 @@ class ServicioController:
         # Generar manifiesto si no existe
         if not servicio_dict.get("manifiesto"):
             año = datetime.now().year
-            count = await servicios_collection.count_documents({})
+            count = await recolecciones_collection.count_documents({})
             servicio_dict["manifiesto"] = f"MAN-{año}-{count+1:03d}"
         
-        result = await servicios_collection.insert_one(servicio_dict)
-        new_servicio = await servicios_collection.find_one({"_id": result.inserted_id})
+        result = await recolecciones_collection.insert_one(servicio_dict)
+        new_servicio = await recolecciones_collection.find_one({"_id": result.inserted_id})
         return Servicio(**new_servicio)
     
     @staticmethod
@@ -87,7 +104,7 @@ class ServicioController:
         if not ObjectId.is_valid(servicio_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
-        existing = await servicios_collection.find_one({"_id": ObjectId(servicio_id), "activo": True})
+        existing = await recolecciones_collection.find_one({"_id": ObjectId(servicio_id), **ServicioController.ACTIVE_FILTER})
         if not existing:
             raise HTTPException(status_code=404, detail="Servicio no encontrado")
         
@@ -95,12 +112,12 @@ class ServicioController:
         update_data["updatedAt"] = datetime.now()
         
         if update_data:
-            await servicios_collection.update_one(
+            await recolecciones_collection.update_one(
                 {"_id": ObjectId(servicio_id)},
                 {"$set": update_data}
             )
         
-        updated = await servicios_collection.find_one({"_id": ObjectId(servicio_id)})
+        updated = await recolecciones_collection.find_one({"_id": ObjectId(servicio_id)})
         return Servicio(**updated)
     
     @staticmethod
@@ -109,8 +126,8 @@ class ServicioController:
         if not ObjectId.is_valid(servicio_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
-        result = await servicios_collection.update_one(
-            {"_id": ObjectId(servicio_id), "activo": True},
+        result = await recolecciones_collection.update_one(
+            {"_id": ObjectId(servicio_id), **ServicioController.ACTIVE_FILTER},
             {"$set": {"activo": False, "updatedAt": datetime.now()}}
         )
         
@@ -122,58 +139,55 @@ class ServicioController:
     @staticmethod
     async def get_estados():
         """Obtener lista de estados posibles"""
-        return ["Asignado", "Recolectado", "En curso", "Concluido"]
+        return ["Programada", "En ruta", "Completada", "Cancelada"]
     
     @staticmethod
-    async def confirmar_recoleccion(servicio_id: str):
-        """Cambiar estado a Recolectado"""
+    async def cancelar_recoleccion(servicio_id: str):
+        """Cambiar estado a Cancelada"""
         if not ObjectId.is_valid(servicio_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
-        await servicios_collection.update_one(
+        await recolecciones_collection.update_one(
             {"_id": ObjectId(servicio_id)},
             {"$set": {
-                "estado": "Recolectado", 
-                "fechaRecoleccion": datetime.now(),
+                "estado": "Cancelada", 
                 "updatedAt": datetime.now()
             }}
         )
         
-        updated = await servicios_collection.find_one({"_id": ObjectId(servicio_id)})
+        updated = await recolecciones_collection.find_one({"_id": ObjectId(servicio_id)})
         return Servicio(**updated)
     
     @staticmethod
     async def iniciar_transporte(servicio_id: str):
-        """Cambiar estado a En curso"""
+        """Cambiar estado a En ruta"""
         if not ObjectId.is_valid(servicio_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
-        await servicios_collection.update_one(
+        await recolecciones_collection.update_one(
             {"_id": ObjectId(servicio_id)},
             {"$set": {
-                "estado": "En curso", 
-                "fechaTransporte": datetime.now(),
+                "estado": "En ruta", 
                 "updatedAt": datetime.now()
             }}
         )
         
-        updated = await servicios_collection.find_one({"_id": ObjectId(servicio_id)})
+        updated = await recolecciones_collection.find_one({"_id": ObjectId(servicio_id)})
         return Servicio(**updated)
     
     @staticmethod
     async def registrar_llegada(servicio_id: str):
-        """Cambiar estado a Concluido"""
+        """Cambiar estado a Completada"""
         if not ObjectId.is_valid(servicio_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
-        await servicios_collection.update_one(
+        await recolecciones_collection.update_one(
             {"_id": ObjectId(servicio_id)},
             {"$set": {
-                "estado": "Concluido", 
-                "fechaConclusion": datetime.now(),
+                "estado": "Completada", 
                 "updatedAt": datetime.now()
             }}
         )
         
-        updated = await servicios_collection.find_one({"_id": ObjectId(servicio_id)})
+        updated = await recolecciones_collection.find_one({"_id": ObjectId(servicio_id)})
         return Servicio(**updated)
