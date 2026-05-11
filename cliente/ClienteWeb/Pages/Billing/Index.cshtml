@@ -288,7 +288,7 @@
                             <h3 class="mb-0 mt-2 text-simar-dark fw-bold">@Model.SelectedRecord?.ClientName <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedRecord?.TaxId)</span></h3>
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                            <h2 class="mb-0 fw-bold text-simar-green">@Model.SelectedRecord?.Amount.ToString("C")</h2>
+                            <h2 class="mb-0 fw-bold text-simar-green">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</h2>
                         </div>
                     </div>
                 </div>
@@ -456,8 +456,8 @@
                                                             </div>
                                                             <div class="invalid-feedback">Monto inválido (debe ser > 0).</div>
                                                         </td>
-                                                        <td class="align-middle tax-cell">@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</td>
-                                                        <td class="align-middle fw-bold total-cell">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</td>
+                                                        <td class="align-middle tax-cell">@(((Model.SelectedRecord?.Amount ?? 0) * 0.16m).ToString("C"))</td>
+                                                        <td class="align-middle fw-bold total-cell">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</td>
                                                         <td class="align-middle text-center">
                                                             <button type="button" class="btn btn-sm btn-outline-danger remove-concept-btn" title="Eliminar concepto"><i class="bi bi-trash"></i></button>
                                                         </td>
@@ -471,15 +471,15 @@
                                                     </tr>
                                                     <tr>
                                                         <th colspan="4" class="text-end border-0 pb-1">Subtotal:</th>
-                                                        <th class="subtotal-cell pb-1">@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</th>
+                                                        <th class="subtotal-cell pb-1">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
                                                     </tr>
                                                     <tr>
                                                         <th colspan="4" class="text-end border-0 py-1">IVA (16%):</th>
-                                                        <th class="tax-cell-foot py-1">@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</th>
+                                                        <th class="tax-cell-foot py-1">@(((Model.SelectedRecord?.Amount ?? 0) * 0.16m).ToString("C"))</th>
                                                     </tr>
                                                     <tr>
                                                         <th colspan="4" class="text-end fs-5 text-simar-green border-0 pt-1">Total:</th>
-                                                        <th class="fs-5 text-simar-green total-cell-foot pt-1">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
+                                                        <th class="fs-5 text-simar-green total-cell-foot pt-1">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</th>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -781,7 +781,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                 });
 
                 var updateCalculations = function() {
-                    var totalAmount = 0;
+                    var globalSubtotal = 0;
                     var rows = form.querySelectorAll('.concept-row');
                     
                     rows.forEach(function(row) {
@@ -792,18 +792,19 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                         
                         var qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
                         var price = parseFloat(amountInput ? amountInput.value : 0) || 0;
-                        var rowTotal = qty * price;
-                        var rowSubtotal = rowTotal / 1.16;
-                        var rowIva = rowSubtotal * 0.16;
                         
-                        totalAmount += rowTotal;
+                        var rowSubtotal = qty * price;
+                        var rowIva = rowSubtotal * 0.16;
+                        var rowTotal = rowSubtotal + rowIva;
+                        
+                        globalSubtotal += rowSubtotal;
                         
                         if (taxCell) taxCell.textContent = formatter.format(rowIva);
                         if (totalCell) totalCell.textContent = formatter.format(rowTotal);
                     });
 
-                    var globalSubtotal = totalAmount / 1.16;
                     var globalIva = globalSubtotal * 0.16;
+                    var globalTotal = globalSubtotal + globalIva;
                     
                     var subtotalFoot = form.querySelector('.subtotal-cell');
                     var taxFoot = form.querySelector('.tax-cell-foot');
@@ -811,7 +812,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     
                     if (subtotalFoot) subtotalFoot.textContent = formatter.format(globalSubtotal);
                     if (taxFoot) taxFoot.textContent = formatter.format(globalIva);
-                    if (totalFoot) totalFoot.textContent = formatter.format(totalAmount);
+                    if (totalFoot) totalFoot.textContent = formatter.format(globalTotal);
                 };
 
                 var validateForm = function() {
