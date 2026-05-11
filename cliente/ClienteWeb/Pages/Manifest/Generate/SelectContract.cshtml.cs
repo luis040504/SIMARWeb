@@ -23,8 +23,11 @@ public class SelectContractModel : PageModel
 
     public string? ApiError { get; private set; }
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         try
         {
             var contratos = await _contratos.GetAllAsync();
@@ -48,6 +51,8 @@ public class SelectContractModel : PageModel
         {
             ApiError = "No se pudo cargar la lista de contratos. Verifique que el servicio esté en línea.";
         }
+
+        return Page();
     }
 }
 

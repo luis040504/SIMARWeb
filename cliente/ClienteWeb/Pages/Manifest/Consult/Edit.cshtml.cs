@@ -17,6 +17,9 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(string id)
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         try
         {
             var found = await _api.GetByIdAsync(id);
@@ -37,6 +40,9 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         if (!ModelState.IsValid)
             return Page();
 

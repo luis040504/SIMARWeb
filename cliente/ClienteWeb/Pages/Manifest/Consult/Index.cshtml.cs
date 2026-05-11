@@ -39,8 +39,11 @@ public class IndexModel : PageModel
 
     public string? ApiError { get; private set; }
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         try
         {
             Results = await _api.GetAllAsync(
@@ -61,6 +64,8 @@ public class IndexModel : PageModel
         {
             ApiError = "No se pudo conectar con el servidor. Verifique que el servicio esté en línea.";
         }
+
+        return Page();
     }
 }
 

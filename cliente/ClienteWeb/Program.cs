@@ -11,9 +11,16 @@ builder.Services.AddHttpClient<ManifestApiService>(client =>
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost/api/");
 }).AddHttpMessageHandler<BillingApiInterceptor>();
 
+// Named client — módulo de Contratos (usado por IHttpClientFactory)
 builder.Services.AddHttpClient("ContractsApi", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:8006"); 
+    client.BaseAddress = new Uri("http://localhost:8006");
+});
+
+// Typed client — usado por los manifiestos
+builder.Services.AddHttpClient<ContratosApiService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ContratosApiBaseUrl"] ?? "http://localhost:8080/api/contratos/");
 });
 
 builder.Services.AddHttpClient<ClientesApiService>(client =>
