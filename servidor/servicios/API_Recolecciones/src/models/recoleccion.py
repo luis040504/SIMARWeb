@@ -27,6 +27,7 @@ class VehiculoAsignado(BaseModel):
 
 class Recoleccion(BaseModel):
     id: Optional[str] = Field(None, alias='_id')
+    idContrato: int  # NUEVO: Referencia al contrato
     cliente: str
     fecha: datetime
     direccion: str
@@ -56,6 +57,12 @@ class Recoleccion(BaseModel):
     def validate_vehiculos(cls, v):
         if not v or len(v) == 0:
             raise ValueError('Debe haber al menos un vehículo asignado')
+        return v
+    
+    @validator('idContrato')
+    def validate_id_contrato(cls, v):
+        if v <= 0:
+            raise ValueError('El ID del contrato debe ser un número positivo')
         return v
     
     model_config = ConfigDict(

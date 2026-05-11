@@ -11,12 +11,14 @@ public class HazardousWasteModel : PageModel
     private readonly ManifestApiService _api;
     private readonly ClientesApiService _clientes;
     private readonly VehiculosApiService _vehiculos;
+    private readonly ContratosApiService _contratos;
 
-    public HazardousWasteModel(ManifestApiService api, ClientesApiService clientes, VehiculosApiService vehiculos)
+    public HazardousWasteModel(ManifestApiService api, ClientesApiService clientes, VehiculosApiService vehiculos, ContratosApiService contratos)
     {
         _api = api;
         _clientes = clientes;
         _vehiculos = vehiculos;
+        _contratos = contratos;
     }
 
     public List<VehiculoDto> Vehiculos { get; private set; } = [];
@@ -96,16 +98,22 @@ public class HazardousWasteModel : PageModel
     [BindProperty] public string    ReceiverResponsibleName        { get; set; } = string.Empty;
     [BindProperty] public DateOnly? ReceiverSignDate               { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    public async Task OnGetAsync(int clienteId = 0, int contratoId = 0)
+    public async Task<IActionResult> OnGetAsync(int clienteId = 0, int contratoId = 0)
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         IdCliente  = clienteId;
         ContratoId = contratoId;
 
         var clienteTask   = clienteId > 0 ? _clientes.GetByIdAsync(clienteId) : Task.FromResult<ClienteDto?>(null);
         var vehiculosTask = _vehiculos.GetAllAsync();
-        await Task.WhenAll(clienteTask, vehiculosTask);
+        var contratoTask  = contratoId > 0 ? _contratos.GetDetailAsync(contratoId) : Task.FromResult<ContratoDetailDto?>(null);
+        await Task.WhenAll(clienteTask, vehiculosTask, contratoTask);
 
-        var cliente = clienteTask.Result;
+        var cliente  = clienteTask.Result;
+        var contrato = contratoTask.Result;
+
         if (cliente is not null)
         {
             ClienteNombre                   = cliente.Name;
@@ -115,11 +123,22 @@ public class HazardousWasteModel : PageModel
             EnvironmentalRegistrationNumber = cliente.SemarnatNum ?? string.Empty;
         }
 
+        if (contrato?.Services is { Count: > 0 })
+        {
+            Residues = contrato.Services
+                .Select(s => new HazardousResidueItem { ResidueName = s.WasteType })
+                .ToList();
+        }
+
         Vehiculos = vehiculosTask.Result;
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         if (!ModelState.IsValid)
             return Page();
 
