@@ -20,7 +20,7 @@ builder.Services.AddHttpClient("ContractsApi", client =>
 // Typed client — usado por los manifiestos
 builder.Services.AddHttpClient<ContratosApiService>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ContratosApiBaseUrl"] ?? "http://localhost:8080/api/contratos/");
+    client.BaseAddress = new Uri("http://localhost:8006");
 });
 
 builder.Services.AddHttpClient<ClientesApiService>(client =>
