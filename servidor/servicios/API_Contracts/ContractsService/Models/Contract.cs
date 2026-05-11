@@ -26,6 +26,8 @@ public class Contract
     public string ClientDeclaraciones { get; set; } = "";
     public string ContractDuration { get; set; } = "";
     public DateTime? FirstServiceDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? SignedContractPath { get; set; }
 
     public List<ContractServiceItem> Services { get; set; } = new();
     public List<ContractPaymentItem> Payments { get; set; } = new();
