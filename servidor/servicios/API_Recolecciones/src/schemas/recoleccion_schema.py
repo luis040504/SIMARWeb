@@ -9,6 +9,7 @@ class VehiculoAsignadoSchema(BaseModel):
     tecnicos: List[str] = Field(default_factory=list)
 
 class RecoleccionCreate(BaseModel):
+    idContrato: int  # NUEVO: Referencia al contrato
     cliente: str
     fecha: datetime
     direccion: str
@@ -17,6 +18,12 @@ class RecoleccionCreate(BaseModel):
     tipoResiduo: Optional[str] = None
     cantidadEstimada: Optional[float] = None
     observaciones: Optional[str] = None
+    
+    @validator('idContrato')
+    def validate_id_contrato(cls, v):
+        if v <= 0:
+            raise ValueError('El ID del contrato debe ser un número positivo')
+        return v
     
     @validator('vehiculos')
     def validate_vehiculos(cls, v):
@@ -28,6 +35,7 @@ class RecoleccionCreate(BaseModel):
         return v
 
 class RecoleccionUpdate(BaseModel):
+    idContrato: Optional[int] = None  # NUEVO: Permitir actualizar el contrato
     cliente: Optional[str] = None
     fecha: Optional[datetime] = None
     direccion: Optional[str] = None
@@ -36,6 +44,12 @@ class RecoleccionUpdate(BaseModel):
     tipoResiduo: Optional[str] = None
     cantidadEstimada: Optional[float] = None
     observaciones: Optional[str] = None
+    
+    @validator('idContrato')
+    def validate_id_contrato(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('El ID del contrato debe ser un número positivo')
+        return v
     
     @validator('vehiculos')
     def validate_vehiculos(cls, v):
@@ -49,6 +63,7 @@ class RecoleccionUpdate(BaseModel):
 
 class RecoleccionResponse(BaseModel):
     id: str
+    idContrato: int
     cliente: str
     fecha: datetime
     direccion: str
@@ -61,10 +76,11 @@ class RecoleccionResponse(BaseModel):
     updatedAt: datetime
 
 class RecoleccionFilter(BaseModel):
+    idContrato: Optional[int] = None  # NUEVO: Filtro por contrato
     cliente: Optional[str] = None
     fechaInicio: Optional[datetime] = None
     fechaFin: Optional[datetime] = None
-    vehiculo: Optional[str] = None  # Filtro por vehículo (busca en vehiculos[].vehiculo)
-    chofer: Optional[str] = None    # Filtro por chofer (busca en vehiculos[].chofer)
-    tecnico: Optional[str] = None   # Filtro por técnico (busca en vehiculos[].tecnicos)
+    vehiculo: Optional[str] = None
+    chofer: Optional[str] = None
+    tecnico: Optional[str] = None
     estado: Optional[str] = None
