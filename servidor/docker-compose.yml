@@ -357,7 +357,7 @@ services:
       - "8010:3306"
     volumes:
       - mysql_vehiculos_data:/var/lib/mysql
-      - ./servicios/vehiculos_api/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./servicios/API_Vehiculos/sql:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped
@@ -381,7 +381,7 @@ services:
       - "8011:3306"
     volumes:
       - mysql_manifiestos_data:/var/lib/mysql
-      - ./servicios/API_MANIFEST/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./servicios/API_MANIFEST/sql:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped
@@ -404,7 +404,7 @@ services:
       - "8012:27017"
     volumes:
       - mongo_recolecciones_data:/data/db
-      - ./servicios/recolecciones_api/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+      - ./servicios/API_Recolecciones/scripts:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped
@@ -451,7 +451,7 @@ services:
       - "8020:27017"
     volumes:
       - mongo_servicios_data:/data/db
-      - ./servicios/API_Services/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+      - ./servicios/API_Services/scripts:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped
@@ -475,7 +475,7 @@ services:
       - "8017:27017"
     volumes:
       - mongo_trazabilidad_data:/data/db
-      - ./servicios/API_WasteTraceability/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js
+      - ./servicios/API_WasteTraceability/scripts:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped
@@ -550,7 +550,7 @@ services:
       - "${DB_USERS_PORT}:5432"
     volumes:
       - db_users_data:/var/lib/postgresql/data
-      - ./servicios/API_Usuarios/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./servicios/API_Usuarios/scripts:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped
@@ -593,7 +593,7 @@ services:
       - "${DB_POSTGRES_PORT}:5432"
     volumes:
       - db_empleados_data:/var/lib/postgresql/data
-      - ./servicios/API_Empleados/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./servicios/API_Empleados/scripts:/docker-entrypoint-initdb.d
     networks:
       - simar_network
     restart: unless-stopped

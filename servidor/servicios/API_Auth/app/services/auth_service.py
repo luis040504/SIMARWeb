@@ -3,6 +3,7 @@ from datetime import timedelta
 from uuid import UUID
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 
 from app import schemas, security

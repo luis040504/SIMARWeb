@@ -309,6 +309,12 @@ class BillingController:
                             condiciones=target_contract.get("contractDuration")
                         )
                         contract_services = target_contract.get("services", [])
+                        
+                        # Priorizar RFC y Dirección del contrato si existen
+                        if target_contract.get("clientRfc"):
+                            client_info.rfc = target_contract.get("clientRfc")
+                        if target_contract.get("clientAddress"):
+                            client_info.direccion_fiscal = target_contract.get("clientAddress")
                 except Exception:
                     pass
 
