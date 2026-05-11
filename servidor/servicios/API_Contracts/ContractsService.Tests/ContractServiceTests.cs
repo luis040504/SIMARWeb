@@ -277,5 +277,41 @@ namespace ContractsService.Tests
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateContractAsync(3, updateRequest));
         }
+
+        [Fact]
+        public async Task UpdateContractAsync_WhenSignedPathPresent_StatusBecomesActivo()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context);
+            var contract = new Contract { Folio = "CON-STATUS", ClientId = 1, Status = "Pendiente de firma" };
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
+
+            contract.SignedContractPath = "/path/to/signed.pdf";
+            await service.UpdateContractAsync(contract);
+
+            var updated = await context.Contracts.FindAsync(contract.Id);
+            Assert.Equal("Activo", updated.Status);
+        }
+
+        [Fact]
+        public async Task GetContractPdfAsync_WhenSignedFileExists_ReturnsFileContent()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context);
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "Dummy PDF Content");
+            var contract = new Contract { Folio = "CON-PDF", SignedContractPath = tempFile };
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
+
+            try {
+                var result = await service.GetContractPdfAsync(contract.Id);
+                Assert.Equal("application/pdf", result.ContentType);
+                Assert.Contains("Contrato_Firmado", result.FileName);
+            } finally {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
     }
 }

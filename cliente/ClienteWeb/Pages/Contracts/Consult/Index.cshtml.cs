@@ -25,16 +25,18 @@ namespace ClienteWeb.Pages.Contracts.Consult
         [BindProperty(SupportsGet = true)]
         public DateTime? DateFilter { get; set; }
 
-        public List<Contract> Contracts { get; set; } = new();
+        public List<ConsultContract> Contracts { get; set; } = new();
 
+        [BindProperty] public int UpdateDbId { get; set; }
         [BindProperty] public string UpdateId { get; set; } = "";
         [BindProperty] public string UpdateClient { get; set; } = "";
         [BindProperty] public DateTime UpdateStartDate { get; set; }
-        [BindProperty] public DateTime UpdateEndDate { get; set; }
-        [BindProperty] public string UpdateStatus { get; set; } = "";
-        [BindProperty] public string ServiceConditions { get; set; } = "";
         [BindProperty] public string AdminObservations { get; set; } = "";
+        [BindProperty] public DateTime? UpdateEndDate { get; set; }
         [BindProperty] public Microsoft.AspNetCore.Http.IFormFile? PdfFile { get; set; }
+        [BindProperty] public string ServicesJson { get; set; } = "[]";
+        [BindProperty] public string PaymentsJson { get; set; } = "[]";
+        [BindProperty] public string ExtrasJson { get; set; } = "[]";
 
         public bool ShowSuccessMessage { get; set; }
         public string ErrorMessage { get; set; } = "";
@@ -64,20 +66,21 @@ namespace ClienteWeb.Pages.Contracts.Consult
 
                 if (apiResponse != null)
                 {
-                    Contracts = apiResponse.Select(c => new Contract
+                    Contracts = apiResponse.Select(c => new ConsultContract
                     {
                         Id = c.Folio,
                         DbId = c.Id,
                         Client = !string.IsNullOrEmpty(c.ClientName) ? c.ClientName : "Cliente Desconocido", 
                         StartDate = c.CreatedAt,
                         EndDate = c.ExpirationDate,
-                        Status = c.Status
+                        Status = c.Status,
+                        SignedContractPath = c.SignedContractPath
                     }).ToList();
                 }
             }
             catch (Exception ex)
             {
-                Contracts = new List<Contract>();
+                Contracts = new List<ConsultContract>();
                 // Descomenta esto si quieres ver el error real temporalmente
                 // ErrorMessage = $"Error técnico: {ex.Message}"; 
                 ErrorMessage = "No se pudo conectar con el servidor de contratos.";
@@ -86,16 +89,74 @@ namespace ClienteWeb.Pages.Contracts.Consult
 
         public async Task<IActionResult> OnPostUpdateAsync()
         {
-            if (UpdateEndDate <= UpdateStartDate)
+            try
             {
-                ErrorMessage = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
-                await LoadContractsAsync();
-                return Page();
-            }
+                if (UpdateEndDate.HasValue && UpdateEndDate.Value <= UpdateStartDate)
+                {
+                    ErrorMessage = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
+                    await LoadContractsAsync();
+                    return Page();
+                }
 
-            ShowSuccessMessage = true;
-            AuditTrail.Add($"Usuario: Administrador | Fecha de modificación: {DateTime.Now}");
-            AuditTrail.Add($"Campos modificados: Fecha de término, Condiciones del servicio, Observaciones administrativas.");
+                var detailUrl = $"/api/contracts/{UpdateDbId}/detail";
+                var current = await _httpClient.GetFromJsonAsync<JsonElement>(detailUrl);
+                
+                var services = JsonSerializer.Deserialize<List<object>>(ServicesJson) ?? new();
+                var payments = JsonSerializer.Deserialize<List<object>>(PaymentsJson) ?? new();
+                var extras = JsonSerializer.Deserialize<List<object>>(ExtrasJson) ?? new();
+
+                var updateData = new {
+                    id = UpdateDbId,
+                    folio = current.GetProperty("folio").GetString(),
+                    clientId = current.GetProperty("clientId").GetInt32(),
+                    totalBasePrice = current.GetProperty("totalBasePrice").GetDecimal(),
+                    clientName = UpdateClient,
+                    clientRfc = current.GetProperty("clientRfc").GetString(),
+                    representative = current.GetProperty("representative").GetString(),
+                    clientAddress = current.GetProperty("clientAddress").GetString(),
+                    clientObjetoSocial = current.GetProperty("clientObjetoSocial").GetString(),
+                    clientDeclaraciones = current.GetProperty("clientDeclaraciones").GetString(),
+                    contractDuration = current.GetProperty("contractDuration").GetString(),
+                    firstServiceDate = UpdateStartDate,
+                    endDate = UpdateEndDate,
+                    status = current.GetProperty("status").GetString(),
+                    services = services,
+                    payments = payments,
+                    extras = extras
+                };
+
+                var putResponse = await _httpClient.PutAsJsonAsync($"/api/contracts/{UpdateDbId}", updateData);
+                if (!putResponse.IsSuccessStatusCode) 
+                {
+                    var errorContent = await putResponse.Content.ReadAsStringAsync();
+                    throw new Exception($"Error del servidor (PUT): {putResponse.StatusCode} - {errorContent}");
+                }
+
+                if (PdfFile != null && PdfFile.Length > 0)
+                {
+                    using var content = new MultipartFormDataContent();
+                    using var fileStream = PdfFile.OpenReadStream();
+                    var fileContent = new StreamContent(fileStream);
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+                    content.Add(fileContent, "file", PdfFile.FileName);
+                    
+                    var pdfResponse = await _httpClient.PostAsync($"/api/contracts/{UpdateDbId}/upload-pdf", content);
+                    if (!pdfResponse.IsSuccessStatusCode)
+                    {
+                        var pdfError = await pdfResponse.Content.ReadAsStringAsync();
+                        throw new Exception($"Error al subir PDF: {pdfResponse.StatusCode} - {pdfError}");
+                    }
+                }
+
+                ShowSuccessMessage = true;
+                AuditTrail.Add($"Usuario: Administrador | Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                AuditTrail.Add($"Cambios persistidos correctamente.");
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Error crítico al guardar: " + ex.Message;
+                Console.WriteLine($"[ERROR UPDATE] {ex}");
+            }
 
             await LoadContractsAsync();
             return Page();
@@ -103,7 +164,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
     }
 
     // Clases auxiliares para mapear la respuesta de la API
-    public class Contract
+    public class ConsultContract
     {
         public int DbId { get; set; }
         public string Id { get; set; } = "";
@@ -111,6 +172,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string Status { get; set; } = "";
+        public string? SignedContractPath { get; set; }
     }
 
     public class ApiContractDto
@@ -124,5 +186,6 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public string Status { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public DateTime ExpirationDate { get; set; }
+        public string? SignedContractPath { get; set; }
     }
 }

@@ -179,19 +179,19 @@
                             </td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
-                                    <button type="button" class="btn-simar-icon"
-                                            onclick="openDetailModal(@contract.DbId)"
-                                            title="Ver Vista Previa">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    @if (contract.Status == "Activo" || contract.Status == "Pendiente de firma")
+                                    @if (contract.Status == "Pendiente de firma")
                                     {
                                         <button type="button" class="btn-simar-icon" 
-                                                onclick="openUpdateModal('@contract.Id', '@contract.Client', '@contract.StartDate.ToString("yyyy-MM-dd")', '@contract.EndDate.ToString("yyyy-MM-dd")', '@contract.Status')"
+                                                onclick="openUpdateModal(@contract.DbId, '@contract.Id', '@contract.Client', '@contract.StartDate.ToString("yyyy-MM-dd")', '@(contract.EndDate.ToString("yyyy-MM-dd"))', '@contract.Status')"
                                                 title="Actualizar">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     }
+                                    <button type="button" class="btn-simar-icon" 
+                                            onclick="openDetailModal(@contract.DbId, '@contract.SignedContractPath')" 
+                                            title="Ver Vista Previa">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                     <button type="button" class="btn-simar-icon" onclick="downloadPdf(@contract.DbId)" title="Descargar PDF">
                                         <i class="bi bi-file-earmark-pdf"></i>
                                     </button>
@@ -225,8 +225,12 @@
             <form id="formUpdate" asp-page-handler="Update" method="post" enctype="multipart/form-data">
                 <div class="modal-body">
                     <div id="modalUpdateError" class="alert alert-danger d-none mb-3" role="alert">
-                        La nueva fecha de término debe ser posterior a la fecha de inicio.
                     </div>
+                    <input type="hidden" asp-for="UpdateDbId" id="updateDbId" />
+                    <input type="hidden" asp-for="ServicesJson" id="updateServicesJson" />
+                    <input type="hidden" asp-for="PaymentsJson" id="updatePaymentsJson" />
+                    <input type="hidden" asp-for="ExtrasJson" id="updateExtrasJson" />
+
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label-simar">Número de Contrato</label>
@@ -237,33 +241,87 @@
                             <input type="text" asp-for="UpdateClient" class="form-control-simar" id="updateClient" readonly>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label-simar">Estatus</label>
-                            <input type="text" asp-for="UpdateStatus" class="form-control-simar" id="updateStatus" readonly>
-                        </div>
-
-                        <div class="col-md-6">
                             <label class="form-label-simar">Fecha de Inicio</label>
                             <input type="date" asp-for="UpdateStartDate" class="form-control-simar" id="updateStartDate" readonly>
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label-simar">Nueva Fecha de Término</label>
                             <input type="date" asp-for="UpdateEndDate" class="form-control-simar" id="updateEndDate" required>
                         </div>
-
-                        <div class="col-12">
-                            <label class="form-label-simar">Condiciones del servicio</label>
-                            <textarea asp-for="ServiceConditions" id="updateServiceConditions" class="form-control-simar" rows="3" required></textarea>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label-simar">Observaciones administrativas</label>
-                            <textarea asp-for="AdminObservations" id="updateAdminObservations" class="form-control-simar" rows="2" required></textarea>
-                        </div>
-
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label class="form-label-simar">Adjuntar nueva versión firmada (PDF)</label>
                             <input type="file" asp-for="PdfFile" accept=".pdf" class="form-control-simar" id="updatePdfFile">
-                            <small class="text-muted">Solo archivos PDF. Opcional.</small>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <ul class="nav nav-tabs" id="updateTabs" role="tablist">
+                                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-services" type="button">Servicios</button></li>
+                                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-payments" type="button">Pagos</button></li>
+                                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-extras" type="button">Extras</button></li>
+                            </ul>
+                            <div class="tab-content p-3 border border-top-0 rounded-bottom">
+                                <div class="tab-pane fade show active" id="tab-services">
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button type="button" class="btn btn-sm btn-success" onclick="addUpdateItem('services')">
+                                            <i class="bi bi-plus-lg"></i> Añadir Servicio
+                                        </button>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered" id="tableUpdateServices">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th style="width: 20%;">Residuo</th>
+                                                    <th style="width: 10%;">Unidad</th>
+                                                    <th style="width: 15%;">Frecuencia</th>
+                                                    <th style="width: 8%;">Veh.</th>
+                                                    <th style="width: 8%;">Téc.</th>
+                                                    <th>Dirección</th>
+                                                    <th style="width: 12%;">Subtotal</th>
+                                                    <th style="width: 5%;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="tab-payments">
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button type="button" class="btn btn-sm btn-success" onclick="addUpdateItem('payments')">
+                                            <i class="bi bi-plus-lg"></i> Añadir Pago
+                                        </button>
+                                    </div>
+                                    <table class="table table-sm table-bordered" id="tableUpdatePayments">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>Concepto del Pago</th>
+                                                <th style="width: 20%;">Monto ($)</th>
+                                                <th style="width: 20%;">Fecha de Pago</th>
+                                                <th style="width: 5%;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="tab-pane fade" id="tab-extras">
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button type="button" class="btn btn-sm btn-success" onclick="addUpdateItem('extras')">
+                                            <i class="bi bi-plus-lg"></i> Añadir Extra
+                                        </button>
+                                    </div>
+                                    <table class="table table-sm table-bordered" id="tableUpdateExtras">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>Descripción</th>
+                                                <th style="width: 20%;">Costo Unit.</th>
+                                                <th style="width: 15%;">Cant.</th>
+                                                <th style="width: 5%;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -304,52 +362,130 @@
         var currentModalDbId = null;
         var API_BASE = '@Model.ApiBaseUrl';
 
-        function openUpdateModal(id, client, startDate, endDate, status) {
-            document.getElementById('modalUpdateError').classList.add('d-none');
+        var currentUpdateData = { services: [], payments: [], extras: [] };
 
-            document.getElementById('updateId').value = id;
+        async function openUpdateModal(dbId, folio, client, startDate, endDate, status) {
+            document.getElementById('modalUpdateError').classList.add('d-none');
+            document.getElementById('updateDbId').value = dbId;
+            document.getElementById('updateId').value = folio;
             document.getElementById('updateClient').value = client;
             document.getElementById('updateStartDate').value = startDate;
             document.getElementById('updateEndDate').value = endDate;
-            document.getElementById('updateStatus').value = status;
             
             var startDateObj = new Date(startDate);
             startDateObj.setDate(startDateObj.getDate() + 1); 
             var minIso = startDateObj.toISOString().split('T')[0];
             document.getElementById('updateEndDate').setAttribute('min', minIso);
-            
-            document.getElementById('updateServiceConditions').value = "Condiciones originales del servicio...";
-            document.getElementById('updateAdminObservations').value = "Ninguna observación inicial.";
+
+            try {
+                var response = await fetch(API_BASE + '/api/contracts/' + dbId + '/detail');
+                if (response.ok) {
+                    var c = await response.json();
+                    currentUpdateData.services = c.services || [];
+                    currentUpdateData.payments = c.payments || [];
+                    currentUpdateData.extras = c.extras || [];
+                    renderUpdateTables();
+                }
+            } catch (e) { console.error("Error al cargar detalle para edición", e); }
 
             var updateModal = new bootstrap.Modal(document.getElementById('modalUpdate'));
             updateModal.show();
+        }
+
+        function renderUpdateTables() {
+            const sBody = document.querySelector('#tableUpdateServices tbody');
+            sBody.innerHTML = currentUpdateData.services.map((s, i) => `
+                <tr>
+                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.wasteType)}" onchange="updateDataValue('services', ${i}, 'wasteType', this.value)"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.wasteUnit)}" onchange="updateDataValue('services', ${i}, 'wasteUnit', this.value)"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.frequency)}" onchange="updateDataValue('services', ${i}, 'frequency', this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm" value="${s.vehicles}" onchange="updateDataValue('services', ${i}, 'vehicles', this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm" value="${s.technicians}" onchange="updateDataValue('services', ${i}, 'technicians', this.value)"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.serviceAddress)}" onchange="updateDataValue('services', ${i}, 'serviceAddress', this.value)"></td>
+                    <td><input type="number" step="0.01" class="form-control form-control-sm" value="${s.subtotal}" onchange="updateDataValue('services', ${i}, 'subtotal', this.value)"></td>
+                    <td class="text-center"><button type="button" class="btn btn-sm text-danger" onclick="removeUpdateItem('services', ${i})"><i class="bi bi-trash"></i></button></td>
+                </tr>`).join('');
+            
+            const pBody = document.querySelector('#tableUpdatePayments tbody');
+            pBody.innerHTML = currentUpdateData.payments.map((p, i) => `
+                <tr>
+                    <td><input type="text" class="form-control form-control-sm" value="${esc(p.description)}" onchange="updateDataValue('payments', ${i}, 'description', this.value)"></td>
+                    <td><input type="number" step="0.01" class="form-control form-control-sm" value="${p.amount}" onchange="updateDataValue('payments', ${i}, 'amount', this.value)"></td>
+                    <td><input type="date" class="form-control form-control-sm" value="${p.paymentDate.split('T')[0]}" onchange="updateDataValue('payments', ${i}, 'paymentDate', this.value)"></td>
+                    <td class="text-center"><button type="button" class="btn btn-sm text-danger" onclick="removeUpdateItem('payments', ${i})"><i class="bi bi-trash"></i></button></td>
+                </tr>`).join('');
+            
+            const eBody = document.querySelector('#tableUpdateExtras tbody');
+            eBody.innerHTML = currentUpdateData.extras.map((x, i) => `
+                <tr>
+                    <td><input type="text" class="form-control form-control-sm" value="${esc(x.description)}" onchange="updateDataValue('extras', ${i}, 'description', this.value)"></td>
+                    <td><input type="number" step="0.01" class="form-control form-control-sm" value="${x.unitCost}" onchange="updateDataValue('extras', ${i}, 'unitCost', this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm" value="${x.quantity}" onchange="updateDataValue('extras', ${i}, 'quantity', this.value)"></td>
+                    <td class="text-center"><button type="button" class="btn btn-sm text-danger" onclick="removeUpdateItem('extras', ${i})"><i class="bi bi-trash"></i></button></td>
+                </tr>`).join('');
+        }
+
+        function updateDataValue(type, index, field, value) {
+            if (field === 'vehicles' || field === 'technicians' || field === 'quantity') {
+                currentUpdateData[type][index][field] = parseInt(value) || 0;
+            } else if (field === 'subtotal' || field === 'amount' || field === 'unitCost') {
+                currentUpdateData[type][index][field] = parseFloat(value) || 0;
+            } else {
+                currentUpdateData[type][index][field] = value;
+            }
+        }
+
+        function addUpdateItem(type) {
+            if (type === 'services') {
+                currentUpdateData.services.push({ wasteType: '', wasteUnit: 'kg', frequency: 'Mensual', vehicles: 1, technicians: 2, serviceAddress: '', warehouseAddress: 'Planta', subtotal: 0 });
+            } else if (type === 'payments') {
+                currentUpdateData.payments.push({ description: '', amount: 0, paymentDate: new Date().toISOString().split('T')[0] });
+            } else if (type === 'extras') {
+                currentUpdateData.extras.push({ description: '', unitCost: 0, quantity: 1 });
+            }
+            renderUpdateTables();
+        }
+
+        function removeUpdateItem(type, index) {
+            currentUpdateData[type].splice(index, 1);
+            renderUpdateTables();
         }
 
         function submitUpdateForm() {
             const startDateStr = document.getElementById('updateStartDate').value;
             const endDateStr = document.getElementById('updateEndDate').value;
 
-            if (startDateStr && endDateStr) {
-                if (endDateStr <= startDateStr) {
-                    document.getElementById('modalUpdateError').classList.remove('d-none');
-                    return; 
-                }
+            if (startDateStr && endDateStr && endDateStr <= startDateStr) {
+                const errorDiv = document.getElementById('modalUpdateError');
+                errorDiv.textContent = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
+                errorDiv.classList.remove('d-none');
+                return; 
             }
+
+            document.getElementById('updateServicesJson').value = JSON.stringify(currentUpdateData.services);
+            document.getElementById('updatePaymentsJson').value = JSON.stringify(currentUpdateData.payments);
+            document.getElementById('updateExtrasJson').value = JSON.stringify(currentUpdateData.extras);
+            
             document.getElementById('formUpdate').submit();
         }
 
-        async function openDetailModal(dbId) {
-            currentModalDbId = dbId;
-            var contentDiv = document.getElementById('contractContent');
-            contentDiv.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-success" role="status"></div><p class="mt-3 text-muted">Cargando contrato...</p></div>';
+        async function openDetailModal(id, signedPath) {
+            if (signedPath && signedPath !== '') {
+                window.open('@Model.ApiBaseUrl/api/contracts/' + id + '/download', '_blank');
+                return;
+            }
 
+            currentModalDbId = id;
             var modal = new bootstrap.Modal(document.getElementById('modalViewContract'));
             modal.show();
+
+            var contentDiv = document.getElementById('contractContent');
+            contentDiv.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-success" role="status"></div><p class="mt-3 text-muted">Cargando contrato...</p></div>';
 
             try {
                 var controller = new AbortController();
                 var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
-                var response = await fetch(API_BASE + '/api/contracts/' + dbId + '/detail', { signal: controller.signal });
+                var response = await fetch('@Model.ApiBaseUrl/api/contracts/' + id + '/detail', { signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (!response.ok) throw new Error('No se pudo cargar el contrato');
                 var c = await response.json();
@@ -443,7 +579,7 @@
                         </table>
 
                         <p style="margin-top:15px;"><strong>TERCERA. - VIGENCIA.</strong></p>
-                        <p>La vigencia del presente instrumento será de <strong>${esc(c.contractDuration)}</strong>.</p>
+                        <p>La vigencia del presente instrumento será de <strong>${esc(c.contractDuration)}</strong>${c.endDate ? `, concluyendo el día <strong>${new Date(c.endDate).toLocaleDateString('es-MX', {day:'numeric', month:'long', year:'numeric'})}</strong>` : ''}.</p>
 
                         <p style="margin-top:15px;"><strong>CUARTA. - SERVICIOS EXTRAORDINARIOS.</strong></p>
                         <p>En caso de servicios adicionales, se aplicarán los costos del <strong>ANEXO ÚNICO</strong>.</p>
