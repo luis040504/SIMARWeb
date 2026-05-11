@@ -144,6 +144,8 @@ public enum ManifestStatus
 public class ManifestDetailViewModel
 {
     public string Id { get; set; } = string.Empty;
+    public int IdCliente { get; set; }
+    public int? ContratoId { get; set; }
     public string Type { get; set; } = "especial";
     public ManifestStatus Status { get; set; } = ManifestStatus.Borrador;
 

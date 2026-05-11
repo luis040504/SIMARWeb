@@ -189,6 +189,9 @@ public class ManifestApiService
     {
         var dto = new CreateManifestDto
         {
+            IdCliente                      = vm.IdCliente,
+            ContratoId                     = vm.ContratoId,
+            NumeroManifiesto               = vm.ManifestNumber,
             Tipo                           = vm.Type,
             NumeroRegistroAmbiental        = vm.EnvironmentalRegistrationNumber,
             RazonSocial                    = vm.SocialReason,
@@ -337,6 +340,8 @@ public class ManifestApiService
         var vm = new ManifestDetailViewModel
         {
             Id                             = dto.Id.ToString(),
+            IdCliente                      = dto.IdCliente,
+            ContratoId                     = dto.ContratoId,
             Type                           = dto.Tipo,
             Status                         = dto.Estado switch
             {
@@ -490,6 +495,8 @@ public class ManifestApiService
     private class ManifestDetailApiDto
     {
         [JsonPropertyName("id")]                       public int Id { get; set; }
+        [JsonPropertyName("id_cliente")]               public int IdCliente { get; set; }
+        [JsonPropertyName("contrato_id")]              public int? ContratoId { get; set; }
         [JsonPropertyName("numero_manifiesto")]        public string NumeroManifiesto { get; set; } = "";
         [JsonPropertyName("tipo")]                     public string Tipo { get; set; } = "";
         [JsonPropertyName("estado")]                   public string Estado { get; set; } = "";
@@ -574,23 +581,24 @@ public class ManifestApiService
     private class PeligrosoResidueApiDto
     {
         [JsonPropertyName("nombre_residuo")]  public string? NombreResiduo { get; set; }
-        [JsonPropertyName("es_corrosivo")]    public bool EsCorrosivo { get; set; }
-        [JsonPropertyName("es_reactivo")]     public bool EsReactivo { get; set; }
-        [JsonPropertyName("es_explosivo")]    public bool EsExplosivo { get; set; }
-        [JsonPropertyName("es_toxico")]       public bool EsToxico { get; set; }
-        [JsonPropertyName("es_inflamable")]   public bool EsInflamable { get; set; }
-        [JsonPropertyName("es_biologico")]    public bool EsBiologico { get; set; }
-        [JsonPropertyName("es_mutagenico")]   public bool EsMutagenico { get; set; }
+        [JsonPropertyName("es_corrosivo")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsCorrosivo { get; set; }
+        [JsonPropertyName("es_reactivo")]     [JsonConverter(typeof(JsonBoolConverter))] public bool EsReactivo { get; set; }
+        [JsonPropertyName("es_explosivo")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsExplosivo { get; set; }
+        [JsonPropertyName("es_toxico")]       [JsonConverter(typeof(JsonBoolConverter))] public bool EsToxico { get; set; }
+        [JsonPropertyName("es_inflamable")]   [JsonConverter(typeof(JsonBoolConverter))] public bool EsInflamable { get; set; }
+        [JsonPropertyName("es_biologico")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsBiologico { get; set; }
+        [JsonPropertyName("es_mutagenico")]   [JsonConverter(typeof(JsonBoolConverter))] public bool EsMutagenico { get; set; }
         [JsonPropertyName("tipo_envase")]     public string? TipoEnvase { get; set; }
         [JsonPropertyName("capacidad_envase")] public string? CapacidadEnvase { get; set; }
         [JsonPropertyName("cantidad_kg")]     public decimal CantidadKg { get; set; }
-        [JsonPropertyName("tiene_etiqueta")]  public bool? TieneEtiqueta { get; set; }
+        [JsonPropertyName("tiene_etiqueta")]  [JsonConverter(typeof(JsonNullableBoolConverter))] public bool? TieneEtiqueta { get; set; }
     }
 
     private class CreateManifestDto
     {
-        [JsonPropertyName("id_cliente")]  public int IdCliente { get; set; }
+        [JsonPropertyName("id_cliente")]  public int? IdCliente { get; set; }
         [JsonPropertyName("contrato_id")] public int? ContratoId { get; set; }
+        [JsonPropertyName("numero_manifiesto")] public string? NumeroManifiesto { get; set; }
         [JsonPropertyName("tipo")]        public string Tipo { get; set; } = "";
         // Generador
         [JsonPropertyName("numero_registro_ambiental")]    public string? NumeroRegistroAmbiental { get; set; }
@@ -688,5 +696,46 @@ public class ManifestApiService
     {
         [JsonPropertyName("estado")]      public string Estado { get; set; } = "";
         [JsonPropertyName("fecha_firma")] public string? FechaFirma { get; set; }
+    }
+
+    public class JsonBoolConverter : JsonConverter<bool>
+    {
+        public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number) return reader.GetInt32() != 0;
+            if (reader.TokenType == JsonTokenType.True) return true;
+            if (reader.TokenType == JsonTokenType.False) return false;
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                return s == "1" || s?.ToLower() == "true";
+            }
+            return false;
+        }
+        public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options) =>
+            writer.WriteBooleanValue(value);
+    }
+
+    public class JsonNullableBoolConverter : JsonConverter<bool?>
+    {
+        public override bool? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Null) return null;
+            if (reader.TokenType == JsonTokenType.Number) return reader.GetInt32() != 0;
+            if (reader.TokenType == JsonTokenType.True) return true;
+            if (reader.TokenType == JsonTokenType.False) return false;
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (string.IsNullOrEmpty(s)) return null;
+                return s == "1" || s?.ToLower() == "true";
+            }
+            return null;
+        }
+        public override void Write(Utf8JsonWriter writer, bool? value, JsonSerializerOptions options)
+        {
+            if (value == null) writer.WriteNullValue();
+            else writer.WriteBooleanValue(value.Value);
+        }
     }
 }
