@@ -81,9 +81,25 @@ builder.Services.AddHttpClient("UserApi", client =>
     client.BaseAddress = new Uri("http://localhost:8002");
 });
 
+builder.Services.AddHttpClient<EmpleadosApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8008");
+});
+
 builder.Services.AddHttpClient("EmpleadoApi", client =>
 {
     client.BaseAddress = new Uri("http://localhost:8008");
+});
+
+builder.Services.AddHttpClient<VehiculosApiService>(client =>
+{
+    
+    client.BaseAddress = new Uri("http://localhost:8003");
+});
+
+builder.Services.AddHttpClient<RecoleccionesApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8004");
 });
 
 var app = builder.Build();
