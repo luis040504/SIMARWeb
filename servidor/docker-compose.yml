@@ -323,7 +323,7 @@ services:
       dockerfile: Dockerfile
     container_name: simar_trazabilidad_api
     ports:
-      - "8015:8006"
+      - "8021:8006"
     environment:
       - PORT=8006
       - MONGODB_HOST=mongo_trazabilidad
@@ -443,7 +443,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=Simar123!
       - MONGO_INITDB_DATABASE=simar_servicios_db
     ports:
-      - "8016:27017"
+      - "8020:27017"
     volumes:
       - mongo_servicios_data:/data/db
       - ./servicios/API_Services/scripts/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js

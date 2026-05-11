@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from datetime import datetime
 from bson import ObjectId
+from typing import List
 from ..config.database import recolecciones_collection
 from ..models.recoleccion import Recoleccion
 from ..schemas.recoleccion_schema import RecoleccionCreate, RecoleccionUpdate, RecoleccionFilter
@@ -13,6 +14,8 @@ class RecoleccionController:
         query = {"activo": True}
         
         if filtro:
+            if filtro.idContrato is not None:  # NUEVO: Filtro por contrato
+                query["idContrato"] = filtro.idContrato
             if filtro.cliente:
                 query["cliente"] = {"$regex": filtro.cliente, "$options": "i"}
             if filtro.estado:
@@ -54,6 +57,26 @@ class RecoleccionController:
         recoleccion['_id'] = str(recoleccion['_id'])
         
         return Recoleccion(**recoleccion)
+    
+    @staticmethod
+    async def get_by_contrato(idContrato: int):
+        """NUEVO: Obtener recolecciones por ID de contrato"""
+        if idContrato <= 0:
+            raise HTTPException(status_code=400, detail="ID de contrato inválido")
+        
+        cursor = recolecciones_collection.find(
+            {"idContrato": idContrato, "activo": True}
+        ).sort("fecha", -1)
+        
+        recolecciones = await cursor.to_list(length=None)
+        
+        for rec in recolecciones:
+            rec['_id'] = str(rec['_id'])
+        
+        if not recolecciones:
+            return []  # Retornar lista vacía si no hay recolecciones
+        
+        return [Recoleccion(**rec) for rec in recolecciones]
     
     @staticmethod
     async def create(recoleccion_data: RecoleccionCreate):
