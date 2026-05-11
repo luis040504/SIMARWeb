@@ -19,6 +19,8 @@ class ResidueDetailSchema(BaseModel):
     residuo: str
     cantidad: float
     unidad: str
+    precio_unitario: float = 0.0
+    subtotal: float = 0.0
 
 class ReadyToBillSchema(BaseModel):
     manifest_id: Optional[int] = 0

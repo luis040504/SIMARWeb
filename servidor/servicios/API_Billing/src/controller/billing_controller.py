@@ -257,43 +257,80 @@ class BillingController:
                         postal_code=m.get("codigo_postal") or (re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")).group(1) if re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")) else None)
                     )
 
-                # 3. Buscar contrato para precios
-                contract_info = None
-                try:
-                    contract_resp = await client.get(f"{contract_url}/api/contracts")
-                    if contract_resp.status_code == 200:
-                        contracts = contract_resp.json()
-                        target_contract = next((c for c in contracts if c.get("client") == razon_social), None)
-                        if target_contract:
-                            contract_info = ContractSummarySchema(
-                                folio=target_contract.get("folio"),
-                                precio_unitario=target_contract.get("price", 0.0),
-                                metodo_pago=target_contract.get("paymentMethod"),
-                                condiciones=target_contract.get("serviceConditions")
-                            )
-                except Exception:
-                    pass
-
-                # 4. Obtener detalles de residuos del manifiesto
-                residues = []
+                # 3. Obtener detalle del manifiesto para tener contrato_id y residuos
+                m_detail = {}
                 try:
                     detail_resp = await client.get(f"{manifest_url}/api/manifiestos/{m.get('id')}")
                     if detail_resp.status_code == 200:
                         m_detail = detail_resp.json().get("data", {})
-                        raw_residues = m_detail.get("residuos_especiales") or m_detail.get("residuos_peligrosos") or []
-                        for r in raw_residues:
-                            residues.append(ResidueDetailSchema(
-                                residuo=r.get("nombre_residuo"),
-                                cantidad=float(r.get("peso") or r.get("cantidad_kg") or 0),
-                                unidad=r.get("unidad", "kg")
-                            ))
                 except Exception:
                     pass
 
-                # Calcular total estimado
-                price = contract_info.precio_unitario if contract_info else 0.0
-                total_qty = sum(r.cantidad for r in residues)
-                total_estimated = total_qty * price
+                # 4. Buscar contrato para precios (usando contrato_id si existe, si no por nombre de cliente)
+                contract_info = None
+                contract_services = []
+                contrato_id = m_detail.get("contrato_id")
+                
+                try:
+                    target_contract = None
+                    if contrato_id:
+                        c_resp = await client.get(f"{contract_url}/api/contracts/{contrato_id}/detail")
+                        if c_resp.status_code == 200:
+                            target_contract = c_resp.json()
+                    
+                    if not target_contract:
+                        # Fallback: buscar por nombre de cliente
+                        c_list_resp = await client.get(f"{contract_url}/api/contracts")
+                        if c_list_resp.status_code == 200:
+                            contracts = c_list_resp.json()
+                            # El campo es clientName en la lista de contratos
+                            summary = next((c for c in contracts if c.get("clientName") == razon_social), None)
+                            if summary:
+                                c_resp = await client.get(f"{contract_url}/api/contracts/{summary.get('id')}/detail")
+                                if c_resp.status_code == 200:
+                                    target_contract = c_resp.json()
+
+                    if target_contract:
+                        contract_info = ContractSummarySchema(
+                            folio=target_contract.get("folio"),
+                            precio_unitario=float(target_contract.get("totalBasePrice") or 0),
+                            metodo_pago="PPD",
+                            condiciones=target_contract.get("contractDuration")
+                        )
+                        contract_services = target_contract.get("services", [])
+                except Exception:
+                    pass
+
+                # 5. Mapear residuos y calcular subtotales usando el contrato
+                residues = []
+                total_estimated = 0.0
+                raw_residues = m_detail.get("residuos") or m_detail.get("residuos_especiales") or m_detail.get("residuos_peligrosos") or []
+                
+                for r in raw_residues:
+                    nombre_residuo = r.get("nombre_residuo")
+                    cantidad = float(r.get("peso") or r.get("cantidad_kg") or 0)
+                    unidad = r.get("unidad") or r.get("capacidad") or r.get("capacidad_envase") or "kg"
+                    
+                    # Buscar precio en el contrato para este tipo de residuo
+                    unit_price = 0.0
+                    if contract_services:
+                        # Coincidencia por nombre de residuo
+                        match = next((s for s in contract_services if s.get("wasteType").lower() in nombre_residuo.lower() or nombre_residuo.lower() in s.get("wasteType").lower()), None)
+                        if match:
+                            unit_price = float(match.get("subtotal") or 0)
+                    
+                    if unit_price == 0 and contract_info:
+                        unit_price = contract_info.precio_unitario
+
+                    subtotal = cantidad * unit_price
+                    residues.append(ResidueDetailSchema(
+                        residuo=nombre_residuo,
+                        cantidad=cantidad,
+                        unidad=unidad,
+                        precio_unitario=unit_price,
+                        subtotal=subtotal
+                    ))
+                    total_estimated += subtotal
 
                 results.append(ReadyToBillSchema(
                     manifest_id=m.get("id"),

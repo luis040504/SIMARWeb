@@ -245,6 +245,12 @@ namespace ClienteWeb.Models
 
         [JsonPropertyName("unidad")]
         public string Unidad { get; set; }
+
+        [JsonPropertyName("precio_unitario")]
+        public decimal PrecioUnitario { get; set; }
+
+        [JsonPropertyName("subtotal")]
+        public decimal Subtotal { get; set; }
     }
 
     public class ReadyToBill

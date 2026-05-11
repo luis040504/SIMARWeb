@@ -103,16 +103,30 @@ namespace ClienteWeb.Pages.Billing
                     UnitCode = SelectedRecord.UnitCode ?? "E48";
                     TaxObject = SelectedRecord.TaxObject ?? "02";
                     
-                    var initialItems = new List<InvoiceItemDto>
+                    if (SelectedRecord.RecordType == "Service" && !string.IsNullOrEmpty(SelectedRecord.RawItemsJson))
                     {
-                        new InvoiceItemDto 
+                        var serviceItems = JsonSerializer.Deserialize<List<ResidueDetail>>(SelectedRecord.RawItemsJson);
+                        var invoiceItems = serviceItems.Select(si => new InvoiceItemDto 
                         { 
-                            Concept = SelectedRecord.ServiceType ?? SelectedRecord.Description ?? "Servicio", 
-                            Quantity = 1,
-                            Amount = SelectedRecord.Amount 
-                        }
-                    };
-                    ItemsJson = JsonSerializer.Serialize(initialItems);
+                            Concept = si.Residuo, 
+                            Quantity = si.Cantidad, 
+                            Amount = si.Subtotal 
+                        }).ToList();
+                        ItemsJson = JsonSerializer.Serialize(invoiceItems);
+                    }
+                    else
+                    {
+                        var initialItems = new List<InvoiceItemDto>
+                        {
+                            new InvoiceItemDto 
+                            { 
+                                Concept = SelectedRecord.ServiceType ?? SelectedRecord.Description ?? "Servicio", 
+                                Quantity = 1,
+                                Amount = SelectedRecord.Amount 
+                            }
+                        };
+                        ItemsJson = JsonSerializer.Serialize(initialItems);
+                    }
                 }
             }
         }
@@ -427,7 +441,8 @@ namespace ClienteWeb.Pages.Billing
                             Date = r.FechaServicio,
                             Amount = r.TotalEstimado,
                             PostalCode = r.Cliente.PostalCode, // Usando el campo directo
-                            Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto"
+                            Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto",
+                            RawItemsJson = JsonSerializer.Serialize(r.DetallesServicio)
                         }));
                     }
                     else if (ActiveTab == "RejectedInvoices")
@@ -494,12 +509,13 @@ namespace ClienteWeb.Pages.Billing
         public string UnitCode { get; set; }
         public string TaxObject { get; set; }
         public string Source { get; set; }
+        public string RawItemsJson { get; set; }
     }
 
     public class InvoiceItemDto
     {
         public string Concept { get; set; }
-        public int Quantity { get; set; }
+        public double Quantity { get; set; }
         public decimal Amount { get; set; }
     }
 }
