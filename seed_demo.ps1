@@ -5,20 +5,119 @@
 # Requisito: contenedores corriendo  →  docker compose up -d
 # ─────────────────────────────────────────────────────────────────────────────
 
-$POSTGRES_CONTAINER  = "simar_postgres_clientes"
-$SQLSERVER_CONTAINER = "simar_sqlserver_contratos"
-$POSTGRES_USER       = "simar_user"
-$POSTGRES_DB         = "simar_clientes_db"
-$SA_PASSWORD         = "Simar123!"
+$POSTGRES_CONTAINER   = "simar_postgres_clientes"
+$SQLSERVER_CONTAINER  = "simar_sqlserver_contratos"
+$POSTGRES_USER        = "simar_user"
+$POSTGRES_DB          = "simar_clientes_db"
+$SA_PASSWORD          = "Simar123!"
+$MYSQL_CONTAINER      = "simar_mysql_vehiculos"
+$MYSQL_ROOT_PASS      = "Simar123!"
+$MYSQL_DB             = "simar_vehiculos_db"
+$EMPLEADOS_CONTAINER  = "simar_db_empleados"
+$EMPLEADOS_USER       = "simar_user"
+$EMPLEADOS_DB         = "simar_empleados_db"
 
 Write-Host ""
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host "  SIMAR  -  Seed de datos para demo"             -ForegroundColor Cyan
 Write-Host "=================================================" -ForegroundColor Cyan
 
+# ── 0. VEHICULOS EN MYSQL ─────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "[0/4]  Inicializando base de datos de vehiculos (MySQL)..." -ForegroundColor Yellow
+
+$vehiculosInitSql = @'
+CREATE TABLE IF NOT EXISTS tipos_desecho (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    activo BOOLEAN DEFAULT TRUE
+);
+CREATE TABLE IF NOT EXISTS tipos_gasolina (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT
+);
+CREATE TABLE IF NOT EXISTS vehiculos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    numero_economico VARCHAR(20) UNIQUE,
+    marca VARCHAR(50) NOT NULL,
+    modelo VARCHAR(50) NOT NULL,
+    anio INT,
+    color VARCHAR(30),
+    placas VARCHAR(15) NOT NULL UNIQUE,
+    peso_toneladas DECIMAL(8,2) NOT NULL,
+    licencia_requerida ENUM('A','B','C','D','E') NOT NULL,
+    tipo_gasolina VARCHAR(30) NOT NULL,
+    tipo_desecho TEXT NOT NULL,
+    descripcion TEXT,
+    foto_url VARCHAR(500),
+    activo BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+INSERT IGNORE INTO tipos_desecho (nombre, descripcion) VALUES
+    ('Residuos Peligrosos','Materiales que representan un riesgo para la salud o el medio ambiente'),
+    ('Residuos Biologicos','Desechos provenientes de actividades medicas o de laboratorio'),
+    ('Residuos Reciclables','Papel, carton, plastico, vidrio y metales'),
+    ('Residuos Organicos','Desechos de origen biologico como alimentos y poda'),
+    ('Residuos de Construccion','Escombros, tierra, concreto y materiales de demolicion'),
+    ('Residuos Electronicos','Equipos electronicos en desuso'),
+    ('Residuos Industriales','Subproductos de procesos industriales'),
+    ('Residuos Varios','Otros tipos de residuos no clasificados');
+INSERT IGNORE INTO tipos_gasolina (nombre, descripcion) VALUES
+    ('Diesel','Combustible para motores diesel'),
+    ('Gasolina Magna','Gasolina regular de 87 octanos'),
+    ('Gasolina Premium','Gasolina de alto octanaje (91-93 octanos)'),
+    ('Gas Natural','Gas natural comprimido para vehiculos'),
+    ('Electrico','Vehiculos de bateria electrica'),
+    ('Hibrido','Combinacion de gasolina y electrico');
+INSERT IGNORE INTO vehiculos (numero_economico, marca, modelo, anio, color, placas, peso_toneladas, licencia_requerida, tipo_gasolina, tipo_desecho, descripcion) VALUES
+    ('VH-001','Kenworth','T680',2022,'Blanco','ABC-1234',15.5,'E','Diesel','Residuos Peligrosos,Residuos Industriales','Tractocamion para residuos peligrosos'),
+    ('VH-002','Volvo','FH16',2023,'Rojo','DEF-5678',18.0,'E','Diesel','Residuos Industriales,Residuos de Construccion','Camion de carga pesada'),
+    ('VH-003','Mercedes-Benz','Actros',2021,'Gris','GHI-9012',14.0,'E','Diesel','Residuos Peligrosos','Transporte de materiales peligrosos'),
+    ('VH-004','Ford','F-550',2023,'Blanco','JKL-3456',4.5,'C','Diesel','Residuos Biologicos,Residuos Reciclables','Camion para recoleccion urbana'),
+    ('VH-005','International','HV Series',2022,'Azul','MNO-7890',12.0,'E','Diesel','Residuos Industriales','Camion para industria pesada');
+'@
+
+$vehiculosResult = $vehiculosInitSql | docker exec -i $MYSQL_CONTAINER mysql -uroot -p"$MYSQL_ROOT_PASS" $MYSQL_DB 2>&1
+if ($vehiculosResult -match "ERROR") {
+    Write-Host "   ADVERTENCIA: $vehiculosResult" -ForegroundColor Red
+} else {
+    Write-Host "   Vehiculos listos (5 unidades)." -ForegroundColor Green
+}
+
+# ── 0b. CHOFERES EN POSTGRESQL (empleados) ────────────────────────────────────
+Write-Host ""
+Write-Host "[0b/4] Insertando choferes en empleados..." -ForegroundColor Yellow
+
+$choferRoleSql = "SELECT id_role FROM roles WHERE name_role = 'chofer' LIMIT 1;"
+$CHOFER_ROLE_ID = $choferRoleSql | docker exec -i $EMPLEADOS_CONTAINER psql -U $EMPLEADOS_USER -d $EMPLEADOS_DB -t -A 2>&1
+$CHOFER_ROLE_ID = $CHOFER_ROLE_ID.Trim()
+
+if ([string]::IsNullOrWhiteSpace($CHOFER_ROLE_ID)) {
+    Write-Host "   ERROR: No se encontro el rol 'chofer' en la BD de empleados." -ForegroundColor Red
+} else {
+    $insertChoferesSql = @"
+INSERT INTO employees (user_id, professional_id, full_name, address, birthday, curp, rfc, phone, genre, salary, state, id_role)
+VALUES
+  ('aaaaaaaa-0000-0000-0000-000000000001','CHO-001','Juan Carlos Mendez Lopez','Av. Insurgentes 45, Col. Centro','1988-03-15','MELJ880315HDFNPN01','MELJ880315AB1','2281112233','Masculino',18000.00,1,'$CHOFER_ROLE_ID'),
+  ('aaaaaaaa-0000-0000-0000-000000000002','CHO-002','Maria Elena Torres Ruiz','Calle Reforma 78, Col. Moderna','1992-07-22','TORM920722MDFRRR01','TORM920722CD2','2282223344','Femenino',18000.00,1,'$CHOFER_ROLE_ID')
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO driver_details (employee_id, license_number, license_type)
+VALUES
+  ('aaaaaaaa-0000-0000-0000-000000000001','LIC-E-001234','E'),
+  ('aaaaaaaa-0000-0000-0000-000000000002','LIC-C-005678','C')
+ON CONFLICT (employee_id) DO NOTHING;
+"@
+    $insertChoferesResult = $insertChoferesSql | docker exec -i $EMPLEADOS_CONTAINER psql -U $EMPLEADOS_USER -d $EMPLEADOS_DB 2>&1
+    Write-Host "   Choferes listos (Juan Carlos Mendez y Maria Elena Torres)." -ForegroundColor Green
+}
+
 # ── 1. CLIENTE EN POSTGRESQL ──────────────────────────────────────────────────
 Write-Host ""
-Write-Host "[1/2]  Insertando cliente en PostgreSQL..." -ForegroundColor Yellow
+Write-Host "[1/4]  Insertando cliente en PostgreSQL..." -ForegroundColor Yellow
 
 # Pasamos el SQL por stdin (-i) para preservar las comillas dobles de los identificadores
 $insertClientSql = @'
@@ -48,7 +147,7 @@ Write-Host "   Cliente listo - ID: $CLIENT_ID" -ForegroundColor Green
 
 # ── 2. ESPERAR QUE ContractsDB EXISTA ────────────────────────────────────────
 Write-Host ""
-Write-Host "[2/2]  Verificando SQL Server..." -ForegroundColor Yellow
+Write-Host "[2/4]  Verificando SQL Server..." -ForegroundColor Yellow
 
 $maxRetries = 15
 $attempt = 0
@@ -78,7 +177,7 @@ if (-not $dbReady) {
 }
 
 # ── 3. INSERTAR CONTRATO ──────────────────────────────────────────────────────
-Write-Host "   Insertando contrato activo..." -ForegroundColor Yellow
+Write-Host "[3/4]  Insertando contrato activo..." -ForegroundColor Yellow
 
 $insertContractSql = @"
 IF NOT EXISTS (SELECT 1 FROM Contracts WHERE Folio = 'DEMO-2024-001')
@@ -119,10 +218,14 @@ Write-Host "  SEMARNAT :  CDMX-2024-001234"                  -ForegroundColor Wh
 Write-Host "  Contrato :  DEMO-2024-001  (status: activo)"   -ForegroundColor White
 Write-Host "  Residuos :  Solventes / Aceites / Pintura"     -ForegroundColor White
 Write-Host ""
+Write-Host "  Vehiculos: 5 (Kenworth T680, Volvo FH16, Mercedes Actros, Ford F-550, International HV)" -ForegroundColor White
+Write-Host "  Choferes : Juan Carlos Mendez (Lic E) / Maria Elena Torres (Lic C)" -ForegroundColor White
+Write-Host ""
 Write-Host "  Flujo de prueba:"                              -ForegroundColor Yellow
 Write-Host "  1. Login en el sistema"                        -ForegroundColor White
 Write-Host "  2. Manifiestos -> Generar manifiesto"          -ForegroundColor White
 Write-Host "  3. Selecciona el contrato DEMO-2024-001"       -ForegroundColor White
 Write-Host "  4. Los residuos se pre-llenaran solos"         -ForegroundColor White
+Write-Host "  5. Selecciona vehiculo y chofer del catalogo"  -ForegroundColor White
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""

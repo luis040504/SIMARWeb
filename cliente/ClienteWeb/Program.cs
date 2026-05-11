@@ -5,6 +5,8 @@ using ClienteWeb.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(o =>
+    o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
 // Billing API Configuration
 builder.Services.AddTransient<ClienteWeb.Services.BillingApiInterceptor>();
@@ -82,6 +84,11 @@ builder.Services.AddHttpClient("UserApi", client =>
 });
 
 builder.Services.AddHttpClient("EmpleadoApi", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8008");
+});
+
+builder.Services.AddHttpClient<EmpleadosApiService>(client =>
 {
     client.BaseAddress = new Uri("http://localhost:8008");
 });

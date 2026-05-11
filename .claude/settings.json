@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://localhost:8080/api/clientes/client/id/1\")",
+      "Bash(curl -s \"http://localhost:8005/client/all\")",
+      "Bash(curl -s \"http://localhost:8005/client/id/1\")",
+      "Bash(docker exec *)",
+      "Bash(curl -s -X POST http://localhost:8001/login -H 'Content-Type: application/json' -d '{\"identifier\":\"admin_root\",\"password\":\"Admin123!\"}')",
+      "Bash(curl -s -X POST http://localhost:8001/login -H 'Content-Type: application/json' -d '{\"identifier\":\"admin_root\",\"password\":\"prueba_password123!\"}')",
+      "Bash(npx playwright *)",
+      "Bash(node test_manifest_flow.js)",
+      "Bash(npm install *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5181/Client_SimarUser/Client/Login\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -L \"http://localhost:5181/\")",
+      "Bash(curl -s \"http://localhost:5181/\" -L)",
+      "Bash(curl -s \"http://localhost:5181/Client_SimarUser/Client/Login\" -o /dev/null -w \"%{http_code} %{redirect_url}\")",
+      "Bash(curl -s \"https://localhost:7034/Client_SimarUser/Client/Login\" -k -o /dev/null -w \"%{http_code}\")",
+      "Bash(curl -s -L \"http://localhost:5181/Manifest/Consult/Index\" -o /dev/null -w \"%{http_code}\")",
+      "Bash(curl -s -L \"http://localhost:5181/inicio\" -o /dev/null -w \"%{http_code} final-url: %{url_effective}\")",
+      "Bash(curl -s -L \"http://localhost:5181/dashboard\" -o /dev/null -w \"%{http_code}\")",
+      "Bash(curl -s -L \"http://localhost:5181/Manifest/Consult\" -o /dev/null -w \" %{http_code}\")",
+      "Bash(curl -s \"http://localhost:5181/Manifest/Consult\")",
+      "Bash(curl -s \"http://localhost:5181/Manifest/Consult/Index\")",
+      "Bash(curl -s -v \"http://localhost:5181/Manifest/Consult/Index\")",
+      "Bash(curl -s -v \"http://localhost:5181/Manifest/Consult\")",
+      "PowerShell(Stop-Process -Id 28656 -Force)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5181/inicio\")",
+      "PowerShell(Stop-Process -Id 2208 -Force)",
+      "Bash(curl -s \"http://localhost:8080/api/manifiestos/4\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('tipo:', d['data']['tipo']\\); print\\('razon_social:', d['data']['razon_social']\\); print\\('numero_manifiesto:', d['data']['numero_manifiesto']\\)\")"
+    ]
+  }
+}
