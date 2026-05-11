@@ -72,6 +72,7 @@ class BillingBase(BaseModel):
     attachments: Optional[Attachments] = Field(default_factory=Attachments)
     status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
     reason: Optional[str] = None
+    service_id: Optional[str] = None
     activo: bool = True
 
 class BillingCreateSchema(BillingBase):
@@ -90,6 +91,7 @@ class BillingUpdateSchema(BaseModel):
     reason: Optional[str] = None
     record_type: Optional[str] = None
     service_type: Optional[str] = None
+    service_id: Optional[str] = None
 
 class BillingResponseSchema(BillingBase):
     id: str = Field(alias="_id")

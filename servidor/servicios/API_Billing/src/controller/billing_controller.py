@@ -97,6 +97,8 @@ class BillingController:
         
         result = await facturas_collection.insert_one(billing_dict)
         
+        print(f"DEBUG: Created invoice with service_id: {billing_dict.get('service_id')}")
+        
         new_billing = await facturas_collection.find_one({"_id": result.inserted_id})
         
         return Billing(**new_billing)
@@ -218,6 +220,11 @@ class BillingController:
         client_url = os.getenv("CLIENTS_API_URL", "http://simar_clientes_api:8005")
         contract_url = os.getenv("CONTRACTS_API_URL", "http://simar_contratos_api:8006")
 
+        # 0. Obtener IDs de servicios que ya tienen factura activa para no duplicar
+        cursor = facturas_collection.find({"activo": True, "service_id": {"$ne": None}}, {"service_id": 1})
+        existing_invoices = await cursor.to_list(length=None)
+        billed_service_ids = {inv["service_id"] for inv in existing_invoices}
+
         async with httpx.AsyncClient() as client:
             # 1. Obtener manifiestos completados
             try:
@@ -230,6 +237,10 @@ class BillingController:
             
             results = []
             for m in manifests_data:
+                manifest_id = str(m.get("id"))
+                if manifest_id in billed_service_ids:
+                    continue
+                    
                 razon_social = m.get("razon_social")
                 
                 # 2. Buscar cliente por razón social
@@ -332,10 +343,25 @@ class BillingController:
                     ))
                     total_estimated += subtotal
 
+                # Asegurar que fecha_servicio sea de tipo date
+                fm_raw = m.get("fecha_manifiesto")
+                fm_date = datetime.now().date()
+                if fm_raw:
+                    try:
+                        if isinstance(fm_raw, str):
+                            if 'T' in fm_raw:
+                                fm_date = datetime.fromisoformat(fm_raw.split('Z')[0]).date()
+                            else:
+                                fm_date = datetime.strptime(fm_raw[:10], '%Y-%m-%d').date()
+                        elif isinstance(fm_raw, datetime):
+                            fm_date = fm_raw.date()
+                    except:
+                        pass
+
                 results.append(ReadyToBillSchema(
                     manifest_id=m.get("id"),
                     numero_manifiesto=m.get("numero_manifiesto"),
-                    fecha_servicio=m.get("fecha_manifiesto"),
+                    fecha_servicio=fm_date,
                     tipo_residuo=m.get("tipo"),
                     cliente=client_info,
                     contrato=contract_info,
@@ -346,7 +372,7 @@ class BillingController:
 
             # 5. Obtener servicios directos de contratos activos/aceptados
             try:
-                contract_services = await BillingController._get_services_from_contracts()
+                contract_services = await BillingController._get_services_from_contracts(billed_service_ids)
                 results.extend(contract_services)
             except Exception:
                 pass
@@ -354,11 +380,14 @@ class BillingController:
             return results
 
     @staticmethod
-    async def _get_services_from_contracts():
+    async def _get_services_from_contracts(billed_service_ids: set = None):
         """Recupera servicios de contratos activos o aceptados"""
         contract_url = os.getenv("CONTRACTS_API_URL", "http://simar_contratos_api:8006")
         results = []
         
+        if billed_service_ids is None:
+            billed_service_ids = set()
+            
         async with httpx.AsyncClient() as client:
             try:
                 # Obtener contratos con status Activo o Aceptado
@@ -379,6 +408,7 @@ class BillingController:
                         continue
                         
                     c_detail = detail_resp.json()
+                    folio = c_detail.get('folio')
                     
                     client_info = ClientSummarySchema(
                         id=c_detail.get("clientId"),
@@ -389,7 +419,7 @@ class BillingController:
                     )
                     
                     contract_info = ContractSummarySchema(
-                        folio=c_detail.get("folio"),
+                        folio=folio,
                         precio_unitario=float(c_detail.get("totalBasePrice") or 0),
                         metodo_pago="PPD", # Valor por defecto común para contratos
                         condiciones=c_detail.get("contractDuration")
@@ -397,18 +427,41 @@ class BillingController:
                     
                     # Mapear los servicios definidos en el contrato
                     for s in c_detail.get("services", []):
+                        waste_type = s.get("wasteType")
+                        # Crear un ID único para este servicio de contrato
+                        # Formato: CONTRACT:{folio}:{waste_type}
+                        contract_service_id = f"CONTRACT:{folio}:{waste_type}"
+                        
+                        if contract_service_id in billed_service_ids:
+                            continue
+
+                        # Asegurar que fecha_servicio sea de tipo date
+                        fs_raw = c_detail.get("firstServiceDate")
+                        fs_date = datetime.now().date()
+                        if fs_raw:
+                            try:
+                                # Si viene con formato ISO completo, tomamos solo la parte de la fecha
+                                if 'T' in fs_raw:
+                                    fs_date = datetime.fromisoformat(fs_raw.split('Z')[0]).date()
+                                else:
+                                    fs_date = datetime.strptime(fs_raw[:10], '%Y-%m-%d').date()
+                            except:
+                                pass
+
                         results.append(ReadyToBillSchema(
                             manifest_id=0,
-                            numero_manifiesto=f"CONTRATO: {c_detail.get('folio')}",
-                            fecha_servicio=c_detail.get("firstServiceDate") or datetime.now().date(),
-                            tipo_residuo=s.get("wasteType"),
+                            numero_manifiesto=contract_service_id, # Usamos el ID generado como numero_manifiesto para que el front lo use
+                            fecha_servicio=fs_date,
+                            tipo_residuo=waste_type,
                             cliente=client_info,
                             contrato=contract_info,
                             detalles_servicio=[
                                 ResidueDetailSchema(
-                                    residuo=s.get("wasteType"),
+                                    residuo=waste_type,
                                     cantidad=1.0,
-                                    unidad=s.get("wasteUnit")
+                                    unidad=s.get("wasteUnit"),
+                                    precio_unitario=float(s.get("subtotal") or 0),
+                                    subtotal=float(s.get("subtotal") or 0)
                                 )
                             ],
                             total_estimado=float(s.get("subtotal") or 0),

@@ -60,6 +60,7 @@ namespace ClienteWeb.Pages.Billing
         [BindProperty] public string UnitCode { get; set; }
         [BindProperty] public string TaxObject { get; set; }
         [BindProperty] public string ItemsJson { get; set; }
+        [BindProperty] public string ServiceId { get; set; }
 
         [TempData]
         public string StatusMessage { get; set; }
@@ -102,6 +103,7 @@ namespace ClienteWeb.Pages.Billing
                     ProductCode = SelectedRecord.ProductCode ?? "80141600";
                     UnitCode = SelectedRecord.UnitCode ?? "E48";
                     TaxObject = SelectedRecord.TaxObject ?? "02";
+                    ServiceId = SelectedRecord.ServiceId;
                     
                     if (SelectedRecord.RecordType == "Service" && !string.IsNullOrEmpty(SelectedRecord.RawItemsJson))
                     {
@@ -162,7 +164,8 @@ namespace ClienteWeb.Pages.Billing
                         Taxes = new List<TaxItem> { new TaxItem { Amount = i.Amount * 0.16m } }
                     }).ToList(),
                     Attachments = new Attachments(),
-                    Status = "Pending"
+                    Status = "Pending",
+                    ServiceId = ServiceId
                 };
 
                 await _billingService.CreateInvoiceAsync(billingCreate);
@@ -421,7 +424,8 @@ namespace ClienteWeb.Pages.Billing
                     PaymentMethod = i.Financials.PaymentMethod,
                     ProductCode = i.Items.FirstOrDefault()?.ProductCode,
                     UnitCode = i.Items.FirstOrDefault()?.UnitCode,
-                    TaxObject = i.Items.FirstOrDefault()?.TaxObject
+                    TaxObject = i.Items.FirstOrDefault()?.TaxObject,
+                    ServiceId = i.ServiceId
                 });
 
                 var displayed = new List<BillingRecord>();
@@ -442,6 +446,7 @@ namespace ClienteWeb.Pages.Billing
                             Amount = r.TotalEstimado,
                             PostalCode = r.Cliente.PostalCode, // Usando el campo directo
                             Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto",
+                            ServiceId = r.Source == "contract" ? r.NumeroManifiesto : r.ManifestId.ToString(),
                             RawItemsJson = JsonSerializer.Serialize(r.DetallesServicio)
                         }));
                     }
@@ -509,6 +514,7 @@ namespace ClienteWeb.Pages.Billing
         public string UnitCode { get; set; }
         public string TaxObject { get; set; }
         public string Source { get; set; }
+        public string ServiceId { get; set; }
         public string RawItemsJson { get; set; }
     }
 

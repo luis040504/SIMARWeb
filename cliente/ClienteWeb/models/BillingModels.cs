@@ -188,6 +188,9 @@ namespace ClienteWeb.Models
 
         [JsonPropertyName("reason")]
         public string Reason { get; set; }
+        
+        [JsonPropertyName("service_id")]
+        public string ServiceId { get; set; }
 
         [JsonPropertyName("activo")]
         public bool Activo { get; set; } = true;

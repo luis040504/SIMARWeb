@@ -50,7 +50,9 @@ services:
           sleep 2;
         done;
         echo 'Base de datos lista';
-        uvicorn app.main:app --host 0.0.0.0 --port 8001"
+        uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
+    volumes:
+      - ./servicios/API_Auth:/app
     depends_on:
       - db_usuarios
     networks:
@@ -284,6 +286,9 @@ services:
       - MONGODB_PASSWORD=${MONGODB_PASSWORD}
       - MONGODB_DB=${MONGODB_DB}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    volumes:
+      - ./servicios/API_Billing:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8009 --reload
     depends_on:
       - mongo_facturacion
     networks:

@@ -7,14 +7,14 @@
 
 $POSTGRES_CONTAINER   = "simar_postgres_clientes"
 $SQLSERVER_CONTAINER  = "simar_sqlserver_contratos"
-$POSTGRES_USER        = "simar_user"
+$POSTGRES_USER        = "simero"
 $POSTGRES_DB          = "simar_clientes_db"
-$SA_PASSWORD          = "Simar123!"
+$SA_PASSWORD          = "SimarContracts123!"
 $MYSQL_CONTAINER      = "simar_mysql_vehiculos"
 $MYSQL_ROOT_PASS      = "Simar123!"
 $MYSQL_DB             = "simar_vehiculos_db"
 $EMPLEADOS_CONTAINER  = "simar_db_empleados"
-$EMPLEADOS_USER       = "simar_user"
+$EMPLEADOS_USER       = "admin_emp"
 $EMPLEADOS_DB         = "simar_empleados_db"
 
 Write-Host ""
@@ -92,8 +92,8 @@ Write-Host ""
 Write-Host "[0b/4] Insertando choferes en empleados..." -ForegroundColor Yellow
 
 $choferRoleSql = "SELECT id_role FROM roles WHERE name_role = 'chofer' LIMIT 1;"
-$CHOFER_ROLE_ID = $choferRoleSql | docker exec -i $EMPLEADOS_CONTAINER psql -U $EMPLEADOS_USER -d $EMPLEADOS_DB -t -A 2>&1
-$CHOFER_ROLE_ID = $CHOFER_ROLE_ID.Trim()
+$CHOFER_ROLE_ID = ($choferRoleSql | docker exec -i $EMPLEADOS_CONTAINER psql -U $EMPLEADOS_USER -d $EMPLEADOS_DB -t -A 2>&1)
+if ($null -ne $CHOFER_ROLE_ID) { $CHOFER_ROLE_ID = "$CHOFER_ROLE_ID".Trim() }
 
 if ([string]::IsNullOrWhiteSpace($CHOFER_ROLE_ID)) {
     Write-Host "   ERROR: No se encontro el rol 'chofer' en la BD de empleados." -ForegroundColor Red
@@ -127,15 +127,14 @@ WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE rfc = 'IDEMO123456XYZ')
 RETURNING id;
 '@
 
-$CLIENT_ID = $insertClientSql | docker exec -i $POSTGRES_CONTAINER psql -U $POSTGRES_USER -d $POSTGRES_DB -t -A 2>&1
-
-if ($CLIENT_ID -match "ERROR" -or [string]::IsNullOrWhiteSpace($CLIENT_ID)) {
+$CLIENT_ID = ($insertClientSql | docker exec -i $POSTGRES_CONTAINER psql -U $POSTGRES_USER -d $POSTGRES_DB -t -A 2>&1)
+if ($CLIENT_ID -match "ERROR" -or [string]::IsNullOrWhiteSpace("$CLIENT_ID")) {
     # Puede que ya exista, obtener el id
-    $CLIENT_ID = "SELECT id FROM clientes WHERE rfc = 'IDEMO123456XYZ' LIMIT 1;" | `
-        docker exec -i $POSTGRES_CONTAINER psql -U $POSTGRES_USER -d $POSTGRES_DB -t -A 2>&1
+    $CLIENT_ID = ("SELECT id FROM clientes WHERE rfc = 'IDEMO123456XYZ' LIMIT 1;" | `
+        docker exec -i $POSTGRES_CONTAINER psql -U $POSTGRES_USER -d $POSTGRES_DB -t -A 2>&1)
 }
 
-$CLIENT_ID = ($CLIENT_ID -replace '\D','').Trim()
+$CLIENT_ID = ("$CLIENT_ID" -replace '\D','').Trim()
 
 if ([string]::IsNullOrWhiteSpace($CLIENT_ID)) {
     Write-Host "   ERROR: No se pudo obtener el ID del cliente." -ForegroundColor Red
@@ -157,7 +156,7 @@ while ($attempt -lt $maxRetries -and -not $dbReady) {
     $attempt++
     $checkDb = "SELECT name FROM sys.databases WHERE name = 'ContractsDB';" | `
         docker exec -i $SQLSERVER_CONTAINER /opt/mssql-tools18/bin/sqlcmd `
-            -S localhost -U sa -P $SA_PASSWORD -C -d master -t -A -h -1 2>&1
+            -S localhost -U sa -P $SA_PASSWORD -C -d master -h -1 2>&1
 
     if ($checkDb -match "ContractsDB") {
         $dbReady = $true

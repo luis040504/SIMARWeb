@@ -76,6 +76,7 @@ class Billing(BaseModel):
     attachments: Optional[AttachmentsModel] = Field(default_factory=AttachmentsModel)
     status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
     reason: Optional[str] = None
+    service_id: Optional[str] = None
     activo: bool = True
     
     class Config:
