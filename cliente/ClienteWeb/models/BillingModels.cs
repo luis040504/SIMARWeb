@@ -67,7 +67,22 @@ namespace ClienteWeb.Models
         public DateTime? CertificationDate { get; set; }
 
         [JsonPropertyName("cfdi_version")]
-        public string CfdiVersion { get; set; }
+        public string CfdiVersion { get; set; } = "4.0";
+
+        [JsonPropertyName("digital_seal_issuer")]
+        public string DigitalSealIssuer { get; set; }
+
+        [JsonPropertyName("digital_seal_sat")]
+        public string DigitalSealSat { get; set; }
+
+        [JsonPropertyName("original_chain")]
+        public string OriginalChain { get; set; }
+
+        [JsonPropertyName("pac_rfc")]
+        public string PacRfc { get; set; }
+
+        [JsonPropertyName("sat_certificate_number")]
+        public string SatCertificateNumber { get; set; }
     }
 
     public class Financials

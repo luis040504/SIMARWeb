@@ -172,6 +172,17 @@ class BillingController:
             update_data["fiscal_data.invoice_folio"] = f"A-{random.randint(1000, 9999)}"
             update_data["fiscal_data.uuid"] = str(uuid.uuid4()).upper()
             update_data["fiscal_data.issue_date"] = datetime.now()
+            update_data["fiscal_data.certification_date"] = datetime.now()
+            update_data["fiscal_data.pac_rfc"] = "SAT970701NN3"
+            update_data["fiscal_data.sat_certificate_number"] = "00001000000504465028"
+            update_data["fiscal_data.cfdi_version"] = "4.0"
+            
+            # Generar hashes simulados para sellos y cadena
+            dummy_hash = "T0Y0eCtSUEkwN0lXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0c"
+            update_data["fiscal_data.digital_seal_issuer"] = dummy_hash[:60] + "..."
+            update_data["fiscal_data.digital_seal_sat"] = dummy_hash[20:80] + "..."
+            update_data["fiscal_data.original_chain"] = f"||1.1|{update_data['fiscal_data.uuid']}|{datetime.now().isoformat()}|{update_data['fiscal_data.pac_rfc']}|{dummy_hash[:40]}...||"
+            
             update_data["reason"] = ""  # Limpiar motivo de rechazo previo
 
         result = await facturas_collection.update_one(
