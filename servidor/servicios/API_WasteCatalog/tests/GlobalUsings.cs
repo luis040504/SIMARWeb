@@ -1,0 +1,9 @@
+﻿global using Xunit;
+global using Moq;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.EntityFrameworkCore;
+global using API_WasteCatalog.Data;
+global using API_WasteCatalog.DTOs;
+global using API_WasteCatalog.Models;
+global using API_WasteCatalog.Services;
+global using API_WasteCatalog.Controllers;

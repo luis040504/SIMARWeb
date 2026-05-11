@@ -11,7 +11,7 @@ import re
 # Configuration - Load from environment variables
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY is not set")

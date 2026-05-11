@@ -4,12 +4,26 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using ClienteWeb.Services;
+using ClienteWeb.Models;
+using System.Threading.Tasks;
 
 namespace ClienteWeb.Pages.Billing
 {
     public class IndexModel : PageModel
     {
-        [BindProperty(SupportsGet = true)]
+        private readonly IBillingService _billingService;
+        private readonly IInvoiceGeneratorService _pdfService;
+        private readonly HttpClient _clientesApi;
+
+        public IndexModel(IBillingService billingService, IInvoiceGeneratorService pdfService, IHttpClientFactory factory)
+        {
+            _billingService = billingService;
+            _pdfService = pdfService;
+            _clientesApi = factory.CreateClient("ClientesApi");
+        }
+
         public string Role { get; set; } = "Admin";
 
         [BindProperty(SupportsGet = true)]
@@ -18,11 +32,17 @@ namespace ClienteWeb.Pages.Billing
         [BindProperty]
         public string SearchQuery { get; set; }
 
+        [BindProperty]
+        public DateTime? DateFilter { get; set; }
+
+        [BindProperty]
+        public string StatusFilter { get; set; }
+
         public List<BillingRecord> DisplayedRecords { get; set; }
         public bool IsSearchResult { get; set; }
 
         [BindProperty]
-        public int? SelectedRecordId { get; set; }
+        public string SelectedRecordId { get; set; }
         public BillingRecord SelectedRecord { get; set; }
 
         [BindProperty]
@@ -39,57 +59,37 @@ namespace ClienteWeb.Pages.Billing
         [BindProperty] public string ProductCode { get; set; }
         [BindProperty] public string UnitCode { get; set; }
         [BindProperty] public string TaxObject { get; set; }
+        [BindProperty] public string ItemsJson { get; set; }
 
         [TempData]
         public string StatusMessage { get; set; }
 
-        private static List<BillingRecord> _simulatedDb = new List<BillingRecord>
+        public async Task OnGetAsync()
         {
-            new BillingRecord { Id = 1, RecordType = "Service", ClientName = "Juan Pérez", TaxId = "PEPJ800101XYZ", ServiceType = "Mantenimiento", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m },
-            new BillingRecord { Id = 2, RecordType = "Service", ClientName = "Empresa SA de CV", TaxId = "EMP120304QWE", ServiceType = "Soporte Técnico", Date = DateTime.Now.AddDays(-5), Amount = 5000.00m },
-            new BillingRecord { Id = 3, RecordType = "Invoice", InvoiceNumber = "F-1001", Status = "Rejected", Reason = "Código Postal Inválido", ClientName = "Juan Pérez", TaxId = "PEPJ800101XYZ", Description = "Servicio de Mantenimiento", Date = DateTime.Now.AddDays(-2), Amount = 1500.00m, PostalCode = "01000", FiscalRegime = "601", CfdiUsage = "G03", PaymentForm = "03", PaymentMethod = "PUE", ProductCode = "80141600", UnitCode = "E48", TaxObject = "02" },
-            new BillingRecord { Id = 4, RecordType = "Invoice", InvoiceNumber = "F-1003", Status = "Rejected", Reason = "Régimen Fiscal Incorrecto", ClientName = "María López", TaxId = "LOMM901212ABC", Description = "Instalación", Date = DateTime.Now.AddDays(-1), Amount = 3200.00m, PostalCode = "03000", FiscalRegime = "601", CfdiUsage = "G01", PaymentForm = "99", PaymentMethod = "PPD", ProductCode = "72151500", UnitCode = "E48", TaxObject = "02" },
-            new BillingRecord { Id = 5, RecordType = "Invoice", InvoiceNumber = "F-1004", Status = "Pending", ClientName = "Comercio C", TaxId = "GHI345678V3", Description = "Instalación", Date = DateTime.Now.AddDays(-10), Amount = 3200.00m, PostalCode = "03000", FiscalRegime = "601", CfdiUsage = "G01", PaymentForm = "99", PaymentMethod = "PPD", ProductCode = "72151500", UnitCode = "E48", TaxObject = "02" },
-            new BillingRecord { Id = 6, RecordType = "Invoice", InvoiceNumber = "F-1005", Status = "Accepted", ClientName = "Consultoría D", TaxId = "JKL901234W4", Description = "Asesoría Contable", Date = DateTime.Now.AddDays(-15), Amount = 4500.00m, PostalCode = "04000", FiscalRegime = "626", CfdiUsage = "P01", PaymentForm = "02", PaymentMethod = "PUE", ProductCode = "84111500", UnitCode = "E48", TaxObject = "02" }
-        };
-
-        public void OnGet()
-        {
+            DetermineRole();
             SetDefaultTab();
-            LoadData();
+            await LoadDataAsync();
             ActiveModal = "None";
         }
 
-        public void OnPostSearch()
+        public async Task OnPostSearchAsync()
         {
+            DetermineRole();
             SetDefaultTab();
-            if (!string.IsNullOrEmpty(SearchQuery))
-            {
-                var query = SearchQuery.ToLower();
-                var filtered = GetBaseQuery();
-                DisplayedRecords = filtered.Where(r => 
-                    (r.TaxId != null && r.TaxId.ToLower().Contains(query)) || 
-                    (r.ClientName != null && r.ClientName.ToLower().Contains(query)) || 
-                    (r.InvoiceNumber != null && r.InvoiceNumber.ToLower().Contains(query))
-                ).ToList();
-                IsSearchResult = true;
-            }
-            else
-            {
-                LoadData();
-            }
+            await LoadDataAsync();
             ActiveModal = "None";
         }
 
-        public void OnPostPrepareModal(string modalType)
+        public async Task OnPostPrepareModalAsync(string modalType)
         {
             ActiveModal = modalType;
+            DetermineRole();
             SetDefaultTab();
-            LoadData(); 
-
-            if (SelectedRecordId.HasValue)
+            await LoadDataAsync(); 
+            ActiveModal = modalType; // Re-asegurar después de LoadData si fuera necesario
+            if (!string.IsNullOrEmpty(SelectedRecordId))
             {
-                SelectedRecord = _simulatedDb.FirstOrDefault(r => r.Id == SelectedRecordId.Value);
+                SelectedRecord = DisplayedRecords.FirstOrDefault(r => r.Id == SelectedRecordId);
                 if (SelectedRecord != null)
                 {
                     TaxId = SelectedRecord.TaxId;
@@ -102,79 +102,254 @@ namespace ClienteWeb.Pages.Billing
                     ProductCode = SelectedRecord.ProductCode ?? "80141600";
                     UnitCode = SelectedRecord.UnitCode ?? "E48";
                     TaxObject = SelectedRecord.TaxObject ?? "02";
+                    
+                    var initialItems = new List<InvoiceItemDto>
+                    {
+                        new InvoiceItemDto 
+                        { 
+                            Concept = SelectedRecord.ServiceType ?? SelectedRecord.Description ?? "Servicio", 
+                            Quantity = 1,
+                            Amount = SelectedRecord.Amount 
+                        }
+                    };
+                    ItemsJson = JsonSerializer.Serialize(initialItems);
                 }
             }
         }
 
-        public IActionResult OnPostChangeRole(string newRole)
+
+
+        public async Task<IActionResult> OnPostGenerateAsync()
         {
-            return RedirectToPage(new { Role = newRole });
+            try
+            {
+                var items = JsonSerializer.Deserialize<List<InvoiceItemDto>>(ItemsJson);
+                var subtotal = items.Sum(i => i.Amount);
+                var taxTotal = subtotal * 0.16m;
+                var total = subtotal + taxTotal;
+
+                var billingCreate = new BillingCreate
+                {
+                    UploadType = "DIGITAL",
+                    RecordType = "Invoice",
+                    Metadata = new InvoiceMetadata { CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now, Source = "web_app" },
+                    Issuer = new Issuer { TaxId = "SIM120101XYZ", Name = "SIMAR S.A. de C.V.", TaxRegime = "601" },
+                    Receiver = new Receiver { TaxId = TaxId, Name = BillingName, PostalCode = PostalCode, FiscalRegime = FiscalRegime, TaxUsage = CfdiUsage },
+                    FiscalData = new FiscalData { IssueDate = DateTime.Now },
+                    Financials = new Financials { Subtotal = subtotal, TaxTotal = taxTotal, Total = total, PaymentForm = PaymentForm, PaymentMethod = PaymentMethod },
+                    Items = items.Select(i => new BillingItem { 
+                        Description = i.Concept, 
+                        Quantity = i.Quantity, 
+                        UnitPrice = i.Amount / (decimal)i.Quantity, 
+                        Amount = i.Amount,
+                        ProductCode = ProductCode,
+                        UnitCode = UnitCode,
+                        TaxObject = TaxObject,
+                        Taxes = new List<TaxItem> { new TaxItem { Amount = i.Amount * 0.16m } }
+                    }).ToList(),
+                    Attachments = new Attachments(),
+                    Status = "Pending"
+                };
+
+                await _billingService.CreateInvoiceAsync(billingCreate);
+                StatusMessage = $"¡La prefactura para {BillingName} ha sido generada exitosamente!";
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
+            }
         }
 
-        public IActionResult OnPostGenerate()
-        {
-            StatusMessage = $"¡La factura para el RFC {TaxId} ha sido generada exitosamente!";
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
-        }
-
-        public IActionResult OnPostUploadPhysicalInvoice(IFormFile PhysicalInvoice, int selectedRecordIdUpload)
+        public async Task<IActionResult> OnPostUploadPhysicalInvoiceAsync(IFormFile PhysicalInvoice, string selectedRecordIdUpload)
         {
             if (PhysicalInvoice != null && PhysicalInvoice.Length > 0 && PhysicalInvoice.ContentType == "application/pdf")
             {
-                StatusMessage = $"¡La factura física '{PhysicalInvoice.FileName}' se ha subido correctamente!";
+                try
+                {
+                    await _billingService.UploadPhysicalInvoiceAsync(selectedRecordIdUpload, PhysicalInvoice.OpenReadStream(), PhysicalInvoice.FileName);
+                    StatusMessage = $"¡La factura física '{PhysicalInvoice.FileName}' se ha subido correctamente!";
+                }
+                catch (BillingApiException ex)
+                {
+                    TempData["ErrorMessage"] = ex.Message;
+                }
             }
             else
             {
-                StatusMessage = "Error: El archivo debe ser un PDF válido.";
+                TempData["ErrorMessage"] = "Error: El archivo debe ser un PDF válido.";
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
 
-        public IActionResult OnPostEdit()
+        public async Task<IActionResult> OnPostEditAsync()
         {
-            StatusMessage = $"¡La factura de {TaxId} ha sido actualizada y reenviada exitosamente!";
-            var invoice = _simulatedDb.FirstOrDefault(i => i.Id == SelectedRecordId);
-            if(invoice != null) invoice.Status = "Pending";
-            return RedirectToPage(new { Role = this.Role, ActiveTab = "RejectedInvoices" });
-        }
-
-        public IActionResult OnPostAccept(int id)
-        {
-            var invoice = _simulatedDb.FirstOrDefault(i => i.Id == id);
-            if (invoice != null && invoice.Status == "Pending")
+            try
             {
-                invoice.Status = "Accepted";
-                StatusMessage = $"¡La factura {invoice.InvoiceNumber} ha sido aceptada exitosamente!";
+                if (string.IsNullOrEmpty(SelectedRecordId))
+                {
+                    TempData["ErrorMessage"] = "No se ha seleccionado ninguna factura para editar.";
+                    return RedirectToPage(new { ActiveTab = this.ActiveTab });
+                }
+
+                var items = JsonSerializer.Deserialize<List<InvoiceItemDto>>(ItemsJson);
+                var subtotal = items.Sum(i => i.Amount);
+                var taxTotal = subtotal * 0.16m;
+                var total = subtotal + taxTotal;
+
+                var billingUpdate = new BillingCreate
+                {
+                    UploadType = "DIGITAL",
+                    RecordType = "Invoice",
+                    Metadata = new InvoiceMetadata { UpdatedAt = DateTime.Now, Source = "web_app" },
+                    Issuer = new Issuer { TaxId = "SIM120101XYZ", Name = "SIMAR S.A. de C.V.", TaxRegime = "601" },
+                    Receiver = new Receiver { TaxId = TaxId, Name = BillingName, PostalCode = PostalCode, FiscalRegime = FiscalRegime, TaxUsage = CfdiUsage },
+                    FiscalData = new FiscalData { IssueDate = DateTime.Now },
+                    Financials = new Financials { Subtotal = subtotal, TaxTotal = taxTotal, Total = total, PaymentForm = PaymentForm, PaymentMethod = PaymentMethod },
+                    Items = items.Select(i => new BillingItem { 
+                        Description = i.Concept, 
+                        Quantity = (double)i.Quantity, 
+                        UnitPrice = i.Amount / (decimal)i.Quantity, 
+                        Amount = i.Amount,
+                        ProductCode = ProductCode,
+                        UnitCode = UnitCode,
+                        TaxObject = TaxObject,
+                        Taxes = new List<TaxItem> { new TaxItem { Amount = i.Amount * 0.16m } }
+                    }).ToList(),
+                    Status = "Pending", 
+                    Reason = "" 
+                };
+
+                await _billingService.UpdateInvoiceAsync(SelectedRecordId, billingUpdate);
+                StatusMessage = $"¡La prefactura de {BillingName} ha sido actualizada y reenviada exitosamente!";
+                return RedirectToPage(new { ActiveTab = "RejectedInvoices" });
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToPage(new { ActiveTab = "RejectedInvoices" });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error inesperado al actualizar: {ex.Message}";
+                return RedirectToPage(new { ActiveTab = "RejectedInvoices" });
+            }
         }
 
-        public IActionResult OnPostReject(int id)
+        public async Task<IActionResult> OnPostAcceptAsync(string id)
         {
-            var invoice = _simulatedDb.FirstOrDefault(i => i.Id == id);
-            if (invoice != null && invoice.Status == "Pending")
+            try
             {
-                invoice.Status = "Rejected";
-                StatusMessage = $"La factura {invoice.InvoiceNumber} ha sido rechazada.";
+                await _billingService.UpdateStatusAsync(id, "Accepted");
+                StatusMessage = $"¡La factura ha sido aceptada exitosamente!";
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
 
-        public IActionResult OnPostDownload(int id)
+        public async Task<IActionResult> OnPostRejectAsync(string id, List<string> rejectReasons)
         {
-            var invoice = _simulatedDb.FirstOrDefault(i => i.Id == id);
-            if (invoice != null)
+            try
             {
-                StatusMessage = $"Iniciando descarga de la factura {invoice.InvoiceNumber}... (Simulación)";
+                var reason = string.Join(" / ", rejectReasons);
+                await _billingService.UpdateStatusAsync(id, "Rejected", reason);
+                StatusMessage = $"La factura ha sido rechazada.";
             }
-            return RedirectToPage(new { Role = this.Role, ActiveTab = this.ActiveTab });
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
+
+        public async Task<IActionResult> OnPostDownloadAsync(string id)
+        {
+            try
+            {
+                var invoice = await _billingService.GetInvoiceByIdAsync(id);
+                if (invoice == null)
+                {
+                    TempData["ErrorMessage"] = "No se pudo encontrar la factura para descargar.";
+                    return RedirectToPage(new { ActiveTab = this.ActiveTab });
+                }
+
+                var pdfBytes = _pdfService.GenerateInvoicePdf(invoice);
+                var fileName = $"Factura_{invoice.FiscalData?.InvoiceFolio ?? invoice.Id}.pdf";
+
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = $"Error al obtener datos: {ex.Message}";
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error inesperado al generar PDF: {ex.Message}";
+                return RedirectToPage(new { ActiveTab = this.ActiveTab });
+            }
+        }
+
+        private void DetermineRole()
+        {
+            var sessionRole = HttpContext.Session.GetString("Rol")?.ToLower();
+            
+            // Roles con permisos administrativos en facturación
+            var adminRoles = new[] { "administrador", "admin", "empleado", "contador", "dueño" };
+
+            if (adminRoles.Contains(sessionRole))
+            {
+                Role = "Admin";
+            }
+            else
+            {
+                // Por defecto para clientes o cualquier otro rol restringido
+                Role = "Client";
+            }
+        }
+
+        public string GetDisplayName_FiscalRegime(string code) => code switch
+        {
+            "601" => "601 - General Ley Personas Morales",
+            "612" => "612 - Personas Físicas con Actividades",
+            "626" => "626 - RESICO",
+            _ => code ?? "N/A"
+        };
+
+        public string GetDisplayName_CfdiUsage(string code) => code switch
+        {
+            "G01" => "G01 - Adquisición mercancías",
+            "G03" => "G03 - Gastos en general",
+            "P01" => "P01 - Por definir",
+            _ => code ?? "N/A"
+        };
+
+        public string GetDisplayName_PaymentForm(string code) => code switch
+        {
+            "01" => "01 - Efectivo",
+            "02" => "02 - Cheque nominativo",
+            "03" => "03 - Transferencia",
+            "04" => "04 - Tarjeta Crédito",
+            "99" => "99 - Por definir",
+            _ => code ?? "N/A"
+        };
+
+        public string GetDisplayName_PaymentMethod(string code) => code switch
+        {
+            "PUE" => "PUE - Pago una exhibición",
+            "PPD" => "PPD - Pago diferido",
+            _ => code ?? "N/A"
+        };
 
         private void SetDefaultTab()
         {
             if (Role == "Admin")
             {
-                if (ActiveTab != "RecentServices" && ActiveTab != "RejectedInvoices") ActiveTab = "RecentServices";
+                if (ActiveTab != "RecentServices" && ActiveTab != "RejectedInvoices" && ActiveTab != "GeneratedInvoices") ActiveTab = "RecentServices";
             }
             else
             {
@@ -182,31 +357,124 @@ namespace ClienteWeb.Pages.Billing
             }
         }
 
-        private IEnumerable<BillingRecord> GetBaseQuery()
+        private async Task LoadDataAsync()
         {
-            if (Role == "Admin")
+            try
             {
-                if (ActiveTab == "RecentServices") return _simulatedDb.Where(r => r.RecordType == "Service");
-                if (ActiveTab == "RejectedInvoices") return _simulatedDb.Where(r => r.RecordType == "Invoice" && r.Status == "Rejected");
-            }
-            else
-            {
-                if (ActiveTab == "PendingInvoices") return _simulatedDb.Where(r => r.RecordType == "Invoice" && r.Status == "Pending");
-                if (ActiveTab == "AcceptedInvoices") return _simulatedDb.Where(r => r.RecordType == "Invoice" && r.Status == "Accepted");
-            }
-            return new List<BillingRecord>();
-        }
+                string rfcFilter = null;
+                if (Role != "Admin")
+                {
+                    var userId = HttpContext.Session.GetString("UserId");
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        try
+                        {
+                            var clientInfo = await _clientesApi.GetFromJsonAsync<ClienteOutput>($"client/user/{userId}");
+                            if (clientInfo != null)
+                            {
+                                rfcFilter = clientInfo.RFC;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error fetching client RFC: {ex.Message}");
+                        }
+                    }
+                }
 
-        private void LoadData()
-        {
-            DisplayedRecords = GetBaseQuery().OrderByDescending(r => r.Date).ToList();
-            IsSearchResult = false;
+                var allInvoices = await _billingService.GetInvoicesAsync(
+                    status: StatusFilter,
+                    receiverTaxId: rfcFilter,
+                    searchQuery: SearchQuery
+                );
+
+                var mappedInvoices = allInvoices.Select(i => new BillingRecord
+                {
+                    Id = i.Id,
+                    RecordType = "Invoice",
+                    ClientName = i.Receiver.Name,
+                    TaxId = i.Receiver.TaxId,
+                    Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
+                    Date = i.FiscalData.IssueDate,
+                    Amount = i.Financials.Total,
+                    InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
+                    Status = i.Status,
+                    Reason = i.Reason,
+                    PostalCode = i.Receiver.PostalCode,
+                    FiscalRegime = i.Receiver.FiscalRegime,
+                    CfdiUsage = i.Receiver.TaxUsage,
+                    PaymentForm = i.Financials.PaymentForm,
+                    PaymentMethod = i.Financials.PaymentMethod,
+                    ProductCode = i.Items.FirstOrDefault()?.ProductCode,
+                    UnitCode = i.Items.FirstOrDefault()?.UnitCode,
+                    TaxObject = i.Items.FirstOrDefault()?.TaxObject
+                });
+
+                var displayed = new List<BillingRecord>();
+
+                if (Role == "Admin")
+                {
+                    if (ActiveTab == "RecentServices")
+                    {
+                        var ready = await _billingService.GetReadyToBillAsync();
+                        displayed.AddRange(ready.Select(r => new BillingRecord
+                        {
+                            Id = r.Source == "contract" ? r.NumeroManifiesto : r.ManifestId.ToString(),
+                            RecordType = "Service",
+                            ClientName = r.Cliente.RazonSocial,
+                            TaxId = r.Cliente.Rfc,
+                            ServiceType = r.TipoResiduo,
+                            Date = r.FechaServicio,
+                            Amount = r.TotalEstimado,
+                            PostalCode = r.Cliente.PostalCode, // Usando el campo directo
+                            Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto"
+                        }));
+                    }
+                    else if (ActiveTab == "RejectedInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Rejected"));
+                    }
+                    else if (ActiveTab == "GeneratedInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Pending" || r.Status == "Accepted"));
+                    }
+                }
+                else
+                {
+                    if (ActiveTab == "PendingInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Pending"));
+                    }
+                    else if (ActiveTab == "AcceptedInvoices")
+                    {
+                        displayed.AddRange(mappedInvoices.Where(r => r.Status == "Accepted"));
+                    }
+                }
+
+                if (DateFilter.HasValue)
+                {
+                    displayed = displayed.Where(r => r.Date.Date == DateFilter.Value.Date).ToList();
+                }
+
+                DisplayedRecords = displayed.OrderByDescending(r => r.Date).ToList();
+                IsSearchResult = !string.IsNullOrEmpty(SearchQuery) || DateFilter.HasValue || !string.IsNullOrEmpty(StatusFilter);
+            }
+            catch (BillingApiException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                DisplayedRecords = new List<BillingRecord>();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar datos de facturación: {ex.Message}";
+                DisplayedRecords = new List<BillingRecord>();
+            }
         }
     }
 
     public class BillingRecord
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string RecordType { get; set; } 
         public string ClientName { get; set; }
         public string TaxId { get; set; }
@@ -225,5 +493,13 @@ namespace ClienteWeb.Pages.Billing
         public string ProductCode { get; set; }
         public string UnitCode { get; set; }
         public string TaxObject { get; set; }
+        public string Source { get; set; }
+    }
+
+    public class InvoiceItemDto
+    {
+        public string Concept { get; set; }
+        public int Quantity { get; set; }
+        public decimal Amount { get; set; }
     }
 }

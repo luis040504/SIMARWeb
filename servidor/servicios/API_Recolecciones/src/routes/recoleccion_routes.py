@@ -8,6 +8,7 @@ router = APIRouter()
 
 @router.get("/")
 async def get_all(
+    idContrato: Optional[int] = Query(None, description="Filtrar por ID de contrato"),
     cliente: Optional[str] = Query(None),
     fechaInicio: Optional[datetime] = Query(None),
     fechaFin: Optional[datetime] = Query(None),
@@ -18,6 +19,7 @@ async def get_all(
 ):
     """Obtener todas las recolecciones con filtros"""
     filtro = RecoleccionFilter(
+        idContrato=idContrato,
         cliente=cliente,
         fechaInicio=fechaInicio,
         fechaFin=fechaFin,
@@ -27,6 +29,16 @@ async def get_all(
         estado=estado
     )
     recolecciones = await RecoleccionController.get_all(filtro)
+    return {
+        "success": True,
+        "data": [r.model_dump(by_alias=True) for r in recolecciones],
+        "count": len(recolecciones)
+    }
+
+@router.get("/contrato/{idContrato}")
+async def get_by_contrato(idContrato: int):
+    """NUEVO: Obtener recolecciones por ID de contrato"""
+    recolecciones = await RecoleccionController.get_by_contrato(idContrato)
     return {
         "success": True,
         "data": [r.model_dump(by_alias=True) for r in recolecciones],

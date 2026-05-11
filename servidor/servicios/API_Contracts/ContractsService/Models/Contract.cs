@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace ContractsService.Models;
 
@@ -8,7 +9,7 @@ public class Contract
     public int Id { get; set; }
     public string Folio { get; set; } = "";
     
-    [Range(1, int.MaxValue, ErrorMessage = "El ID del cliente es requerido y debe ser válido.")]
+    [Range(1, int.MaxValue, ErrorMessage = "El ID del cliente es requerido.")]
     public int ClientId { get; set; }
 
     [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "El monto debe ser mayor a 0.")]
@@ -17,57 +18,42 @@ public class Contract
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Status { get; set; } = "Pendiente de firma";
 
-    public List<Anexo1Scope> Anexo1Items { get; set; } = new();
-    public List<Anexo2Payment> Anexo2Payments { get; set; } = new();
-    public List<Anexo3Schedule> Anexo3Steps { get; set; } = new();
-    public List<Anexo4Extra> Anexo4Extras { get; set; } = new();
+    public string ClientName { get; set; } = "";
+    public string ClientRfc { get; set; } = "";
+    public string Representative { get; set; } = "";
+    public string ClientAddress { get; set; } = "";
+    public string ClientObjetoSocial { get; set; } = "";
+    public string ClientDeclaraciones { get; set; } = "";
+    public string ContractDuration { get; set; } = "";
+    public DateTime? FirstServiceDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? SignedContractPath { get; set; }
+
+    public List<ContractServiceItem> Services { get; set; } = new();
+    public List<ContractPaymentItem> Payments { get; set; } = new();
+    public List<ContractExtra> Extras { get; set; } = new();
 }
 
-public class AuditLog
-{
-    public int Id { get; set; }
-    public string Action { get; set; } = "";
-    public string Details { get; set; } = "";
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-}
+public class ContractServiceItem { public int Id { get; set; } public int ContractId { get; set; } public string WasteType { get; set; } = ""; public string WasteUnit { get; set; } = ""; public string Frequency { get; set; } = ""; public int Vehicles { get; set; } public int Technicians { get; set; } public string ServiceAddress { get; set; } = ""; public string WarehouseAddress { get; set; } = ""; public decimal Subtotal { get; set; } }
+public class ContractPaymentItem { public int Id { get; set; } public int ContractId { get; set; } public string Description { get; set; } = ""; public decimal Amount { get; set; } public DateTime PaymentDate { get; set; } }
+public class ContractExtra { public int Id { get; set; } public int ContractId { get; set; } public string Description { get; set; } = ""; public decimal UnitCost { get; set; } public int Quantity { get; set; } }
 
-public class Anexo1Scope
+public class Quotation
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int Id { get; set; }
-    public int ContractId { get; set; }
-    public int ExternalResiduoId { get; set; }
-    public string NombreResiduo { get; set; } = "";
-    public string EstadoFisico { get; set; } = "";
-    public string FormaAlmacenado { get; set; } = "";
-}
-
-public class Anexo2Payment
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public string Concept { get; set; } = "";
-    public decimal Amount { get; set; }
-    public DateTime PaymentDate { get; set; }
-    public bool IsBilled { get; set; } = false;
-}
-
-public class Anexo3Schedule
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public string Phase { get; set; } = "";
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public string Deliverable { get; set; } = "";
-}
-
-public class Anexo4Extra
-{
-    public int Id { get; set; }
-    public int ContractId { get; set; }
-    public int? ExternalResiduoId { get; set; } 
-    public string Description { get; set; } = "";
-    public decimal UnitCost { get; set; }
-    public int Quantity { get; set; }
-    public decimal Subtotal => UnitCost * Quantity;
+    public string Folio { get; set; } = "";
+    public string Status { get; set; } = "";
+    public string ClientName { get; set; } = "";
+    public string ClientRfc { get; set; } = "";
+    public string ContactName { get; set; } = "";
+    public string ContactPhone { get; set; } = "";
+    public string ContactEmail { get; set; } = "";
+    public int ValidityDays { get; set; }
+    public decimal Subtotal { get; set; }
+    public decimal Total { get; set; }
+    public DateTime CreatedAt { get; set; } 
+    public string ServicesRawJson { get; set; } = "[]"; 
+    public string Frequency { get; set; } = "";
 }

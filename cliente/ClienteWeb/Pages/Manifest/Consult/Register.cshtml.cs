@@ -1,64 +1,77 @@
+using ClienteWeb.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
 
 namespace ClienteWeb.Pages.Manifest.Consult;
 
 public class RegisterModel : PageModel
 {
+    private readonly ManifestApiService _api;
+
+    public RegisterModel(ManifestApiService api) => _api = api;
+
     [BindProperty]
     public RegisterViewModel Input { get; set; } = new();
 
     public ManifestDetailViewModel ManifestInfo { get; private set; } = new();
 
-    public IActionResult OnGet(string id)
+    public string? ApiError { get; private set; }
+
+    public async Task<IActionResult> OnGetAsync(string id)
     {
-        var found = DetailModel.SampleData.FirstOrDefault(m => m.Id == id);
-        if (found is null)
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
+        try
+        {
+            var found = await _api.GetByIdAsync(id);
+            if (found is null) return NotFound();
+            if (found.Status != ManifestStatus.EnTransito)
+                return RedirectToPage("/Manifest/Consult/Detail", new { id });
+
+            ManifestInfo = found;
+            Input.Id = found.Id;
+            Input.SignedDate = DateOnly.FromDateTime(DateTime.Today);
+            return Page();
+        }
+        catch (BillingApiException ex) when (ex.StatusCode == 404)
+        {
             return NotFound();
-
-        if (found.Status != ManifestStatus.EnTransito)
-            return RedirectToPage("/Manifest/Consult/Detail", new { id });
-
-        ManifestInfo = found;
-        Input.Id = found.Id;
-        Input.SignedDate = DateOnly.FromDateTime(DateTime.Today);
-
-        return Page();
+        }
+        catch (Exception)
+        {
+            ApiError = "No se pudo cargar el manifiesto. Verifique que el servicio esté en línea.";
+            return Page();
+        }
     }
 
-    public IActionResult OnPost()
+    public async Task<IActionResult> OnPostAsync()
     {
-        var found = DetailModel.SampleData.FirstOrDefault(m => m.Id == Input.Id);
-        if (found is null)
-            return NotFound();
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
 
         if (Input.SignedFile is null)
             ModelState.AddModelError(nameof(Input.SignedFile), "Debes subir el PDF firmado.");
 
         if (!ModelState.IsValid)
         {
-            ManifestInfo = found;
+            var current = await _api.GetByIdAsync(Input.Id);
+            if (current is not null) ManifestInfo = current;
             return Page();
         }
 
-        found.Status = ManifestStatus.Completado;
-        found.SignedDate = Input.SignedDate;
-        found.SignedManifestFileName = Input.SignedFile!.FileName;
-
-        TempData["SuccessMessage"] =
-            $"El manifiesto {found.ManifestNumber} ha sido marcado como completado.";
-
-        return RedirectToPage("/Manifest/Consult/Detail", new { id = found.Id });
+        try
+        {
+            await _api.UploadFirmaAsync(Input.Id, Input.SignedFile!);
+            TempData["SuccessMessage"] = "El manifiesto ha sido marcado como completado con el PDF firmado.";
+            return RedirectToPage("/Manifest/Consult/Detail", new { id = Input.Id });
+        }
+        catch (BillingApiException ex)
+        {
+            ApiError = ex.Message;
+            var current = await _api.GetByIdAsync(Input.Id);
+            if (current is not null) ManifestInfo = current;
+            return Page();
+        }
     }
-}
-
-public class RegisterViewModel
-{
-    public string Id { get; set; } = string.Empty;
-
-    public DateOnly SignedDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-
-    public IFormFile? SignedFile { get; set; }
 }

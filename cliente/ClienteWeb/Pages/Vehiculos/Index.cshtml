@@ -343,7 +343,7 @@
                                                     data-tipogasolina="@item.TipoGasolina"
                                                     data-placas="@item.Placas"
                                                     data-numeroeconomico="@item.NumeroEconomico"
-                                                    data-año="@item.Año"
+                                                    data-año="@item.Anio"
                                                     data-color="@item.Color"
                                                     data-descripcion="@item.Descripcion"
                                                     data-fotourl="@item.FotoUrl">
@@ -361,7 +361,7 @@
                                                     data-tipogasolina="@item.TipoGasolina"
                                                     data-placas="@item.Placas"
                                                     data-numeroeconomico="@item.NumeroEconomico"
-                                                    data-año="@item.Año"
+                                                    data-año="@item.Anio"
                                                     data-color="@item.Color"
                                                     data-descripcion="@item.Descripcion"
                                                     data-fotourl="@item.FotoUrl">
@@ -390,11 +390,11 @@
                             </h5>
                             
                             <div class="mb-2">
-                                @if (!string.IsNullOrEmpty(item.Año.ToString()))
+                                @if (!string.IsNullOrEmpty(item.Anio.ToString()))
                                 {
                                     <div class="small mb-1">
                                         <i class="bi bi-calendar text-muted me-2"></i>
-                                        <strong>Año:</strong> @item.Año
+                                        <strong>Año:</strong> @item.Anio
                                     </div>
                                 }
                                 <div class="small mb-1">
@@ -423,7 +423,7 @@
                                     data-tipogasolina="@item.TipoGasolina"
                                     data-placas="@item.Placas"
                                     data-numeroeconomico="@item.NumeroEconomico"
-                                    data-año="@item.Año"
+                                    data-año="@item.Anio"
                                     data-color="@item.Color"
                                     data-descripcion="@item.Descripcion"
                                     data-fotourl="@item.FotoUrl">
@@ -450,7 +450,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form id="formCreate" method="post" enctype="multipart/form-data">
+            <form id="formCreate" method="post" asp-page-handler="Create" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <div class="modal-body modal-scrollable">
                     <div class="row g-3">
@@ -494,17 +494,31 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de gasolina *</label>
-                            <select name="TipoGasolina" class="form-select" id="createTipoGasolina" required>
-                                <option value="">Seleccionar tipo</option>
-                            </select>
-                        </div>
+    <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de gasolina *</label>
+    <select name="TipoGasolina" class="form-select" required>
+        <option value="">Seleccionar tipo</option>
+        <option value="Diesel">Diesel</option>
+        <option value="Gasolina Magna">Gasolina Magna</option>
+        <option value="Gasolina Premium">Gasolina Premium</option>
+        <option value="Gas Natural">Gas Natural</option>
+        <option value="Eléctrico">Eléctrico</option>
+        <option value="Híbrido">Híbrido</option>
+    </select>
+</div>
                         <div class="col-12">
-                            <label class="form-label"><i class="bi bi-trash me-1"></i> Tipo de desecho que puede transportar *</label>
-                            <select name="TipoDesecho" class="form-select" id="createTipoDesecho" required>
-                                <option value="">Seleccionar tipo de desecho</option>
-                            </select>
-                        </div>
+    <label class="form-label"><i class="bi bi-trash me-1"></i> Tipo de desecho que puede transportar *</label>
+    <select name="TipoDesecho" class="form-select" required>
+        <option value="">Seleccionar tipo de desecho</option>
+        <option value="Residuos Peligrosos">Residuos Peligrosos</option>
+        <option value="Residuos Biológicos">Residuos Biológicos</option>
+        <option value="Residuos Reciclables">Residuos Reciclables</option>
+        <option value="Residuos Orgánicos">Residuos Orgánicos</option>
+        <option value="Residuos de Construcción">Residuos de Construcción</option>
+        <option value="Residuos Electrónicos">Residuos Electrónicos</option>
+        <option value="Residuos Industriales">Residuos Industriales</option>
+        <option value="Residuos Varios">Residuos Varios</option>
+    </select>
+</div>
                         <div class="col-12">
                             <label class="form-label"><i class="bi bi-chat-text me-1"></i> Descripción</label>
                             <textarea name="Descripcion" class="form-control" rows="2" placeholder="Características adicionales del vehículo..."></textarea>
@@ -540,7 +554,8 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form id="formEdit" method="post" enctype="multipart/form-data">
+            <form id="formEdit" method="post" asp-page-handler="Update" enctype="multipart/form-data">
+    <input type="hidden" name="id" id="editId">orm-data">
                 <input type="hidden" name="Id" id="editId">
                 @Html.AntiForgeryToken()
                 <div class="modal-body modal-scrollable">
@@ -589,17 +604,31 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de gasolina *</label>
-                            <select name="TipoGasolina" class="form-select" id="editTipoGasolina" required>
-                                <option value="">Seleccionar tipo</option>
-                            </select>
-                        </div>
+    <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de gasolina *</label>
+    <select name="TipoGasolina" class="form-select" id="editTipoGasolina" required>
+        <option value="">Seleccionar tipo</option>
+        <option value="Diesel">Diesel</option>
+        <option value="Gasolina Magna">Gasolina Magna</option>
+        <option value="Gasolina Premium">Gasolina Premium</option>
+        <option value="Gas Natural">Gas Natural</option>
+        <option value="Eléctrico">Eléctrico</option>
+        <option value="Híbrido">Híbrido</option>
+    </select>
+</div>
                         <div class="col-12">
-                            <label class="form-label"><i class="bi bi-trash me-1"></i> Tipo de desecho que puede transportar *</label>
-                            <select name="TipoDesecho" class="form-select" id="editTipoDesecho" required>
-                                <option value="">Seleccionar tipo de desecho</option>
-                            </select>
-                        </div>
+    <label class="form-label"><i class="bi bi-trash me-1"></i> Tipo de desecho que puede transportar *</label>
+    <select name="TipoDesecho" class="form-select" id="editTipoDesecho" required>
+        <option value="">Seleccionar tipo de desecho</option>
+        <option value="Residuos Peligrosos">Residuos Peligrosos</option>
+        <option value="Residuos Biológicos">Residuos Biológicos</option>
+        <option value="Residuos Reciclables">Residuos Reciclables</option>
+        <option value="Residuos Orgánicos">Residuos Orgánicos</option>
+        <option value="Residuos de Construcción">Residuos de Construcción</option>
+        <option value="Residuos Electrónicos">Residuos Electrónicos</option>
+        <option value="Residuos Industriales">Residuos Industriales</option>
+        <option value="Residuos Varios">Residuos Varios</option>
+    </select>
+</div>
                         <div class="col-12">
                             <label class="form-label"><i class="bi bi-chat-text me-1"></i> Descripción</label>
                             <textarea name="Descripcion" class="form-control" id="editDescripcion" rows="2"></textarea>
@@ -730,142 +759,74 @@
     </div>
 </div>
 
+
 @section Scripts {
     <script>
-        // Variables globales
-        let tiposDesecho = [];
-        let tiposGasolina = [];
-        let vehiculoAEliminar = null;
+        let recoleccionAEliminar = null;
 
-        // Cargar datos al iniciar
-        document.addEventListener('DOMContentLoaded', function() {
-            cargarTiposDesecho();
-            cargarTiposGasolina();
-        });
-
-        // Función para cargar tipos de desecho
-        async function cargarTiposDesecho() {
-            try {
-                const response = await fetch('?handler=ObtenerTiposDesecho');
-                if (response.ok) {
-                    tiposDesecho = await response.json();
-                    llenarSelectsDesecho();
-                }
-            } catch (error) {
-                console.error('Error al cargar tipos de desecho:', error);
-            }
+        // Mostrar mensajes toast
+        @if (Model.SuccessMessage != null)
+        {
+            <text>showToast('@Model.SuccessMessage', 'success');</text>
+        }
+        @if (Model.ErrorMessage != null)
+        {
+            <text>showToast('@Model.ErrorMessage', 'error');</text>
         }
 
-        // Función para cargar tipos de gasolina
-        async function cargarTiposGasolina() {
-            try {
-                const response = await fetch('?handler=ObtenerTiposGasolina');
-                if (response.ok) {
-                    tiposGasolina = await response.json();
-                    llenarSelectsGasolina();
-                }
-            } catch (error) {
-                console.error('Error al cargar tipos de gasolina:', error);
-            }
+        function showToast(message, type) {
+            const bgColor = type === 'success' ? '#5aad31' : '#dc3545';
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 9999;
+                background: ${bgColor}; color: white; padding: 15px 20px;
+                border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                max-width: 400px; animation: slideIn 0.3s ease;
+            `;
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
         }
 
-        // Llenar selects de tipo de desecho
-        function llenarSelectsDesecho() {
-            const selects = document.querySelectorAll('select[name="TipoDesecho"]');
-            selects.forEach(select => {
-                while (select.options.length > 1) {
-                    select.remove(1);
-                }
-                tiposDesecho.forEach(tipo => {
-                    const option = document.createElement('option');
-                    option.value = tipo;
-                    option.textContent = tipo;
-                    select.appendChild(option);
-                });
-            });
-        }
-
-        // Llenar selects de tipo de gasolina
-        function llenarSelectsGasolina() {
-            const selects = document.querySelectorAll('select[name="TipoGasolina"]');
-            selects.forEach(select => {
-                while (select.options.length > 1) {
-                    select.remove(1);
-                }
-                tiposGasolina.forEach(tipo => {
-                    const option = document.createElement('option');
-                    option.value = tipo;
-                    option.textContent = tipo;
-                    select.appendChild(option);
-                });
-            });
-        }
-
-        // Vista previa de foto en create
-        document.getElementById('createFotoInput')?.addEventListener('change', function (e) {
-            manejarVistaPreviaFoto(e, 'createFotoPreview');
-        });
-
-        // Editar
+        // ========== EDITAR ==========
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.getElementById('editId').value = this.dataset.id;
-                document.getElementById('editMarca').value = this.dataset.marca || '';
-                document.getElementById('editModelo').value = this.dataset.modelo || '';
-                document.getElementById('editPeso').value = this.dataset.peso || '';
-                document.getElementById('editPlacas').value = this.dataset.placas || '';
-                document.getElementById('editNumeroEconomico').value = this.dataset.numeroeconomico || '';
-                document.getElementById('editAño').value = this.dataset.año || '';
-                document.getElementById('editColor').value = this.dataset.color || '';
-                document.getElementById('editDescripcion').value = this.dataset.descripcion || '';
-                
-                setTimeout(() => {
-                    document.getElementById('editLicencia').value = this.dataset.licencia || '';
-                    document.getElementById('editTipoDesecho').value = this.dataset.tipodesecho || '';
-                    document.getElementById('editTipoGasolina').value = this.dataset.tipogasolina || '';
-                }, 100);
-                
-                const fotoActual = document.getElementById('editFotoActual');
-                fotoActual.src = this.dataset.fotourl || 'https://placehold.co/300x200/e9ecef/5aad31?text=SIN+IMAGEN';
-                
-                document.getElementById('editFotoPreview').classList.add('d-none');
-                document.getElementById('editFotoInput').value = '';
+                document.getElementById('editCliente').value = this.dataset.cliente || '';
+                document.getElementById('editFecha').value = this.dataset.fecha || '';
+                document.getElementById('editDireccion').value = this.dataset.direccion || '';
+                document.getElementById('editVehiculo').value = this.dataset.vehiculo || '';
+                document.getElementById('editTecnico').value = this.dataset.tecnico || '';
+                document.getElementById('editTipoResiduo').value = this.dataset.tiporesiduo || '';
+                document.getElementById('editCantidad').value = this.dataset.cantidad || '';
+                document.getElementById('editObservaciones').value = this.dataset.observaciones || '';
+                document.getElementById('editEstado').value = this.dataset.estado || 'Programada';
                 
                 new bootstrap.Modal(document.getElementById('modalEdit')).show();
             });
         });
 
-        // Vista previa en edit
-        document.getElementById('editFotoInput')?.addEventListener('change', function (e) {
-            manejarVistaPreviaFoto(e, 'editFotoPreview');
-        });
-
-        // Detalles
+        // ========== DETALLES ==========
         document.querySelectorAll('.btn-details').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.getElementById('detailsId').textContent = this.dataset.id;
-                document.getElementById('detailsMarca').textContent = this.dataset.marca || 'No especificado';
-                document.getElementById('detailsModelo').textContent = this.dataset.modelo || 'No especificado';
-                document.getElementById('detailsPeso').textContent = this.dataset.peso ? parseFloat(this.dataset.peso).toFixed(1) : 'N/A';
-                document.getElementById('detailsPlacas').textContent = this.dataset.placas || 'No especificado';
-                document.getElementById('detailsNumeroEconomico').textContent = this.dataset.numeroeconomico || 'No especificado';
-                document.getElementById('detailsAño').textContent = this.dataset.año || 'No especificado';
-                document.getElementById('detailsColor').textContent = this.dataset.color || 'No especificado';
-                document.getElementById('detailsDescripcion').textContent = this.dataset.descripcion || 'No hay descripción';
+                document.getElementById('detailsCliente').textContent = this.dataset.cliente || 'No especificado';
                 
-                const licencia = this.dataset.licencia || '';
-                let licenciaTexto = licencia;
-                if (licencia === 'A') licenciaTexto = 'A - Automóviles';
-                else if (licencia === 'B') licenciaTexto = 'B - Camiones ligeros';
-                else if (licencia === 'C') licenciaTexto = 'C - Camiones pesados';
-                else if (licencia === 'D') licenciaTexto = 'D - Autobuses';
-                else if (licencia === 'E') licenciaTexto = 'E - Tractocamiones';
-                document.getElementById('detailsLicencia').textContent = licenciaTexto;
+                const fechaRaw = this.dataset.fecha;
+                if (fechaRaw) {
+                    const fecha = new Date(fechaRaw);
+                    document.getElementById('detailsFecha').textContent = fecha.toLocaleDateString('es-MX', { 
+                        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                    });
+                }
                 
-                document.getElementById('detailsGasolina').textContent = this.dataset.tipogasolina || 'No especificado';
-                document.getElementById('detailsTipoDesecho').textContent = this.dataset.tipodesecho || 'No especificado';
-                document.getElementById('detailsTitulo').textContent = (this.dataset.marca || '') + ' ' + (this.dataset.modelo || '');
-                document.getElementById('detailsFoto').src = this.dataset.fotourl || 'https://placehold.co/300x200/e9ecef/5aad31?text=SIN+IMAGEN';
+                document.getElementById('detailsDireccion').textContent = this.dataset.direccion || 'No especificada';
+                document.getElementById('detailsVehiculo').textContent = this.dataset.vehiculo || 'No asignado';
+                document.getElementById('detailsTecnico').textContent = this.dataset.tecnico || 'No asignado';
+                document.getElementById('detailsTipoResiduo').textContent = this.dataset.tiporesiduo || 'No especificado';
+                document.getElementById('detailsCantidad').textContent = this.dataset.cantidad ? `${parseFloat(this.dataset.cantidad).toFixed(1)} ton` : 'No especificada';
+                document.getElementById('detailsEstado').textContent = this.dataset.estado || 'Programada';
+                document.getElementById('detailsObservaciones').textContent = this.dataset.observaciones || 'Sin observaciones';
                 
                 new bootstrap.Modal(document.getElementById('modalDetails')).show();
             });
@@ -881,66 +842,49 @@
             }
         });
 
-        // Eliminar
+        // ========== ELIMINAR ==========
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function () {
-                vehiculoAEliminar = {
+                recoleccionAEliminar = {
                     id: this.dataset.id,
-                    numeroEconomico: this.dataset.numeroeconomico || 'Sin número',
-                    marca: this.dataset.marca || '',
-                    modelo: this.dataset.modelo || '',
-                    placas: this.dataset.placas || ''
+                    cliente: this.dataset.cliente || 'No especificado',
+                    fecha: this.dataset.fecha || 'No especificada'
                 };
                 
-                document.getElementById('deleteId').textContent = vehiculoAEliminar.id;
-                document.getElementById('deleteNumeroEconomico').textContent = vehiculoAEliminar.numeroEconomico;
-                document.getElementById('deletePlacas').textContent = vehiculoAEliminar.placas;
-                document.getElementById('deleteVehiculoNombre').textContent = vehiculoAEliminar.marca + ' ' + vehiculoAEliminar.modelo;
+                document.getElementById('deleteId').textContent = recoleccionAEliminar.id;
+                document.getElementById('deleteCliente').textContent = recoleccionAEliminar.cliente;
+                document.getElementById('deleteFecha').textContent = recoleccionAEliminar.fecha;
+                document.getElementById('deleteRecoleccionInfo').textContent = 
+                    `Recolección #${recoleccionAEliminar.id.substring(0, 8)}... - ${recoleccionAEliminar.cliente}`;
                 
                 new bootstrap.Modal(document.getElementById('modalDelete')).show();
             });
         });
 
+        // Confirmar eliminación
         document.getElementById('confirmDelete')?.addEventListener('click', function() {
-            if (vehiculoAEliminar) {
-                alert(`Vehículo ${vehiculoAEliminar.marca} ${vehiculoAEliminar.modelo} eliminado (simulado)`);
-                bootstrap.Modal.getInstance(document.getElementById('modalDelete')).hide();
+            if (recoleccionAEliminar) {
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = `?handler=Delete&id=${recoleccionAEliminar.id}`;
+                
+                const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (antiForgery) {
+                    form.innerHTML += `<input type="hidden" name="__RequestVerificationToken" value="${antiForgery.value}">`;
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
             }
         });
 
-        // Función auxiliar para vista previa
-        function manejarVistaPreviaFoto(event, previewId) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (file.size > 5 * 1024 * 1024) {
-                alert('El archivo es demasiado grande. El tamaño máximo es 5MB.');
-                event.target.value = '';
-                return;
-            }
-            
-            if (!file.type.startsWith('image/')) {
-                alert('Solo se permiten archivos de imagen');
-                event.target.value = '';
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = () => {
-                const preview = document.getElementById(previewId);
-                preview.src = reader.result;
-                preview.classList.remove('d-none');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // Limpiar modales al cerrar
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('hidden.bs.modal', function () {
-                const forms = this.querySelectorAll('form');
-                forms.forEach(form => form.reset());
-                this.querySelectorAll('.img-preview').forEach(img => img.classList.add('d-none'));
+        // Validar fechas en filtros
+        const fechaInicio = document.querySelector('input[name="FiltroFechaInicio"]');
+        const fechaFin = document.querySelector('input[name="FiltroFechaFin"]');
+        if (fechaInicio && fechaFin) {
+            fechaInicio.addEventListener('change', function() {
+                fechaFin.min = this.value;
             });
-        });
+        }
     </script>
 }

@@ -15,8 +15,15 @@ namespace API_Usuarios.src.Controllers
             _usuarioService = usuarioService;
         }
 
-        // === CREAR/REGISTRAR USUARIO/EMPLEADO ===
+        // === CONSULTAR TODOS LOS USUARIOS ===
+        [HttpGet]
+        public async Task<IActionResult> ObtenerUsuarios()
+        {
+            var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+            return Ok(usuarios);
+        }
 
+        // === CREAR/REGISTRAR USUARIO/EMPLEADO ===
         [HttpPost("registro-completo")]
         public async Task<IActionResult> Registrar([FromBody] RegistroRequestDto dto)
         {
@@ -24,23 +31,19 @@ namespace API_Usuarios.src.Controllers
 
             string rolLimpio = dto.RolSeleccionado?.Trim().ToLower() ?? "";
 
+            string[] rolesPermitidos = { "administrador", "vendedor", "tecnico", "dueño", "contador", "chofer", "cliente" };
+            
+            if (!rolesPermitidos.Contains(rolLimpio))
+            {
+                return BadRequest(new { mensaje = $"El rol '{dto.RolSeleccionado}' no es válido en el sistema." });
+            }
+
             if (rolLimpio == "chofer")
             {
                 if (string.IsNullOrWhiteSpace(dto.LicenseNumber) || string.IsNullOrWhiteSpace(dto.LicenseType))
                 {
                     return BadRequest(new { mensaje = "Para el rol Chofer, el número y tipo de licencia son obligatorios." });
                 }
-            }
-            else if (new[] { "administrador", "vendedor", "tecnico", "dueño", "contador" }.Contains(rolLimpio))
-            {
-                if (string.IsNullOrWhiteSpace(dto.ProfessionalId))
-                {
-                    return BadRequest(new { mensaje = $"Para el rol {dto.RolSeleccionado}, la Cédula/ID Profesional es obligatoria." });
-                }
-            }
-            else if (rolLimpio != "cliente")
-            {
-                return BadRequest(new { mensaje = $"El rol '{dto.RolSeleccionado}' no es válido en el sistema." });
             }
 
             var exito = await _usuarioService.RegistrarUsuarioCompletoAsync(dto);
@@ -50,5 +53,70 @@ namespace API_Usuarios.src.Controllers
     
             return BadRequest(new { mensaje = "Error al procesar el registro (el correo, usuario o CURP podrían estar duplicados)" });
         }
+
+
+        // Obtener usuario por id
+        [HttpGet("buscar-id/{username}")]
+        public async Task<IActionResult> ObtenerIdPorUsername(string username)
+        {
+        var id = await _usuarioService.ObtenerIdPorUsernameAsync(username);
+
+        if (id == null)
+        {
+            return NotFound(new { mensaje = "Usuario no encontrado" });
+        }
+        return Ok(new { id_user = id });
+        }
+
+        // Registro solo lo de usuario
+        // POST: api/usuarios/registro-simple
+        [HttpPost("registro-simple")]
+        public async Task<IActionResult> RegistroSimple([FromBody] UsuarioRegistroSimpleDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        try
+        {
+            var id = await _usuarioService.RegistrarUsuarioSimpleAsync(dto);
+            return Ok(new { id_user = id });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { mensaje = "Error al registrar usuario", detalle = ex.Message });
+        }
+    }
+
+    // Consultar por id
+    // GET: api/usuarios/{id}
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUsuarioPorId(Guid id)
+    {
+        var usuarioDto = await _usuarioService.ObtenerPorIdAsync(id);
+
+        if (usuarioDto == null)
+        {
+            return NotFound(new { mensaje = "Usuario no encontrado" });
+        }
+
+        return Ok(usuarioDto);
+    }
+
+    // Modificar
+    // PUT: api/usuarios/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> ActualizarUsuario(Guid id, [FromBody] UsuarioUpdateDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var resultado = await _usuarioService.ActualizarUsuarioAsync(id, dto);
+
+        if (!resultado)
+        {
+            return NotFound(new { mensaje = "No se pudo actualizar: Usuario no encontrado" });
+        }
+
+        return Ok(new { mensaje = "Información de usuario actualizada con éxito" });
+    }
+
     }
 }

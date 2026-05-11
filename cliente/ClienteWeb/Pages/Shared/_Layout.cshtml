@@ -291,121 +291,205 @@
                 padding: 0.3rem 0.8rem;
             }
         }
+
+        /* ── Loading overlay ── */
+        #simar-loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        #simar-loading-overlay.visible {
+            display: flex;
+        }
+        .simar-spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #e0ead8;
+            border-top-color: var(--simar-green);
+            border-radius: 50%;
+            animation: simar-spin 0.75s linear infinite;
+        }
+        @@keyframes simar-spin {
+            to { transform: rotate(360deg); }
+        }
+        #simar-loading-overlay p {
+            color: var(--simar-dark);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 0;
+        }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
+
+@{
+        var esLogin = Context.Request.Path.Value?.Contains("/inicio") == true;
+}
 <body class="no-transitions">
 
     @{
         var usuarioNombre = "Luis López";
+        var rolUsuario = Context.Session.GetString("Rol");
     }
 
+
     <!-- HEADER MODERNO -->
-    <header class="header-simar">
-        <div class="d-flex align-items-center w-100 justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-                <!-- Botón Hamburguesa -->
-                <button class="btn-toggle-simar" id="sidebarToggle" type="button">
-                    <i class="bi bi-list"></i>
-                </button>
+    @if (!esLogin)
+    {
+        <header class="header-simar">
+            <div class="d-flex align-items-center w-100 justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Botón Hamburguesa -->
+                    <button class="btn-toggle-simar" id="sidebarToggle" type="button">
+                        <i class="bi bi-list"></i>
+                    </button>
 
-                <!-- Logo como botón que redirige al Index -->
-                <a href="/" class="logo-btn">
-                    <img src="~/images/logosimar.png" alt="SIMAR - Manejo de residuos" class="logo-simar">
-                </a>
-            </div>
+                    <!-- Logo como botón que redirige al Index -->
+                    <a href="/dashboard" class="logo-btn">
+                        <img src="~/images/logosimar.png" alt="SIMAR - Manejo de residuos" class="logo-simar">
+                    </a>
+                </div>
 
-            <!-- Frase de la empresa centrada -->
-            <div class="company-slogan">
-                <i class="bi bi-recycle me-1" style="color: var(--simar-green);"></i>
-                Manejo de residuos para todos los giros comerciales
-            </div>
+                <!-- Frase de la empresa centrada -->
+                <div class="company-slogan">
+                    <i class="bi bi-recycle me-1" style="color: var(--simar-green);"></i>
+                    Manejo de residuos para todos los giros comerciales
+                </div>
 
-            <!-- Dropdown Usuario -->
-            <div class="dropdown">
-                <button class="btn user-dropdown-simar dropdown-toggle d-flex align-items-center gap-2" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-person-circle"></i>
-                    <span class="d-none d-md-inline">@usuarioNombre</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown">
-                    <li>
-                        <a class="dropdown-item" href="/editar/@usuarioNombre">
-                            <i class="bi bi-pencil-square me-2"></i>Editar Perfil
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="#">
-                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
-                        </a>
-                    </li>
-                </ul>
+                <!-- Dropdown Usuario -->
+                <div class="dropdown">
+                    <button class="btn user-dropdown-simar dropdown-toggle d-flex align-items-center gap-2" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle"></i>
+                        <span class="d-none d-md-inline">@usuarioNombre</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/editar/@usuarioNombre">
+                                <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="/logout">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
+    }
 
     <!-- SIDEBAR (MENÚ LATERAL) -->
     <aside class="sidebar-simar" id="sidebar">
         <div class="py-3">
             <!-- Menú Principal -->
             <div class="list-group list-group-flush">
-                <a asp-page="/Contracts/Consult/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-file-text me-3"></i>
-                    <span class="nav-label">Contratos</span>
-                </a>
-                
-                <a asp-page="/Cotizaciones/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-calculator me-3"></i>
-                    <span class="nav-label">Cotizaciones</span>
-                </a>
-                
-                <a asp-page="/Manifest/Consult/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-file-earmark-pdf me-3"></i>
-                    <span class="nav-label">Manifiestos</span>
-                </a>
-                
-                <a asp-page="/Vehiculos/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-truck-front me-3"></i>
-                    <span class="nav-label">Vehículos</span>
-                </a>
-                
-                <a asp-page="/Recolecciones/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-truck me-3"></i>
-                    <span class="nav-label">Programación de recolecciones</span>
-                </a>
-                
-                <a asp-page="/Billing/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-receipt me-3"></i>
-                    <span class="nav-label">Facturación</span>
-                </a>
+                @if (rolUsuario == "cliente")
+                {
+                    <a asp-page="/Billing/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-receipt me-3"></i>
+                        <span class="nav-label">Facturación</span>
+                    </a>
 
-                <!-- Submenú Usuarios -->
-                <div class="list-group-item list-group-item-simar p-0">
-                    <div class="submenu-toggle w-100 p-3" data-bs-toggle="collapse" data-bs-target="#submenuUsuarios" aria-expanded="false">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-people me-3"></i>
-                            <span class="nav-label">Usuarios</span>
-                        </div>
-                        <i class="bi bi-chevron-right chevron"></i>
-                    </div>
-                    <div class="collapse" id="submenuUsuarios">
-                        <div class="submenu">
-                            <a asp-page="/Client_SimarUser/Client/ClientList" class="list-group-item list-group-item-simar d-flex align-items-center">
-                                <i class="bi bi-person-badge me-3"></i>
-                                <span>Clientes</span>
-                            </a>
-                            <a asp-page="/Client_SimarUser/SimarUser/ConsultSimarUser" class="list-group-item list-group-item-simar d-flex align-items-center">
-                                <i class="bi bi-person-workspace me-3"></i>
-                                <span>Personal SIMAR</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                    <a asp-page="/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-receipt me-3"></i>
+                        <span class="nav-label">Servicios y seguimiento</span>
+                    </a>
+                }
+                else
+                {
+                    <a asp-page="/Contracts/Consult/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-file-text me-3"></i>
+                        <span class="nav-label">Contratos</span>
+                    </a>
 
-                <a asp-page="/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection" class="list-group-item list-group-item-simar d-flex align-items-center">
-                    <i class="bi bi-receipt me-3"></i>
-                    <span class="nav-label">Servicios y seguimiento</span>
-                </a>
+                    <a asp-page="/Cotizaciones/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-calculator me-3"></i>
+                        <span class="nav-label">Cotizaciones</span>
+                    </a>
+
+                    <a asp-page="/Manifest/Consult/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-file-earmark-pdf me-3"></i>
+                        <span class="nav-label">Manifiestos</span>
+                    </a>
+
+                    <a asp-page="/Vehiculos/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-truck-front me-3"></i>
+                        <span class="nav-label">Vehículos</span>
+                    </a>
+
+                    <a asp-page="/WasteCatalog/Index" class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-recycle me-3"></i>
+                        <span class="nav-label">Catálogo de Residuos</span>
+                    </a>
+
+                    <a asp-page="/Recolecciones/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-truck me-3"></i>
+                        <span class="nav-label">Programación de recolecciones</span>
+                    </a>
+
+                    <a asp-page="/Billing/Index"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-receipt me-3"></i>
+                        <span class="nav-label">Facturación</span>
+                    </a>
+
+                    <!-- Usuarios -->
+                    <div class="list-group-item list-group-item-simar p-0">
+                        <div class="submenu-toggle w-100 p-3"
+                             data-bs-toggle="collapse"
+                             data-bs-target="#submenuUsuarios"
+                             aria-expanded="false">
+
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-people me-3"></i>
+                                <span class="nav-label">Usuarios</span>
+                            </div>
+
+                            <i class="bi bi-chevron-right chevron"></i>
+                        </div>
+
+                        <div class="collapse" id="submenuUsuarios">
+                            <div class="submenu">
+
+                                <a asp-page="/Client_SimarUser/Client/ClientList"
+                                   class="list-group-item list-group-item-simar d-flex align-items-center">
+                                    <i class="bi bi-person-badge me-3"></i>
+                                    <span>Clientes</span>
+                                </a>
+
+                                <a asp-page="/Client_SimarUser/SimarUser/ConsultSimarUser"
+                                   class="list-group-item list-group-item-simar d-flex align-items-center">
+                                    <i class="bi bi-person-workspace me-3"></i>
+                                    <span>Personal SIMAR</span>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <a asp-page="/WasteTraceability/RegisterWasteCollection/IndexRegisterWasteCollection"
+                       class="list-group-item list-group-item-simar d-flex align-items-center">
+                        <i class="bi bi-receipt me-3"></i>
+                        <span class="nav-label">Servicios y seguimiento</span>
+                    </a>
+                }
             </div>
         </div>
     </aside>
@@ -429,6 +513,12 @@
             </div>
         </footer>
     </main>
+
+    <!-- Loading overlay -->
+    <div id="simar-loading-overlay" role="status" aria-live="polite">
+        <div class="simar-spinner"></div>
+        <p id="simar-loading-msg">Procesando...</p>
+    </div>
 
     <!-- SCRIPTS -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -472,5 +562,57 @@
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        (function () {
+            var overlay = document.getElementById('simar-loading-overlay');
+            var msg     = document.getElementById('simar-loading-msg');
+            var timer   = null;
+            var DELAY   = 400; // ms antes de mostrar el overlay
+
+            function scheduleShow(text) {
+                cancelPending();
+                timer = setTimeout(function () {
+                    msg.textContent = text || 'Procesando...';
+                    overlay.classList.add('visible');
+                }, DELAY);
+            }
+
+            function cancelPending() {
+                if (timer) { clearTimeout(timer); timer = null; }
+            }
+
+            function hide() {
+                cancelPending();
+                overlay.classList.remove('visible');
+            }
+
+            // Cancelar si la página carga rápido o el usuario vuelve atrás
+            document.addEventListener('DOMContentLoaded', hide);
+            window.addEventListener('pageshow', hide);
+
+            // Forms: programar overlay al enviar
+            document.addEventListener('submit', function (e) {
+                if (e.defaultPrevented) return;
+                var active = document.activeElement;
+                if (active && active.dataset.loading === 'false') return;
+                var text = (active && active.dataset.loadingText) || 'Guardando...';
+                scheduleShow(text);
+            });
+
+            // Links de navegación real
+            document.addEventListener('click', function (e) {
+                var el = e.target.closest('a[href]');
+                if (!el) return;
+                var href = el.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('javascript')) return;
+                if (el.dataset.bsToggle) return;
+                if (el.target === '_blank') return;
+                if (el.dataset.loading === 'false') return;
+                var text = el.dataset.loadingText || 'Cargando...';
+                scheduleShow(text);
+            });
+        })();
+    </script>
 </body>
 </html>
