@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using ClienteWeb.Services;
+using ClienteWeb.Pages.Manifest.Generate;
 
 namespace ClienteWeb.Pages.Recolecciones
 {
     public class Recoleccion
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public string Cliente { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
         public string Direccion { get; set; } = string.Empty;
@@ -18,6 +21,7 @@ namespace ClienteWeb.Pages.Recolecciones
         public string? TipoResiduo { get; set; }
         public decimal? CantidadEstimada { get; set; }
         public string? Estado { get; set; } = "Programada";
+        public string ManifestNumber { get; set; } = string.Empty;
     }
 
     public class ClienteItem
@@ -43,6 +47,26 @@ namespace ClienteWeb.Pages.Recolecciones
 
     public class IndexModel : PageModel
     {
+        private readonly ManifestApiService _manifestService;
+        private readonly ClientesApiService _clientesService;
+        private readonly VehiculosApiService _vehiculosService;
+        private readonly EmpleadosApiService _empleadosService;
+        private readonly ContratosApiService _contratosService;
+
+        public IndexModel(
+            ManifestApiService manifestService,
+            ClientesApiService clientesService,
+            VehiculosApiService vehiculosService,
+            EmpleadosApiService empleadosService,
+            ContratosApiService contratosService)
+        {
+            _manifestService = manifestService;
+            _clientesService = clientesService;
+            _vehiculosService = vehiculosService;
+            _empleadosService = empleadosService;
+            _contratosService = contratosService;
+        }
+
         [BindProperty(SupportsGet = true)]
         public string? FiltroCliente { get; set; }
 
@@ -62,188 +86,218 @@ namespace ClienteWeb.Pages.Recolecciones
         public string? FiltroEstado { get; set; }
 
         public List<Recoleccion> Recolecciones { get; set; } = new();
+        public List<ManifestSummary> ManifiestosPendientes { get; set; } = new();
+        public List<ContratoDto> Contratos { get; set; } = new();
         public List<ClienteItem> Clientes { get; set; } = new();
         public List<TecnicoItem> Tecnicos { get; set; } = new();
         public List<VehiculoItem> Vehiculos { get; set; } = new();
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-            // Datos de ejemplo para comboboxes
-            CargarDatosCombobox();
+            await CargarDatosComboboxAsync();
 
-            // Datos de ejemplo para la tabla
-            Recolecciones = new List<Recoleccion>
+            var manifests = await _manifestService.GetAllAsync(
+                razonSocial: FiltroCliente,
+                estado: FiltroEstado);
+            
+            // FILTRO SOLICITADO: Solo mostrar contratos con una recolección programada
+            // En este contexto, mostramos los manifiestos que están en borrador o en tránsito vinculados a contratos
+            Recolecciones = manifests
+                .Where(m => m.ContratoId.HasValue && m.Status != "cancelado") 
+                .Select(m => new Recoleccion
             {
-                new Recoleccion
+                Id = m.Id,
+                ManifestNumber = m.ManifestNumber,
+                Cliente = m.SocialReason,
+                Fecha = m.ManifestDate.ToDateTime(TimeOnly.MinValue),
+                Direccion = m.Municipality,
+                Vehiculo = m.TransporterName,
+                Tecnico = m.TransporterResponsibleName ?? "Pendiente", 
+                Estado = m.Status switch
                 {
-                    Id = 1,
-                    Cliente = "Industrias ABC",
-                    Fecha = DateTime.Now.AddDays(2),
-                    Direccion = "Av. Industrial 123, Zona Norte",
-                    Vehiculo = "Kenworth T680 - VH-001",
-                    Tecnico = "Juan Pérez",
-                    Observaciones = "Residuos peligrosos - Manejo especial",
-                    TipoResiduo = "Peligrosos",
-                    CantidadEstimada = 5.5m,
-                    Estado = "Programada"
+                    "borrador" => "Programada",
+                    "en_transito" => "En ruta",
+                    "completado" => "Completada",
+                    "cancelado" => "Cancelada",
+                    _ => m.Status
                 },
-                new Recoleccion
-                {
-                    Id = 2,
-                    Cliente = "Hospital Regional",
-                    Fecha = DateTime.Now.AddDays(1),
-                    Direccion = "Blvd. de la Salud 456, Centro",
-                    Vehiculo = "International 4300 - VH-002",
-                    Tecnico = "María García",
-                    Observaciones = "Residuos biológicos - Contenedores especiales",
-                    TipoResiduo = "Biológicos",
-                    CantidadEstimada = 3.2m,
-                    Estado = "Programada"
-                },
-                new Recoleccion
-                {
-                    Id = 3,
-                    Cliente = "Centro Comercial Plaza",
-                    Fecha = DateTime.Now.AddDays(3),
-                    Direccion = "Av. Principal 789, Colonia Centro",
-                    Vehiculo = "Freightliner M2 - VH-003",
-                    Tecnico = "Carlos López",
-                    Observaciones = "Recolección de papel y cartón",
-                    TipoResiduo = "Reciclables",
-                    CantidadEstimada = 2.8m,
-                    Estado = "Programada"
-                },
-                new Recoleccion
-                {
-                    Id = 4,
-                    Cliente = "Laboratorios Médicos",
-                    Fecha = DateTime.Now.AddDays(-1),
-                    Direccion = "Calle de la Ciencia 321, Zona Industrial",
-                    Vehiculo = "RAM 5500 - VH-004",
-                    Tecnico = "Ana Martínez",
-                    Observaciones = "Residuos biológicos - Urgente",
-                    TipoResiduo = "Biológicos",
-                    CantidadEstimada = 1.5m,
-                    Estado = "Completada"
-                },
-                new Recoleccion
-                {
-                    Id = 5,
-                    Cliente = "Constructora del Norte",
-                    Fecha = DateTime.Now.AddDays(5),
-                    Direccion = "Periférico Norte 555, Colonia Industrial",
-                    Vehiculo = "Kenworth T680 - VH-001",
-                    Tecnico = "Roberto Sánchez",
-                    Observaciones = "Residuos de construcción",
-                    TipoResiduo = "Construcción",
-                    CantidadEstimada = 12.0m,
-                    Estado = "Programada"
-                },
-                new Recoleccion
-                {
-                    Id = 6,
-                    Cliente = "Restaurante El Sazón",
-                    Fecha = DateTime.Now.AddDays(-2),
-                    Direccion = "Calle de los Sabores 222, Centro",
-                    Vehiculo = "International 4300 - VH-002",
-                    Tecnico = "Laura Rodríguez",
-                    Observaciones = "Residuos orgánicos",
-                    TipoResiduo = "Orgánicos",
-                    CantidadEstimada = 0.8m,
-                    Estado = "Cancelada"
-                }
-            };
+                TipoResiduo = m.ResidueSummary
+            }).ToList();
 
-            // Aplicar filtros (simulado)
-            if (!string.IsNullOrEmpty(FiltroCliente))
-            {
-                Recolecciones = Recolecciones.Where(r => 
-                    r.Cliente.Contains(FiltroCliente, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
+            // Manifiestos que pueden ser programados (Borradores)
+            ManifiestosPendientes = manifests.Where(m => m.Status == "borrador").ToList();
 
+            // Contratos activos para generar nuevas recolecciones
+            Contratos = await _contratosService.GetAllAsync();
+
+            // Aplicar filtros de fecha
             if (FiltroFechaInicio.HasValue)
             {
                 Recolecciones = Recolecciones.Where(r => r.Fecha.Date >= FiltroFechaInicio.Value.Date).ToList();
             }
-
             if (FiltroFechaFin.HasValue)
             {
                 Recolecciones = Recolecciones.Where(r => r.Fecha.Date <= FiltroFechaFin.Value.Date).ToList();
             }
-
-            if (!string.IsNullOrEmpty(FiltroVehiculo))
-            {
-                Recolecciones = Recolecciones.Where(r => 
-                    r.Vehiculo.Contains(FiltroVehiculo, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
-
-            if (!string.IsNullOrEmpty(FiltroTecnico))
-            {
-                Recolecciones = Recolecciones.Where(r => 
-                    r.Tecnico.Contains(FiltroTecnico, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
-
-            if (!string.IsNullOrEmpty(FiltroEstado))
-            {
-                Recolecciones = Recolecciones.Where(r => 
-                    r.Estado == FiltroEstado).ToList();
-            }
         }
 
-        private void CargarDatosCombobox()
+        public async Task<IActionResult> OnGetObtenerContrato(int id)
         {
-            // Clientes de ejemplo
-            Clientes = new List<ClienteItem>
-            {
-                new ClienteItem { Id = 1, Nombre = "Industrias ABC", Direccion = "Av. Industrial 123" },
-                new ClienteItem { Id = 2, Nombre = "Hospital Regional", Direccion = "Blvd. de la Salud 456" },
-                new ClienteItem { Id = 3, Nombre = "Centro Comercial Plaza", Direccion = "Av. Principal 789" },
-                new ClienteItem { Id = 4, Nombre = "Laboratorios Médicos", Direccion = "Calle de la Ciencia 321" },
-                new ClienteItem { Id = 5, Nombre = "Constructora del Norte", Direccion = "Periférico Norte 555" },
-                new ClienteItem { Id = 6, Nombre = "Restaurante El Sazón", Direccion = "Calle de los Sabores 222" },
-                new ClienteItem { Id = 7, Nombre = "Universidad Tecnológica", Direccion = "Campus Universitario 100" },
-                new ClienteItem { Id = 8, Nombre = "Farmacéutica del Valle", Direccion = "Av. de la Salud 789" }
-            };
-
-            // Técnicos de ejemplo
-            Tecnicos = new List<TecnicoItem>
-            {
-                new TecnicoItem { Id = 1, Nombre = "Juan Pérez", Especialidad = "Residuos peligrosos" },
-                new TecnicoItem { Id = 2, Nombre = "María García", Especialidad = "Residuos biológicos" },
-                new TecnicoItem { Id = 3, Nombre = "Carlos López", Especialidad = "Residuos reciclables" },
-                new TecnicoItem { Id = 4, Nombre = "Ana Martínez", Especialidad = "Residuos biológicos" },
-                new TecnicoItem { Id = 5, Nombre = "Roberto Sánchez", Especialidad = "Residuos construcción" },
-                new TecnicoItem { Id = 6, Nombre = "Laura Rodríguez", Especialidad = "Residuos orgánicos" },
-                new TecnicoItem { Id = 7, Nombre = "Miguel Ángel Torres", Especialidad = "Residuos peligrosos" },
-                new TecnicoItem { Id = 8, Nombre = "Gabriela Flores", Especialidad = "Residuos varios" }
-            };
-
-            // Vehículos de ejemplo
-            Vehiculos = new List<VehiculoItem>
-            {
-                new VehiculoItem { Id = 1, Nombre = "Kenworth T680", Placas = "VH-001" },
-                new VehiculoItem { Id = 2, Nombre = "International 4300", Placas = "VH-002" },
-                new VehiculoItem { Id = 3, Nombre = "Freightliner M2", Placas = "VH-003" },
-                new VehiculoItem { Id = 4, Nombre = "RAM 5500", Placas = "VH-004" }
-            };
+            var detail = await _contratosService.GetDetailAsync(id);
+            return new JsonResult(detail);
         }
 
-        // Métodos para obtener datos para combobox via AJAX
-        public IActionResult OnGetObtenerClientes()
+        private async Task CargarDatosComboboxAsync()
         {
-            CargarDatosCombobox();
+            var clientes = await _clientesService.GetAllAsync();
+            Clientes = clientes.Select(c => new ClienteItem { Id = c.Id, Nombre = c.Name, Direccion = c.Address }).ToList();
+
+            var vehiculos = await _vehiculosService.GetAllAsync();
+            Vehiculos = vehiculos.Select(v => new VehiculoItem { Id = v.Id, Nombre = v.Marca + " " + v.Modelo, Placas = v.Placas }).ToList();
+
+            var empleados = await _empleadosService.GetAllAsync();
+            Tecnicos = empleados.Select(e => new TecnicoItem { Id = e.Id, Nombre = e.Nombre, Especialidad = e.Puesto }).ToList();
+        }
+
+        public async Task<IActionResult> OnPostAsync(
+            int? contractId, 
+            string? manifestId, 
+            string vehiculo, 
+            string tecnico, 
+            string estado, 
+            DateTime fecha, 
+            string direccion, 
+            string tipoResiduo,
+            decimal? cantidadEstimada,
+            string? observaciones)
+        {
+            if (contractId.HasValue && string.IsNullOrEmpty(manifestId))
+            {
+                // Generar NUEVO manifiesto a partir del contrato
+                var contrato = await _contratosService.GetDetailAsync(contractId.Value);
+                if (contrato == null) return Page();
+
+                var cliente = contrato.ClientId > 0 ? await _clientesService.GetByIdAsync(contrato.ClientId) : null;
+                var wasteService = contrato.Services.FirstOrDefault(s => s.WasteType == tipoResiduo) ?? contrato.Services.FirstOrDefault();
+                
+                var choferes = await _empleadosService.GetChoferesAsync();
+                var chofer = choferes.FirstOrDefault(c => c.FullName == tecnico);
+                
+                var vehiculosApi = await _vehiculosService.GetAllAsync();
+                var vApi = vehiculosApi.FirstOrDefault(v => v.DisplayLabel == vehiculo || v.Placas == (vehiculo.Contains(" - ") ? vehiculo.Split(" - ")[1] : ""));
+
+                var newManifest = new SpecialWasteModel(_manifestService, _clientesService, _vehiculosService, _contratosService, _empleadosService)
+                {
+                    IdCliente = cliente?.Id ?? 0,
+                    ContratoId = contrato.Id,
+                    SocialReason = contrato.ClientName,
+                    Address = direccion ?? wasteService?.ServiceAddress ?? contrato.ClientAddress,
+                    Municipality = wasteService?.ServiceAddress ?? cliente?.Address ?? contrato.ClientAddress, 
+                    EnvironmentalRegistrationNumber = cliente?.SemarnatNum ?? "PENDIENTE",
+                    PhoneNumber = cliente?.Phone ?? "PENDIENTE",
+                    Email = cliente?.ContactEmail,
+                    ManifestDate = DateOnly.FromDateTime(fecha),
+                    ManifestTime = TimeOnly.FromDateTime(fecha),
+                    GeneratorObservations = observaciones,
+                    
+                    // Datos del Transportista (Desde Recolecciones/Selección)
+                    TransporterSocialReason = vApi?.Marca ?? "SIMAR", 
+                    VehiclePlate = vApi?.Placas ?? (vehiculo.Contains(" - ") ? vehiculo.Split(" - ")[1] : vehiculo),
+                    TransporterResponsibleName = chofer?.FullName ?? tecnico,
+                    DriverName = chofer?.FullName ?? tecnico,
+                    DriverLicense = chofer?.LicenseNumber,
+                    VehicleType = vApi != null ? $"{vApi.Marca} {vApi.Modelo}" : "CAMION",
+                    
+                    // Datos del Generador (Extras)
+                    GeneratorResponsibleName = cliente?.Name,
+
+                    Residues = new List<ResidueItem>
+                    {
+                        new ResidueItem 
+                        { 
+                            ResidueName = tipoResiduo,
+                            Unit = wasteService?.WasteUnit ?? "kg",
+                            Weight = cantidadEstimada ?? 0,
+                            ContainerType = "Bolsa/Contenedor"
+                        }
+                    }
+                };
+
+                var newId = await _manifestService.CreateSpecialAsync(newManifest);
+                
+                // Actualizar estado a lo solicitado (Programada o En ruta)
+                string apiEstado = estado switch
+                {
+                    "Programada" => "borrador",
+                    "En ruta" => "en_transito",
+                    "Completada" => "completado",
+                    "Cancelada" => "cancelado",
+                    _ => "borrador"
+                };
+                
+                await _manifestService.UpdateStatusAsync(newId, apiEstado);
+                TempData["MensajeExito"] = "Recolección y Manifiesto generados exitosamente.";
+            }
+            else if (!string.IsNullOrEmpty(manifestId))
+            {
+                // Actualizar manifiesto EXISTENTE
+                string apiEstado = estado switch
+                {
+                    "Programada" => "borrador",
+                    "En ruta" => "en_transito",
+                    "Completada" => "completado",
+                    "Cancelada" => "cancelado",
+                    _ => "en_transito"
+                };
+
+                await _manifestService.UpdateTransportAsync(manifestId, vehiculo, tecnico, apiEstado, observaciones, cantidadEstimada);
+                TempData["MensajeExito"] = "Recolección actualizada exitosamente.";
+            }
+
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostUpdateStatusAsync(string id, string nuevoEstado)
+        {
+            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(nuevoEstado))
+                return BadRequest();
+
+            // Mapear estado legible a estado de API
+            string apiEstado = nuevoEstado switch
+            {
+                "Programada" => "borrador",
+                "En ruta" => "en_transito",
+                "Completada" => "completado",
+                "Cancelada" => "cancelado",
+                _ => nuevoEstado
+            };
+
+            await _manifestService.UpdateStatusAsync(id, apiEstado);
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnGetObtenerManifiesto(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return BadRequest();
+            var detail = await _manifestService.GetByIdAsync(id);
+            return new JsonResult(detail);
+        }
+
+        public async Task<IActionResult> OnGetObtenerClientes()
+        {
+            await CargarDatosComboboxAsync();
             return new JsonResult(Clientes);
         }
 
-        public IActionResult OnGetObtenerTecnicos()
+        public async Task<IActionResult> OnGetObtenerTecnicos()
         {
-            CargarDatosCombobox();
+            await CargarDatosComboboxAsync();
             return new JsonResult(Tecnicos);
         }
 
-        public IActionResult OnGetObtenerVehiculos()
+        public async Task<IActionResult> OnGetObtenerVehiculos()
         {
-            CargarDatosCombobox();
+            await CargarDatosComboboxAsync();
             return new JsonResult(Vehiculos);
         }
 

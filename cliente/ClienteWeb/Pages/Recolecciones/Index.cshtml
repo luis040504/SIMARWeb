@@ -361,9 +361,10 @@
                             <td class="fw-light">@item.Id</td>
                             <td>
                                 <strong>@item.Cliente</strong>
+                                <br><small class="text-muted">#@item.ManifestNumber</small>
                                 @if (!string.IsNullOrEmpty(item.TipoResiduo))
                                 {
-                                    <br><small class="text-muted">@item.TipoResiduo</small>
+                                    <br><small class="text-success">@item.TipoResiduo</small>
                                 }
                             </td>
                             <td>
@@ -432,6 +433,35 @@
                                             </button>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header">Cambiar Estado</h6></li>
+                                        <li>
+                                            <form method="post" asp-page-handler="UpdateStatus">
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="nuevoEstado" value="En ruta" />
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-truck me-2 text-warning"></i>En ruta
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form method="post" asp-page-handler="UpdateStatus">
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="nuevoEstado" value="Completada" />
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-check-circle me-2 text-success"></i>Completada
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form method="post" asp-page-handler="UpdateStatus">
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="nuevoEstado" value="Cancelada" />
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-x-circle me-2"></i>Cancelada
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <button class="dropdown-item text-danger btn-delete"
                                                     data-id="@item.Id"
@@ -473,6 +503,24 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-body modal-scrollable">
                     <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-simar-primary">
+                                <i class="bi bi-file-earmark-check me-1"></i> 1. Seleccionar Contrato Activo
+                            </label>
+                            <select id="selectContract" name="contractId" class="form-select border-primary shadow-sm" required>
+                                <option value="">-- Seleccionar Contrato --</option>
+                                @foreach (var c in Model.Contratos)
+                                {
+                                    <option value="@c.Id">
+                                        @c.Folio - @c.ClientName
+                                    </option>
+                                }
+                            </select>
+                            <div class="form-text">La recolección se vinculará a este contrato y generará un manifiesto automático.</div>
+                        </div>
+
+                        <input type="hidden" id="selectedManifestId" name="manifestId" value="" />
+
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-person me-1"></i> Cliente *</label>
                             <select name="Cliente" class="form-select" id="createCliente" required>
@@ -496,7 +544,7 @@
                         
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-truck-front me-1"></i> Vehículo *</label>
-                            <select name="Vehiculo" class="form-select" id="createVehiculo" required>
+                            <select name="vehiculo" class="form-select" id="createVehiculo" required>
                                 <option value="">Seleccionar vehículo</option>
                                 @foreach (var vehiculo in Model.Vehiculos)
                                 {
@@ -507,7 +555,7 @@
                         
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-person-badge me-1"></i> Técnico *</label>
-                            <select name="Tecnico" class="form-select" id="createTecnico" required>
+                            <select name="tecnico" class="form-select" id="createTecnico" required>
                                 <option value="">Seleccionar técnico</option>
                                 @foreach (var tecnico in Model.Tecnicos)
                                 {
@@ -854,6 +902,60 @@
             }
         });
 
+        // ========== MANEJO DE PRE-LLENADO DESDE CONTRATO ==========
+        document.getElementById('selectContract')?.addEventListener('change', async function() {
+            const id = this.value;
+            if (!id) return;
+            
+            try {
+                const response = await fetch(`./Index?handler=ObtenerContrato&id=${id}`);
+                const detail = await response.json();
+                
+                if (detail) {
+                    // Pre-llenar cliente
+                    if (detail.clientName) {
+                        const selectCliente = document.getElementById('createCliente');
+                        for (let i = 0; i < selectCliente.options.length; i++) {
+                            if (selectCliente.options[i].value === detail.clientName) {
+                                selectCliente.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Pre-llenar dirección (priorizar dirección de servicio si hay servicios)
+                    let address = detail.clientAddress;
+                    if (detail.services && detail.services.length > 0 && detail.services[0].serviceAddress) {
+                        address = detail.services[0].serviceAddress;
+                    }
+                    if (address) {
+                        document.getElementById('createDireccion').value = address;
+                    }
+
+                    // Establecer fecha actual por defecto
+                    const now = new Date();
+                    const tzoffset = now.getTimezoneOffset() * 60000;
+                    const localISOTime = (new Date(now - tzoffset)).toISOString().slice(0, 16);
+                    document.getElementById('createFecha').value = localISOTime;
+                    
+                    // Pre-llenar tipo residuo si hay servicios en el contrato
+                    if (detail.services && detail.services.length > 0) {
+                        const firstWaste = detail.services[0].wasteType;
+                        const selectResiduo = document.getElementById('createTipoResiduo');
+                        for (let i = 0; i < selectResiduo.options.length; i++) {
+                            if (firstWaste.toLowerCase().includes(selectResiduo.options[i].value.toLowerCase()) || 
+                                selectResiduo.options[i].value.toLowerCase().includes(firstWaste.toLowerCase())) {
+                                selectResiduo.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching contract details:', error);
+            }
+        });
+
         // ========== MANEJO DE DELETE ==========
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -899,13 +1001,20 @@
             });
         });
 
-        // Prevenir envío de formularios (simulación)
+        // Permitir envío de formularios reales
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function (e) {
+                const action = this.getAttribute('action') || '';
+                const hasHandler = action.includes('handler=');
+                
+                // No prevenir el envío si es el formCreate o si tiene un handler definido
+                if (this.id === 'formCreate' || hasHandler) {
+                    // El formulario se enviará normalmente
+                    return;
+                }
+                
                 e.preventDefault();
-                alert('Funcionalidad simulada - Los datos no se guardarán realmente');
-                const modal = this.closest('.modal');
-                if (modal) bootstrap.Modal.getInstance(modal).hide();
+                alert('Funcionalidad no implementada para este formulario.');
             });
         });
     </script>

@@ -9,6 +9,24 @@ public class EmpleadosApiService
 
     public EmpleadosApiService(HttpClient http) => _http = http;
 
+    public async Task<List<EmpleadoSimpleDto>> GetAllAsync()
+    {
+        try
+        {
+            var list = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees");
+            return list?.Select(e => new EmpleadoSimpleDto
+            {
+                Id = e.UserId.GetHashCode(), // Hack if ID is needed as int
+                Nombre = e.FullName,
+                Puesto = e.ProfessionalId
+            }).ToList() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
     public async Task<List<ChoferDto>> GetChoferesAsync()
     {
         try
@@ -62,6 +80,13 @@ public class EmpleadosApiService
         [JsonPropertyName("licenseNumber")] public string LicenseNumber { get; set; } = "";
         [JsonPropertyName("licenseType")]   public string LicenseType   { get; set; } = "";
     }
+}
+
+public class EmpleadoSimpleDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+    public string Puesto { get; set; } = "";
 }
 
 public class ChoferDto

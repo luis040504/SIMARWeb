@@ -1,0 +1,104 @@
+# DATOS DE PRUEBA PARA MANIFIESTOS SIMAR
+
+## MANIFIESTO DE RESIDUOS ESPECIALES (MRE)
+
+### GENERADOR
+- No. Registro SEDEMA: SEDEMA/DRME-CH09987205XB-17/182
+- Razón Social: CEMENTOS MOCTEZUMA S.A. DE C.V.
+- Domicilio: Camino vecinal, predio Los Gallineros, Cerro Colorado
+- C.P.: 91645
+- Municipio: Apazapan
+- Teléfono: 2288323510
+- Email: gerencia@moctezuma.com.mx
+- Responsable: Juan Pérez López
+
+### RESIDUOS (EJEMPLO)
+- Clave: RI-001
+- Nombre: Otros residuos inorgánicos (RSU)
+- Envase: OF
+- Capacidad: N/A
+- Peso: 680
+- Unidad: kg
+
+### TRANSPORTISTA
+- No. Autorización SEDEMA: SEDEMA/TRME-SMA0810239G-2025/073
+- Razón Social: Sistemas en Manejo y Administración de Residuos S.A. de C.V.
+- Domicilio: Av. Pípila No. 126, Col. José Cardel
+- C.P.: 91030
+- Municipio: Xalapa
+- Teléfono: 2288343149
+- Vehículo: Camión caja seca 3.5 ton.
+- Placas: YJ-9638-A
+- Chofer: Fernando López Sánchez
+- Licencia: UB0030UNC
+- Ruta: De Apazapan, Ver. a Xalapa, Ver.
+
+### DESTINATARIO
+- No. Autorización SEDEMA: SEDEMA/AATRME-SMA0810239L9-2024/36
+- Razón Social: Sistemas en Manejo y Administración de Residuos S.A. de C.V.
+- Domicilio: Félix Licona #209, Col. Rafael Lucio
+- C.P.: 91110
+- Municipio: Xalapa
+- Teléfono: 2288190044
+- Tipo Disposición: Almacén temporal
+- Responsable: Gustavo Cruz Torres
+
+----------------------------------------------------------
+
+## MANIFIESTO DE RESIDUOS PELIGROSOS (MRP)
+
+### GENERADOR
+- Núm. Registro Ambiental: CMORE3001711
+- Razón Social: CEMENTOS MOCTEZUMA S.A. DE C.V.
+- C.P.: 91645
+- Calle: Dom. conocido predio de los gallineros
+- Núm. Ext: S/N
+- Núm. Int: S/N
+- Estado: Veracruz
+- Colonia: Camino vecinal Cerro Colorado
+- Municipio: Apazapan
+- Teléfono: 2288343149
+- Email: operaciones@moctezuma.com.mx
+- Responsable: Santiago Montalvo R.
+
+### RESIDUOS (EJEMPLO)
+- Nombre: Objetos punzocortantes (B)
+- Clasificación: Biológico (B)
+- Envase Tipo: C/P
+- Capacidad: 1
+- Cantidad: 250 kg
+- Etiqueta: Sí
+
+### TRANSPORTISTA
+- Razón Social: Sistemas en Manejo y Administración de Residuos S.A. de C.V.
+- Núm. Autorización SEMARNAT: 30-087-PS-I-07D-17
+- Núm. Permiso S.C.T.: 3063SMA10052017230301000
+- C.P.: 91030
+- Calle: Avenida Pípila
+- Núm. Ext: 126
+- Núm. Int: S/N
+- Colonia: José Cardel
+- Municipio: Xalapa
+- Estado: Veracruz
+- Teléfono: 2288343149
+- Email: operaciones@gruposimar.com
+- Vehículo: Camión caja seca 4.5 ton.
+- Placas: 394E4N
+- Chofer: Fernando López Sánchez
+- Licencia: UB0030UNC
+- Ruta: Apazapan, Ver. a Xalapa, Ver.
+- Responsable: Jesús López Solís
+
+### DESTINATARIO
+- Razón Social: EXITUM TRATAMIENTOS ECOLÓGICOS S.A. DE C.V.
+- Núm. Autorización SEMARNAT: 21-V-23-20
+- C.P.: 75235
+- Calle: Carr. Gpe. Victoria Valsequillo KM15
+- Núm. Ext: 147
+- Núm. Int: Z-3
+- Colonia: Localidad San Baltasar Torija
+- Municipio: Cuautinchan
+- Estado: Puebla
+- Teléfono: (222)239 2323
+- Email: captura@exitium.mx
+- Persona Recibe: Juan Pérez - Supervisor de recepción

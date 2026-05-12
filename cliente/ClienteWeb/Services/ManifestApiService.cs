@@ -8,6 +8,21 @@ using Microsoft.AspNetCore.Http;
 
 namespace ClienteWeb.Services;
 
+public class ManifestSummary
+{
+    public string Id { get; set; } = string.Empty;
+    public string ManifestNumber { get; set; } = string.Empty;
+    public string Type { get; set; } = "especial";
+    public string Status { get; set; } = "borrador";
+    public int? ContratoId { get; set; }
+    public string SocialReason { get; set; } = string.Empty;
+    public string Municipality { get; set; } = string.Empty;
+    public DateOnly ManifestDate { get; set; }
+    public string ResidueSummary { get; set; } = string.Empty;
+    public string TransporterName { get; set; } = string.Empty;
+    public string? TransporterResponsibleName { get; set; }
+}
+
 public class ManifestApiService
 {
     private readonly HttpClient _http;
@@ -102,7 +117,7 @@ public class ManifestApiService
 
         var response = await _http.PostAsJsonAsync("manifiestos", dto);
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<ManifestDetailApiDto>>();
-        return result?.Data?.NumeroManifiesto ?? "?";
+        return result?.Data?.Id.ToString() ?? "?";
     }
 
     // ─── CREATE PELIGROSO ─────────────────────────────────────────────────────
@@ -180,7 +195,7 @@ public class ManifestApiService
 
         var response = await _http.PostAsJsonAsync("manifiestos", dto);
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<ManifestDetailApiDto>>();
-        return result?.Data?.NumeroManifiesto ?? "?";
+        return result?.Data?.Id.ToString() ?? "?";
     }
 
     // ─── UPDATE (PUT) ─────────────────────────────────────────────────────────
@@ -290,6 +305,57 @@ public class ManifestApiService
         }
     }
 
+    public async Task UpdateTransportAsync(string id, string vehiculo, string tecnico, string? estado = null, string? observaciones = null, decimal? peso = null)
+    {
+        // Primero obtenemos el manifiesto actual para no sobreescribir otros datos
+        var resp = await _http.GetFromJsonAsync<ApiResponse<ManifestDetailApiDto>>($"manifiestos/{id}");
+        if (resp?.Data == null) return;
+
+        var dto = resp.Data;
+
+        // Cargar residuos si están en el campo genérico
+        if (dto.Residuos.HasValue)
+        {
+            if (dto.Tipo == "especial")
+                dto.ResiduosEspeciales = dto.Residuos.Value.Deserialize<List<EspecialResidueApiDto>>();
+            else
+                dto.ResiduosPeligrosos = dto.Residuos.Value.Deserialize<List<PeligrosoResidueApiDto>>();
+        }
+        
+        // El formato de vehiculo es "Nombre - Placas"
+        if (vehiculo.Contains(" - "))
+        {
+            var parts = vehiculo.Split(" - ");
+            dto.RazonSocialTransportista = parts[0]; 
+            dto.Placa = parts[1];
+        }
+        else
+        {
+            dto.Placa = vehiculo;
+        }
+
+        dto.NombreResponsableTransportista = tecnico;
+        if (!string.IsNullOrEmpty(estado))
+        {
+            dto.Estado = estado;
+        }
+
+        if (!string.IsNullOrEmpty(observaciones))
+        {
+            dto.ObservacionesGenerador = observaciones;
+        }
+
+        if (peso.HasValue)
+        {
+            if (dto.ResiduosEspeciales != null && dto.ResiduosEspeciales.Count > 0)
+                dto.ResiduosEspeciales[0].Peso = peso.Value;
+            else if (dto.ResiduosPeligrosos != null && dto.ResiduosPeligrosos.Count > 0)
+                dto.ResiduosPeligrosos[0].CantidadKg = peso.Value;
+        }
+
+        await _http.PutAsJsonAsync($"manifiestos/{id}", dto);
+    }
+
     // ─── PATCH ESTADO ─────────────────────────────────────────────────────────
 
     public async Task UpdateStatusAsync(string id, string estado, DateOnly? fechaFirma = null)
@@ -327,11 +393,13 @@ public class ManifestApiService
             ManifestNumber  = dto.NumeroManifiesto,
             Type            = dto.Tipo,
             Status          = dto.Estado,
+            ContratoId      = dto.ContratoId,
             SocialReason    = dto.RazonSocial ?? "",
             Municipality    = dto.Municipio ?? "",
             ManifestDate    = date,
             ResidueSummary  = dto.ResumenResiduos ?? "",
-            TransporterName = dto.RazonSocialTransportista ?? ""
+            TransporterName = dto.RazonSocialTransportista ?? "",
+            TransporterResponsibleName = dto.NombreResponsableTransportista
         };
     }
 
@@ -484,12 +552,14 @@ public class ManifestApiService
         [JsonPropertyName("numero_manifiesto")]        public string NumeroManifiesto { get; set; } = "";
         [JsonPropertyName("tipo")]                     public string Tipo { get; set; } = "";
         [JsonPropertyName("estado")]                   public string Estado { get; set; } = "";
+        [JsonPropertyName("contrato_id")]              public int? ContratoId { get; set; }
         [JsonPropertyName("razon_social")]             public string? RazonSocial { get; set; }
         [JsonPropertyName("municipio")]                public string? Municipio { get; set; }
         [JsonPropertyName("fecha_manifiesto")]         public string? FechaManifiesto { get; set; }
         [JsonPropertyName("fecha_firma_generador")]    public string? FechaFirmaGenerador { get; set; }
         [JsonPropertyName("resumen_residuos")]         public string? ResumenResiduos { get; set; }
         [JsonPropertyName("razon_social_transportista")] public string? RazonSocialTransportista { get; set; }
+        [JsonPropertyName("nombre_responsable_transportista")] public string? NombreResponsableTransportista { get; set; }
     }
 
     private class ManifestDetailApiDto
@@ -566,6 +636,10 @@ public class ManifestApiService
         [JsonPropertyName("observaciones_destinatario")]        public string? ObservacionesDestinatario { get; set; }
         // Array de residuos (especiales o peligrosos según tipo)
         [JsonPropertyName("residuos")] public JsonElement? Residuos { get; set; }
+
+        // Propiedades auxiliares para actualizaciones
+        [JsonPropertyName("residuos_especiales")] public List<EspecialResidueApiDto>? ResiduosEspeciales { get; set; }
+        [JsonPropertyName("residuos_peligrosos")] public List<PeligrosoResidueApiDto>? ResiduosPeligrosos { get; set; }
     }
 
     private class EspecialResidueApiDto

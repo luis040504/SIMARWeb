@@ -46,7 +46,7 @@ public class IndexModel : PageModel
 
         try
         {
-            Results = await _api.GetAllAsync(
+            var all = await _api.GetAllAsync(
                 FilterManifestNumber,
                 FilterSocialReason,
                 FilterType,
@@ -55,6 +55,16 @@ public class IndexModel : PageModel
                 FilterDateTo,
                 FilterClienteId,
                 FilterContratoId);
+
+            // FILTRO SOLICITADO: Mostrar los vinculados a contratos por defecto
+            if (string.IsNullOrEmpty(FilterStatus) && string.IsNullOrEmpty(FilterManifestNumber))
+            {
+                Results = all.Where(m => m.ContratoId.HasValue && m.Status != "cancelado").ToList();
+            }
+            else
+            {
+                Results = all;
+            }
         }
         catch (BillingApiException ex)
         {
@@ -67,17 +77,4 @@ public class IndexModel : PageModel
 
         return Page();
     }
-}
-
-public class ManifestSummary
-{
-    public string Id { get; set; } = string.Empty;
-    public string ManifestNumber { get; set; } = string.Empty;
-    public string Type { get; set; } = "especial";
-    public string Status { get; set; } = "borrador";
-    public string SocialReason { get; set; } = string.Empty;
-    public string Municipality { get; set; } = string.Empty;
-    public DateOnly ManifestDate { get; set; }
-    public string ResidueSummary { get; set; } = string.Empty;
-    public string TransporterName { get; set; } = string.Empty;
 }

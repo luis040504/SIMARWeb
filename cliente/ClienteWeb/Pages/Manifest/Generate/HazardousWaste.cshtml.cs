@@ -151,8 +151,8 @@ public class HazardousWasteModel : PageModel
 
         try
         {
-            var numeroManifiesto = await _api.CreateHazardousAsync(this);
-            TempData["SuccessMessage"] = $"Manifiesto {numeroManifiesto} guardado como borrador. Puede editarlo y enviarlo a tránsito desde el listado.";
+            var id = await _api.CreateHazardousAsync(this);
+            TempData["SuccessMessage"] = "Manifiesto guardado exitosamente como borrador.";
             return RedirectToPage("/Manifest/Consult/Index");
         }
         catch (BillingApiException ex)

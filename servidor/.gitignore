@@ -73,3 +73,7 @@ venv.bak/
 # Type checking / Linting
 .mypy_cache/
 .ruff_cache/
+.claude/
+*.txt
+*.ps1
+*.seed_*.ps1
