@@ -204,4 +204,25 @@ app.MapGet("/api/quotations/{id:int}", async (int id, ContractsDbContext db) =>
     return Results.Ok(quote);
 }).WithName("GetQuotationById");
 
+app.MapPost("/api/contracts/{id:int}/upload-pdf", async (int id, IFormFile file, ContractsDbContext db) =>
+{
+    try
+    {
+        if (file == null || file.Length == 0) return Results.BadRequest("Archivo no válido.");
+        var uploads = Path.Combine(app.Environment.ContentRootPath, "uploads", "signed");
+        if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+        var fileName = $"Signed_{id}_{Guid.NewGuid().ToString()[..8]}.pdf";
+        var filePath = Path.Combine(uploads, fileName);
+        using (var stream = new FileStream(filePath, FileMode.Create)) { await file.CopyToAsync(stream); }
+        var contract = await db.Contracts.FindAsync(id);
+        if (contract != null) { 
+            contract.SignedContractPath = filePath; 
+            contract.Status = "Activo";
+            await db.SaveChangesAsync(); 
+        }
+        return Results.Ok(new { path = filePath });
+    }
+    catch (Exception ex) { return Results.Problem(ex.Message); }
+}).DisableAntiforgery();
+
 app.Run();

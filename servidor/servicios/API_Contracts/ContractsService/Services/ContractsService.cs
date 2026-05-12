@@ -74,7 +74,8 @@ public class ContractService : IContractService
             ClientName = c.ClientName,
             Status = c.Status,
             CreatedAt = c.CreatedAt,
-            ExpirationDate = c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue)
+            SignedContractPath = c.SignedContractPath,
+            ExpirationDate = c.EndDate ?? (c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue))
         }).ToListAsync();
     }
 
@@ -95,8 +96,9 @@ public class ContractService : IContractService
 
         return new ContractListDto
         {
-            Id = quote.Id, Folio = quote.Folio, ClientId = 0, ClientName = quote.ClientName, Status = quote.Status, CreatedAt = quote.CreatedAt,
-            ExpirationDate = quote.CreatedAt.AddDays(quote.ValidityDays)
+            Id = contract.Id, Folio = contract.Folio, ClientId = contract.ClientId, Status = contract.Status, CreatedAt = contract.CreatedAt,
+            SignedContractPath = contract.SignedContractPath,
+            ExpirationDate = contract.EndDate ?? (contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue))
         };
     }
 
@@ -195,6 +197,12 @@ public class ContractService : IContractService
         existing.ClientDeclaraciones = request.ClientDeclaraciones;
         existing.ContractDuration = request.ContractDuration;
         existing.FirstServiceDate = request.FirstServiceDate;
+        existing.EndDate = request.EndDate;
+        existing.SignedContractPath = request.SignedContractPath;
+
+        if (!string.IsNullOrEmpty(existing.SignedContractPath)) {
+            existing.Status = "Activo";
+        }
 
         // Actualizar Servicios
         existing.Services.RemoveAll(e => !request.Services.Any(r => r.Id == e.Id && e.Id != 0));
@@ -233,12 +241,18 @@ public class ContractService : IContractService
             
         if (contract == null) throw new KeyNotFoundException("Contract not found");
 
+        if (!string.IsNullOrEmpty(contract.SignedContractPath) && File.Exists(contract.SignedContractPath))
+        {
+            byte[] fileBytes = await File.ReadAllBytesAsync(contract.SignedContractPath);
+            return (fileBytes, "application/pdf", $"Contrato_Firmado_{contract.Folio}.pdf");
+        }
+
         byte[] pdfBuffer = ContractPdfGenerator.Generate(contract);
         return (pdfBuffer, "application/pdf", $"{contract.Folio}.pdf");
     }
 }
 
-public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } }public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
+public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } public string? SignedContractPath { get; set; } }public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
 
 public class ContractFullDetailDto
 {
@@ -256,6 +270,8 @@ public class ContractFullDetailDto
     public string ClientDeclaraciones { get; set; } = "";
     public string ContractDuration { get; set; } = "";
     public DateTime? FirstServiceDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? SignedContractPath { get; set; }
     public List<ContractServiceItem> Services { get; set; } = new();
     public List<ContractPaymentItem> Payments { get; set; } = new();
     public List<ContractExtra> Extras { get; set; } = new();
