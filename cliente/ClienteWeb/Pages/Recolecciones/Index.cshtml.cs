@@ -68,7 +68,8 @@ namespace ClienteWeb.Pages.Recolecciones
 
             // Cargar contratos para combobox
             Contratos = await _recoleccionesService.GetContratosActivosAsync();
-            Choferes = await _empleadosService.GetChoferesAsync();
+            var choferesResult = await _empleadosService.GetChoferesAsync();
+            Choferes = choferesResult.Select(c => new EmpleadoItemDto { UserId = c.UserId, FullName = c.FullName }).ToList();
             Tecnicos = await _empleadosService.GetTecnicosAsync();
 
             // Cargar recolecciones con filtros

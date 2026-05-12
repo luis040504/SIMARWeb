@@ -80,6 +80,23 @@ public class EmpleadosApiService
         [JsonPropertyName("licenseNumber")] public string LicenseNumber { get; set; } = "";
         [JsonPropertyName("licenseType")]   public string LicenseType   { get; set; } = "";
     }
+
+    public async Task<List<EmpleadoItemDto>> GetTecnicosAsync()
+    {
+        try
+        {
+            var empleados = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees?role=tecnico");
+            return empleados?.Select(e => new EmpleadoItemDto
+            {
+                UserId = e.UserId,
+                FullName = e.FullName
+            }).ToList() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
 }
 
 public class EmpleadoSimpleDto
@@ -89,10 +106,14 @@ public class EmpleadoSimpleDto
     public string Puesto { get; set; } = "";
 }
 
-public class ChoferDto
+public class EmpleadoItemDto
 {
-    public Guid   UserId        { get; set; }
-    public string FullName      { get; set; } = "";
+    public Guid   UserId   { get; set; }
+    public string FullName { get; set; } = "";
+}
+
+public class ChoferDto : EmpleadoItemDto
+{
     public string LicenseNumber { get; set; } = "";
     public string LicenseType   { get; set; } = "";
 }

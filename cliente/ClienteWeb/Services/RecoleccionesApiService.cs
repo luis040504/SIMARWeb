@@ -223,6 +223,7 @@ public class RecoleccionDto
     [JsonPropertyName("cliente")] public string Cliente { get; set; } = "";
     [JsonPropertyName("fecha")] public DateTime Fecha { get; set; }
     [JsonPropertyName("direccion")] public string Direccion { get; set; } = "";
+    [JsonPropertyName("manifestNumber")] public string? ManifestNumber { get; set; }
     [JsonPropertyName("vehiculos")] public List<VehiculoAsignadoDto> Vehiculos { get; set; } = new();
     [JsonPropertyName("estado")] public string Estado { get; set; } = "Programada";
     [JsonPropertyName("tipoResiduo")] public string? TipoResiduo { get; set; }
