@@ -41,6 +41,7 @@ public class ClienteDto
     [JsonPropertyName("name")]             public string Name { get; set; } = "";
     [JsonPropertyName("phone")]            public string? Phone { get; set; }
     [JsonPropertyName("address")]          public string? Address { get; set; }
+    [JsonPropertyName("contactEmail")]     public string? ContactEmail { get; set; }
     [JsonPropertyName("rfc")]              public string? Rfc { get; set; }
     [JsonPropertyName("semarnatNum")]      public string? SemarnatNum { get; set; }
     [JsonPropertyName("status")]           public string Status { get; set; } = "";

@@ -60,6 +60,9 @@ namespace ContractsService.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("FirstServiceDate")
                         .HasColumnType("datetime2");
 
@@ -69,6 +72,9 @@ namespace ContractsService.Migrations
 
                     b.Property<string>("Representative")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SignedContractPath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")

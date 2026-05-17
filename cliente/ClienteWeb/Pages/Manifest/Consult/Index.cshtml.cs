@@ -39,11 +39,14 @@ public class IndexModel : PageModel
 
     public string? ApiError { get; private set; }
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         try
         {
-            Results = await _api.GetAllAsync(
+            var all = await _api.GetAllAsync(
                 FilterManifestNumber,
                 FilterSocialReason,
                 FilterType,
@@ -52,6 +55,16 @@ public class IndexModel : PageModel
                 FilterDateTo,
                 FilterClienteId,
                 FilterContratoId);
+
+            // FILTRO SOLICITADO: Mostrar los vinculados a contratos por defecto
+            if (string.IsNullOrEmpty(FilterStatus) && string.IsNullOrEmpty(FilterManifestNumber))
+            {
+                Results = all.Where(m => m.ContratoId.HasValue && m.Status != "cancelado").ToList();
+            }
+            else
+            {
+                Results = all;
+            }
         }
         catch (BillingApiException ex)
         {
@@ -61,18 +74,7 @@ public class IndexModel : PageModel
         {
             ApiError = "No se pudo conectar con el servidor. Verifique que el servicio esté en línea.";
         }
-    }
-}
 
-public class ManifestSummary
-{
-    public string Id { get; set; } = string.Empty;
-    public string ManifestNumber { get; set; } = string.Empty;
-    public string Type { get; set; } = "especial";
-    public string Status { get; set; } = "borrador";
-    public string SocialReason { get; set; } = string.Empty;
-    public string Municipality { get; set; } = string.Empty;
-    public DateOnly ManifestDate { get; set; }
-    public string ResidueSummary { get; set; } = string.Empty;
-    public string TransporterName { get; set; } = string.Empty;
+        return Page();
+    }
 }

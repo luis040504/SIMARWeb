@@ -11,7 +11,14 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Necesario cuando el app está detrás de NGINX (reenvía X-Forwarded-For)
+app.set('trust proxy', 1);
+
 // Middlewares de seguridad
+app.use((req, res, next) => {
+    console.log(`[MANIFEST_API] ${req.method} ${req.url}`);
+    next();
+});
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

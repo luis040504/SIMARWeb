@@ -1,6 +1,7 @@
 using ContractsService.Data;
 using ContractsService.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace ContractsService.Services;
 
@@ -73,19 +74,31 @@ public class ContractService : IContractService
             ClientName = c.ClientName,
             Status = c.Status,
             CreatedAt = c.CreatedAt,
-            ExpirationDate = c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue)
+            SignedContractPath = c.SignedContractPath,
+            ExpirationDate = c.EndDate ?? (c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue))
         }).ToListAsync();
     }
 
     public async Task<ContractListDto> GetContractByIdAsync(int id)
     {
         var contract = await _context.Contracts.Include(c => c.Payments).FirstOrDefaultAsync(c => c.Id == id);
-        if (contract == null) throw new KeyNotFoundException("Contrato no encontrado.");
+        if (contract != null)
+        {
+            return new ContractListDto
+            {
+                Id = contract.Id, Folio = contract.Folio, ClientId = contract.ClientId, Status = contract.Status, CreatedAt = contract.CreatedAt,
+                ExpirationDate = contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue)
+            };
+        }
+
+        var quote = await _context.Quotations.FindAsync(id);
+        if (quote == null) throw new KeyNotFoundException("Contrato o Cotización no encontrada.");
 
         return new ContractListDto
         {
             Id = contract.Id, Folio = contract.Folio, ClientId = contract.ClientId, Status = contract.Status, CreatedAt = contract.CreatedAt,
-            ExpirationDate = contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue)
+            SignedContractPath = contract.SignedContractPath,
+            ExpirationDate = contract.EndDate ?? (contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue))
         };
     }
 
@@ -96,27 +109,73 @@ public class ContractService : IContractService
             .Include(c => c.Payments)
             .Include(c => c.Extras)
             .FirstOrDefaultAsync(c => c.Id == id);
-        if (contract == null) throw new KeyNotFoundException("Contrato no encontrado.");
+
+        if (contract != null)
+        {
+            return new ContractFullDetailDto
+            {
+                Id = contract.Id,
+                Folio = contract.Folio,
+                ClientId = contract.ClientId,
+                ClientName = contract.ClientName,
+                ClientRfc = contract.ClientRfc,
+                Representative = contract.Representative,
+                ClientAddress = contract.ClientAddress,
+                Status = contract.Status,
+                CreatedAt = contract.CreatedAt,
+                TotalBasePrice = contract.TotalBasePrice,
+                ClientObjetoSocial = contract.ClientObjetoSocial,
+                ClientDeclaraciones = contract.ClientDeclaraciones,
+                ContractDuration = contract.ContractDuration,
+                FirstServiceDate = contract.FirstServiceDate,
+                Services = contract.Services,
+                Payments = contract.Payments,
+                Extras = contract.Extras
+            };
+        }
+
+        var quote = await _context.Quotations.FindAsync(id);
+        if (quote == null) throw new KeyNotFoundException("Contrato o Cotización no encontrada.");
+
+        // Intentar extraer servicios del JSON raw
+        var services = new List<ContractServiceItem>();
+        try {
+            var rawServices = JsonSerializer.Deserialize<List<JsonElement>>(quote.ServicesRawJson);
+            if (rawServices != null) {
+                foreach (var s in rawServices) {
+                    string address = "";
+                    if (s.TryGetProperty("location", out var location) && location.ValueKind == JsonValueKind.Object) {
+                        var street = location.TryGetProperty("street", out var st) ? st.GetString() : "";
+                        var muni = location.TryGetProperty("municipality", out var mu) ? mu.GetString() : "";
+                        address = $"{street}, {muni}".Trim(',', ' ');
+                    }
+
+                    if (s.TryGetProperty("wastes", out var wastes) && wastes.ValueKind == JsonValueKind.Array) {
+                        foreach (var w in wastes.EnumerateArray()) {
+                            services.Add(new ContractServiceItem {
+                                ContractId = quote.Id,
+                                WasteType = w.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
+                                WasteUnit = w.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "",
+                                ServiceAddress = address
+                            });
+                        }
+                    }
+                }
+            }
+        } catch { /* Ignorar errores de parseo y devolver lista vacía */ }
 
         return new ContractFullDetailDto
         {
-            Id = contract.Id,
-            Folio = contract.Folio,
-            ClientId = contract.ClientId,
-            ClientName = contract.ClientName,
-            ClientRfc = contract.ClientRfc,
-            Representative = contract.Representative,
-            ClientAddress = contract.ClientAddress,
-            Status = contract.Status,
-            CreatedAt = contract.CreatedAt,
-            TotalBasePrice = contract.TotalBasePrice,
-            ClientObjetoSocial = contract.ClientObjetoSocial,
-            ClientDeclaraciones = contract.ClientDeclaraciones,
-            ContractDuration = contract.ContractDuration,
-            FirstServiceDate = contract.FirstServiceDate,
-            Services = contract.Services,
-            Payments = contract.Payments,
-            Extras = contract.Extras
+            Id = quote.Id,
+            Folio = quote.Folio,
+            ClientId = 0, // Las cotizaciones pueden no tener ClientId directo aún
+            ClientName = quote.ClientName,
+            ClientRfc = quote.ClientRfc,
+            Status = quote.Status,
+            CreatedAt = quote.CreatedAt,
+            TotalBasePrice = quote.Total,
+            ClientAddress = "Ver detalle en servicios",
+            Services = services
         };
     }
 
@@ -138,6 +197,12 @@ public class ContractService : IContractService
         existing.ClientDeclaraciones = request.ClientDeclaraciones;
         existing.ContractDuration = request.ContractDuration;
         existing.FirstServiceDate = request.FirstServiceDate;
+        existing.EndDate = request.EndDate;
+        existing.SignedContractPath = request.SignedContractPath;
+
+        if (!string.IsNullOrEmpty(existing.SignedContractPath)) {
+            existing.Status = "Activo";
+        }
 
         // Actualizar Servicios
         existing.Services.RemoveAll(e => !request.Services.Any(r => r.Id == e.Id && e.Id != 0));
@@ -176,12 +241,18 @@ public class ContractService : IContractService
             
         if (contract == null) throw new KeyNotFoundException("Contract not found");
 
+        if (!string.IsNullOrEmpty(contract.SignedContractPath) && File.Exists(contract.SignedContractPath))
+        {
+            byte[] fileBytes = await File.ReadAllBytesAsync(contract.SignedContractPath);
+            return (fileBytes, "application/pdf", $"Contrato_Firmado_{contract.Folio}.pdf");
+        }
+
         byte[] pdfBuffer = ContractPdfGenerator.Generate(contract);
         return (pdfBuffer, "application/pdf", $"{contract.Folio}.pdf");
     }
 }
 
-public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } }public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
+public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } public string? SignedContractPath { get; set; } }public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
 
 public class ContractFullDetailDto
 {
@@ -199,6 +270,8 @@ public class ContractFullDetailDto
     public string ClientDeclaraciones { get; set; } = "";
     public string ContractDuration { get; set; } = "";
     public DateTime? FirstServiceDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? SignedContractPath { get; set; }
     public List<ContractServiceItem> Services { get; set; } = new();
     public List<ContractPaymentItem> Payments { get; set; } = new();
     public List<ContractExtra> Extras { get; set; } = new();

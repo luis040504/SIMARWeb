@@ -1,11 +1,10 @@
 @page
 @model ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel
 @{
-    ViewData["Title"] = "Consulta de Servicios";
+    ViewData["Title"] = "Seguimiento de Contratos y Servicios";
 }
 
 <style>
-    /* Unificación de estilos con el layout */
     :root {
         --simar-green: #5aad31;
         --simar-dark: #4a4a4a;
@@ -17,14 +16,12 @@
         font-family: 'Inter', sans-serif;
     }
     
-    /* Contenedor principal */
     .container-fluid-custom {
         width: 100%;
         padding-right: 1rem;
         padding-left: 1rem;
     }
     
-    /* Header de página */
     h1 {
         font-size: 1.8rem;
         font-weight: 600;
@@ -39,131 +36,6 @@
         margin-right: 0.5rem;
     }
     
-    /* Botones de vista mejorados */
-    .botones-vista {
-        margin-bottom: 1.5rem;
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-    }
-    
-    .btn-vista {
-        background: white;
-        border: 1px solid var(--simar-border);
-        color: var(--simar-dark);
-        border-radius: 10px;
-        padding: 0.6rem 1.5rem;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        text-decoration: none;
-    }
-    
-    .btn-vista:hover {
-        background: var(--simar-gray-light);
-        border-color: var(--simar-green);
-        transform: translateY(-2px);
-    }
-    
-    .btn-vista-activo {
-        background: var(--simar-green);
-        color: white;
-        border: 1px solid var(--simar-green);
-    }
-    
-    .btn-vista-activo:hover {
-        background: #3d7a1f;
-        color: white;
-    }
-    
-    /* Alertas mejoradas */
-    .alert-success-simar {
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        background: rgba(90, 173, 49, 0.1);
-        border: 1px solid var(--simar-green);
-        color: var(--simar-dark);
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .alert-success-simar i {
-        color: var(--simar-green);
-        font-size: 1.25rem;
-    }
-    
-    .alert-error-simar {
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        background: rgba(220, 53, 69, 0.1);
-        border: 1px solid #dc3545;
-        color: #721c24;
-        margin-bottom: 1.5rem;
-    }
-    
-    /* Filtros mejorados */
-    .filtros-card {
-        background: white;
-        border-radius: 16px;
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid var(--simar-border);
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .filtros-card label {
-        font-weight: 500;
-        font-size: 0.85rem;
-        color: var(--simar-dark);
-        margin-right: 0.25rem;
-    }
-    
-    .filtros-card select,
-    .filtros-card input {
-        padding: 0.5rem 1rem;
-        border: 1px solid var(--simar-border);
-        border-radius: 10px;
-        font-size: 0.9rem;
-        background: white;
-        transition: all 0.2s;
-        min-width: 180px;
-    }
-    
-    .filtros-card select:focus,
-    .filtros-card input:focus {
-        border-color: var(--simar-green);
-        box-shadow: 0 0 0 2px rgba(90, 173, 49, 0.2);
-        outline: none;
-    }
-    
-    .btn-simar-outline {
-        background: transparent;
-        border: 1px solid var(--simar-green);
-        color: var(--simar-green);
-        border-radius: 10px;
-        padding: 0.5rem 1.25rem;
-        transition: all 0.2s;
-        font-weight: 500;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-    
-    .btn-simar-outline:hover {
-        background: var(--simar-green);
-        color: white;
-        transform: translateY(-2px);
-    }
-    
-    /* Tabla mejorada */
     .table-container {
         background: white;
         border-radius: 16px;
@@ -190,61 +62,28 @@
         font-size: 0.85rem;
         color: var(--simar-dark);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
     
     .table-simar td {
         padding: 1rem 1.25rem;
         border-bottom: 1px solid var(--simar-border);
         vertical-align: middle;
-        color: #666;
         font-size: 0.9rem;
-    }
-    
-    .table-simar tbody tr {
-        cursor: pointer;
-        transition: all 0.2s ease;
     }
     
     .table-simar tbody tr:hover {
         background: rgba(90, 173, 49, 0.05);
+        cursor: pointer;
     }
     
-    .table-simar tbody tr:last-child td {
-        border-bottom: none;
-    }
-    
-    /* Badges de estado */
-    .badge-simar {
-        display: inline-block;
-        padding: 0.3rem 0.75rem;
-        font-size: 0.7rem;
-        font-weight: 600;
+    .badge-status {
+        padding: 0.35rem 0.85rem;
         border-radius: 30px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-    
-    .badge-en-curso {
-        background: rgba(0, 102, 204, 0.1);
-        color: #0066cc;
-        border: 1px solid rgba(0, 102, 204, 0.3);
-    }
-    
-    .badge-concluido {
-        background: rgba(90, 173, 49, 0.1);
-        color: var(--simar-green);
-        border: 1px solid rgba(90, 173, 49, 0.3);
-    }
-    
-    /* Info adicional en tabla */
-    .info-adicional-simar {
         font-size: 0.75rem;
-        color: #999;
-        margin-top: 0.25rem;
+        font-weight: 600;
+        color: white;
     }
     
-    /* Modal mejorado */
     .modal-simar {
         display: none;
         position: fixed;
@@ -259,12 +98,11 @@
     
     .modal-content-simar {
         background: white;
-        margin: 40px auto;
+        margin: 2% auto;
         width: 90%;
-        max-width: 800px;
-        max-height: 85vh;
+        max-width: 900px;
+        max-height: 90vh;
         border-radius: 20px;
-        border: none;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         overflow: hidden;
         display: flex;
@@ -273,545 +111,180 @@
     
     .modal-header-simar {
         padding: 1.25rem 1.5rem;
-        background: white;
         border-bottom: 2px solid var(--simar-green);
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
     
-    .modal-header-simar h2 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--simar-dark);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .modal-header-simar h2 i {
-        color: var(--simar-green);
-    }
-    
-    .close-simar {
-        color: #999;
-        font-size: 1.5rem;
-        font-weight: 400;
-        cursor: pointer;
-        transition: color 0.2s;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-    }
-    
-    .close-simar:hover {
-        color: var(--simar-dark);
-        background: var(--simar-gray-light);
-    }
-    
     .modal-body-simar {
         padding: 1.5rem;
         overflow-y: auto;
-        flex: 1;
     }
     
-    .modal-body-simar::-webkit-scrollbar {
-        width: 4px;
+    .close-simar {
+        cursor: pointer;
+        font-size: 1.5rem;
     }
-    
-    .modal-body-simar::-webkit-scrollbar-track {
-        background: var(--simar-border);
-        border-radius: 4px;
-    }
-    
-    .modal-body-simar::-webkit-scrollbar-thumb {
-        background: var(--simar-green);
-        border-radius: 4px;
-    }
-    
-    /* Detalles en modal */
-    .detalles-card {
+
+    .historial-item {
+        border-left: 3px solid var(--simar-green);
         background: var(--simar-gray-light);
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid var(--simar-border);
-    }
-    
-    .detalle-item {
-        display: flex;
-        border-bottom: 1px solid var(--simar-border);
-    }
-    
-    .detalle-item:last-child {
-        border-bottom: none;
-    }
-    
-    .detalle-label {
-        width: 180px;
-        padding: 0.9rem 1.25rem;
-        background: white;
-        font-weight: 500;
-        font-size: 0.85rem;
-        color: var(--simar-dark);
-        border-right: 1px solid var(--simar-border);
-    }
-    
-    .detalle-value {
-        flex: 1;
-        padding: 0.9rem 1.25rem;
-        color: #666;
-        font-size: 0.9rem;
-        background: white;
-    }
-    
-    /* Sección de acciones */
-    .acciones-section {
-        margin-top: 1.5rem;
-        padding-top: 1.25rem;
-        border-top: 1px solid var(--simar-border);
-    }
-    
-    .acciones-section h3 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--simar-dark);
+        padding: 1rem;
         margin-bottom: 1rem;
-    }
-    
-    .botones-accion-simar {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-    
-    .btn-simar-primary {
-        background: var(--simar-green);
-        border: none;
-        color: white;
-        border-radius: 10px;
-        padding: 0.6rem 1.25rem;
-        font-weight: 500;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .btn-simar-primary:hover {
-        background: #3d7a1f;
-        transform: translateY(-2px);
-    }
-    
-    .btn-simar-secondary {
-        background: var(--simar-dark);
-        border: none;
-        color: white;
-        border-radius: 10px;
-        padding: 0.6rem 1.25rem;
-        font-weight: 500;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .btn-simar-secondary:hover {
-        background: #3a3a3a;
-        transform: translateY(-2px);
-    }
-    
-    /* Mensaje informativo */
-    .mensaje-info-simar {
-        margin-top: 1.5rem;
-        padding: 1rem 1.25rem;
-        background: var(--simar-gray-light);
-        border-radius: 12px;
-        border: 1px solid var(--simar-border);
-        color: var(--simar-dark);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .mensaje-info-simar i {
-        color: var(--simar-green);
-        font-size: 1.1rem;
-    }
-    
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .filtros-card {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .filtros-card select,
-        .filtros-card input {
-            width: 100%;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-        }
-        
-        .detalle-item {
-            flex-direction: column;
-        }
-        
-        .detalle-label {
-            width: 100%;
-            border-right: none;
-            border-bottom: 1px solid var(--simar-border);
-        }
+        border-radius: 0 10px 10px 0;
     }
 </style>
 
 <div class="container-fluid-custom">
-    <!-- Header de la página -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1>
-                <i class="bi bi-clipboard-check"></i>
-                Consulta de Servicios
+                <i class="bi bi-clipboard-pulse"></i>
+                Seguimiento de Contratos y Servicios
             </h1>
-            <p class="text-muted small mb-0">Gestión y seguimiento de servicios de recolección</p>
-        </div>
-        
-        <div class="botones-vista">
-            <a href="?rol=empresa" class="btn-vista @(ViewData["Rol"]?.ToString() == "empresa" ? "btn-vista-activo" : "")">
-                <i class="bi bi-building"></i> Vista Empresarial
-            </a>
-            <a href="?rol=cliente" class="btn-vista @(ViewData["Rol"]?.ToString() == "cliente" ? "btn-vista-activo" : "")">
-                <i class="bi bi-person"></i> Vista Cliente
-            </a>
+            <p class="text-muted">Consulte el estado actual de sus servicios por contrato</p>
         </div>
     </div>
-    
-    @if (ViewData["MensajeExito"] != null)
-    {
-        <div class="alert-success-simar">
-            <i class="bi bi-check-circle-fill"></i>
-            <span>@ViewData["MensajeExito"]</span>
-        </div>
-    }
 
-    @if (ViewData["MensajeError"] != null)
-    {
-        <div class="alert-error-simar">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <strong>Error:</strong> @ViewData["MensajeError"]
-            @if (ViewData["TipoError"] != null)
-            {
-                <div style="margin-top: 5px; font-size: 12px;">Código: @ViewData["TipoError"]</div>
-            }
-        </div>
-    }
-    
-    <!-- Filtros -->
-    <div class="filtros-card">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <i class="bi bi-funnel" style="color: var(--simar-green);"></i>
-            <label>Estado:</label>
-            <select id="filtroEstado">
-                <option value="todos">Todos los estados</option>
-                <option value="En curso">En curso</option>
-                <option value="Concluido">Concluido</option>
-            </select>
-        </div>
-        
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <i class="bi bi-search" style="color: var(--simar-green);"></i>
-            <label>Buscar:</label>
-            <input type="text" id="busqueda" placeholder="Cliente, dirección o contrato..." />
-        </div>
-        
-        <button class="btn-simar-outline" type="button" onclick="aplicarFiltros()">
-            <i class="bi bi-funnel"></i> Aplicar filtros
-        </button>
-        
-        <button class="btn-simar-outline" type="button" onclick="limpiarFiltros()" style="margin-left: auto;">
-            <i class="bi bi-x-circle"></i> Limpiar
-        </button>
-    </div>
-    
-    <!-- Tabla de servicios -->
     <div class="table-container">
-        <table class="table-simar" id="tablaServicios">
+        <table class="table-simar">
             <thead>
                 <tr>
-                    <th><i class="bi bi-person me-1"></i>Cliente</th>
-                    <th><i class="bi bi-file-text me-1"></i>Descripción</th>
-                    <th><i class="bi bi-geo-alt me-1"></i>Dirección</th>
-                    @if (ViewData["Rol"]?.ToString() != "cliente")
-                    {
-                        <th><i class="bi bi-file-earmark me-1"></i>Contrato</th>
-                    }
-                    <th><i class="bi bi-calendar me-1"></i>Fecha</th>
+                    <th>Folio Contrato</th>
+                    <th>Cliente</th>
+                    <th>Estado Contrato</th>
+                    <th>Vencimiento</th>
+                    <th>Último Servicio / En Curso</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var servicio in Model.Servicios)
+                @foreach (var contrato in Model.Contratos)
                 {
-                    <tr data-id="@servicio.Id" onclick="abrirModal(this.dataset.id)">
+                    <tr onclick="abrirHistorial(@contrato.Id)">
+                        <td><strong>@contrato.Folio</strong></td>
+                        <td>@contrato.Cliente</td>
                         <td>
-                            <strong style="color: var(--simar-dark);">@servicio.Cliente</strong>
-                            <div class="info-adicional-simar">
-                                <i class="bi bi-hash"></i> ID: @servicio.Id
-                            </div>
+                            <span class="badge @(contrato.EstadoContrato == "activo" ? "bg-success" : "bg-secondary")">
+                                @contrato.EstadoContrato
+                            </span>
                         </td>
+                        <td>@(contrato.FechaExpiracion?.ToString("dd/MM/yyyy") ?? "N/A")</td>
                         <td>
-                            @{
-                                string descripcion = "";
-                                if (servicio.Cliente.Contains("Industrias"))
-                                    descripcion = "Recolección de residuos industriales - Plásticos";
-                                else if (servicio.Cliente.Contains("Comercial"))
-                                    descripcion = "Servicio semanal de recolección de orgánicos";
-                                else if (servicio.Cliente.Contains("Hospital"))
-                                    descripcion = "Recolección de residuos biológicos peligrosos";
-                                else if (servicio.Cliente.Contains("Restaurante"))
-                                    descripcion = "Recolección de aceites y grasas usadas";
-                                else if (servicio.Cliente.Contains("Constructora"))
-                                    descripcion = "Retiro de escombros y materiales de construcción";
-                                else
-                                    descripcion = servicio.Observaciones;
+                            @if (contrato.UltimoServicio != null)
+                            {
+                                <div>
+                                    <span class="badge @ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.GetStatusClass(contrato.UltimoServicio.Status)">
+                                        @ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.MapStatus(contrato.UltimoServicio.Status)
+                                    </span>
+                                    <br />
+                                    <small class="text-muted">#@contrato.UltimoServicio.ManifestNumber - @contrato.UltimoServicio.ManifestDate.ToString("dd/MM/yyyy")</small>
+                                </div>
                             }
-                            @descripcion
-                            <div class="info-adicional-simar">
-                                <span class="badge-simar @(servicio.Estado == "En curso" ? "badge-en-curso" : "badge-concluido")">
-                                    <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
-                                    @servicio.Estado
-                                </span>
-                            </div>
+                            else
+                            {
+                                <span class="text-muted small">Sin servicios registrados</span>
+                            }
                         </td>
-                        <td>@servicio.Direccion</td>
-                        @if (ViewData["Rol"]?.ToString() != "cliente")
-                        {
-                            <td>@servicio.Contrato</td>
-                        }
-                        <td>@servicio.FechaServicio.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success rounded-pill">
+                                <i class="bi bi-eye"></i> Historial
+                            </button>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
-    
-    <!-- Mensaje informativo -->
-    <div class="mensaje-info-simar">
-        <i class="bi bi-info-circle"></i>
-        <span>
-            <strong>Instrucciones:</strong> Haga clic en cualquier fila para ver los detalles completos del servicio. 
-            Total de servicios: <strong>@Model.Servicios.Count</strong>
-        </span>
-    </div>
 </div>
 
-<!-- Modal de detalles -->
-<div id="servicioModal" class="modal-simar">
+<!-- Modal Historial -->
+<div id="historialModal" class="modal-simar">
     <div class="modal-content-simar">
         <div class="modal-header-simar">
-            <h2>
-                <i class="bi bi-info-circle"></i>
-                Detalles del Servicio
-            </h2>
-            <span class="close-simar" onclick="cerrarModal()">
-                <i class="bi bi-x-lg"></i>
-            </span>
+            <h2 id="modalTitle">Historial de Servicios</h2>
+            <span class="close-simar" onclick="cerrarModal()">&times;</span>
         </div>
         <div class="modal-body-simar" id="modalBody">
-            <!-- Contenido cargado dinámicamente -->
+            <!-- Cargado por JS -->
         </div>
     </div>
 </div>
 
-<template id="modalTemplate">
-    <div class="detalles-card">
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-hash me-2"></i>ID del Servicio</div>
-            <div class="detalle-value" id="detalleId"></div>
-        </div>
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-person me-2"></i>Cliente</div>
-            <div class="detalle-value" id="detalleCliente"></div>
-        </div>
-        <div class="detalle-item" id="filaObservaciones" style="display: none;">
-            <div class="detalle-label"><i class="bi bi-chat-text me-2"></i>Observaciones</div>
-            <div class="detalle-value" id="detalleObservaciones"></div>
-        </div>
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-geo-alt me-2"></i>Dirección</div>
-            <div class="detalle-value" id="detalleDireccion"></div>
-        </div>
-        <div class="detalle-item" id="filaContrato" style="display: none;">
-            <div class="detalle-label"><i class="bi bi-file-earmark-text me-2"></i>Contrato</div>
-            <div class="detalle-value" id="detalleContrato"></div>
-        </div>
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-calendar me-2"></i>Fecha del Servicio</div>
-            <div class="detalle-value" id="detalleFecha"></div>
-        </div>
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-flag me-2"></i>Estado Actual</div>
-            <div class="detalle-value" id="detalleEstado"></div>
-        </div>
-        <div class="detalle-item" id="filaConductor" style="display: none;">
-            <div class="detalle-label"><i class="bi bi-person-badge me-2"></i>Conductor Asignado</div>
-            <div class="detalle-value" id="detalleConductor"></div>
-        </div>
-        <div class="detalle-item" id="filaVehiculo" style="display: none;">
-            <div class="detalle-label"><i class="bi bi-truck me-2"></i>Vehículo</div>
-            <div class="detalle-value" id="detalleVehiculo"></div>
-        </div>
-        <div class="detalle-item" id="filaTecnico" style="display: none;">
-            <div class="detalle-label"><i class="bi bi-tools me-2"></i>Técnico</div>
-            <div class="detalle-value" id="detalleTecnico"></div>
-        </div>
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-recycle me-2"></i>Tipo de Residuo</div>
-            <div class="detalle-value" id="detalleTipoResiduo"></div>
-        </div>
-        <div class="detalle-item">
-            <div class="detalle-label"><i class="bi bi-weight me-2"></i>Cantidad Estimada</div>
-            <div class="detalle-value" id="detalleCantidad"></div>
-        </div>
-    </div>
-    
-    <div class="acciones-section">
-        <h3><i class="bi bi-gear me-2"></i>Acciones disponibles</h3>
-        <div class="botones-accion-simar" id="botonesAccion">
-        </div>
-    </div>
-</template>
-
 <script>
-    var servicios = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Servicios));
-    var rol = '@ViewData["Rol"]';
-    var esCliente = (rol === 'cliente');
-    
-    function abrirModal(id) {
-        var idBuscado = typeof id === 'string' ? parseInt(id) : id;
-        var servicio = servicios.find(s => s.Id === idBuscado);
-        
-        if (!servicio) {
-            console.error('Servicio no encontrado:', idBuscado);
-            return;
+    const contratos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Contratos));
+
+    function abrirHistorial(id) {
+        const contrato = contratos.find(c => c.Id === id);
+        if (!contrato) return;
+
+        document.getElementById('modalTitle').innerText = `Historial de Servicios - ${contrato.Folio}`;
+        const body = document.getElementById('modalBody');
+        body.innerHTML = '';
+
+        if (contrato.HistorialServicios.length === 0) {
+            body.innerHTML = '<p class="text-center py-5 text-muted">No hay historial de servicios para este contrato.</p>';
+        } else {
+            contrato.HistorialServicios.forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'historial-item';
+                
+                let statusName = mapStatus(m.Status);
+                let statusClass = getStatusClass(m.Status);
+
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">Manifiesto #${m.ManifestNumber}</h5>
+                            <p class="mb-0 small text-muted"><i class="bi bi-calendar"></i> ${formatDate(m.ManifestDate)}</p>
+                            <p class="mb-0 small text-muted"><i class="bi bi-recycle"></i> ${m.ResidueSummary || 'Sin descripción'}</p>
+                        </div>
+                        <div>
+                            <span class="badge ${statusClass}">${statusName}</span>
+                        </div>
+                    </div>
+                `;
+                body.appendChild(item);
+            });
         }
-        
-        var template = document.getElementById('modalTemplate').content.cloneNode(true);
-        var modalBody = document.getElementById('modalBody');
-        modalBody.innerHTML = '';
-        
-        // Mostrar/ocultar campos según rol
-        var filaObservaciones = template.getElementById('filaObservaciones');
-        var filaContrato = template.getElementById('filaContrato');
-        var filaConductor = template.getElementById('filaConductor');
-        var filaVehiculo = template.getElementById('filaVehiculo');
-        var filaTecnico = template.getElementById('filaTecnico');
-        
-        if (!esCliente) {
-            filaObservaciones.style.display = 'flex';
-            filaContrato.style.display = 'flex';
-            filaConductor.style.display = 'flex';
-            filaVehiculo.style.display = 'flex';
-            filaTecnico.style.display = 'flex';
-        }
-        
-        // Llenar datos
-        template.getElementById('detalleId').textContent = servicio.Id;
-        template.getElementById('detalleCliente').textContent = servicio.Cliente || 'N/A';
-        template.getElementById('detalleDireccion').textContent = servicio.Direccion || 'N/A';
-        
-        if (!esCliente) {
-            template.getElementById('detalleContrato').textContent = servicio.Contrato || 'N/A';
-            template.getElementById('detalleConductor').textContent = servicio.Conductor || 'No asignado';
-            template.getElementById('detalleVehiculo').textContent = servicio.Vehiculo || 'No asignado';
-            template.getElementById('detalleTecnico').textContent = servicio.Tecnico || 'No asignado';
-            template.getElementById('detalleObservaciones').textContent = servicio.Observaciones || 'Sin observaciones';
-        }
-        
-        try {
-            var fecha = new Date(servicio.FechaServicio);
-            template.getElementById('detalleFecha').textContent = fecha.toLocaleDateString('es-MX') + ' ' + 
-                                                                  fecha.toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
-        } catch (e) {
-            template.getElementById('detalleFecha').textContent = servicio.FechaServicio || 'N/A';
-        }
-        
-        var estadoHtml = '<span class="badge-simar ' + getEstadoClass(servicio.Estado) + '">';
-        estadoHtml += '<i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>';
-        estadoHtml += (servicio.Estado || 'N/A') + '</span>';
-        template.getElementById('detalleEstado').innerHTML = estadoHtml;
-        
-        template.getElementById('detalleTipoResiduo').textContent = servicio.TipoResiduo || 'No especificado';
-        template.getElementById('detalleCantidad').textContent = (servicio.CantidadEstimada || 0) + ' kg';
-        
-        // Botones de acción
-        var botonesDiv = template.getElementById('botonesAccion');
-        botonesDiv.innerHTML = '';
-        
-        var btnHistorial = document.createElement('button');
-        btnHistorial.className = 'btn-simar-primary';
-        btnHistorial.innerHTML = '<i class="bi bi-clock-history"></i> Ver historial de servicios';
-        btnHistorial.onclick = function() {
-            window.location.href = '/WasteTraceability/ConsultWasteHistory/ServiceHistory?id=' + servicio.Id + '&cliente=' + encodeURIComponent(servicio.Cliente) + '&rol=' + rol;
-        };
-        botonesDiv.appendChild(btnHistorial);
-        
-        modalBody.appendChild(template);
-        document.getElementById('servicioModal').style.display = 'block';
+
+        document.getElementById('historialModal').style.display = 'block';
     }
-    
+
     function cerrarModal() {
-        document.getElementById('servicioModal').style.display = 'none';
+        document.getElementById('historialModal').style.display = 'none';
     }
-    
-    function getEstadoClass(estado) {
-        return estado === 'En curso' ? 'badge-en-curso' : 'badge-concluido';
-    }
-    
-    function limpiarFiltros() {
-        document.getElementById('filtroEstado').value = 'todos';
-        document.getElementById('busqueda').value = '';
-        aplicarFiltros();
-    }
-    
-    function aplicarFiltros() {
-        var filtroEstado = document.getElementById('filtroEstado').value;
-        var busqueda = document.getElementById('busqueda').value.toLowerCase();
-        var filas = document.querySelectorAll('#tablaServicios tbody tr');
-        
-        filas.forEach(function(fila) {
-            var textoFila = fila.textContent.toLowerCase();
-            var estadoBadge = fila.querySelector('.badge-simar');
-            var estado = estadoBadge ? estadoBadge.textContent.trim() : '';
-            
-            var coincideEstado = (filtroEstado === 'todos' || estado.includes(filtroEstado));
-            var coincideBusqueda = busqueda === '' || textoFila.includes(busqueda);
-            
-            fila.style.display = (coincideEstado && coincideBusqueda) ? '' : 'none';
-        });
-    }
-    
-    // Cerrar modal al hacer clic fuera
-    window.onclick = function(event) {
-        var modal = document.getElementById('servicioModal');
-        if (event.target == modal) {
-            modal.style.display = 'none';
+
+    function mapStatus(status) {
+        switch(status) {
+            case 'borrador': return 'Programado';
+            case 'en_transito': return 'En ruta';
+            case 'completado': return 'Concluido';
+            case 'cancelado': return 'Cancelado';
+            default: return status;
         }
     }
-    
-    // Cerrar con tecla ESC
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
+
+    function getStatusClass(status) {
+        switch(status) {
+            case 'borrador': return 'bg-info';
+            case 'en_transito': return 'bg-warning';
+            case 'completado': return 'bg-success';
+            case 'cancelado': return 'bg-danger';
+            default: return 'bg-secondary';
+        }
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return 'N/A';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('es-MX');
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('historialModal')) {
             cerrarModal();
         }
-    });
+    }
 </script>

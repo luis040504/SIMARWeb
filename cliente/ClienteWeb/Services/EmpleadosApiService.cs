@@ -1,0 +1,119 @@
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+
+namespace ClienteWeb.Services;
+
+public class EmpleadosApiService
+{
+    private readonly HttpClient _http;
+
+    public EmpleadosApiService(HttpClient http) => _http = http;
+
+    public async Task<List<EmpleadoSimpleDto>> GetAllAsync()
+    {
+        try
+        {
+            var list = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees");
+            return list?.Select(e => new EmpleadoSimpleDto
+            {
+                Id = e.UserId.GetHashCode(), // Hack if ID is needed as int
+                Nombre = e.FullName,
+                Puesto = e.ProfessionalId
+            }).ToList() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public async Task<List<ChoferDto>> GetChoferesAsync()
+    {
+        try
+        {
+            var empleados = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees?role=chofer");
+            if (empleados is null || empleados.Count == 0) return [];
+
+            var tasks = empleados.Select(async e =>
+            {
+                try
+                {
+                    var detail = await _http.GetFromJsonAsync<EmpleadoDetailApiDto>($"api/employees/{e.UserId}");
+                    return new ChoferDto
+                    {
+                        UserId        = e.UserId,
+                        FullName      = e.FullName,
+                        LicenseNumber = detail?.DriverInfo?.LicenseNumber ?? "",
+                        LicenseType   = detail?.DriverInfo?.LicenseType  ?? ""
+                    };
+                }
+                catch
+                {
+                    return new ChoferDto { UserId = e.UserId, FullName = e.FullName };
+                }
+            });
+
+            return [.. await Task.WhenAll(tasks)];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    // ─── DTOs internos ────────────────────────────────────────────────────────
+
+    private class EmpleadoApiDto
+    {
+        [JsonPropertyName("userId")]        public Guid   UserId   { get; set; }
+        [JsonPropertyName("fullName")]      public string FullName { get; set; } = "";
+        [JsonPropertyName("professionalId")] public string ProfessionalId { get; set; } = "";
+    }
+
+    private class EmpleadoDetailApiDto
+    {
+        [JsonPropertyName("driverInfo")] public DriverInfoDto? DriverInfo { get; set; }
+    }
+
+    private class DriverInfoDto
+    {
+        [JsonPropertyName("licenseNumber")] public string LicenseNumber { get; set; } = "";
+        [JsonPropertyName("licenseType")]   public string LicenseType   { get; set; } = "";
+    }
+
+    public async Task<List<EmpleadoItemDto>> GetTecnicosAsync()
+    {
+        try
+        {
+            var empleados = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees?role=tecnico");
+            return empleados?.Select(e => new EmpleadoItemDto
+            {
+                UserId = e.UserId,
+                FullName = e.FullName
+            }).ToList() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+}
+
+public class EmpleadoSimpleDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+    public string Puesto { get; set; } = "";
+}
+
+public class EmpleadoItemDto
+{
+    public Guid   UserId   { get; set; }
+    public string FullName { get; set; } = "";
+}
+
+public class ChoferDto : EmpleadoItemDto
+{
+    public string LicenseNumber { get; set; } = "";
+    public string LicenseType   { get; set; } = "";
+}

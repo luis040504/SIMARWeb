@@ -8,6 +8,21 @@ using Microsoft.AspNetCore.Http;
 
 namespace ClienteWeb.Services;
 
+public class ManifestSummary
+{
+    public string Id { get; set; } = string.Empty;
+    public string ManifestNumber { get; set; } = string.Empty;
+    public string Type { get; set; } = "especial";
+    public string Status { get; set; } = "borrador";
+    public int? ContratoId { get; set; }
+    public string SocialReason { get; set; } = string.Empty;
+    public string Municipality { get; set; } = string.Empty;
+    public DateOnly ManifestDate { get; set; }
+    public string ResidueSummary { get; set; } = string.Empty;
+    public string TransporterName { get; set; } = string.Empty;
+    public string? TransporterResponsibleName { get; set; }
+}
+
 public class ManifestApiService
 {
     private readonly HttpClient _http;
@@ -102,7 +117,7 @@ public class ManifestApiService
 
         var response = await _http.PostAsJsonAsync("manifiestos", dto);
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<ManifestDetailApiDto>>();
-        return result?.Data?.NumeroManifiesto ?? "?";
+        return result?.Data?.Id.ToString() ?? "?";
     }
 
     // ─── CREATE PELIGROSO ─────────────────────────────────────────────────────
@@ -142,8 +157,9 @@ public class ManifestApiService
             CorreoTransportista = model.TransporterEmail,
             TipoVehiculo = model.VehicleType,
             Placa = model.VehiclePlate,
+            LicenciaConductor = model.DriverLicense,
             RutaTransporte = model.TransportRoute,
-            NombreResponsableTransportista = model.TransporterResponsibleName,
+            NombreResponsableTransportista = string.IsNullOrEmpty(model.TransporterResponsibleName) ? model.DriverName : model.TransporterResponsibleName,
             FechaFirmaTransportista = model.TransporterSignDate?.ToString("yyyy-MM-dd"),
             NumeroAutorizacionDestinatario = model.ReceiverAuthorizationNumber,
             RazonSocialDestinatario = model.ReceiverSocialReason,
@@ -179,7 +195,7 @@ public class ManifestApiService
 
         var response = await _http.PostAsJsonAsync("manifiestos", dto);
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<ManifestDetailApiDto>>();
-        return result?.Data?.NumeroManifiesto ?? "?";
+        return result?.Data?.Id.ToString() ?? "?";
     }
 
     // ─── UPDATE (PUT) ─────────────────────────────────────────────────────────
@@ -188,6 +204,9 @@ public class ManifestApiService
     {
         var dto = new CreateManifestDto
         {
+            IdCliente                      = vm.IdCliente,
+            ContratoId                     = vm.ContratoId,
+            NumeroManifiesto               = vm.ManifestNumber,
             Tipo                           = vm.Type,
             NumeroRegistroAmbiental        = vm.EnvironmentalRegistrationNumber,
             RazonSocial                    = vm.SocialReason,
@@ -286,6 +305,57 @@ public class ManifestApiService
         }
     }
 
+    public async Task UpdateTransportAsync(string id, string vehiculo, string tecnico, string? estado = null, string? observaciones = null, decimal? peso = null)
+    {
+        // Primero obtenemos el manifiesto actual para no sobreescribir otros datos
+        var resp = await _http.GetFromJsonAsync<ApiResponse<ManifestDetailApiDto>>($"manifiestos/{id}");
+        if (resp?.Data == null) return;
+
+        var dto = resp.Data;
+
+        // Cargar residuos si están en el campo genérico
+        if (dto.Residuos.HasValue)
+        {
+            if (dto.Tipo == "especial")
+                dto.ResiduosEspeciales = dto.Residuos.Value.Deserialize<List<EspecialResidueApiDto>>();
+            else
+                dto.ResiduosPeligrosos = dto.Residuos.Value.Deserialize<List<PeligrosoResidueApiDto>>();
+        }
+        
+        // El formato de vehiculo es "Nombre - Placas"
+        if (vehiculo.Contains(" - "))
+        {
+            var parts = vehiculo.Split(" - ");
+            dto.RazonSocialTransportista = parts[0]; 
+            dto.Placa = parts[1];
+        }
+        else
+        {
+            dto.Placa = vehiculo;
+        }
+
+        dto.NombreResponsableTransportista = tecnico;
+        if (!string.IsNullOrEmpty(estado))
+        {
+            dto.Estado = estado;
+        }
+
+        if (!string.IsNullOrEmpty(observaciones))
+        {
+            dto.ObservacionesGenerador = observaciones;
+        }
+
+        if (peso.HasValue)
+        {
+            if (dto.ResiduosEspeciales != null && dto.ResiduosEspeciales.Count > 0)
+                dto.ResiduosEspeciales[0].Peso = peso.Value;
+            else if (dto.ResiduosPeligrosos != null && dto.ResiduosPeligrosos.Count > 0)
+                dto.ResiduosPeligrosos[0].CantidadKg = peso.Value;
+        }
+
+        await _http.PutAsJsonAsync($"manifiestos/{id}", dto);
+    }
+
     // ─── PATCH ESTADO ─────────────────────────────────────────────────────────
 
     public async Task UpdateStatusAsync(string id, string estado, DateOnly? fechaFirma = null)
@@ -307,7 +377,7 @@ public class ManifestApiService
         await using var stream = file.OpenReadStream();
         var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-        content.Add(fileContent, "firma", file.FileName);
+        content.Add(fileContent, "pdf", file.FileName);
         var response = await _http.PostAsync($"manifiestos/{id}/firma", content);
         response.EnsureSuccessStatusCode();
     }
@@ -323,11 +393,13 @@ public class ManifestApiService
             ManifestNumber  = dto.NumeroManifiesto,
             Type            = dto.Tipo,
             Status          = dto.Estado,
+            ContratoId      = dto.ContratoId,
             SocialReason    = dto.RazonSocial ?? "",
             Municipality    = dto.Municipio ?? "",
             ManifestDate    = date,
             ResidueSummary  = dto.ResumenResiduos ?? "",
-            TransporterName = dto.RazonSocialTransportista ?? ""
+            TransporterName = dto.RazonSocialTransportista ?? "",
+            TransporterResponsibleName = dto.NombreResponsableTransportista
         };
     }
 
@@ -336,6 +408,8 @@ public class ManifestApiService
         var vm = new ManifestDetailViewModel
         {
             Id                             = dto.Id.ToString(),
+            IdCliente                      = dto.IdCliente,
+            ContratoId                     = dto.ContratoId,
             Type                           = dto.Tipo,
             Status                         = dto.Estado switch
             {
@@ -411,27 +485,34 @@ public class ManifestApiService
 
         if (dto.Residuos.HasValue && dto.Residuos.Value.ValueKind == JsonValueKind.Array)
         {
+            // La API devuelve los decimales como strings ("0.10"), se necesita AllowReadingFromString
+            var numOpts = new JsonSerializerOptions
+            {
+                NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
+                PropertyNameCaseInsensitive = true
+            };
+
             if (dto.Tipo == "especial")
             {
-                var list = dto.Residuos.Value.Deserialize<List<EspecialResidueApiDto>>();
+                var list = dto.Residuos.Value.Deserialize<List<EspecialResidueApiDto>>(numOpts);
                 if (list is not null)
                     vm.SpecialResidues = list.Select(r => new SpecialResidueItem
                     {
                         ResidueKey        = r.ClaveResiduo ?? "",
-                        ResidueName       = r.NombreResiduo,
+                        ResidueName       = r.NombreResiduo ?? "",
                         ContainerType     = r.TipoEnvase ?? "",
                         ContainerCapacity = r.Capacidad ?? "",
                         Weight            = r.Peso,
-                        Unit              = r.Unidad
+                        Unit              = r.Unidad ?? "kg"
                     }).ToList();
             }
             else
             {
-                var list = dto.Residuos.Value.Deserialize<List<PeligrosoResidueApiDto>>();
+                var list = dto.Residuos.Value.Deserialize<List<PeligrosoResidueApiDto>>(numOpts);
                 if (list is not null)
                     vm.HazardousResidues = list.Select(r => new HazardousResidueItem
                     {
-                        ResidueName       = r.NombreResiduo,
+                        ResidueName       = r.NombreResiduo ?? "",
                         IsCorrosive       = r.EsCorrosivo,
                         IsReactive        = r.EsReactivo,
                         IsExplosive       = r.EsExplosivo,
@@ -471,17 +552,21 @@ public class ManifestApiService
         [JsonPropertyName("numero_manifiesto")]        public string NumeroManifiesto { get; set; } = "";
         [JsonPropertyName("tipo")]                     public string Tipo { get; set; } = "";
         [JsonPropertyName("estado")]                   public string Estado { get; set; } = "";
+        [JsonPropertyName("contrato_id")]              public int? ContratoId { get; set; }
         [JsonPropertyName("razon_social")]             public string? RazonSocial { get; set; }
         [JsonPropertyName("municipio")]                public string? Municipio { get; set; }
         [JsonPropertyName("fecha_manifiesto")]         public string? FechaManifiesto { get; set; }
         [JsonPropertyName("fecha_firma_generador")]    public string? FechaFirmaGenerador { get; set; }
         [JsonPropertyName("resumen_residuos")]         public string? ResumenResiduos { get; set; }
         [JsonPropertyName("razon_social_transportista")] public string? RazonSocialTransportista { get; set; }
+        [JsonPropertyName("nombre_responsable_transportista")] public string? NombreResponsableTransportista { get; set; }
     }
 
     private class ManifestDetailApiDto
     {
         [JsonPropertyName("id")]                       public int Id { get; set; }
+        [JsonPropertyName("id_cliente")]               public int IdCliente { get; set; }
+        [JsonPropertyName("contrato_id")]              public int? ContratoId { get; set; }
         [JsonPropertyName("numero_manifiesto")]        public string NumeroManifiesto { get; set; } = "";
         [JsonPropertyName("tipo")]                     public string Tipo { get; set; } = "";
         [JsonPropertyName("estado")]                   public string Estado { get; set; } = "";
@@ -551,38 +636,43 @@ public class ManifestApiService
         [JsonPropertyName("observaciones_destinatario")]        public string? ObservacionesDestinatario { get; set; }
         // Array de residuos (especiales o peligrosos según tipo)
         [JsonPropertyName("residuos")] public JsonElement? Residuos { get; set; }
+
+        // Propiedades auxiliares para actualizaciones
+        [JsonPropertyName("residuos_especiales")] public List<EspecialResidueApiDto>? ResiduosEspeciales { get; set; }
+        [JsonPropertyName("residuos_peligrosos")] public List<PeligrosoResidueApiDto>? ResiduosPeligrosos { get; set; }
     }
 
     private class EspecialResidueApiDto
     {
         [JsonPropertyName("clave_residuo")] public string? ClaveResiduo { get; set; }
-        [JsonPropertyName("nombre_residuo")] public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")] public string? NombreResiduo { get; set; }
         [JsonPropertyName("tipo_envase")]    public string? TipoEnvase { get; set; }
         [JsonPropertyName("capacidad")]      public string? Capacidad { get; set; }
         [JsonPropertyName("peso")]           public decimal Peso { get; set; }
-        [JsonPropertyName("unidad")]         public string Unidad { get; set; } = "kg";
+        [JsonPropertyName("unidad")]         public string? Unidad { get; set; }
     }
 
     private class PeligrosoResidueApiDto
     {
-        [JsonPropertyName("nombre_residuo")]  public string NombreResiduo { get; set; } = "";
-        [JsonPropertyName("es_corrosivo")]    public bool EsCorrosivo { get; set; }
-        [JsonPropertyName("es_reactivo")]     public bool EsReactivo { get; set; }
-        [JsonPropertyName("es_explosivo")]    public bool EsExplosivo { get; set; }
-        [JsonPropertyName("es_toxico")]       public bool EsToxico { get; set; }
-        [JsonPropertyName("es_inflamable")]   public bool EsInflamable { get; set; }
-        [JsonPropertyName("es_biologico")]    public bool EsBiologico { get; set; }
-        [JsonPropertyName("es_mutagenico")]   public bool EsMutagenico { get; set; }
+        [JsonPropertyName("nombre_residuo")]  public string? NombreResiduo { get; set; }
+        [JsonPropertyName("es_corrosivo")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsCorrosivo { get; set; }
+        [JsonPropertyName("es_reactivo")]     [JsonConverter(typeof(JsonBoolConverter))] public bool EsReactivo { get; set; }
+        [JsonPropertyName("es_explosivo")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsExplosivo { get; set; }
+        [JsonPropertyName("es_toxico")]       [JsonConverter(typeof(JsonBoolConverter))] public bool EsToxico { get; set; }
+        [JsonPropertyName("es_inflamable")]   [JsonConverter(typeof(JsonBoolConverter))] public bool EsInflamable { get; set; }
+        [JsonPropertyName("es_biologico")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsBiologico { get; set; }
+        [JsonPropertyName("es_mutagenico")]   [JsonConverter(typeof(JsonBoolConverter))] public bool EsMutagenico { get; set; }
         [JsonPropertyName("tipo_envase")]     public string? TipoEnvase { get; set; }
         [JsonPropertyName("capacidad_envase")] public string? CapacidadEnvase { get; set; }
         [JsonPropertyName("cantidad_kg")]     public decimal CantidadKg { get; set; }
-        [JsonPropertyName("tiene_etiqueta")]  public bool? TieneEtiqueta { get; set; }
+        [JsonPropertyName("tiene_etiqueta")]  [JsonConverter(typeof(JsonNullableBoolConverter))] public bool? TieneEtiqueta { get; set; }
     }
 
     private class CreateManifestDto
     {
-        [JsonPropertyName("id_cliente")]  public int IdCliente { get; set; }
+        [JsonPropertyName("id_cliente")]  public int? IdCliente { get; set; }
         [JsonPropertyName("contrato_id")] public int? ContratoId { get; set; }
+        [JsonPropertyName("numero_manifiesto")] public string? NumeroManifiesto { get; set; }
         [JsonPropertyName("tipo")]        public string Tipo { get; set; } = "";
         // Generador
         [JsonPropertyName("numero_registro_ambiental")]    public string? NumeroRegistroAmbiental { get; set; }
@@ -653,16 +743,16 @@ public class ManifestApiService
     private class EspecialResidueSendDto
     {
         [JsonPropertyName("clave_residuo")] public string? ClaveResiduo { get; set; }
-        [JsonPropertyName("nombre_residuo")] public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")] public string? NombreResiduo { get; set; }
         [JsonPropertyName("tipo_envase")]    public string? TipoEnvase { get; set; }
         [JsonPropertyName("capacidad")]      public string? Capacidad { get; set; }
         [JsonPropertyName("peso")]           public decimal Peso { get; set; }
-        [JsonPropertyName("unidad")]         public string Unidad { get; set; } = "kg";
+        [JsonPropertyName("unidad")]         public string? Unidad { get; set; }
     }
 
     private class PeligrosoResidueSendDto
     {
-        [JsonPropertyName("nombre_residuo")]   public string NombreResiduo { get; set; } = "";
+        [JsonPropertyName("nombre_residuo")]   public string? NombreResiduo { get; set; }
         [JsonPropertyName("es_corrosivo")]     public bool EsCorrosivo { get; set; }
         [JsonPropertyName("es_reactivo")]      public bool EsReactivo { get; set; }
         [JsonPropertyName("es_explosivo")]     public bool EsExplosivo { get; set; }
@@ -680,5 +770,46 @@ public class ManifestApiService
     {
         [JsonPropertyName("estado")]      public string Estado { get; set; } = "";
         [JsonPropertyName("fecha_firma")] public string? FechaFirma { get; set; }
+    }
+
+    public class JsonBoolConverter : JsonConverter<bool>
+    {
+        public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number) return reader.GetInt32() != 0;
+            if (reader.TokenType == JsonTokenType.True) return true;
+            if (reader.TokenType == JsonTokenType.False) return false;
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                return s == "1" || s?.ToLower() == "true";
+            }
+            return false;
+        }
+        public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options) =>
+            writer.WriteBooleanValue(value);
+    }
+
+    public class JsonNullableBoolConverter : JsonConverter<bool?>
+    {
+        public override bool? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Null) return null;
+            if (reader.TokenType == JsonTokenType.Number) return reader.GetInt32() != 0;
+            if (reader.TokenType == JsonTokenType.True) return true;
+            if (reader.TokenType == JsonTokenType.False) return false;
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (string.IsNullOrEmpty(s)) return null;
+                return s == "1" || s?.ToLower() == "true";
+            }
+            return null;
+        }
+        public override void Write(Utf8JsonWriter writer, bool? value, JsonSerializerOptions options)
+        {
+            if (value == null) writer.WriteNullValue();
+            else writer.WriteBooleanValue(value.Value);
+        }
     }
 }

@@ -32,10 +32,13 @@ public class IndexModel : PageModel
     public string? ApiError { get; private set; }
 
     // ── Handler GET ───────────────────────────────────────────────────────────
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         HasSearched = !string.IsNullOrWhiteSpace(Search) || !string.IsNullOrWhiteSpace(TypeFilter);
-        if (!HasSearched) return;
+        if (!HasSearched) return Page();
 
         try
         {
@@ -45,11 +48,16 @@ public class IndexModel : PageModel
         {
             ApiError = "No se pudo conectar con el servidor. Verifique que el servicio esté en línea.";
         }
+
+        return Page();
     }
 
     // ── Handler POST Crear ────────────────────────────────────────────────────
     public async Task<IActionResult> OnPostCreateAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         var (ok, error, _) = await _api.CreateAsync(CreateForm);
         if (ok)
             TempData["SuccessMessage"] = $"Residuo '{CreateForm.Name}' creado correctamente.";
@@ -62,6 +70,9 @@ public class IndexModel : PageModel
     // ── Handler POST Editar ───────────────────────────────────────────────────
     public async Task<IActionResult> OnPostEditAsync()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         var (ok, error) = await _api.UpdateAsync(EditId, EditForm);
         if (ok)
             TempData["SuccessMessage"] = $"Residuo '{EditForm.Name}' actualizado correctamente.";
@@ -74,6 +85,9 @@ public class IndexModel : PageModel
     // ── Handler POST Eliminar ─────────────────────────────────────────────────
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+            return RedirectToPage("/Client_SimarUser/Client/Login");
+
         var (ok, error) = await _api.DeleteAsync(id);
         if (ok)
             TempData["SuccessMessage"] = "Residuo eliminado del catálogo.";

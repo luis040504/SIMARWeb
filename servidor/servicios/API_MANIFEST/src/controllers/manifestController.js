@@ -54,6 +54,8 @@ const manifestController = {
             const manifest = await Manifest.create(body);
             res.status(201).json({ success: true, data: manifest });
         } catch (err) {
+            fs.appendFileSync('error.log', `[${new Date().toISOString()}] POST /api/manifiestos ERROR: ${err.stack}\n`);
+            console.error('[POST /api/manifiestos] ERROR:', err);
             res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },

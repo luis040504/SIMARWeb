@@ -29,7 +29,12 @@ class FiscalDataModel(BaseModel):
     invoice_folio: Optional[str] = None
     issue_date: datetime
     certification_date: Optional[datetime] = None
-    cfdi_version: Optional[str] = None
+    cfdi_version: Optional[str] = "4.0"
+    digital_seal_issuer: Optional[str] = None
+    digital_seal_sat: Optional[str] = None
+    original_chain: Optional[str] = None
+    pac_rfc: Optional[str] = None
+    sat_certificate_number: Optional[str] = None
 
 class FinancialsModel(BaseModel):
     currency: str
@@ -73,9 +78,10 @@ class Billing(BaseModel):
     fiscal_data: FiscalDataModel
     financials: FinancialsModel
     items: List[ItemModel]
-    attachments: AttachmentsModel
+    attachments: Optional[AttachmentsModel] = Field(default_factory=AttachmentsModel)
     status: Literal["VALID", "CANCELLED", "PENDING_APPROVAL", "Pending", "Accepted", "Rejected"]
     reason: Optional[str] = None
+    service_id: Optional[str] = None
     activo: bool = True
     
     class Config:

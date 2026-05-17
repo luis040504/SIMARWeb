@@ -5,22 +5,7 @@
 }
 
 <div class="container-fluid-simar mt-4">
-    <!-- User Role Selector Simulator -->
-    <div class="card-simar mb-4 border-info">
-        <div class="card-body bg-light d-flex align-items-center justify-content-between rounded-3">
-            <div>
-                <h5 class="mb-0 text-info fw-bold"><i class="bi bi-person-badge me-2"></i> Simulador de Rol de Usuario</h5>
-                <small class="text-muted">Cambia el rol para ver las funcionalidades correspondientes.</small>
-            </div>
-            <form method="get" class="d-flex" id="roleForm">
-                <select class="form-select-simar border-info" name="Role" asp-for="Role" onchange="document.getElementById('roleForm').submit()">
-                    <option value="Admin">Administrador / Empleado</option>
-                    <option value="Client">Cliente Final</option>
-                </select>
-                <input type="hidden" name="ActiveTab" value="" />
-            </form>
-        </div>
-    </div>
+
 
     <!-- Main Content -->
     <div class="card-simar mb-4">
@@ -29,17 +14,17 @@
                 @if (Model.Role == "Admin")
                 {
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "RecentServices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RecentServices">
+                        <a class="nav-link @(Model.ActiveTab == "RecentServices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="RecentServices">
                             <i class="bi bi-file-earmark-text me-1"></i> Servicios Recientes
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "RejectedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="RejectedInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "RejectedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="RejectedInvoices">
                             <i class="bi bi-exclamation-triangle me-1"></i> Prefacturas Rechazadas
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "GeneratedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="GeneratedInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "GeneratedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="GeneratedInvoices">
                             <i class="bi bi-receipt me-1"></i> Facturas Generadas
                         </a>
                     </li>
@@ -47,12 +32,12 @@
                 else
                 {
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "PendingInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="PendingInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "PendingInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="PendingInvoices">
                             <i class="bi bi-clock-history me-1"></i> Prefacturas Pendientes
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(Model.ActiveTab == "AcceptedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="AcceptedInvoices">
+                        <a class="nav-link @(Model.ActiveTab == "AcceptedInvoices" ? "active fw-bold border-bottom-0 text-simar-green" : "text-secondary")" asp-page="./Index" asp-route-ActiveTab="AcceptedInvoices">
                             <i class="bi bi-check-circle me-1"></i> Facturas Aceptadas
                         </a>
                     </li>
@@ -101,7 +86,7 @@
                     <h5 class="text-simar-green fw-bold mb-0 fs-4">
                         <i class="bi bi-funnel me-2"></i> Resultados de la Búsqueda
                     </h5>
-                    <a asp-page="./Index" asp-route-Role="@Model.Role" asp-route-ActiveTab="@Model.ActiveTab" class="btn btn-simar-outline-gray">Limpiar Búsqueda</a>
+                    <a asp-page="./Index" asp-route-ActiveTab="@Model.ActiveTab" class="btn btn-simar-outline-gray">Limpiar Búsqueda</a>
                 </div>
             }
 
@@ -113,23 +98,35 @@
                         <div class="col-md-6 col-lg-4 col-xl-3">
                             <div class="card-simar-subtle h-100">
                                 <div class="card-body p-4 position-relative d-flex flex-column h-100">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title text-dark fw-semibold text-truncate mb-0" title="@record.ClientName">@record.ClientName</h5>
+                                    <div class="d-flex justify-content-between align-items-start mb-3 overflow-hidden">
+                                        <h5 class="card-title text-dark fw-semibold text-truncate mb-0 flex-grow-1" style="min-width: 0;" title="@record.ClientName">@record.ClientName</h5>
                                         @if (record.RecordType == "Invoice")
                                         {
-                                            <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))">@record.InvoiceNumber</span>
+                                            <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))">
+                                                @if (record.Status == "Accepted") { <i class="bi bi-check-lg me-1"></i> }
+                                                else if (record.Status == "Rejected") { <i class="bi bi-x-lg me-1"></i> }
+                                                else { <i class="bi bi-clock-history me-1"></i> }
+                                                @record.InvoiceNumber
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="badge badge-simar badge-simar-programada">ID: @record.Id</span>
+                                            <span class="badge badge-simar @(record.Source == "contract" ? "bg-info text-white" : "badge-simar-programada")">
+                                                @if (record.Source == "contract") { <i class="bi bi-file-earmark-text me-1"></i> }
+                                                else { <i class="bi bi-tag me-1"></i> }
+                                                ID: @record.Id
+                                            </span>
                                         }
                                     </div>
                                     <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong class="text-simar-dark">@record.TaxId</strong></p>
                                     
-                                    <p class="card-text mb-2"><small class="text-muted">Servicio:</small> <span class="badge bg-secondary badge-simar text-truncate d-inline-block align-bottom" title="@(record.ServiceType ?? record.Description)">@(record.ServiceType ?? record.Description)</span></p>
-                                    @if(!string.IsNullOrEmpty(record.Reason))
+                                    <p class="card-text mb-2 d-flex align-items-center overflow-hidden">
+                                        <small class="text-muted text-nowrap me-2">Servicio:</small> 
+                                        <span class="badge bg-secondary badge-simar text-truncate" style="min-width: 0;" title="@(record.ServiceType ?? record.Description)">@(record.ServiceType ?? record.Description)</span>
+                                    </p>
+                                    @if(!string.IsNullOrEmpty(record.Reason) && record.Status == "Rejected")
                                     {
-                                        <p class="card-text mb-2"><small class="text-muted">Motivo:</small> <span class="badge badge-simar badge-simar-cancelada text-wrap text-start lh-sm w-100 border-0">@record.Reason</span></p>
+                                        <p class="card-text mb-2"><small class="text-muted">Motivo:</small> <span class="badge badge-simar badge-simar-cancelada text-wrap text-start lh-sm w-100 border-0"><i class="bi bi-x-lg me-1"></i> @record.Reason</span></p>
                                     }
 
                                     <p class="card-text mb-3"><small class="text-muted">Fecha:</small> @record.Date.ToString("dd/MM/yyyy")</p>
@@ -142,7 +139,7 @@
                                             {
                                                 <form method="post" asp-page-handler="PrepareModal">
                                                     <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Generate" />
@@ -153,7 +150,7 @@
 
                                                 <form method="post" asp-page-handler="UploadPhysicalInvoice" enctype="multipart/form-data">
                                                     <input type="hidden" name="selectedRecordIdUpload" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <div class="d-grid">
                                                         <label class="btn btn-simar-outline-gray justify-content-center w-100 mb-0" style="cursor: pointer;" for="upload_@record.Id">
@@ -167,7 +164,7 @@
                                             {
                                                 <form method="post" asp-page-handler="PrepareModal">
                                                     <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Edit" />
@@ -181,7 +178,7 @@
                                                 <div class="mb-2">
                                                     <form method="post" asp-page-handler="PrepareModal" class="w-100">
                                                         <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                        <input type="hidden" asp-for="Role" />
+                                                        
                                                         <input type="hidden" asp-for="ActiveTab" />
                                                         <input type="hidden" asp-for="SearchQuery" />
                                                         <input type="hidden" name="modalType" value="Details" />
@@ -194,7 +191,7 @@
                                                 {
                                                     <form method="post" asp-page-handler="Download" class="w-100">
                                                         <input type="hidden" name="id" value="@record.Id" />
-                                                        <input type="hidden" asp-for="Role" />
+                                                        
                                                         <input type="hidden" asp-for="ActiveTab" />
                                                         <button type="submit" class="btn btn-simar-primary justify-content-center w-100">
                                                             <i class="bi bi-download"></i> Descargar
@@ -208,7 +205,7 @@
                                             <div class="mb-2">
                                                 <form method="post" asp-page-handler="PrepareModal" class="w-100">
                                                     <input type="hidden" asp-for="SelectedRecordId" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     <input type="hidden" asp-for="SearchQuery" />
                                                     <input type="hidden" name="modalType" value="Details" />
@@ -221,7 +218,7 @@
                                             <div>
                                                 <form method="post" class="w-100 d-flex justify-content-between gap-2">
                                                     <input type="hidden" name="id" value="@record.Id" />
-                                                    <input type="hidden" asp-for="Role" />
+                                                    
                                                     <input type="hidden" asp-for="ActiveTab" />
                                                     @if (record.Status == "Pending")
                                                     {
@@ -281,7 +278,7 @@
                     <h4 class="modal-title">
                         <i class="bi bi-clipboard-data me-2"></i> @modalTitle
                     </h4>
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
+                    <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
                 
                 <div class="@bgClass px-5 py-4 border-bottom">
@@ -291,7 +288,7 @@
                             <h3 class="mb-0 mt-2 text-simar-dark fw-bold">@Model.SelectedRecord?.ClientName <span class="fs-5 opacity-75 fw-normal">(@Model.SelectedRecord?.TaxId)</span></h3>
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                            <h2 class="mb-0 fw-bold text-simar-green">@Model.SelectedRecord?.Amount.ToString("C")</h2>
+                            <h2 class="mb-0 fw-bold text-simar-green">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</h2>
                         </div>
                     </div>
                 </div>
@@ -310,9 +307,13 @@
 
                 <div class="modal-body modal-scrollable-simar p-5 pt-4 flex-grow-1 overflow-auto">
                     <input type="hidden" asp-for="SelectedRecordId" />
-                    <input type="hidden" asp-for="Role" />
+                    
                     <input type="hidden" asp-for="ActiveTab" />
                     <input type="hidden" asp-for="ItemsJson" id="ItemsJson" />
+                    <input type="hidden" asp-for="ProductCode" />
+                    <input type="hidden" asp-for="UnitCode" />
+                    <input type="hidden" asp-for="TaxObject" />
+                    <input type="hidden" asp-for="ServiceId" />
 
                     @if (isPreInvoice)
                     {
@@ -339,19 +340,19 @@
                                     <div class="row g-4">
                                             <div class="col-md-4">
                                                 <label class="form-label form-label-simar text-danger @(isRfcBad ? "fw-bold" : "")">RFC *</label>
-                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" readonly="readonly" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)">
+                                                <input type="text" class="form-control form-control-simar @(isRfcBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="TaxId" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" title="Un RFC válido consta de 12 a 13 caracteres, formato letras y números (ej. ABC123456T12)" readonly="@(!string.IsNullOrEmpty(Model.TaxId) && !isRfcBad)">
                                                 <div class="invalid-feedback">RFC inválido. Letras mayúsculas (3-4), AAMMdd y 3 caracteres finales.</div>
                                                 @if(isRfcBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-8">
                                                 <label class="form-label form-label-simar text-danger @(isNameBad ? "fw-bold" : "")">Razón Social *</label>
-                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" readonly="readonly" required minlength="3" maxlength="250" title="Ingresa la razón social">
+                                                <input type="text" class="form-control form-control-simar @(isNameBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="BillingName" required minlength="3" maxlength="250" title="Ingresa la razón social" readonly="@(!string.IsNullOrEmpty(Model.BillingName) && !isNameBad)">
                                                 <div class="invalid-feedback">La razón social es requerida (mín. 3 caracteres).</div>
                                                 @if(isNameBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
                                             <div class="col-md-4">
                                                 <label class="form-label form-label-simar text-danger @(isPostalBad ? "fw-bold" : "")">Código Postal *</label>
-                                                <input type="text" class="form-control form-control-simar @(isPostalBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="PostalCode" required maxlength="5" minlength="5" pattern="\d{5}" title="Debe contener exactamente 5 dígitos numéricos">
+                                                <input type="text" class="form-control form-control-simar @(isPostalBad ? "is-invalid border-danger bg-danger bg-opacity-10" : "")" asp-for="PostalCode" required maxlength="5" minlength="5" pattern="\d{5}" title="Debe contener exactamente 5 dígitos numéricos" readonly="@(!string.IsNullOrEmpty(Model.PostalCode) && !isPostalBad)">
                                                 <div class="invalid-feedback">Debe contener 5 dígitos.</div>
                                                 @if(isPostalBad) { <div class="invalid-feedback d-block fw-bold"><i class="bi bi-exclamation-triangle"></i> Marcado para corrección</div> }
                                             </div>
@@ -455,8 +456,8 @@
                                                             </div>
                                                             <div class="invalid-feedback">Monto inválido (debe ser > 0).</div>
                                                         </td>
-                                                        <td class="align-middle tax-cell">@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</td>
-                                                        <td class="align-middle fw-bold total-cell">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</td>
+                                                        <td class="align-middle tax-cell">@(((Model.SelectedRecord?.Amount ?? 0) * 0.16m).ToString("C"))</td>
+                                                        <td class="align-middle fw-bold total-cell">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</td>
                                                         <td class="align-middle text-center">
                                                             <button type="button" class="btn btn-sm btn-outline-danger remove-concept-btn" title="Eliminar concepto"><i class="bi bi-trash"></i></button>
                                                         </td>
@@ -470,15 +471,15 @@
                                                     </tr>
                                                     <tr>
                                                         <th colspan="4" class="text-end border-0 pb-1">Subtotal:</th>
-                                                        <th class="subtotal-cell pb-1">@(((Model.SelectedRecord?.Amount ?? 0) / 1.16m).ToString("C"))</th>
+                                                        <th class="subtotal-cell pb-1">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
                                                     </tr>
                                                     <tr>
                                                         <th colspan="4" class="text-end border-0 py-1">IVA (16%):</th>
-                                                        <th class="tax-cell-foot py-1">@((((Model.SelectedRecord?.Amount ?? 0) / 1.16m) * 0.16m).ToString("C"))</th>
+                                                        <th class="tax-cell-foot py-1">@(((Model.SelectedRecord?.Amount ?? 0) * 0.16m).ToString("C"))</th>
                                                     </tr>
                                                     <tr>
                                                         <th colspan="4" class="text-end fs-5 text-simar-green border-0 pt-1">Total:</th>
-                                                        <th class="fs-5 text-simar-green total-cell-foot pt-1">@((Model.SelectedRecord?.Amount ?? 0).ToString("C"))</th>
+                                                        <th class="fs-5 text-simar-green total-cell-foot pt-1">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</th>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -499,7 +500,7 @@
                 </div>
 
                 <div class="modal-footer bg-light mt-auto">
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
+                    <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cancelar</a>
                     <button type="submit" class="btn btn-simar-primary" id="confirmSubmitBtn" data-amount="@(Model.SelectedRecord?.Amount ?? 0)">
                         <i class="bi @iconClass"></i> Confirmar
                     </button>
@@ -522,7 +523,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     <h4 class="modal-title">
                         <i class="bi bi-file-text me-2"></i> Detalles de @documentNameDetails: @Model.SelectedRecord.InvoiceNumber
                     </h4>
-                    <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn-close"></a>
+                    <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn-close"></a>
                 </div>
                 <div class="modal-body modal-scrollable-simar p-4 flex-grow-1 overflow-auto">
                     @if (isPreInvoiceDetails)
@@ -562,11 +563,14 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                 <div class="modal-footer d-flex justify-content-between align-items-center">
                     <div>
                          <span class="badge badge-simar @(Model.SelectedRecord.Status == "Accepted" ? "badge-simar-completada" : (Model.SelectedRecord.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta")) fs-6 px-3 py-2">
+                             @if (Model.SelectedRecord.Status == "Accepted") { <i class="bi bi-check-lg me-2"></i> }
+                             else if (Model.SelectedRecord.Status == "Rejected") { <i class="bi bi-x-lg me-2"></i> }
+                             else { <i class="bi bi-clock-history me-2"></i> }
                              Estado: @(Model.SelectedRecord.Status == "Accepted" ? "Aceptada" : (Model.SelectedRecord.Status == "Rejected" ? "Rechazada" : "Pendiente"))
                          </span>
                     </div>
                     <div>
-                        <a href="/Billing?Role=@Model.Role&ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cerrar</a>
+                        <a href="/Billing?ActiveTab=@Model.ActiveTab" class="btn btn-simar-outline-gray">Cerrar</a>
                     </div>
                 </div>
             </div>
@@ -584,7 +588,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
           <div class="modal-dialog modal-dialog-centered">
             <form method="post" asp-page-handler="Reject" class="modal-content text-dark h-100 needs-validation" novalidate>
               <input type="hidden" name="id" value="@record.Id" />
-              <input type="hidden" asp-for="Role" />
+              
               <input type="hidden" asp-for="ActiveTab" />
               <div class="modal-header">
                 <h5 class="modal-title" id="rejectModalLabel-@record.Id">Rechazar Factura @record.InvoiceNumber</h5>
@@ -639,7 +643,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-start">
-                    <p class="mb-0">Estás modificando un valor que difiere de lo establecido en el contrato <strong>@(Model.SelectedRecord?.Id ?? 0)</strong>. ¿Deseas continuar?</p>
+                    <p class="mb-0">Estás modificando un valor que difiere de lo establecido en el contrato <strong>@(Model.SelectedRecord?.Id ?? "N/A")</strong>. ¿Deseas continuar?</p>
                 </div>
                 <div class="modal-footer bg-light mt-auto">
                     <button type="button" class="btn btn-simar-outline-gray" data-bs-dismiss="modal">Regresar</button>
@@ -652,29 +656,35 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
     </div>
 }
 
-<!-- Toasts -->
-<div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;">
+<!-- Premium Toasts -->
+<div class="toast-container toast-container-simar position-fixed top-0 end-0 p-4" style="margin-top: 75px;">
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
-        <div class="toast align-items-center text-white bg-success border-0 shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius:15px;">
-            <div class="d-flex p-2">
-                <div class="toast-body fs-5 d-flex align-items-center">
-                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
-                    <span>@Model.StatusMessage</span>
+        <div class="toast toast-simar toast-simar-success shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill main-icon fs-5 me-2"></i>
+                    <strong class="toast-title text-simar-green">Éxito</strong>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                @Model.StatusMessage
             </div>
         </div>
     }
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="toast align-items-center text-white bg-danger border-0 shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius:15px;">
-            <div class="d-flex p-2">
-                <div class="toast-body fs-5 d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
-                    <span>@TempData["ErrorMessage"]</span>
+        <div class="toast toast-simar toast-simar-error shadow-lg show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill main-icon fs-5 me-2"></i>
+                    <strong class="toast-title text-danger">Error</strong>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                @TempData["ErrorMessage"]
             </div>
         </div>
     }
@@ -740,7 +750,11 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                             document.getElementById('confirmDirtyBtn').onclick = function() {
                                 form.dataset.confirmed = 'true';
                                 confirmModal.hide();
-                                form.submit();
+                                if (typeof form.requestSubmit === 'function') {
+                                    form.requestSubmit();
+                                } else {
+                                    form.submit();
+                                }
                             };
                             return;
                         }
@@ -767,7 +781,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                 });
 
                 var updateCalculations = function() {
-                    var totalAmount = 0;
+                    var globalSubtotal = 0;
                     var rows = form.querySelectorAll('.concept-row');
                     
                     rows.forEach(function(row) {
@@ -778,18 +792,19 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                         
                         var qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
                         var price = parseFloat(amountInput ? amountInput.value : 0) || 0;
-                        var rowTotal = qty * price;
-                        var rowSubtotal = rowTotal / 1.16;
-                        var rowIva = rowSubtotal * 0.16;
                         
-                        totalAmount += rowTotal;
+                        var rowSubtotal = qty * price;
+                        var rowIva = rowSubtotal * 0.16;
+                        var rowTotal = rowSubtotal + rowIva;
+                        
+                        globalSubtotal += rowSubtotal;
                         
                         if (taxCell) taxCell.textContent = formatter.format(rowIva);
                         if (totalCell) totalCell.textContent = formatter.format(rowTotal);
                     });
 
-                    var globalSubtotal = totalAmount / 1.16;
                     var globalIva = globalSubtotal * 0.16;
+                    var globalTotal = globalSubtotal + globalIva;
                     
                     var subtotalFoot = form.querySelector('.subtotal-cell');
                     var taxFoot = form.querySelector('.tax-cell-foot');
@@ -797,7 +812,7 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                     
                     if (subtotalFoot) subtotalFoot.textContent = formatter.format(globalSubtotal);
                     if (taxFoot) taxFoot.textContent = formatter.format(globalIva);
-                    if (totalFoot) totalFoot.textContent = formatter.format(totalAmount);
+                    if (totalFoot) totalFoot.textContent = formatter.format(globalTotal);
                 };
 
                 var validateForm = function() {

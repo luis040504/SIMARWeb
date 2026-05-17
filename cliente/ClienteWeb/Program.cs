@@ -1,19 +1,42 @@
 using ClienteWeb.Services;
 
+using QuestPDF.Infrastructure;
+using ClienteWeb.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(o =>
+    o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
-builder.Services.AddTransient<BillingApiInterceptor>();
+// Billing API Configuration
+builder.Services.AddTransient<ClienteWeb.Services.BillingApiInterceptor>();
+builder.Services.AddHttpClient<ClienteWeb.Services.IBillingService, ClienteWeb.Services.BillingService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["BillingApiUrl"] ?? "http://localhost:8009");
+})
+.AddHttpMessageHandler<ClienteWeb.Services.BillingApiInterceptor>();
+
+// PDF Generation
+QuestPDF.Settings.License = LicenseType.Community;
+builder.Services.AddScoped<IInvoiceGeneratorService, InvoiceGeneratorService>();
+
+
 
 builder.Services.AddHttpClient<ManifestApiService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "http://localhost/api/");
 }).AddHttpMessageHandler<BillingApiInterceptor>();
 
+// Named client — módulo de Contratos (usado por IHttpClientFactory)
 builder.Services.AddHttpClient("ContractsApi", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:8006"); 
+    client.BaseAddress = new Uri("http://localhost:8006");
+});
+
+// Typed client — usado por los manifiestos
+builder.Services.AddHttpClient<ContratosApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8006");
 });
 
 builder.Services.AddHttpClient<ClientesApiService>(client =>
@@ -60,9 +83,30 @@ builder.Services.AddHttpClient("UserApi", client =>
     client.BaseAddress = new Uri("http://localhost:8002");
 });
 
+builder.Services.AddHttpClient<EmpleadosApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8008");
+});
+
 builder.Services.AddHttpClient("EmpleadoApi", client =>
 {
     client.BaseAddress = new Uri("http://localhost:8008");
+});
+
+builder.Services.AddHttpClient<EmpleadosApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8008");
+});
+
+builder.Services.AddHttpClient<VehiculosApiService>(client =>
+{
+    
+    client.BaseAddress = new Uri("http://localhost:8003");
+});
+
+builder.Services.AddHttpClient<RecoleccionesApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8004");
 });
 
 var app = builder.Build();
