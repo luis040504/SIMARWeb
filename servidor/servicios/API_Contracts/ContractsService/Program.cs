@@ -39,17 +39,54 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ContractsDbContext>();
-    db.Database.Migrate();
+    
+    if (app.Environment.IsDevelopment())
+    {
+        // En desarrollo, verificamos el estado de las migraciones sin eliminar la base de datos para no perder datos locales.
+        if (db.Database.HasPendingModelChanges())
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("==========================================================================");
+            Console.WriteLine("ADVERTENCIA: Se detectaron cambios pendientes en los modelos de C#.");
+            Console.WriteLine("Para aplicar estos cambios a la base de datos de forma automática,");
+            Console.WriteLine("por favor genera una nueva migración ejecutando:");
+            Console.WriteLine("   dotnet ef migrations add <NombreDeLaMigración>");
+            Console.WriteLine("==========================================================================");
+            Console.ResetColor();
+        }
+
+        var pendingMigrations = db.Database.GetPendingMigrations();
+        if (pendingMigrations.Any())
+        {
+            Console.WriteLine("Aplicando migraciones pendientes de forma automatizada...");
+            db.Database.Migrate();
+            Console.WriteLine("Migraciones aplicadas con éxito.");
+        }
+        else
+        {
+            Console.WriteLine("La base de datos de Contracts está al día. No se realizaron cambios.");
+        }
+    }
+    else
+    {
+        db.Database.Migrate();
+    }
 }
 
+// ─── AQUÍ REINTEGRAMOS SWAGGER Y EL ENTORNO ───────────────────────────
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(); // Esto es lo que hace que cargue la interfaz visual
 }
 
 app.UseCors();
-app.UseHttpsRedirection();
+
+// Solo forzar HTTPS si no estamos en desarrollo (Docker usa HTTP en el 8006)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.MapPost("/api/contracts", async (Contract contractRequest, IContractService contractService) =>
 {
