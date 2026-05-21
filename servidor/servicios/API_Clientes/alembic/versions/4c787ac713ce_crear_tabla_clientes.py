@@ -26,6 +26,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('businessName', sa.String(length=100), nullable=False),
+    sa.Column('alias', sa.String(length=100)),
     sa.Column('contactEmail', sa.String(length=100), nullable=False),
     sa.Column('phone', sa.String(length=100), nullable=True),
     sa.Column('registerDate', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),

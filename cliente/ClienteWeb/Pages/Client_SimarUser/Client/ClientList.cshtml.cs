@@ -166,13 +166,12 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
 
                 if (!userResponse.IsSuccessStatusCode)
                 {
-                    var error = await userResponse.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error al crear usuario: {error}");
-
+                    var errorResponse = await userResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+                  
                     return new JsonResult(new
                     {
                         success = false,
-                        message = $"Error al crear usuario: {error}"
+                        message = errorResponse?.Mensaje ?? "Error al crear usuario"
                     });
                 }
 
@@ -197,6 +196,7 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
                     idUser = userId,
                     name = input.Name,
                     businessName = input.BusinessName,
+                    alias = input.Alias,
                     contactEmail = input.ContactEmail,
                     phone = input.Phone,
                     address = input.Address,
@@ -224,6 +224,46 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
 
                 var created = await clientResponse.Content
                     .ReadFromJsonAsync<ClienteOutput>();
+
+                // ========================================
+                // 3. SUBIR CERTIFICADO
+                // ========================================
+
+                if (CertificadoFile != null && created != null)
+                {
+                    using var content = new MultipartFormDataContent();
+
+                    using var stream = CertificadoFile.OpenReadStream();
+
+                    var fileContent = new StreamContent(stream);
+
+                    fileContent.Headers.ContentType =
+                        new MediaTypeHeaderValue(CertificadoFile.ContentType);
+
+                    content.Add(
+                        fileContent,
+                        "file",
+                        CertificadoFile.FileName
+                    );
+
+                    var uploadResponse = await _clientesApi.PostAsync(
+                        $"/client/id/{created.Id}/certificate",
+                        content
+                    );
+
+                    if (!uploadResponse.IsSuccessStatusCode)
+                    {
+                        var uploadError = await uploadResponse.Content.ReadAsStringAsync();
+
+                        Console.WriteLine($"Error al subir certificado: {uploadError}");
+
+                        return new JsonResult(new
+                        {
+                            success = false,
+                            message = "Cliente registrado, pero hubo un problema al subir el certificado."
+                        });
+                    }
+                }
 
                 return new JsonResult(new
                 {
@@ -376,8 +416,12 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
 
                     if (!userResponse.IsSuccessStatusCode)
                     {
-                        var error = await userResponse.Content.ReadAsStringAsync();
-                        return new JsonResult(new { success = false, message = $"Error al actualizar usuario: {error}" });
+                        var error = await userResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+                        return new JsonResult(new 
+                        { 
+                            success = false,
+                            Message = error?.Mensaje ?? "Error al crear usuario"
+                        });
                     }
                 }
 
@@ -639,6 +683,9 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         public string Name { get; set; }
 
         public string BusinessName { get; set; }
+
+        public string Alias { get; set; }
+
         public string Phone { get; set; }
         public DateTime RegisterDate { get; set; }
         public string Status { get; set; }
@@ -664,6 +711,8 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
 
         public string Name { get; set; }
         public string BusinessName { get; set; }
+
+        public string Alias { get; set; }
         public string ContactEmail { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
@@ -693,6 +742,8 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         public string Name { get; set; }
 
         public string BusinessName { get; set; }
+
+        public string Alias { get; set; }
 
         public string ContactEmail { get; set; }
 
@@ -741,5 +792,10 @@ namespace ClienteWeb.Pages.Client_SimarUser.Client
         public string? Email { get; set; }
         public string? Password { get; set; }
         public string? Role { get; set; }
+    }
+
+    public class ApiErrorResponse
+    {
+        public string Mensaje { get; set; } = string.Empty;
     }
 }

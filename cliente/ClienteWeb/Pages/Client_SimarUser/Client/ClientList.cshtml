@@ -250,6 +250,7 @@
                     data-emailContacto="@cliente.ContactEmail"
                     data-username="@cliente.UserName"
                     data-razonSocial="@cliente.BusinessName"
+                    data-alias="@cliente.Alias"
                     data-nombre="@cliente.Name"
                     data-telefono="@cliente.Phone"
                     data-direccion="@cliente.Address"
@@ -396,6 +397,11 @@
                         </div>
 
                         <div class="col-md-6">
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Alias (nombre comercial): </strong>
+                            <input asp-for="Input.Alias" type="text" name="Alias" id="regAlias" class="form-control" placeholder="Alias" />
+                        </div>
+
+                        <div class="col-md-6">
                             <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email de contacto: *</strong>
                             <input asp-for="Input.ContactEmail" type="text" name="ContactEmail" id="regEmailContacto" class="form-control" placeholder="Email contacto" required />
                         </div>
@@ -478,6 +484,11 @@
                     <div class="col-md-6">
                         <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
                         <div id="detalleRazonSocial"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Alias:</strong>
+                        <div id="detalleAlias"></div>
                     </div>
 
                     <div class="col-md-6">
@@ -581,8 +592,6 @@
                             </div>
                         </div>
 
-                        <!--pendiente de agregar para editar ^ ^-->
-
                         <div class="col-md-6">
                             <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i> Nombre:</strong>
                             <input asp-for="EditInput.Name" type="text" id="editNombre" class="form-control" placeholder="Nombre" />
@@ -591,6 +600,11 @@
                         <div class="col-md-6">
                             <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
                             <input asp-for="EditInput.BusinessName" type="text" id="editRazonSocial" class="form-control" placeholder="Razon social" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Alias:</strong>
+                            <input asp-for="EditInput.Alias" type="text" id="editAlias" class="form-control" placeholder="Alias" required />
                         </div>
 
                         <div class="col-md-6">
@@ -648,6 +662,7 @@
         const password = document.getElementById("regPassword").value;
         const name = document.getElementById("regNombre").value;
         const businessName = document.getElementById("regRazonSocial").value;
+        const alias = document.getElementById("regAlias").value;
         const contactEmail = document.getElementById("regEmailContacto").value;
         const rfc = document.getElementById("regRFC").value;
 
@@ -655,6 +670,35 @@
             alert("Por favor, complete todos los campos obligatorios (*)");
             return;
         }
+
+        // ========================================
+        // VALIDACIÓN DE FORMATO DE EMAIL
+        // ========================================
+        function validarFormatoEmail(email) {
+            // Debe contener @@ y .com (o .[dominio] como .mx, .org, etc.)
+            const regexEmail = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            return regexEmail.test(email);
+        }
+
+        if (!validarFormatoEmail(email)) {
+            alert("❌ El correo electrónico no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+            return;
+        }
+
+        // ========================================
+        // VALIDACIÓN DE CONTRASEÑA (mínimo 8 caracteres)
+        // ========================================
+        if (password.length < 8) {
+            alert("❌ La contraseña debe tener al menos 8 caracteres");
+            return;
+        }
+
+        // También validar el email de contacto
+        if (contactEmail && !validarFormatoEmail(contactEmail)) {
+            alert("❌ El Email de contacto no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+            return;
+        }
+
 
         const fileInput = document.getElementById("regCertificado");
         const file = fileInput.files[0];
@@ -667,6 +711,7 @@
         formData.append("Input.Role", "cliente");
         formData.append("Input.Name", name);
         formData.append("Input.BusinessName", businessName);
+        formData.append("Input.Alias", alias);
         formData.append("Input.ContactEmail", contactEmail);
         formData.append("Input.Phone", document.getElementById("regTelefono").value || "");
         formData.append("Input.Address", document.getElementById("regDireccion").value || "");
@@ -885,6 +930,7 @@
         document.getElementById("detalleUsername").innerText = fila.getAttribute("data-username") || 'N/A';
         document.getElementById("detalleNombre").innerText = fila.getAttribute("data-nombre") || 'N/A';
         document.getElementById("detalleRazonSocial").innerText = fila.getAttribute("data-razonSocial") || 'N/A';
+        document.getElementById("detalleAlias").innerText = fila.getAttribute("data-alias") || 'N/A';
         document.getElementById("detalleEmailContacto").innerText = fila.getAttribute("data-emailContacto") || 'N/A';
         document.getElementById("detalleTelefono").innerText = fila.getAttribute("data-telefono") || 'N/A';
         document.getElementById("detalleDireccion").innerText = fila.getAttribute("data-direccion") || 'N/A';
@@ -937,7 +983,18 @@
 <script>
     let filaActual = null;
 
-    let usuarioOriginal = {}; // Guardar valores originales del usu
+    let usuarioOriginal = {}; // Guardar valores originales del usuario
+
+    function validarFormatoEmail(email) {
+        // Debe contener @@ y un dominio
+        const posicionArroba = email.indexOf('@@');
+        if (posicionArroba === -1) return false;
+        
+        const dominio = email.substring(posicionArroba + 1);
+        if (!dominio.includes('.')) return false;
+        
+        return true;
+    }
 
     function abrirModalEditar(id) {
 
@@ -947,6 +1004,7 @@
 
         document.getElementById("editNombre").value = filaActual.getAttribute("data-nombre");
         document.getElementById("editRazonSocial").value = filaActual.getAttribute("data-razonSocial");
+        document.getElementById("editAlias").value = filaActual.getAttribute("data-alias");
         document.getElementById("editUsername").value = filaActual.getAttribute("data-username");
         document.getElementById("editEmail").value = filaActual.getAttribute("data-email");
         document.getElementById("editEmailContacto").value = filaActual.getAttribute("data-emailContacto");
@@ -1009,10 +1067,23 @@
             updatedData.businessName = razonSocialNueva;
         }
 
+        const aliasNueva = document.getElementById("editAlias").value;
+        const aliasOriginal = filaActual.getAttribute("data-alias");
+
+        if (aliasNueva !== aliasOriginal) {
+            updatedData.alias = aliasNueva;
+        }
+
         const emailContactoNueva = document.getElementById("editEmailContacto").value;
         const emailContactoOriginal = filaActual.getAttribute("data-emailContacto");
 
         if (emailContactoNueva !== emailContactoOriginal) {
+
+            if (!validarFormatoEmail(emailContactoNueva)) {
+                alert("❌ El email de contacto no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+                return;
+            }
+
             updatedData.contactEmail = emailContactoNueva;
         }
 
@@ -1041,13 +1112,26 @@
         const nuevoEmail = document.getElementById("editEmail").value;
         const emailOriginal = filaActual.getAttribute("data-email");
         if (nuevoEmail !== emailOriginal) {
+
+            if (!validarFormatoEmail(nuevoEmail)) {
+                alert("❌ El correo electrónico no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+                return;
+            }
+
             userData.email = nuevoEmail;
         }
 
         const nuevaPassword = document.getElementById("editPassword").value;
         if (nuevaPassword && nuevaPassword.trim() !== "") {
+
+            if (nuevaPassword.length < 8) {
+                alert("❌ La contraseña debe tener al menos 8 caracteres");
+                return;
+            }
+
             userData.password = nuevaPassword;
         }
+
 
         const certificado = document.getElementById("editCertificado").files[0];
 
@@ -1222,12 +1306,14 @@
             const rfc = fila.getAttribute('data-rfc')?.toLowerCase() || '';
             const semarnat = fila.getAttribute('data-semarnat')?.toLowerCase() || '';
             const username = fila.getAttribute('data-username')?.toLowerCase() || '';
+            const alias = fila.getAttribute('data-alias')?.toLowerCase() || '';
             const email = fila.getAttribute('data-email')?.toLowerCase() || '';
 
             // Verificar si el término de búsqueda está en algún campo
             const coincide = searchTerm === '' ||
                 nombre.includes(searchTerm) ||
                 razonSocial.includes(searchTerm) ||
+                alias.includes(searchTerm) ||
                 emailContacto.includes(searchTerm) ||
                 telefono.includes(searchTerm) ||
                 status.includes(searchTerm) ||

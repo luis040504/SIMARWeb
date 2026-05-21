@@ -17,6 +17,7 @@ def create_client(db: Session, client: schemas.ClientCreate):
     db_client = models.Clientes(
         name=client.name,
         businessName = client.businessName,
+        alias = client.alias,
         contactEmail = client.contactEmail,
         phone=client.phone,
         address=client.address,
@@ -42,6 +43,9 @@ def update_client(db: Session, client_id: int, client_update: schemas.ClientUpda
 
     if client_update.businessName is not None:
         db_client.businessName = client_update.businessName
+
+    if client_update.alias is not None:
+        db_client.alias = client_update.alias
 
     if client_update.contactEmail is not None:
         db_client.contactEmail = client_update.contactEmail
@@ -155,6 +159,7 @@ def search_clients(db: Session, query: str):
     filters = [
         models.Clientes.name.ilike(f"%{query}%"),
         models.Clientes.businessName.ilike(f"%{query}%"),
+        models.Clientes.alias.ilike(f"%{query}%"),
         models.Clientes.contactEmail.ilike(f"%{query}%"),
         models.Clientes.phone.ilike(f"%{query}%"),
         models.Clientes.address.ilike(f"%{query}%"),

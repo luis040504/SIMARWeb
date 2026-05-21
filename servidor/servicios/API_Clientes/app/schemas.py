@@ -12,6 +12,7 @@ class StatusEnum(str, Enum):
 class ClientBase(BaseModel):
     name: str = Field(max_length=100)
     businessName: str = Field(max_length=100)
+    alias: str = Field(max_length=100)
     contactEmail: str = Field(max_length=100)
     phone: str = Field(max_length=100)
     registerDate: datetime | None = None
@@ -26,6 +27,7 @@ class ClientBase(BaseModel):
 class ClientCreate(BaseModel):
     name: str
     businessName: str 
+    alias: str | None = None
     contactEmail: str
     phone: str | None = None
     address: str | None = None
@@ -38,6 +40,7 @@ class ClientCreate(BaseModel):
 class ClientUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=100)
     businessName: str | None = None
+    alias: str | None = None
     contactEmail: str | None = None
     phone: str | None = None
     address: str | None = None
@@ -50,6 +53,7 @@ class Client(ClientBase):
     id: int
     name: str
     businessName: str 
+    alias: str | None = None
     contactEmail: str
     phone: str | None = None
     registerDate: datetime
