@@ -257,6 +257,7 @@
                     data-rfc="@cliente.RFC"
                     data-fecha="@cliente.RegisterDate.ToShortDateString()"
                     data-semarnat="@cliente.SemarnatNum"
+                    data-sedema="@cliente.SedemaNum"
                     data-status="@cliente.Status"
                     data-idUser="@cliente.IdUser"
                     data-certificado='@(string.IsNullOrEmpty(cliente.UrlSatCertificate)
@@ -366,24 +367,74 @@
 
                     <div class="row g-3">
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: (para iniciar sesion) *</strong>
-                            <input asp-for="Input.Email" type="email" class="form-control" name="Email" id="regEmail" placeholder="Email" required />
-                        </div>
+                        <!-- OPCIÓN CREAR ACCESO -->
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="chkCrearAcceso"
+                                       checked
+                                       onchange="toggleCamposUsuario()">
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username: *</strong>
-                            <input asp-for="Input.UserName" type="text" name="UserName" id="regUsername" class="form-control" placeholder="Username" required />
-                        </div>
-
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña *:</strong>
-                            <div class="input-group">
-                                <input asp-for="Input.Password" type="password" name="Password" id="regPassword" class="form-control" placeholder="Contraseña" required />
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('regPassword', this)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                                <label class="form-check-label fw-semibold" for="chkCrearAcceso">
+                                    Crear acceso al sistema para este cliente
+                                </label>
                             </div>
+                        </div>
+
+                        <!-- CAMPOS DE USUARIO -->
+                        <div id="camposUsuario" class="row g-3">
+
+                            <div class="col-md-6">
+                                <strong>
+                                    <i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>
+                                    Email: (para iniciar sesión) *
+                                </strong>
+
+                                <input asp-for="Input.Email"
+                                       type="email"
+                                       class="form-control"
+                                       name="Email"
+                                       id="regEmail"
+                                       placeholder="Email" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong>
+                                    <i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>
+                                    Username: *
+                                </strong>
+
+                                <input asp-for="Input.UserName"
+                                       type="text"
+                                       name="UserName"
+                                       id="regUsername"
+                                       class="form-control"
+                                       placeholder="Username" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong>
+                                    <i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>
+                                    Contraseña *:
+                                </strong>
+
+                                <div class="input-group">
+                                    <input asp-for="Input.Password"
+                                           type="password"
+                                           name="Password"
+                                           id="regPassword"
+                                           class="form-control"
+                                           placeholder="Contraseña" />
+
+                                    <button class="btn btn-outline-secondary"
+                                            type="button"
+                                            onclick="togglePassword('regPassword', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="col-md-6">
@@ -392,7 +443,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social: *</strong>
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razón social: *</strong>
                             <input asp-for="Input.BusinessName" type="text" name="BusinessName" id="regRazonSocial" class="form-control" placeholder="Razon social" required />
                         </div>
 
@@ -424,6 +475,11 @@
                         <div class="col-md-6">
                             <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i>Número de Semarnat:</strong>
                             <input asp-for="Input.SemarnatNum" type="text" name="SemarnatNumber" id="regSemarnat" class="form-control" placeholder="Número de SEMARNAT" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i>Número de Sedema:</strong>
+                            <input asp-for="Input.SedemaNum" type="text" name="SedemaNumber" id="regSedema" class="form-control" placeholder="Número de SEDEMA" />
                         </div>
 
                         <div class="col-12">
@@ -482,7 +538,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
+                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razón social:</strong>
                         <div id="detalleRazonSocial"></div>
                     </div>
 
@@ -519,6 +575,11 @@
                     <div class="col-md-6">
                         <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Semarnat:</strong>
                         <div id="detalleSemarnat"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Sedema:</strong>
+                        <div id="detalleSedema"></div>
                     </div>
 
                     <div class="col-md-6">
@@ -570,26 +631,44 @@
 
                     <input type="hidden" id="editId" />
 
-                    <div class="row g-3">
+                    <div class="row g-3" >
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
-                            <input type="text" id="editUsername" class="form-control" placeholder="Username" />
-                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="chkCrearAccesoEdit"
+                                       onchange="toggleCamposUsuarioEdit()">
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
-                            <input type="text" id="editEmail" class="form-control" placeholder="Email" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
-                            <div class="input-group">
-                                <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                                <label class="form-check-label" for="chkCrearAccesoEdit">
+                                    Crear acceso al sistema para este cliente
+                                </label>
                             </div>
+                        </div>
+
+
+                        <div id="camposUsuarioEdit" class="row g-3">
+
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
+                                <input type="text" id="editUsername" class="form-control" placeholder="Username" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
+                                <input type="text" id="editEmail" class="form-control" placeholder="Email" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
+                                <div class="input-group">
+                                    <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="col-md-6">
@@ -598,7 +677,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razón social:</strong>
                             <input asp-for="EditInput.BusinessName" type="text" id="editRazonSocial" class="form-control" placeholder="Razon social" required />
                         </div>
 
@@ -632,6 +711,11 @@
                             <input asp-for="EditInput.SemarnatNum" type="text" id="editSemarnat" class="form-control" placeholder="SEMARNAT" />
                         </div>
 
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Sedema:</strong>
+                            <input asp-for="EditInput.SedemaNum" type="text" id="editSedema" class="form-control" placeholder="SEDEMA" />
+                        </div>
+
                         <div class="col-12">
                             <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT</strong>
                             <input asp-for="CertificadoFile" type="file" id="editCertificado" class="form-control" />
@@ -656,6 +740,9 @@
 
 <script>
     async function registrarCliente() {
+
+        const crearAcceso = document.getElementById("chkCrearAcceso").checked;
+
         // Validar campos requeridos
         const email = document.getElementById("regEmail").value;
         const username = document.getElementById("regUsername").value;
@@ -666,31 +753,52 @@
         const contactEmail = document.getElementById("regEmailContacto").value;
         const rfc = document.getElementById("regRFC").value;
 
-        if (!email || !username || !password || !name || !businessName || !contactEmail || !rfc) {
-            alert("Por favor, complete todos los campos obligatorios (*)");
+        const semarnat = document.getElementById("regSemarnat").value;
+        const sedema = document.getElementById("regSedema").value;
+
+        if(crearAcceso){
+            if (!email || !username || !password || !name || !businessName || !contactEmail || !rfc) {
+                alert("Por favor, complete todos los campos obligatorios (*)");
+                return;
+            }
+        }else{
+            if (!name || !businessName || !contactEmail || !rfc) {
+                alert("Por favor, complete todos los campos obligatorios (*)");
+                return;
+            }
+        }
+
+
+        //validar que tenga num de semarnat o de sedema
+
+        if(!semarnat && !sedema){
+            alert("Debe ingresar al menos el número de SEMARNAT o el de SEDEMA")
             return;
         }
 
-        // ========================================
-        // VALIDACIÓN DE FORMATO DE EMAIL
-        // ========================================
         function validarFormatoEmail(email) {
             // Debe contener @@ y .com (o .[dominio] como .mx, .org, etc.)
             const regexEmail = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
             return regexEmail.test(email);
         }
 
-        if (!validarFormatoEmail(email)) {
-            alert("❌ El correo electrónico no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
-            return;
-        }
+        if(crearAcceso){
+            // ========================================
+            // VALIDACIÓN DE FORMATO DE EMAIL
+            // ========================================
+            
+            if (!validarFormatoEmail(email)) {
+                alert("❌ El correo electrónico no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+                return;
+            }
 
-        // ========================================
-        // VALIDACIÓN DE CONTRASEÑA (mínimo 8 caracteres)
-        // ========================================
-        if (password.length < 8) {
-            alert("❌ La contraseña debe tener al menos 8 caracteres");
-            return;
+            // ========================================
+            // VALIDACIÓN DE CONTRASEÑA (mínimo 8 caracteres)
+            // ========================================
+            if (password.length < 8) {
+                alert("❌ La contraseña debe tener al menos 8 caracteres");
+                return;
+            }
         }
 
         // También validar el email de contacto
@@ -705,10 +813,14 @@
 
         // Crear FormData para enviar el archivo junto con los datos
         const formData = new FormData();
-        formData.append("Input.Email", email);
-        formData.append("Input.UserName", username);
-        formData.append("Input.Password", password);
-        formData.append("Input.Role", "cliente");
+
+        if(crearAcceso){
+            formData.append("Input.Email", email);
+            formData.append("Input.UserName", username);
+            formData.append("Input.Password", password);
+            formData.append("Input.Role", "cliente");
+        }
+
         formData.append("Input.Name", name);
         formData.append("Input.BusinessName", businessName);
         formData.append("Input.Alias", alias);
@@ -717,6 +829,7 @@
         formData.append("Input.Address", document.getElementById("regDireccion").value || "");
         formData.append("Input.RFC", rfc);
         formData.append("Input.SemarnatNum", document.getElementById("regSemarnat").value || "");
+        formData.append("Input.SedemaNum", document.getElementById("regSedema").value || "");
 
         if (file) {
             formData.append("CertificadoFile", file);
@@ -733,14 +846,27 @@
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Registrando...';
             }
 
-            // Enviar al handler correcto
-            const response = await fetch("?handler=RegistrarCliente", {
-                method: "POST",
-                headers: {
-                    "RequestVerificationToken": token
-                },
-                body: formData
-            });
+            let response;
+
+            if(crearAcceso){
+                // handler con usuario
+                response = await fetch("?handler=RegistrarCliente", {
+                    method: "POST",
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    body: formData
+                });
+            }else{
+                // handler sin usuario
+                response = await fetch("?handler=RegistrarClienteSinUser", {
+                    method: "POST",
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    body: formData
+                });
+            }
 
             const result = await response.json();
 
@@ -818,6 +944,55 @@
     }
 
 </script>
+
+
+<script>
+    function toggleCamposUsuario() {
+
+        const checkbox = document.getElementById("chkCrearAcceso");
+        const campos = document.getElementById("camposUsuario");
+
+        const email = document.getElementById("regEmail");
+        const username = document.getElementById("regUsername");
+        const password = document.getElementById("regPassword");
+
+        if (checkbox.checked) {
+
+            campos.style.display = "flex";
+
+            email.required = true;
+            username.required = true;
+            password.required = true;
+
+        } else {
+
+            campos.style.display = "none";
+
+            email.required = false;
+            username.required = false;
+            password.required = false;
+
+            email.value = "";
+            username.value = "";
+            password.value = "";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", toggleCamposUsuario);
+
+
+    function toggleCamposUsuarioEdit() {
+
+        const checked =
+            document.getElementById("chkCrearAccesoEdit").checked;
+
+        const contenedor =
+            document.getElementById("camposUsuarioEdit");
+
+        contenedor.style.display = checked ? "flex" : "none";
+    }
+</script>
+
 
 <script>
     document.getElementById("registroForm").addEventListener("submit", async function(e) {
@@ -937,6 +1112,7 @@
         document.getElementById("detalleRFC").innerText = fila.getAttribute("data-rfc") || 'N/A';
         document.getElementById("detalleFecha").innerText = fila.getAttribute("data-fecha") || 'N/A';
         document.getElementById("detalleSemarnat").innerText = fila.getAttribute("data-semarnat") || 'N/A';
+        document.getElementById("detalleSedema").innerText = fila.getAttribute("data-sedema") || 'N/A';
         document.getElementById("detalleStatus").innerText = fila.getAttribute("data-status") || 'N/A';
 
         // botón historial
@@ -1000,26 +1176,86 @@
 
         filaActual = document.getElementById("cliente-" + id);
 
+        const idUser = filaActual.getAttribute("data-idUser");
+
         document.getElementById("editId").value = id;
 
-        document.getElementById("editNombre").value = filaActual.getAttribute("data-nombre");
-        document.getElementById("editRazonSocial").value = filaActual.getAttribute("data-razonSocial");
-        document.getElementById("editAlias").value = filaActual.getAttribute("data-alias");
-        document.getElementById("editUsername").value = filaActual.getAttribute("data-username");
-        document.getElementById("editEmail").value = filaActual.getAttribute("data-email");
-        document.getElementById("editEmailContacto").value = filaActual.getAttribute("data-emailContacto");
-        document.getElementById("editTelefono").value = filaActual.getAttribute("data-telefono");
-        document.getElementById("editDireccion").value = filaActual.getAttribute("data-direccion");
-        document.getElementById("editRFC").value = filaActual.getAttribute("data-rfc");
-        document.getElementById("editSemarnat").value = filaActual.getAttribute("data-semarnat");
+        // ============================================
+        // DATOS CLIENTE
+        // ============================================
 
-        // Guardar valores originales del usuario
-        usuarioOriginal = {
-            username: filaActual.getAttribute("data-username") || '',
-            email: filaActual.getAttribute("data-email") || ''
-        };
+        document.getElementById("editNombre").value =
+            filaActual.getAttribute("data-nombre");
 
-        let modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+        document.getElementById("editRazonSocial").value =
+            filaActual.getAttribute("data-razonSocial");
+
+        document.getElementById("editAlias").value =
+            filaActual.getAttribute("data-alias");
+
+        document.getElementById("editEmailContacto").value =
+            filaActual.getAttribute("data-emailContacto");
+
+        document.getElementById("editTelefono").value =
+            filaActual.getAttribute("data-telefono");
+
+        document.getElementById("editDireccion").value =
+            filaActual.getAttribute("data-direccion");
+
+        document.getElementById("editRFC").value =
+            filaActual.getAttribute("data-rfc");
+
+        document.getElementById("editSemarnat").value =
+            filaActual.getAttribute("data-semarnat");
+
+        document.getElementById("editSedema").value =
+            filaActual.getAttribute("data-sedema");
+
+        // ============================================
+        // TIENE USUARIO
+        // ============================================
+
+        if (idUser && idUser !== "null") {
+
+            document.getElementById("chkCrearAccesoEdit").checked = true;
+
+            // bloquear checkbox
+            document.getElementById("chkCrearAccesoEdit").disabled = true;
+
+            // mostrar campos
+            document.getElementById("camposUsuarioEdit").style.display = "flex";
+
+            // cargar usuario
+            document.getElementById("editEmail").value =
+                filaActual.getAttribute("data-email") || "";
+
+            document.getElementById("editUsername").value =
+                filaActual.getAttribute("data-username") || "";
+
+            // guardar originales
+            usuarioOriginal = {
+                username: filaActual.getAttribute("data-username") || '',
+                email: filaActual.getAttribute("data-email") || ''
+            };
+
+        } else {
+
+            document.getElementById("chkCrearAccesoEdit").checked = false;
+
+            document.getElementById("chkCrearAccesoEdit").disabled = false;
+
+            document.getElementById("camposUsuarioEdit").style.display = "none";
+
+            // limpiar campos
+            document.getElementById("editEmail").value = "";
+            document.getElementById("editUsername").value = "";
+            document.getElementById("editPassword").value = "";
+        }
+
+        let modal = new bootstrap.Modal(
+            document.getElementById('modalEditar')
+        );
+
         modal.show();
     }
 
@@ -1031,6 +1267,7 @@
 
         console.log("=== guardarEdicion() ha sido llamada ===");
 
+        
 
         const updatedData = {};
         const userData = {};
@@ -1038,6 +1275,27 @@
 
         updatedData.id = parseInt(document.getElementById("editId").value);
         const idUser = filaActual.getAttribute("data-idUser");
+
+
+        const crearAcceso = document.getElementById("chkCrearAccesoEdit").checked;
+        const yaTieneUsuario = idUser && idUser !== "null" && idUser !== "";
+
+        // ======================================
+        // VALIDAR CREAR USUARIO NUEVO
+        // ======================================
+
+        if (!yaTieneUsuario && crearAcceso) {
+
+            const username = document.getElementById("editUsername").value.trim();
+            const email = document.getElementById("editEmail").value.trim();
+            const password = document.getElementById("editPassword").value.trim();
+
+            if (!username || !email || !password) {
+                alert("Debe completar username, email y contraseña para crear el acceso al sistema");
+                return;
+            }
+
+        }
 
         const nombreNuevo = document.getElementById("editNombre").value;
         const nombreOriginal = filaActual.getAttribute("data-nombre");
@@ -1101,37 +1359,67 @@
             updatedData.SemarnatNum = semarnatNumNueva;
         }
         
+        const sedemaNumNueva = document.getElementById("editSedema").value;
+        const sedemaNumOriginal = filaActual.getAttribute("data-sedema");
 
-        // --- Usuario: solo campos modificados ---
-        const nuevoUsername = document.getElementById("editUsername").value;
-        const usernameOriginal = filaActual.getAttribute("data-username");
-        if (nuevoUsername !== usernameOriginal) {
-            userData.username = nuevoUsername;
+        if (sedemaNumNueva !== sedemaNumOriginal) {
+            updatedData.SedemaNum = sedemaNumNueva;
         }
 
-        const nuevoEmail = document.getElementById("editEmail").value;
-        const emailOriginal = filaActual.getAttribute("data-email");
-        if (nuevoEmail !== emailOriginal) {
 
-            if (!validarFormatoEmail(nuevoEmail)) {
-                alert("❌ El correo electrónico no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
-                return;
+        // ======================================
+        // USUARIO
+        // ======================================
+
+        if (yaTieneUsuario || crearAcceso) {
+
+            const nuevoUsername =
+                document.getElementById("editUsername").value;
+
+            const usernameOriginal =
+                filaActual.getAttribute("data-username") || "";
+
+            if (nuevoUsername !== usernameOriginal) {
+
+                if (!nuevoUsername.trim()) {
+                    alert("El username es obligatorio");
+                    return;
+                }
+
+                userData.username = nuevoUsername;
             }
 
-            userData.email = nuevoEmail;
-        }
+            const nuevoEmail =
+                document.getElementById("editEmail").value;
 
-        const nuevaPassword = document.getElementById("editPassword").value;
-        if (nuevaPassword && nuevaPassword.trim() !== "") {
+            const emailOriginal =
+                filaActual.getAttribute("data-email") || "";
 
-            if (nuevaPassword.length < 8) {
-                alert("❌ La contraseña debe tener al menos 8 caracteres");
-                return;
+            if (nuevoEmail !== emailOriginal) {
+
+                if (!validarFormatoEmail(nuevoEmail)) {
+                    alert("❌ El correo electrónico no es válido");
+                    return;
+                }
+
+                userData.email = nuevoEmail;
             }
 
-            userData.password = nuevaPassword;
-        }
+            const nuevaPassword =
+                document.getElementById("editPassword").value;
 
+            if (nuevaPassword && nuevaPassword.trim() !== "") {
+
+                if (nuevaPassword.length < 8) {
+                    alert("❌ La contraseña debe tener al menos 8 caracteres");
+                    return;
+                }
+
+                userData.password = nuevaPassword;
+            }
+
+        }
+       
 
         const certificado = document.getElementById("editCertificado").files[0];
 
@@ -1159,13 +1447,18 @@
             idUser: idUser
         };
 
-        if (hasClientChanges) {
+
+        if (hasClientChanges || (!yaTieneUsuario && crearAcceso)) {
             payload.cliente = updatedData;
         }
 
+
         if (hasUserChanges) {
             payload.usuario = userData;
-            payload.idUser = idUser;
+
+            if (yaTieneUsuario) {
+                payload.idUser = idUser;
+            }
         }
 
         // Si solo hay certificado sin cambios en datos
@@ -1185,7 +1478,19 @@
             return;
         }
 
-        fetch('/Client_SimarUser/Client/ClientList?handler=EditarCompleto', {
+        let handler = "EditarCliente";
+
+        if (yaTieneUsuario && hasUserChanges) {
+            handler = "EditarCompleto";
+        }
+        else if (!yaTieneUsuario && crearAcceso) {
+            handler = "EditarCrearUsuario";
+        }
+
+        console.log("Handler:", handler);
+        console.log("Payload:", payload);
+
+        fetch(`/Client_SimarUser/Client/ClientList?handler=${handler}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1236,7 +1541,7 @@
         })
             .catch(error => {
             console.error("Error:", error);
-            alert("Error inesperado al guardar");
+            alert("Error inesperado al guardar" + error);
         });
 
     }
@@ -1305,6 +1610,7 @@
             const direccion = fila.getAttribute('data-direccion')?.toLowerCase() || '';
             const rfc = fila.getAttribute('data-rfc')?.toLowerCase() || '';
             const semarnat = fila.getAttribute('data-semarnat')?.toLowerCase() || '';
+            const sedema = fila.getAttribute('data-sedema')?.toLowerCase() || '';
             const username = fila.getAttribute('data-username')?.toLowerCase() || '';
             const alias = fila.getAttribute('data-alias')?.toLowerCase() || '';
             const email = fila.getAttribute('data-email')?.toLowerCase() || '';
@@ -1320,6 +1626,7 @@
                 direccion.includes(searchTerm) ||
                 rfc.includes(searchTerm) ||
                 semarnat.includes(searchTerm) ||
+                sedema.includes(searchTerm) ||
                 username.includes(searchTerm) ||
                 email.includes(searchTerm);
 

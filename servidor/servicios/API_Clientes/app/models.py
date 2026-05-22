@@ -23,8 +23,9 @@ class Clientes(Base):
     rfc = Column(String(100), nullable=True)
     urlSatCertificate = Column(String(100), nullable=True)
     semarnatNum = Column(String(100), nullable=True)
+    sedemaNum = Column(String(100), nullable=True)
     status = Column(Enum(StatusEnum), nullable=False, default=StatusEnum.activo)
-    idUser = Column(UUID(as_uuid=True), nullable=False)
+    idUser = Column(UUID(as_uuid=True))
 
     
 

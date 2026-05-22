@@ -20,8 +20,9 @@ class ClientBase(BaseModel):
     rfc: str = Field(max_length=100)
     urlSatCertificate: str = Field(max_length=100)
     semarnatNum: str = Field(max_length=100)
+    sedemaNum: str = Field(max_length=100)
     status: StatusEnum
-    idUser: UUID
+    idUser: UUID 
 
 
 class ClientCreate(BaseModel):
@@ -34,7 +35,8 @@ class ClientCreate(BaseModel):
     rfc: str
     urlSatCertificate: str | None = None
     semarnatNum: str | None = None
-    idUser: UUID
+    sedemaNum: str | None = None
+    idUser: UUID | None = None
 
 
 class ClientUpdate(BaseModel):
@@ -47,6 +49,8 @@ class ClientUpdate(BaseModel):
     rfc: str | None = None
     urlSatCertificate: str | None = None
     semarnatNum: str | None = None
+    sedemaNum: str | None = None
+    idUser: UUID | None = None
 
 
 class Client(ClientBase):
@@ -61,8 +65,9 @@ class Client(ClientBase):
     rfc: str | None = None
     urlSatCertificate: str | None = None
     semarnatNum: str | None = None
+    sedemaNum: str | None = None
     status: StatusEnum
-    idUser: UUID
+    idUser: UUID | None = None
 
     class Config:
         from_attributes = True

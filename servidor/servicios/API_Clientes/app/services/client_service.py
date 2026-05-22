@@ -14,6 +14,15 @@ class ClientService:
     def create_client(self, client_data: schemas.ClientCreate):
         if len(client_data.name.strip()) == 0:
             raise ValueError("Client name required")
+        
+        semarnat = (client_data.semarnatNum or "").strip()
+        sedema = (client_data.sedemaNum or "").strip()
+
+        if not semarnat and not sedema:
+            raise ValueError(
+                "Se debe ingresar al menos el número de SEMARNAT o el de SEDEMA"
+            )
+
         return client_repository.create_client(self.db, client_data)
 
     def update_client(self, client_id: int, client_update: schemas.ClientUpdate):

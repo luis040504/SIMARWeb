@@ -13,6 +13,8 @@ namespace ClienteWeb.Models
         public string Address { get; set; }
         public string RFC { get; set; }
         public string SemarnatNum { get; set; }
+
+        public string SedemaNum { get; set; }
     }
 
     public class ClienteOutput
@@ -29,6 +31,8 @@ namespace ClienteWeb.Models
         public string RFC { get; set; }
         public string UrlSatCertificate { get; set; }
         public string SemarnatNum { get; set; }
+
+        public string SedemaNum { get; set; }
         public string UserName { get; set; }
         public string Email { get; set; }
         public string ContactEmail { get; set; }

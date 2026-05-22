@@ -34,6 +34,7 @@ def upgrade() -> None:
     sa.Column('rfc', sa.String(length=100), nullable=True),
     sa.Column('urlSatCertificate', sa.String(length=100), nullable=True),
     sa.Column('semarnatNum', sa.String(length=100), nullable=True),
+    sa.Column('sedemaNum', sa.String(length=100), nullable=True),
     sa.Column('status', sa.Enum('activo', 'inactivo', name='statusenum'), nullable=False),
     sa.Column('idUser', UUID(as_uuid=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
