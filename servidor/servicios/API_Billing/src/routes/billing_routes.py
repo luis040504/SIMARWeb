@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status, File, UploadFile, Form
 from typing import List
 from ..schemas.billing_schema import BillingCreateSchema, BillingUpdateSchema, BillingResponseSchema, BillingFilterSchema
 from ..schemas.aggregator_schema import ReadyToBillSchema
+from ..schemas.pac_schema import PacSettingsSchema, PacSettingsUpdateSchema
 from ..controller.billing_controller import BillingController
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
@@ -12,12 +13,12 @@ async def get_all_billing(filtro: BillingFilterSchema = Depends()):
     return await BillingController.get_all(filtro)
 
 @router.get("/ready-to-bill", response_model=List[ReadyToBillSchema])
-async def get_ready_to_bill():
+async def get_ready_to_bill(include_billed: bool = False):
     """
     Endpoint agregador que consulta Manifiestos, Clientes y Contratos 
     para devolver servicios listos para facturación.
     """
-    return await BillingController.get_ready_to_bill()
+    return await BillingController.get_ready_to_bill(include_billed)
 
 @router.get("/{billing_id}", response_model=BillingResponseSchema)
 async def get_billing(billing_id: str):
@@ -53,3 +54,22 @@ async def change_status(billing_id: str, new_status: str, reason: str = None):
 async def upload_physical_invoice(billing_id: str, file: UploadFile = File(...)):
     """Subir el PDF de una factura física"""
     return await BillingController.upload_file(billing_id, file)
+
+@router.get("/pac/settings", response_model=PacSettingsSchema)
+async def get_pac_settings():
+    """Obtener la configuración actual de timbrado PAC y consumo de timbres"""
+    return await BillingController.get_pac_settings()
+
+@router.post("/pac/settings", response_model=PacSettingsSchema)
+async def update_pac_settings(settings_data: PacSettingsUpdateSchema):
+    """Actualizar el modo PAC y el límite de timbres"""
+    return await BillingController.update_pac_settings(
+        pac_mode=settings_data.pac_mode,
+        timbres_limit=settings_data.timbres_limit,
+        timbres_used=settings_data.timbres_used
+    )
+
+@router.post("/pac/reset", response_model=PacSettingsSchema)
+async def reset_pac_timbres():
+    """Restablecer a cero los timbres consumidos"""
+    return await BillingController.reset_pac_timbres()

@@ -11,7 +11,7 @@ const startServer = async () => {
         process.exit(1);
     }
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
         console.log(`Manifiestos API corriendo en puerto ${PORT}`);
         console.log(`Health check: http://localhost:${PORT}/health`);
     });

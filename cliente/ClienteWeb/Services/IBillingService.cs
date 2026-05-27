@@ -8,7 +8,7 @@ namespace ClienteWeb.Services
     public interface IBillingService
     {
         Task<List<BillingResponse>> GetInvoicesAsync(string status = null, string receiverTaxId = null, string searchQuery = null);
-        Task<List<ReadyToBill>> GetReadyToBillAsync();
+        Task<List<ReadyToBill>> GetReadyToBillAsync(bool includeBilled = false);
         Task<BillingResponse> GetInvoiceByIdAsync(string id);
         Task<BillingResponse> CreateInvoiceAsync(BillingCreate data);
         Task<BillingResponse> UpdateInvoiceAsync(string id, BillingCreate data);

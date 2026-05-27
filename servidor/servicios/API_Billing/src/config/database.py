@@ -18,6 +18,8 @@ MONGO_URI = f"mongodb://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_HOST}:{MONGOD
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 database = client[MONGODB_DB]
 facturas_collection = database['facturas']
+pac_settings_collection = database['pac_settings']
+
 
 
 async def test_connection():

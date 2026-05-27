@@ -33,9 +33,9 @@ namespace ClienteWeb.Services
             return await _httpClient.GetFromJsonAsync<List<BillingResponse>>(url);
         }
 
-        public async Task<List<ReadyToBill>> GetReadyToBillAsync()
+        public async Task<List<ReadyToBill>> GetReadyToBillAsync(bool includeBilled = false)
         {
-            return await _httpClient.GetFromJsonAsync<List<ReadyToBill>>("billing/ready-to-bill");
+            return await _httpClient.GetFromJsonAsync<List<ReadyToBill>>($"billing/ready-to-bill?include_billed={includeBilled}");
         }
 
         public async Task<BillingResponse> GetInvoiceByIdAsync(string id)

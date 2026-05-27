@@ -9,7 +9,7 @@
 
     <!-- Main Content -->
     <div class="card-simar mb-4">
-        <div class="card-simar-header pb-0 border-bottom-0">
+        <div class="card-simar-header pb-0 border-bottom-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <ul class="nav nav-tabs border-bottom-0 pb-0">
                 @if (Model.Role == "Admin")
                 {
@@ -43,6 +43,12 @@
                     </li>
                 }
             </ul>
+            @if (Model.Role == "Admin")
+            {
+                <button type="button" class="btn btn-simar-primary mb-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalGenerarAparte">
+                    <i class="bi bi-plus-circle"></i> Factura Aparte
+                </button>
+            }
         </div>
         <div class="card-body p-4 pt-4">
 
@@ -98,25 +104,52 @@
                         <div class="col-md-6 col-lg-4 col-xl-3">
                             <div class="card-simar-subtle h-100">
                                 <div class="card-body p-4 position-relative d-flex flex-column h-100">
-                                    <div class="d-flex justify-content-between align-items-start mb-3 overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-start mb-3 gap-2">
                                         <h5 class="card-title text-dark fw-semibold text-truncate mb-0 flex-grow-1" style="min-width: 0;" title="@record.ClientName">@record.ClientName</h5>
-                                        @if (record.RecordType == "Invoice")
-                                        {
-                                            <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))">
-                                                @if (record.Status == "Accepted") { <i class="bi bi-check-lg me-1"></i> }
-                                                else if (record.Status == "Rejected") { <i class="bi bi-x-lg me-1"></i> }
-                                                else { <i class="bi bi-clock-history me-1"></i> }
-                                                @record.InvoiceNumber
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge badge-simar @(record.Source == "contract" ? "bg-info text-white" : "badge-simar-programada")">
-                                                @if (record.Source == "contract") { <i class="bi bi-file-earmark-text me-1"></i> }
-                                                else { <i class="bi bi-tag me-1"></i> }
-                                                ID: @record.Id
-                                            </span>
-                                        }
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (record.RecordType == "Invoice")
+                                            {
+                                                <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))">
+                                                    @if (record.Status == "Accepted") { <i class="bi bi-check-lg me-1"></i> }
+                                                    else if (record.Status == "Rejected") { <i class="bi bi-x-lg me-1"></i> }
+                                                    else { <i class="bi bi-clock-history me-1"></i> }
+                                                    @record.InvoiceNumber
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-simar @(record.Source == "contract" ? "bg-info text-white" : "badge-simar-programada")">
+                                                    @if (record.Source == "contract") { <i class="bi bi-file-earmark-text me-1"></i> }
+                                                    else { <i class="bi bi-tag me-1"></i> }
+                                                    ID: @record.Id
+                                                </span>
+                                            }
+
+                                            @if (Model.Role == "Admin" && record.RecordType == "Invoice" && record.Status == "Pending")
+                                            {
+                                                <div class="dropdown">
+                                                    <button class="btn btn-link text-secondary p-0 border-0" type="button" id="dropdownMenu-@record.Id" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow: none; line-height: 1;">
+                                                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownMenu-@record.Id" style="z-index: 1030;">
+                                                        <li>
+                                                            <form method="post" asp-page-handler="Accept" class="w-100">
+                                                                <input type="hidden" name="id" value="@record.Id" />
+                                                                <input type="hidden" asp-for="ActiveTab" />
+                                                                <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 small fw-medium">
+                                                                    <i class="bi bi-check-circle text-success"></i> Aceptar Prefactura
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        <li>
+                                                            <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2 small fw-medium" data-bs-toggle="modal" data-bs-target="#rejectModal-@record.Id">
+                                                                 <i class="bi bi-x-circle text-danger"></i> Rechazar Prefactura
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
                                     <p class="card-text mb-2"><small class="text-muted">RFC:</small> <strong class="text-simar-dark">@record.TaxId</strong></p>
                                     
@@ -315,6 +348,21 @@
                     <input type="hidden" asp-for="TaxObject" />
                     <input type="hidden" asp-for="ServiceId" />
 
+                    @if (Model.ActiveModal == "Edit" && !string.IsNullOrEmpty(Model.SelectedRecord?.Reason))
+                    {
+                        <div class="alert alert-danger border-0 shadow-sm rounded-3 d-flex align-items-center mb-4 p-3">
+                            <div class="bg-danger bg-opacity-25 rounded-circle p-2 me-3 text-danger">
+                                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading fw-bold mb-1 text-danger">Esta prefactura fue rechazada</h6>
+                                <p class="mb-0 small text-dark opacity-75 mb-0">
+                                    <strong>Motivos del rechazo:</strong> @Model.SelectedRecord.Reason
+                                </p>
+                            </div>
+                        </div>
+                    }
+
                     @if (isPreInvoice)
                     {
                         <div class="alert alert-warning border-0 shadow-sm rounded-3 d-flex align-items-center mb-4 p-3">
@@ -437,7 +485,7 @@
                                                         <th>Precio Unitario</th>
                                                         <th>Impuestos (IVA 16%)</th>
                                                         <th>Importe</th>
-                                                        <th></th>
+                                                        <th class="d-none"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="conceptsTbody">
@@ -458,13 +506,13 @@
                                                         </td>
                                                         <td class="align-middle tax-cell">@(((Model.SelectedRecord?.Amount ?? 0) * 0.16m).ToString("C"))</td>
                                                         <td class="align-middle fw-bold total-cell">@(((Model.SelectedRecord?.Amount ?? 0) * 1.16m).ToString("C"))</td>
-                                                        <td class="align-middle text-center">
+                                                        <td class="align-middle text-center d-none">
                                                             <button type="button" class="btn btn-sm btn-outline-danger remove-concept-btn" title="Eliminar concepto"><i class="bi bi-trash"></i></button>
                                                         </td>
                                                     </tr>
                                                 </tbody>
                                                 <tfoot>
-                                                    <tr>
+                                                    <tr class="d-none">
                                                         <td colspan="6" class="border-0 pb-2">
                                                             <button type="button" id="addConceptBtn" class="btn btn-sm btn-simar-outline-gray"><i class="bi bi-plus-circle me-1"></i> Añadir Concepto</button>
                                                         </td>
@@ -601,20 +649,27 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                         var reasonsList = new List<string> {
                             "RFC Incorrecto", "Razón Social Incorrecta", "Código Postal Incorrecto",
                             "Régimen Fiscal Incorrecto", "Uso de CFDI Incorrecto", "Forma de Pago Incorrecta",
-                            "Método de Pago Incorrecto", "Concepto / Servicio Incorrecto", "Monto Total Incorrecto"
+                            "Método de Pago Incorrecto", "Concepto / Servicio Incorrecto", "Monto Total Incorrecto",
+                            "Otros"
                         };
                     }
                     @for (int idx = 0; idx < reasonsList.Count; idx++)
                     {
                         var rText = reasonsList[idx];
                         var chkId = $"chk_{record.Id}_{idx}";
+                        var isOtros = rText == "Otros";
                         <div class="col-md-6">
                             <label class="form-check d-flex align-items-center p-2 border rounded-3 h-100 m-0 bg-light rounded" for="@chkId">
-                                <input class="form-check-input my-0 ms-1 me-3 validate-checkbox" type="checkbox" name="rejectReasons" value="@rText" id="@chkId">
+                                <input class="form-check-input my-0 ms-1 me-3 validate-checkbox @(isOtros ? "chk-otros" : "")" type="checkbox" name="rejectReasons" value="@rText" id="@chkId" data-record-id="@record.Id">
                                 <span class="form-check-label text-simar-dark small">@rText</span>
                             </label>
                         </div>
                     }
+                    <div class="col-12 mt-2 select-otros-reason-container text-start" id="otrosContainer-@record.Id" style="display: none;">
+                        <label class="form-label small fw-semibold text-simar-dark mb-1">Especifique la razón de "Otros" *</label>
+                        <textarea class="form-control form-control-simar text-reason-otros text-dark" rows="2" name="customRejectReason" placeholder="Escriba el motivo del rechazo..." id="txtOtros-@record.Id"></textarea>
+                        <div class="invalid-feedback">Por favor ingrese la razón del rechazo.</div>
+                    </div>
                     <div class="col-12 mt-2 checkbox-feedback text-danger small text-center" style="display: none;">
                         <i class="bi bi-exclamation-circle me-1"></i> Debes seleccionar al menos un motivo de rechazo.
                     </div>
@@ -690,9 +745,202 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
     }
 </div>
 
+@if (Model.Role == "Admin")
+{
+    <!-- Modal Generar Factura Aparte -->
+    <div class="modal fade modal-simar" id="modalGenerarAparte" tabindex="-1" aria-labelledby="modalGenerarAparteLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <form method="post" asp-page-handler="Generate" id="apartGenerateForm" class="modal-content h-100 needs-validation" novalidate>
+                <input type="hidden" name="ActiveTab" value="@Model.ActiveTab" />
+                <input type="hidden" name="ItemsJson" id="apartItemsJson" />
+                <input type="hidden" name="ProductCode" value="80141600" />
+                <input type="hidden" name="UnitCode" value="E48" />
+                <input type="hidden" name="TaxObject" value="02" />
+                <input type="hidden" name="ServiceId" id="apartServiceId" />
+
+                <div class="modal-header">
+                    <h4 class="modal-title" id="modalGenerarAparteLabel">
+                        <i class="bi bi-plus-circle-fill me-2 text-simar-green"></i> Generar Factura Aparte
+                    </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4 overflow-auto">
+                    <div class="row g-4">
+                        <!-- Selección de Cliente y Manifiesto -->
+                        <div class="col-md-6">
+                            <div class="card-simar-subtle p-3 h-100 border-0 bg-light">
+                                <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">1. Selección de Origen</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label form-label-simar">Cliente *</label>
+                                        <select class="form-select form-select-simar" id="apartSelectClient" required>
+                                            <option value="">-- Seleccione un Cliente --</option>
+                                            @foreach (var client in Model.ActiveClients)
+                                            {
+                                                <option value="@client.Id" data-rfc="@client.RFC" data-name="@client.BusinessName">
+                                                    @client.BusinessName (@client.RFC)
+                                                </option>
+                                            }
+                                        </select>
+                                        <div class="invalid-feedback">Debe seleccionar un cliente.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-simar">Contrato *</label>
+                                        <select class="form-select form-select-simar" id="apartSelectContract" required disabled>
+                                            <option value="">-- Primero seleccione un cliente --</option>
+                                        </select>
+                                        <div class="invalid-feedback">Debe seleccionar un contrato.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-simar">Manifiesto a Cargo *</label>
+                                        <select class="form-select form-select-simar" id="apartSelectManifest" required disabled>
+                                            <option value="">-- Primero seleccione un contrato --</option>
+                                        </select>
+                                        <div class="invalid-feedback">Debe seleccionar un manifiesto.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-simar">Contrato Relacionado (Trazabilidad)</label>
+                                        <input type="text" class="form-control form-control-simar bg-white" id="apartContractFolio" readonly placeholder="No asignado">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Datos Fiscales del Receptor -->
+                        <div class="col-md-6">
+                            <div class="card-simar-subtle p-3 h-100 border-0 bg-light">
+                                <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">2. Información Fiscal (Receptor)</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-simar">RFC *</label>
+                                        <input type="text" class="form-control form-control-simar bg-white" name="TaxId" id="apartTaxId" required pattern="^[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}$" minlength="12" maxlength="13" oninput="this.value = this.value.toUpperCase()" placeholder="RFC del cliente">
+                                        <div class="invalid-feedback">RFC inválido. Letras mayúsculas (3-4), AAMMdd y 3 caracteres finales.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-simar">Código Postal *</label>
+                                        <input type="text" class="form-control form-control-simar bg-white" name="PostalCode" id="apartPostalCode" required maxlength="5" minlength="5" pattern="\d{5}" placeholder="CP">
+                                        <div class="invalid-feedback">Debe contener 5 dígitos.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-simar">Razón Social *</label>
+                                        <input type="text" class="form-control form-control-simar bg-white" name="BillingName" id="apartBillingName" required minlength="3" maxlength="250" placeholder="Razón Social">
+                                        <div class="invalid-feedback">La razón social es requerida (mín. 3 caracteres).</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-simar">Régimen Fiscal *</label>
+                                        <select class="form-select form-select-simar" name="FiscalRegime" id="apartFiscalRegime" required>
+                                            <option value="601">601 - General Ley Personas Morales</option>
+                                            <option value="612">612 - Personas Físicas con Actividades</option>
+                                            <option value="626">626 - RESICO</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-simar">Uso de CFDI *</label>
+                                        <select class="form-select form-select-simar" name="CfdiUsage" id="apartCfdiUsage" required>
+                                            <option value="G03" selected>G03 - Gastos en general</option>
+                                            <option value="G01">G01 - Adquisición mercancías</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Atributos de Pago -->
+                        <div class="col-12">
+                            <div class="card-simar-subtle p-3 border-0 bg-light">
+                                <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">3. Atributos de Pago</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-simar">Forma de Pago *</label>
+                                        <select class="form-select form-select-simar" name="PaymentForm" id="apartPaymentForm" required>
+                                            <option value="03" selected>03 - Transferencia</option>
+                                            <option value="01">01 - Efectivo</option>
+                                            <option value="02">02 - Cheque nominativo</option>
+                                            <option value="04">04 - Tarjeta Crédito</option>
+                                            <option value="99">99 - Por definir</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label form-label-simar">Método de Pago *</label>
+                                        <select class="form-select form-select-simar" name="PaymentMethod" id="apartPaymentMethod" required>
+                                            <option value="PUE" selected>PUE - Pago una exhibición</option>
+                                            <option value="PPD">PPD - Pago diferido</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalle de Conceptos -->
+                        <div class="col-12">
+                            <div class="card-simar-subtle p-3 border-0 bg-light">
+                                <h6 class="text-uppercase text-simar-green fw-bold mb-3 border-bottom pb-2">4. Detalle del Cargo</h6>
+                                <div class="table-responsive table-responsive-simar">
+                                    <table class="table table-simar mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Concepto</th>
+                                                <th style="width: 120px;">Cantidad</th>
+                                                <th style="width: 180px;">Precio Unitario</th>
+                                                <th>IVA (16%)</th>
+                                                <th>Total</th>
+                                                <th style="width: 50px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="apartConceptsTbody">
+                                            <tr class="placeholder-row">
+                                                <td colspan="6" class="text-center text-muted py-3">Seleccione un cliente y manifiesto, o añada conceptos manualmente.</td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="6" class="border-0 pb-2">
+                                                    <button type="button" id="apartAddConceptBtn" class="btn btn-sm btn-simar-outline-gray"><i class="bi bi-plus-circle me-1"></i> Añadir Concepto</button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="4" class="text-end border-0 pb-1">Subtotal:</th>
+                                                <th class="text-end pb-1 subtotal-cell" id="apartSubtotalFoot">$0.00</th>
+                                                <th class="border-0"></th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="4" class="text-end border-0 py-1">IVA (16%):</th>
+                                                <th class="text-end py-1 tax-cell-foot" id="apartTaxFoot">$0.00</th>
+                                                <th class="border-0"></th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="4" class="text-end fs-5 text-simar-green border-0 pt-1">Total:</th>
+                                                <th class="text-end fs-5 text-simar-green pt-1 total-cell-foot" id="apartTotalFoot">$0.00</th>
+                                                <th class="border-0"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light mt-auto">
+                    <button type="button" class="btn btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-simar-primary" id="apartConfirmSubmitBtn" disabled>
+                        <i class="bi bi-check-circle-fill me-1"></i> Generar Prefactura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            var formatter = new Intl.NumberFormat('es-MX', {
+                style: 'currency',
+                currency: 'MXN'
+            });
+
             var toastElList = [].slice.call(document.querySelectorAll('.toast'));
             toastElList.forEach(toastEl => {
                 var toast = new bootstrap.Toast(toastEl, { delay: 6000 });
@@ -730,6 +978,27 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                                     Concept: cInput.value,
                                     Quantity: parseInt(qInput.value) || 1,
                                     Amount: parseFloat(aInput.value) || 0
+                                });
+                            }
+                        });
+                        if (itemsJsonInput) {
+                            itemsJsonInput.value = JSON.stringify(items);
+                        }
+                    } else if (form.id === 'apartGenerateForm') {
+                        var itemsJsonInput = document.getElementById('apartItemsJson');
+                        var items = [];
+                        var rows = form.querySelectorAll('.concept-row');
+                        rows.forEach(function(row) {
+                            var cInput = row.querySelector('.concept-input');
+                            var qInput = row.querySelector('.qty-input');
+                            var aInput = row.querySelector('.price-input');
+                            if (cInput && qInput && aInput) {
+                                var qty = parseFloat(qInput.value) || 0;
+                                var price = parseFloat(aInput.value) || 0;
+                                items.push({
+                                    Concept: cInput.value,
+                                    Quantity: qty,
+                                    Amount: qty * price
                                 });
                             }
                         });
@@ -951,12 +1220,381 @@ else if (Model.ActiveModal == "Details" && Model.SelectedRecord != null)
                             var feedback = form.querySelector('.checkbox-feedback');
                             if(feedback) feedback.style.display = 'none';
                         }
-                        if (form.id === 'rejectModal-' + form.querySelector('input[name="id"]').value) {
-                             validateForm();
+                        
+                        // "Otros" checkbox toggle logic
+                        if (chk.value === 'Otros') {
+                            var recordId = chk.dataset.recordId;
+                            var container = document.getElementById('otrosContainer-' + recordId);
+                            var textarea = document.getElementById('txtOtros-' + recordId);
+                            if (chk.checked) {
+                                if (container) container.style.display = 'block';
+                                if (textarea) {
+                                    textarea.setAttribute('required', 'required');
+                                    textarea.focus();
+                                }
+                            } else {
+                                if (container) container.style.display = 'none';
+                                if (textarea) {
+                                    textarea.removeAttribute('required');
+                                    textarea.value = '';
+                                    textarea.classList.remove('is-invalid');
+                                }
+                            }
                         }
+
+                        validateForm();
+                    });
+                });
+
+                // Add real-time validation listener to custom reject textareas
+                var textareas = form.querySelectorAll('.text-reason-otros');
+                textareas.forEach(function(textarea) {
+                    textarea.addEventListener('input', function() {
+                        if (textarea.hasAttribute('required') && !textarea.value.trim()) {
+                            textarea.classList.add('is-invalid');
+                        } else {
+                            textarea.classList.remove('is-invalid');
+                        }
+                        validateForm();
                     });
                 });
             });
+
+            // --- FLUX "FACTURA APARTE" ---
+            const apartSelectClient = document.getElementById('apartSelectClient');
+            const apartSelectContract = document.getElementById('apartSelectContract');
+            const apartSelectManifest = document.getElementById('apartSelectManifest');
+            const apartContractFolio = document.getElementById('apartContractFolio');
+            const apartTaxId = document.getElementById('apartTaxId');
+            const apartPostalCode = document.getElementById('apartPostalCode');
+            const apartBillingName = document.getElementById('apartBillingName');
+            const apartPaymentMethod = document.getElementById('apartPaymentMethod');
+            const apartPaymentForm = document.getElementById('apartPaymentForm');
+            const apartFiscalRegime = document.getElementById('apartFiscalRegime');
+            const apartCfdiUsage = document.getElementById('apartCfdiUsage');
+            const apartConceptsTbody = document.getElementById('apartConceptsTbody');
+            const apartSubtotalFoot = document.getElementById('apartSubtotalFoot');
+            const apartTaxFoot = document.getElementById('apartTaxFoot');
+            const apartTotalFoot = document.getElementById('apartTotalFoot');
+            const apartItemsJson = document.getElementById('apartItemsJson');
+            const apartServiceId = document.getElementById('apartServiceId');
+            const apartConfirmSubmitBtn = document.getElementById('apartConfirmSubmitBtn');
+            const apartAddConceptBtn = document.getElementById('apartAddConceptBtn');
+
+            let currentManifests = [];
+
+            function updateApartCalculations() {
+                let subtotal = 0;
+                const rows = apartConceptsTbody.querySelectorAll('.concept-row');
+                
+                if (rows.length === 0) {
+                    if (!apartConceptsTbody.querySelector('.placeholder-row')) {
+                        apartConceptsTbody.innerHTML = `
+                            <tr class="placeholder-row">
+                                <td colspan="6" class="text-center text-muted py-3">Seleccione un cliente y manifiesto, o añada conceptos manualmente.</td>
+                            </tr>
+                        `;
+                    }
+                    apartSubtotalFoot.textContent = formatter.format(0);
+                    apartTaxFoot.textContent = formatter.format(0);
+                    apartTotalFoot.textContent = formatter.format(0);
+                    apartConfirmSubmitBtn.disabled = true;
+                    return;
+                }
+
+                rows.forEach(row => {
+                    const qtyInput = row.querySelector('.qty-input');
+                    const priceInput = row.querySelector('.price-input');
+                    const ivaCell = row.querySelector('.iva-cell');
+                    const totalCell = row.querySelector('.total-cell');
+
+                    const qty = parseFloat(qtyInput.value) || 0;
+                    const price = parseFloat(priceInput.value) || 0;
+                    
+                    const rowSubtotal = qty * price;
+                    const rowIva = rowSubtotal * 0.16;
+                    const rowTotal = rowSubtotal + rowIva;
+
+                    subtotal += rowSubtotal;
+
+                    if (ivaCell) ivaCell.textContent = formatter.format(rowIva);
+                    if (totalCell) totalCell.textContent = formatter.format(rowTotal);
+                });
+
+                const iva = subtotal * 0.16;
+                const total = subtotal + iva;
+
+                apartSubtotalFoot.textContent = formatter.format(subtotal);
+                apartTaxFoot.textContent = formatter.format(iva);
+                apartTotalFoot.textContent = formatter.format(total);
+
+                checkApartFormValidity();
+            }
+
+            function checkApartFormValidity() {
+                const form = document.getElementById('apartGenerateForm');
+                if (!form) return;
+                
+                const isFormValid = form.checkValidity();
+                
+                // Check if we have at least one concept-row
+                const rows = apartConceptsTbody.querySelectorAll('.concept-row');
+                let hasRows = rows.length > 0;
+                
+                // Check if any row has an invalid or <= 0 amount
+                let areRowsValid = true;
+                rows.forEach(row => {
+                    const qtyInput = row.querySelector('.qty-input');
+                    const priceInput = row.querySelector('.price-input');
+                    const conceptInput = row.querySelector('.concept-input');
+                    
+                    if (qtyInput && priceInput && conceptInput) {
+                        const qty = parseFloat(qtyInput.value) || 0;
+                        const price = parseFloat(priceInput.value) || 0;
+                        const concept = conceptInput.value.trim();
+                        
+                        if (qty <= 0 || price < 0 || !concept) {
+                            areRowsValid = false;
+                        }
+                    } else {
+                        areRowsValid = false;
+                    }
+                });
+
+                apartConfirmSubmitBtn.disabled = !(isFormValid && hasRows && areRowsValid);
+            }
+
+            function addApartConceptRow(concept, qty, price, unit = 'U') {
+                // Remove placeholder row if it exists
+                const placeholder = apartConceptsTbody.querySelector('.placeholder-row');
+                if (placeholder) placeholder.remove();
+
+                const tr = document.createElement('tr');
+                tr.className = 'concept-row';
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" class="form-control form-control-sm concept-input" value="${concept}" required placeholder="Concepto / Residuo" />
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control form-control-sm qty-input text-center" value="${qty}" min="0.001" step="any" required />
+                            <span class="input-group-text bg-light text-muted px-2 py-0 border-start-0" style="font-size: 0.75rem;">${unit || 'U'}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-muted px-2 py-0 border-end-0">$</span>
+                            <input type="number" class="form-control form-control-sm price-input text-end" value="${price}" min="0" step="any" required />
+                        </div>
+                    </td>
+                    <td class="align-middle text-end iva-cell">$0.00</td>
+                    <td class="align-middle text-end fw-bold total-cell">$0.00</td>
+                    <td class="align-middle text-center">
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0 remove-apart-concept-btn" title="Eliminar">
+                            <i class="bi bi-trash fs-5"></i>
+                        </button>
+                    </td>
+                `;
+
+                apartConceptsTbody.appendChild(tr);
+
+                // Bind listeners to row inputs
+                const qtyInput = tr.querySelector('.qty-input');
+                const priceInput = tr.querySelector('.price-input');
+                const conceptInput = tr.querySelector('.concept-input');
+                const removeBtn = tr.querySelector('.remove-apart-concept-btn');
+
+                qtyInput.addEventListener('input', updateApartCalculations);
+                priceInput.addEventListener('input', updateApartCalculations);
+                conceptInput.addEventListener('input', checkApartFormValidity);
+                
+                removeBtn.addEventListener('click', function() {
+                    tr.remove();
+                    updateApartCalculations();
+                });
+
+                updateApartCalculations();
+            }
+
+            if (apartAddConceptBtn) {
+                apartAddConceptBtn.addEventListener('click', function() {
+                    addApartConceptRow('', 1, 0, 'U');
+                });
+            }
+
+            if (apartSelectClient) {
+                apartSelectClient.addEventListener('change', async function() {
+                    const clientId = this.value;
+                    
+                    if (apartSelectContract) {
+                        apartSelectContract.innerHTML = '<option value="">-- Seleccione un Contrato --</option>';
+                        apartSelectContract.disabled = true;
+                    }
+                    apartSelectManifest.innerHTML = '<option value="">-- Primero seleccione un contrato --</option>';
+                    apartSelectManifest.disabled = true;
+                    apartContractFolio.value = '';
+                    apartTaxId.value = '';
+                    apartPostalCode.value = '';
+                    apartBillingName.value = '';
+                    apartServiceId.value = '';
+                    apartItemsJson.value = '';
+                    apartConfirmSubmitBtn.disabled = true;
+                    
+                    apartConceptsTbody.innerHTML = `
+                        <tr class="placeholder-row">
+                            <td colspan="6" class="text-center text-muted py-3">Seleccione un cliente, contrato y manifiesto para ver el detalle o añadir conceptos.</td>
+                        </tr>
+                    `;
+                    apartSubtotalFoot.textContent = '$0.00';
+                    apartTaxFoot.textContent = '$0.00';
+                    apartTotalFoot.textContent = '$0.00';
+
+                    if (!clientId) return;
+
+                    const selectedOption = this.options[this.selectedIndex];
+                    apartTaxId.value = selectedOption.dataset.rfc || '';
+                    apartBillingName.value = selectedOption.dataset.name || '';
+                    
+                    // Recover CP if we have it, otherwise leave it empty for manual input
+                    apartPostalCode.value = selectedOption.dataset.cp || '';
+
+                    try {
+                        if (apartSelectContract) {
+                            apartSelectContract.innerHTML = '<option value="">Cargando contratos...</option>';
+                            const response = await fetch(`/Billing?handler=GetContractsForClient&clientId=${clientId}`);
+                            if (!response.ok) throw new Error('Error al cargar contratos');
+                            
+                            const contracts = await response.json();
+                            if (contracts && contracts.error) throw new Error(contracts.error);
+
+                            apartSelectContract.innerHTML = '<option value="">-- Seleccione un Contrato --</option>';
+                            if (!contracts || contracts.length === 0) {
+                                apartSelectContract.innerHTML = '<option value="">No hay contratos activos para este cliente</option>';
+                            } else {
+                                contracts.forEach(c => {
+                                    const opt = document.createElement('option');
+                                    opt.value = c.id;
+                                    opt.textContent = `${c.folio} - ${c.status}`;
+                                    opt.dataset.folio = c.folio;
+                                    apartSelectContract.appendChild(opt);
+                                });
+                                apartSelectContract.disabled = false;
+                            }
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        if (apartSelectContract) apartSelectContract.innerHTML = `<option value="">Error: ${error.message}</option>`;
+                    }
+                    checkApartFormValidity();
+                });
+
+                if (apartSelectContract) {
+                    apartSelectContract.addEventListener('change', async function() {
+                        const contractId = this.value;
+                        const clientId = apartSelectClient.value;
+                        
+                        apartSelectManifest.innerHTML = '<option value="">-- Seleccione un Manifiesto --</option>';
+                        apartSelectManifest.disabled = true;
+                        apartContractFolio.value = '';
+                        apartServiceId.value = '';
+                        apartItemsJson.value = '';
+                        apartConfirmSubmitBtn.disabled = true;
+                        
+                        apartConceptsTbody.innerHTML = `
+                            <tr class="placeholder-row">
+                                <td colspan="6" class="text-center text-muted py-3">Seleccione un manifiesto para ver el detalle.</td>
+                            </tr>
+                        `;
+                        apartSubtotalFoot.textContent = '$0.00';
+                        apartTaxFoot.textContent = '$0.00';
+                        apartTotalFoot.textContent = '$0.00';
+
+                        if (!contractId || !clientId) return;
+
+                        const selectedOption = this.options[this.selectedIndex];
+                        const contractFolio = selectedOption.dataset.folio || '';
+                        apartContractFolio.value = contractFolio;
+
+                        try {
+                            apartSelectManifest.innerHTML = '<option value="">Cargando manifiestos...</option>';
+                            const response = await fetch(`/Billing?handler=GetManifestsForContract&clientId=${clientId}&contractId=${contractId}`);
+                            if (!response.ok) throw new Error('Error al cargar manifiestos');
+                            
+                            currentManifests = await response.json();
+                            if (currentManifests && currentManifests.error) throw new Error(currentManifests.error);
+                            
+                            apartSelectManifest.innerHTML = '<option value="">-- Seleccione un Manifiesto --</option>';
+                            if (!currentManifests || currentManifests.length === 0) {
+                                apartSelectManifest.innerHTML = '<option value="">No hay manifiestos completados para este contrato</option>';
+                            } else {
+                                currentManifests.forEach((m, idx) => {
+                                    const opt = document.createElement('option');
+                                    opt.value = idx;
+                                    opt.textContent = `${m.numeroManifiesto} (${m.date}) - ${m.residueType} - ${formatter.format(m.amount)}`;
+                                    apartSelectManifest.appendChild(opt);
+                                });
+                                apartSelectManifest.disabled = false;
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            apartSelectManifest.innerHTML = `<option value="">Error: ${error.message}</option>`;
+                        }
+                        checkApartFormValidity();
+                    });
+                }
+
+                apartSelectManifest.addEventListener('change', function() {
+                    const idx = this.value;
+                    if (!idx && idx !== '0') {
+                        apartServiceId.value = '';
+                        apartItemsJson.value = '';
+                        apartConfirmSubmitBtn.disabled = true;
+                        apartConceptsTbody.innerHTML = `
+                            <tr class="placeholder-row">
+                                <td colspan="6" class="text-center text-muted py-3">Seleccione un manifiesto para ver el detalle.</td>
+                            </tr>
+                        `;
+                        apartSubtotalFoot.textContent = '$0.00';
+                        apartTaxFoot.textContent = '$0.00';
+                        apartTotalFoot.textContent = '$0.00';
+                        checkApartFormValidity();
+                        return;
+                    }
+
+                    const manifest = currentManifests[parseInt(idx)];
+                    if (!manifest) return;
+
+                    apartServiceId.value = manifest.manifestId || '';
+                    
+                    // Recover CP, RFC, and BillingName if they are returned by manifest but currently empty (or recover them anyway)
+                    if (manifest.postalCode) apartPostalCode.value = manifest.postalCode;
+                    if (manifest.rfc) apartTaxId.value = manifest.rfc;
+                    if (manifest.businessName) apartBillingName.value = manifest.businessName;
+                    
+                    if (manifest.paymentMethod && (manifest.paymentMethod === 'PUE' || manifest.paymentMethod === 'PPD')) {
+                        apartPaymentMethod.value = manifest.paymentMethod;
+                    }
+
+                    apartConceptsTbody.innerHTML = '';
+
+                    if (manifest.details && manifest.details.length > 0) {
+                        manifest.details.forEach(d => {
+                            addApartConceptRow(d.residuo, d.cantidad, d.precioUnitario, d.unidad);
+                        });
+                    } else {
+                        addApartConceptRow(manifest.residueType || 'Servicio', 1, parseFloat(manifest.amount) || 0, 'U');
+                    }
+                });
+
+                // Attach validation listeners for manual editing fields
+                ['apartTaxId', 'apartPostalCode', 'apartBillingName', 'apartFiscalRegime', 'apartCfdiUsage', 'apartPaymentForm', 'apartPaymentMethod'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', checkApartFormValidity);
+                        el.addEventListener('change', checkApartFormValidity);
+                    }
+                });
+            }
         });
     </script>
 }
