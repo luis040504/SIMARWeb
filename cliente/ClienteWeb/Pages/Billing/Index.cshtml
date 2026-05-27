@@ -104,12 +104,12 @@
                         <div class="col-md-6 col-lg-4 col-xl-3">
                             <div class="card-simar-subtle h-100">
                                 <div class="card-body p-4 position-relative d-flex flex-column h-100">
-                                    <div class="d-flex justify-content-between align-items-start mb-3 gap-2">
+                                    <div class="d-flex justify-content-between align-items-start mb-3 gap-2" style="min-width: 0;">
                                         <h5 class="card-title text-dark fw-semibold text-truncate mb-0 flex-grow-1" style="min-width: 0;" title="@record.ClientName">@record.ClientName</h5>
-                                        <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                             @if (record.RecordType == "Invoice")
                                             {
-                                                <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))">
+                                                <span class="badge badge-simar @(record.Status == "Accepted" ? "badge-simar-completada" : (record.Status == "Rejected" ? "badge-simar-cancelada" : "badge-simar-enruta"))" title="@record.InvoiceNumber">
                                                     @if (record.Status == "Accepted") { <i class="bi bi-check-lg me-1"></i> }
                                                     else if (record.Status == "Rejected") { <i class="bi bi-x-lg me-1"></i> }
                                                     else { <i class="bi bi-clock-history me-1"></i> }
@@ -118,7 +118,7 @@
                                             }
                                             else
                                             {
-                                                <span class="badge badge-simar @(record.Source == "contract" ? "bg-info text-white" : "badge-simar-programada")">
+                                                <span class="badge badge-simar @(record.Source == "contract" ? "bg-info text-white" : "badge-simar-programada")" title="ID: @record.Id">
                                                     @if (record.Source == "contract") { <i class="bi bi-file-earmark-text me-1"></i> }
                                                     else { <i class="bi bi-tag me-1"></i> }
                                                     ID: @record.Id
