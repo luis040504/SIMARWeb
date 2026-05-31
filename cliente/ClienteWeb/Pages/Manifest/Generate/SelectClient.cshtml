@@ -2,9 +2,10 @@
 @model ClienteWeb.Pages.Manifest.Generate.SelectClientModel
 @{
     ViewData["Title"] = "Nuevo manifiesto";
+    var hayManifiestosExistentes = Model.ManifiestosPorContrato.Values.Any(c => c.Rp > 0 || c.Rme > 0);
 }
 
-<div class="container mt-4" style="max-width: 860px;">
+<div class="container mt-4" style="max-width: 900px;">
 
     <div class="mb-4">
         <h4 class="fw-semibold mb-0" style="color: var(--simar-dark);">
@@ -24,7 +25,7 @@
     @* ── Buscador ── *@
     <div class="filter-section-simar mb-4">
         <form method="get">
-            <label class="form-label-sm fw-semibold">Buscar empresa</label>
+            <label class="form-label-sm fw-semibold">Buscar por razón social</label>
             <div class="d-flex gap-2">
                 <input name="Q"
                        value="@Model.Q"
@@ -61,7 +62,7 @@
                 <table class="table-simar">
                     <thead>
                         <tr>
-                            <th>Empresa</th>
+                            <th>Razón social</th>
                             <th>Teléfono</th>
                             <th class="text-center">Acción</th>
                         </tr>
@@ -111,6 +112,19 @@
             </div>
         </div>
 
+        @* ── Banner aviso manifiestos existentes ── *@
+        @if (hayManifiestosExistentes)
+        {
+            <div class="alert d-flex align-items-start gap-2 mb-3"
+                 style="background: #fff8ed; border: 1px solid #f59e0b; border-left: 4px solid #f59e0b; border-radius: 8px; color: #92400e;">
+                <i class="bi bi-exclamation-triangle-fill mt-1" style="color: #f59e0b; flex-shrink:0;"></i>
+                <div>
+                    <strong>Atención:</strong> Uno o más contratos de este cliente ya tienen manifiestos generados.
+                    Verifica antes de crear uno nuevo para evitar duplicados.
+                </div>
+            </div>
+        }
+
         <h6 class="fw-semibold mb-3" style="color: var(--simar-dark);">
             <i class="bi bi-file-earmark-check me-1"></i> Contratos activos
         </h6>
@@ -124,20 +138,61 @@
         }
         else
         {
+            @* ── Leyenda del semáforo ── *@
+            <div class="d-flex align-items-center gap-3 mb-2 flex-wrap" style="font-size: 0.78rem; color: #6c757d;">
+                <span class="fw-semibold" style="color: var(--simar-dark);">
+                    <i class="bi bi-circle-half me-1"></i>Semáforo:
+                </span>
+                <span>
+                    <span class="badge badge-simar badge-simar-sin me-1">Sin este tipo</span>
+                    El contrato no incluye ese tipo de residuo
+                </span>
+                <span>
+                    <span class="badge badge-simar badge-simar-pendiente me-1">Pendiente</span>
+                    Contrato incluye el tipo pero aún sin manifiesto
+                </span>
+                <span>
+                    <span class="badge badge-simar badge-simar-peligroso me-1">N existente(s)</span>
+                    Ya hay manifiestos generados — click para verlos
+                </span>
+            </div>
+
             <div class="table-responsive-simar">
                 <table class="table-simar">
                     <thead>
                         <tr>
                             <th>Folio contrato</th>
                             <th>Vigencia</th>
-                            <th class="text-center">RP — Peligrosos</th>
-                            <th class="text-center">RME — Especiales</th>
+                            <th class="text-center">
+                                RP — Peligrosos
+                                <i class="bi bi-info-circle ms-1 text-muted"
+                                   style="cursor:pointer; font-size:0.8rem;"
+                                   data-bs-toggle="popover"
+                                   data-bs-trigger="hover focus"
+                                   data-bs-placement="top"
+                                   data-bs-html="true"
+                                   data-bs-content="<strong>Residuos Peligrosos (RP)</strong><br>Incluye RP y RPBI (biológico-infeccioso).<br><br><span style='color:#adb5bd'>●</span> <b>Sin RP</b> — el contrato no contempla este tipo<br><span style='color:#f59e0b'>●</span> <b>Pendiente</b> — tiene RP pero sin manifiesto generado<br><span style='color:#7b2d2d'>●</span> <b>N existente(s)</b> — ya hay manifiestos RP">
+                                </i>
+                            </th>
+                            <th class="text-center">
+                                RME — Especiales
+                                <i class="bi bi-info-circle ms-1 text-muted"
+                                   style="cursor:pointer; font-size:0.8rem;"
+                                   data-bs-toggle="popover"
+                                   data-bs-trigger="hover focus"
+                                   data-bs-placement="top"
+                                   data-bs-html="true"
+                                   data-bs-content="<strong>Residuos de Manejo Especial (RME)</strong><br>Residuos inorgánicos y orgánicos de manejo especial.<br><br><span style='color:#adb5bd'>●</span> <b>Sin RME</b> — el contrato no contempla este tipo<br><span style='color:#f59e0b'>●</span> <b>Pendiente</b> — tiene RME pero sin manifiesto generado<br><span style='color:#1a3a5c'>●</span> <b>N existente(s)</b> — ya hay manifiestos RME">
+                                </i>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var contrato in Model.ContratosActivos)
                         {
                             Model.ManifiestosPorContrato.TryGetValue(contrato.ContratoId, out var counts);
+                            var urlRp  = $"/Manifest/Generate/HazardousWaste?clienteId={contrato.ClienteId}&contratoId={contrato.ContratoId}";
+                            var urlRme = $"/Manifest/Generate/SpecialWaste?clienteId={contrato.ClienteId}&contratoId={contrato.ContratoId}";
                             <tr>
                                 <td class="fw-semibold">@contrato.Folio</td>
                                 <td>
@@ -145,37 +200,87 @@
                                         ? contrato.ExpirationDate.Value.ToString("dd/MM/yyyy")
                                         : "—")
                                 </td>
+
+                                @* ── Columna RP ── *@
                                 <td class="text-center">
-                                    @if (counts.Rp > 0)
+                                    @if (contrato.TieneRp == false)
                                     {
-                                        <a asp-page="/Manifest/Consult/Index"
-                                           asp-route-filterContratoId="@contrato.ContratoId"
-                                           asp-route-filterType="peligroso"
-                                           class="badge bg-danger text-decoration-none me-1"
-                                           title="Ver manifiestos RP existentes">
-                                            @counts.Rp existente(s)
-                                        </a>
+                                        <span class="badge badge-simar badge-simar-sin"
+                                              title="Este contrato no incluye residuos peligrosos">
+                                            <i class="bi bi-dash-circle me-1"></i>Sin RP
+                                        </span>
                                     }
-                                    <a href="/Manifest/Generate/HazardousWaste?clienteId=@contrato.ClienteId&contratoId=@contrato.ContratoId"
-                                       class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-plus"></i> Nuevo RP
-                                    </a>
+                                    else
+                                    {
+                                        @if (contrato.TieneRp == true && counts.Rp == 0)
+                                        {
+                                            <span class="badge badge-simar badge-simar-pendiente me-1"
+                                                  title="Este contrato incluye RP pero aún no se ha generado el manifiesto">
+                                                <i class="bi bi-clock me-1"></i>RP pendiente
+                                            </span>
+                                        }
+                                        @if (counts.Rp > 0)
+                                        {
+                                            <a asp-page="/Manifest/Consult/Index"
+                                               asp-route-filterContratoId="@contrato.ContratoId"
+                                               asp-route-filterType="peligroso"
+                                               class="badge badge-simar badge-simar-peligroso text-decoration-none me-1"
+                                               title="Ver manifiestos RP existentes">
+                                                <i class="bi bi-eye me-1"></i>@counts.Rp existente(s)
+                                            </a>
+                                        }
+                                        <button type="button"
+                                                class="action-btn rp"
+                                                onclick="confirmarNuevo(this)"
+                                                data-url="@urlRp"
+                                                data-tipo="peligroso"
+                                                data-tipo-label="Peligroso (RP)"
+                                                data-count="@counts.Rp"
+                                                data-folio="@contrato.Folio">
+                                            <i class="bi bi-plus"></i> Nuevo RP
+                                        </button>
+                                    }
                                 </td>
+
+                                @* ── Columna RME ── *@
                                 <td class="text-center">
-                                    @if (counts.Rme > 0)
+                                    @if (contrato.TieneRme == false)
                                     {
-                                        <a asp-page="/Manifest/Consult/Index"
-                                           asp-route-filterContratoId="@contrato.ContratoId"
-                                           asp-route-filterType="especial"
-                                           class="badge bg-warning text-dark text-decoration-none me-1"
-                                           title="Ver manifiestos RME existentes">
-                                            @counts.Rme existente(s)
-                                        </a>
+                                        <span class="badge badge-simar badge-simar-sin"
+                                              title="Este contrato no incluye residuos de manejo especial">
+                                            <i class="bi bi-dash-circle me-1"></i>Sin RME
+                                        </span>
                                     }
-                                    <a href="/Manifest/Generate/SpecialWaste?clienteId=@contrato.ClienteId&contratoId=@contrato.ContratoId"
-                                       class="btn btn-sm btn-outline-warning">
-                                        <i class="bi bi-plus"></i> Nuevo RME
-                                    </a>
+                                    else
+                                    {
+                                        @if (contrato.TieneRme == true && counts.Rme == 0)
+                                        {
+                                            <span class="badge badge-simar badge-simar-pendiente me-1"
+                                                  title="Este contrato incluye RME pero aún no se ha generado el manifiesto">
+                                                <i class="bi bi-clock me-1"></i>RME pendiente
+                                            </span>
+                                        }
+                                        @if (counts.Rme > 0)
+                                        {
+                                            <a asp-page="/Manifest/Consult/Index"
+                                               asp-route-filterContratoId="@contrato.ContratoId"
+                                               asp-route-filterType="especial"
+                                               class="badge badge-simar badge-simar-especial text-decoration-none me-1"
+                                               title="Ver manifiestos RME existentes">
+                                                <i class="bi bi-eye me-1"></i>@counts.Rme existente(s)
+                                            </a>
+                                        }
+                                        <button type="button"
+                                                class="action-btn rme"
+                                                onclick="confirmarNuevo(this)"
+                                                data-url="@urlRme"
+                                                data-tipo="especial"
+                                                data-tipo-label="Especial (RME)"
+                                                data-count="@counts.Rme"
+                                                data-folio="@contrato.Folio">
+                                            <i class="bi bi-plus"></i> Nuevo RME
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -192,3 +297,69 @@
     </div>
 
 </div>
+
+@* ── Modal confirmación duplicado ── *@
+<div class="modal fade" id="modalConfirmarNuevo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.15);">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-circle fs-5" style="color: #f59e0b;"></i>
+                    <h6 class="modal-title fw-semibold mb-0" style="color: var(--simar-dark);">Manifiesto ya existe</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="mb-1" id="modalMensaje" style="color: #374151;"></p>
+                <p class="text-muted small mb-0">Si necesitas generar uno adicional, confirma para continuar.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 gap-2">
+                <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button type="button" class="action-btn" id="btnConfirmarModal" onclick="irAlFormulario()">
+                    <i class="bi bi-plus-circle me-1"></i> Sí, generar otro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Inicializar popovers de Bootstrap
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+        new bootstrap.Popover(el, { sanitize: false });
+    });
+
+    let _urlPendiente = '';
+
+    function confirmarNuevo(btn) {
+        const url   = btn.dataset.url;
+        const count = parseInt(btn.dataset.count, 10);
+        const label = btn.dataset.tipoLabel;
+        const folio = btn.dataset.folio;
+        const tipo  = btn.dataset.tipo;
+
+        if (count === 0) {
+            window.location.href = url;
+            return;
+        }
+
+        _urlPendiente = url;
+
+        document.getElementById('modalMensaje').textContent =
+            `El contrato ${folio} ya tiene ${count} manifiesto(s) de tipo ${label} generado(s).`;
+
+        const btnConfirmar = document.getElementById('btnConfirmarModal');
+        btnConfirmar.className = tipo === 'peligroso' ? 'action-btn rp' : 'action-btn rme';
+
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirmarNuevo'));
+        modal.show();
+    }
+
+    function irAlFormulario() {
+        if (_urlPendiente) window.location.href = _urlPendiente;
+    }
+</script>
+}

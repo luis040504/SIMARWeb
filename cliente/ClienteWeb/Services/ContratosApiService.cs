@@ -73,4 +73,16 @@ public class ContratoServiceItemDto
     [JsonPropertyName("wasteUnit")]      public string WasteUnit { get; set; } = "";
     [JsonPropertyName("frequency")]      public string Frequency { get; set; } = "";
     [JsonPropertyName("serviceAddress")] public string ServiceAddress { get; set; } = "";
+    // Estructura nueva (igual que cotización): services[].wastes[].type
+    [JsonPropertyName("wastes")]         public List<ContratoWasteItemDto> Wastes { get; set; } = [];
+}
+
+public class ContratoWasteItemDto
+{
+    [JsonPropertyName("name")]           public string Name { get; set; } = "";
+    [JsonPropertyName("type")]           public string Type { get; set; } = "";
+    [JsonPropertyName("classification")] public string Classification { get; set; } = "";
+    [JsonPropertyName("clave")]          public string Clave { get; set; } = "";
+    [JsonPropertyName("quantity")]       public decimal Quantity { get; set; }
+    [JsonPropertyName("unit")]           public string Unit { get; set; } = "";
 }

@@ -53,12 +53,12 @@ public class SelectClientModel : PageModel
                                 c.Status.Equals("activo", StringComparison.OrdinalIgnoreCase))
                     .Select(c => new ContratoConClienteVm
                     {
-                        ContratoId     = c.Id,
-                        Folio          = c.Folio,
-                        Status         = c.Status,
+                        ContratoId    = c.Id,
+                        Folio         = c.Folio,
+                        Status        = c.Status,
                         ExpirationDate = c.ExpirationDate,
-                        ClienteId      = c.ClientId,
-                        ClienteNombre  = c.ClientName
+                        ClienteId     = c.ClientId,
+                        ClienteNombre = c.ClientName
                     }).ToList();
 
                 foreach (var m in manifestsTask.Result.Where(m => m.ContratoId.HasValue))
@@ -68,6 +68,26 @@ public class SelectClientModel : PageModel
                     ManifiestosPorContrato[cid] = m.Type == "peligroso"
                         ? (counts.Rp + 1, counts.Rme)
                         : (counts.Rp, counts.Rme + 1);
+                }
+
+                // Semáforo: obtener detalle de cada contrato en paralelo para leer wastes[].type
+                // Si el backend aún no devuelve wastes[], TieneRp/TieneRme quedan null (degradación limpia)
+                var detailTasks = ContratosActivos
+                    .Select(c => _contratos.GetDetailAsync(c.ContratoId))
+                    .ToList();
+                await Task.WhenAll(detailTasks);
+
+                for (var i = 0; i < ContratosActivos.Count; i++)
+                {
+                    var wastes = detailTasks[i].Result?.Services
+                        .SelectMany(s => s.Wastes)
+                        .ToList();
+
+                    if (wastes is { Count: > 0 })
+                    {
+                        ContratosActivos[i].TieneRp  = wastes.Any(w => EsRp(w.Type));
+                        ContratosActivos[i].TieneRme = wastes.Any(w => EsRme(w.Type));
+                    }
                 }
             }
             catch
@@ -89,4 +109,14 @@ public class SelectClientModel : PageModel
 
         return Page();
     }
+
+    // Residuo Peligroso (RP) — incluye RPBI y cualquier variante con "Peligros" o "RPBI"
+    private static bool EsRp(string type) =>
+        type.Contains("Peligros", StringComparison.OrdinalIgnoreCase) ||
+        type.Contains("RPBI", StringComparison.OrdinalIgnoreCase);
+
+    // Residuo de Manejo Especial (RME)
+    private static bool EsRme(string type) =>
+        type.Contains("RME", StringComparison.OrdinalIgnoreCase) ||
+        type.Contains("Manejo Especial", StringComparison.OrdinalIgnoreCase);
 }

@@ -332,6 +332,20 @@ body {
 }
 
 
+.badge-simar-sin {
+    background: rgba(108, 117, 125, 0.12);
+    color: #6c757d;
+    border-left: 3px solid #adb5bd;
+}
+
+
+.badge-simar-pendiente {
+    background: rgba(245, 158, 11, 0.12);
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+}
+
+
 .modal-simar .modal-content {
     border-radius: 20px;
     border: none;
