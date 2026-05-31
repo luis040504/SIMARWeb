@@ -105,6 +105,12 @@ namespace ClienteWeb.Pages.Contracts.Consult
                 var payments = JsonSerializer.Deserialize<List<object>>(PaymentsJson) ?? new();
                 var extras = JsonSerializer.Deserialize<List<object>>(ExtrasJson) ?? new();
 
+                var newStatus = current.GetProperty("status").GetString();
+                if (PdfFile != null && PdfFile.Length > 0)
+                {
+                    newStatus = "Activo";
+                }
+
                 var updateData = new {
                     id = UpdateDbId,
                     folio = current.GetProperty("folio").GetString(),
@@ -119,7 +125,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
                     contractDuration = current.GetProperty("contractDuration").GetString(),
                     firstServiceDate = UpdateStartDate,
                     endDate = UpdateEndDate,
-                    status = current.GetProperty("status").GetString(),
+                    status = newStatus,
                     services = services,
                     payments = payments,
                     extras = extras

@@ -1,7 +1,6 @@
 using ClienteWeb.Services;
 
 using QuestPDF.Infrastructure;
-using ClienteWeb.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();

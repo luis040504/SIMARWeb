@@ -83,6 +83,7 @@ class Billing(BaseModel):
     reason: Optional[str] = None
     service_id: Optional[str] = None
     activo: bool = True
+    pac_type: Optional[str] = None
     
     class Config:
         populate_by_name = True
