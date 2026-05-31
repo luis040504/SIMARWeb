@@ -1,0 +1,194 @@
+@page
+@model ClienteWeb.Pages.Manifest.Generate.SelectClientModel
+@{
+    ViewData["Title"] = "Nuevo manifiesto";
+}
+
+<div class="container mt-4" style="max-width: 860px;">
+
+    <div class="mb-4">
+        <h4 class="fw-semibold mb-0" style="color: var(--simar-dark);">
+            <i class="bi bi-file-earmark-plus me-2" style="color: var(--simar-green);"></i>
+            Nuevo manifiesto
+        </h4>
+        <p class="text-muted small mb-0">Busca el cliente y selecciona el contrato para generar el manifiesto.</p>
+    </div>
+
+    @if (Model.ApiError is not null)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i> @Model.ApiError
+        </div>
+    }
+
+    @* ── Buscador ── *@
+    <div class="filter-section-simar mb-4">
+        <form method="get">
+            <label class="form-label-sm fw-semibold">Buscar empresa</label>
+            <div class="d-flex gap-2">
+                <input name="Q"
+                       value="@Model.Q"
+                       class="form-control form-control-sm"
+                       placeholder="Ej. Industrias López..."
+                       autofocus />
+                <button type="submit" class="btn-simar-primary text-nowrap">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                @if (!string.IsNullOrWhiteSpace(Model.Q) || Model.ClienteId.HasValue)
+                {
+                    <a asp-page="/Manifest/Generate/SelectClient" class="btn-simar-outline-gray text-nowrap">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    @* ── Resultados de búsqueda ── *@
+    @if (!string.IsNullOrWhiteSpace(Model.Q) && !Model.ClienteId.HasValue)
+    {
+        if (Model.ClienteResults.Count == 0)
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-1"></i>
+                No se encontraron clientes para <strong>"@Model.Q"</strong>.
+            </div>
+        }
+        else
+        {
+            <p class="text-muted small mb-2">@Model.ClienteResults.Count resultado(s) encontrado(s).</p>
+            <div class="table-responsive-simar mb-4">
+                <table class="table-simar">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>Teléfono</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.ClienteResults)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@c.BusinessName</td>
+                                <td>@(c.Phone ?? "—")</td>
+                                <td class="text-center">
+                                    <a asp-page="/Manifest/Generate/SelectClient"
+                                       asp-route-clienteId="@c.Id"
+                                       class="action-btn ver">
+                                        <i class="bi bi-folder2-open"></i> Ver contratos
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    @* ── Cliente seleccionado + contratos ── *@
+    @if (Model.ClienteSeleccionado is not null)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-3 px-4">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-building fs-4" style="color: var(--simar-green);"></i>
+                    <div>
+                        <div class="fw-semibold">@Model.ClienteSeleccionado.BusinessName</div>
+                        <div class="text-muted small">
+                            @if (!string.IsNullOrWhiteSpace(Model.ClienteSeleccionado.Rfc))
+                            {
+                                <span class="me-3"><i class="bi bi-card-text me-1"></i>@Model.ClienteSeleccionado.Rfc</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.ClienteSeleccionado.Phone))
+                            {
+                                <span><i class="bi bi-telephone me-1"></i>@Model.ClienteSeleccionado.Phone</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="fw-semibold mb-3" style="color: var(--simar-dark);">
+            <i class="bi bi-file-earmark-check me-1"></i> Contratos activos
+        </h6>
+
+        @if (Model.ContratosActivos.Count == 0)
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-1"></i>
+                Este cliente no tiene contratos activos. Solo los contratos con estatus <strong>Activo</strong> pueden generar manifiestos.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive-simar">
+                <table class="table-simar">
+                    <thead>
+                        <tr>
+                            <th>Folio contrato</th>
+                            <th>Vigencia</th>
+                            <th class="text-center">RP — Peligrosos</th>
+                            <th class="text-center">RME — Especiales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var contrato in Model.ContratosActivos)
+                        {
+                            Model.ManifiestosPorContrato.TryGetValue(contrato.ContratoId, out var counts);
+                            <tr>
+                                <td class="fw-semibold">@contrato.Folio</td>
+                                <td>
+                                    @(contrato.ExpirationDate.HasValue
+                                        ? contrato.ExpirationDate.Value.ToString("dd/MM/yyyy")
+                                        : "—")
+                                </td>
+                                <td class="text-center">
+                                    @if (counts.Rp > 0)
+                                    {
+                                        <a asp-page="/Manifest/Consult/Index"
+                                           asp-route-filterContratoId="@contrato.ContratoId"
+                                           asp-route-filterType="peligroso"
+                                           class="badge bg-danger text-decoration-none me-1"
+                                           title="Ver manifiestos RP existentes">
+                                            @counts.Rp existente(s)
+                                        </a>
+                                    }
+                                    <a href="/Manifest/Generate/HazardousWaste?clienteId=@contrato.ClienteId&contratoId=@contrato.ContratoId"
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-plus"></i> Nuevo RP
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    @if (counts.Rme > 0)
+                                    {
+                                        <a asp-page="/Manifest/Consult/Index"
+                                           asp-route-filterContratoId="@contrato.ContratoId"
+                                           asp-route-filterType="especial"
+                                           class="badge bg-warning text-dark text-decoration-none me-1"
+                                           title="Ver manifiestos RME existentes">
+                                            @counts.Rme existente(s)
+                                        </a>
+                                    }
+                                    <a href="/Manifest/Generate/SpecialWaste?clienteId=@contrato.ClienteId&contratoId=@contrato.ContratoId"
+                                       class="btn btn-sm btn-outline-warning">
+                                        <i class="bi bi-plus"></i> Nuevo RME
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    <div class="mt-4 d-flex gap-2">
+        <a asp-page="/Manifest/Consult/Index" class="btn-simar-outline-gray">
+            <i class="bi bi-arrow-left"></i> Cancelar
+        </a>
+    </div>
+
+</div>

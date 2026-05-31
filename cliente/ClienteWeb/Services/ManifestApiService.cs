@@ -14,6 +14,7 @@ public class ManifestSummary
     public string ManifestNumber { get; set; } = string.Empty;
     public string Type { get; set; } = "especial";
     public string Status { get; set; } = "borrador";
+    public int ClienteId { get; set; }
     public int? ContratoId { get; set; }
     public string SocialReason { get; set; } = string.Empty;
     public string Municipality { get; set; } = string.Empty;
@@ -393,6 +394,7 @@ public class ManifestApiService
             ManifestNumber  = dto.NumeroManifiesto,
             Type            = dto.Tipo,
             Status          = dto.Estado,
+            ClienteId       = dto.IdCliente,
             ContratoId      = dto.ContratoId,
             SocialReason    = dto.RazonSocial ?? "",
             Municipality    = dto.Municipio ?? "",
@@ -549,6 +551,7 @@ public class ManifestApiService
     private class ManifestListItemDto
     {
         [JsonPropertyName("id")]                       public int Id { get; set; }
+        [JsonPropertyName("id_cliente")]               public int IdCliente { get; set; }
         [JsonPropertyName("numero_manifiesto")]        public string NumeroManifiesto { get; set; } = "";
         [JsonPropertyName("tipo")]                     public string Tipo { get; set; } = "";
         [JsonPropertyName("estado")]                   public string Estado { get; set; } = "";
