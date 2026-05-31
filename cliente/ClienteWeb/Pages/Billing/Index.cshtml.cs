@@ -746,7 +746,7 @@ namespace ClienteWeb.Pages.Billing
                 List<ReadyToBill> readyToBillList = new();
                 try
                 {
-                    readyToBillList = await _billingService.GetReadyToBillAsync() ?? new List<ReadyToBill>();
+                    readyToBillList = await _billingService.GetReadyToBillAsync(includeBilled: true) ?? new List<ReadyToBill>();
                 }
                 catch (Exception ex)
                 {
