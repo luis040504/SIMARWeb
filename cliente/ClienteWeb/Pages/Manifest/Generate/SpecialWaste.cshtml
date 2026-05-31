@@ -4,6 +4,16 @@
     ViewData["Title"] = "Generate Manifest - Special Waste";
 }
 
+<style>
+    .required-star { color: #dc3545; margin-left: 2px; font-weight: 700; }
+    .form-control.is-pending,
+    .form-select.is-pending { border-color: #fd7e14 !important; background-color: #fff9f5 !important; }
+    .field-feedback { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+    .field-feedback.error  { color: #dc3545; }
+    .field-feedback.pending { color: #fd7e14; }
+    #validationPanel { display: none; }
+</style>
+
 <div class="manifest-container">
 
     <div class="manifest-header d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
@@ -28,13 +38,25 @@
     <form method="post" id="manifestForm">
         @Html.AntiForgeryToken()
 
+        <!-- Panel de validación -->
+        <div id="validationPanel" class="mb-3">
+            <div id="errorSection" style="display:none;" class="alert alert-danger py-2 mb-2">
+                <div class="fw-semibold mb-1"><i class="bi bi-exclamation-circle-fill me-1"></i>Por favor corrige los siguientes errores:</div>
+                <ul id="errorList" class="mb-0 ps-3 small"></ul>
+            </div>
+            <div id="warningSection" style="display:none;" class="alert py-2 mb-0" style="background:#fff3e0;border-color:#fd7e14;color:#bf5700;">
+                <div class="fw-semibold mb-1" style="color:#bf5700;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Los siguientes campos están pendientes:</div>
+                <ul id="warningList" class="mb-0 ps-3 small" style="color:#bf5700;"></ul>
+            </div>
+        </div>
+
         <!-- GENERADOR -->
         <div class="section-card mb-3">
             <div class="section-label">GENERADOR</div>
 
             <div class="row g-2 mb-2">
                 <div class="col-md-4">
-                    <label asp-for="EnvironmentalRegistrationNumber" class="form-label-sm">No. de Registro SEDEMA</label>
+                    <label asp-for="EnvironmentalRegistrationNumber" class="form-label-sm">No. de Registro SEDEMA<span class="required-star">*</span></label>
                     <input asp-for="EnvironmentalRegistrationNumber"
                            class="form-control form-control-sm"
                            placeholder="Ej. SEDEMA/DRME-CH09987205XB-17/182" />
@@ -42,7 +64,7 @@
                 </div>
 
                 <div class="col-md-8">
-                    <label asp-for="SocialReason" class="form-label-sm">Razón social</label>
+                    <label asp-for="SocialReason" class="form-label-sm">Razón social<span class="required-star">*</span></label>
                     <input asp-for="SocialReason"
                            class="form-control form-control-sm"
                            placeholder="Ej. CEMENTOS MOCTEZUMA S.A. DE C.V." />
@@ -52,7 +74,7 @@
 
             <div class="row g-2 mb-2">
                 <div class="col-md-6">
-                    <label asp-for="Address" class="form-label-sm">Domicilio</label>
+                    <label asp-for="Address" class="form-label-sm">Domicilio<span class="required-star">*</span></label>
                     <input asp-for="Address"
                            class="form-control form-control-sm"
                            placeholder="Ej. Camino vecinal, predio Los Gallineros, Cerro Colorado" />
@@ -76,7 +98,7 @@
 
             <div class="row g-2 mb-3">
                 <div class="col-md-3">
-                    <label asp-for="PhoneNumber" class="form-label-sm">Teléfono</label>
+                    <label asp-for="PhoneNumber" class="form-label-sm">Teléfono<span class="required-star">*</span></label>
                     <input asp-for="PhoneNumber"
                            class="form-control form-control-sm"
                            placeholder="Ej. 2288323510" />
@@ -321,7 +343,8 @@
                         {
                             <option value="@c.UserId"
                                     data-nombre="@c.FullName"
-                                    data-licencia="@c.LicenseNumber">
+                                    data-licencia="@c.LicenseNumber"
+                                    data-licencia-tipo="@c.LicenseType">
                                 @c.FullName @(string.IsNullOrEmpty(c.LicenseNumber) ? "" : $"— Lic. {c.LicenseNumber}")
                             </option>
                         }
@@ -524,6 +547,149 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        // ── Campos requeridos (bloquean el guardado) ──────────────────────────
+        const REQUIRED_FIELDS = [
+            { id: 'EnvironmentalRegistrationNumber', label: 'No. de Registro SEDEMA' },
+            { id: 'SocialReason',                    label: 'Razón social (Generador)' },
+            { id: 'Address',                         label: 'Domicilio (Generador)' },
+            { id: 'PhoneNumber',                     label: 'Teléfono (Generador)' },
+        ];
+
+        // ── Campos opcionales (naranja al guardar vacíos) ─────────────────────
+        const PENDING_FIELDS = [
+            { id: 'PostalCode',                   label: 'C.P. (Generador)' },
+            { id: 'Municipality',                  label: 'Municipio (Generador)' },
+            { id: 'Email',                         label: 'Correo electrónico (Generador)' },
+            { id: 'GeneratorResponsibleName',      label: 'Nombre del responsable (Generador)' },
+            { id: 'TransporterAuthorizationNumber',label: 'No. de Autorización SEDEMA (Transportista)' },
+            { id: 'TransporterSocialReason',       label: 'Razón social (Transportista)' },
+            { id: 'TransporterAddress',            label: 'Domicilio (Transportista)' },
+            { id: 'TransporterPostalCode',         label: 'C.P. (Transportista)' },
+            { id: 'TransporterMunicipality',       label: 'Municipio (Transportista)' },
+            { id: 'TransporterPhone',              label: 'Teléfono (Transportista)' },
+            { id: 'VehicleType',                   label: 'Tipo de vehículo' },
+            { id: 'VehiclePlate',                  label: 'No. de placa' },
+            { id: 'DriverName',                    label: 'Nombre del conductor' },
+            { id: 'DriverLicense',                 label: 'No. de licencia' },
+            { id: 'TransportRoute',                label: 'Ruta de transporte' },
+            { id: 'TransporterResponsibleName',    label: 'Nombre del responsable (Transportista)' },
+            { id: 'ReceiverAuthorizationNumber',   label: 'No. de autorización SEDEMA (Destinatario)' },
+            { id: 'ReceiverSocialReason',          label: 'Razón social (Destinatario)' },
+            { id: 'ReceiverAddress',               label: 'Domicilio (Destinatario)' },
+            { id: 'ReceiverPostalCode',            label: 'C.P. (Destinatario)' },
+            { id: 'ReceiverMunicipality',          label: 'Municipio (Destinatario)' },
+            { id: 'ReceiverPhone',                 label: 'Teléfono (Destinatario)' },
+            { id: 'DisposalType',                  label: 'Tipo de disposición' },
+            { id: 'ReceiverResponsibleName',       label: 'Nombre del responsable (Destinatario)' },
+        ];
+
+        // ── Utilidades ────────────────────────────────────────────────────────
+        function clearFieldFeedback(el) {
+            el.classList.remove('is-invalid', 'is-pending');
+            el.parentElement.querySelectorAll('.dynamic-feedback').forEach(n => n.remove());
+        }
+
+        function setFieldError(el) {
+            el.classList.add('is-invalid');
+            const msg = document.createElement('small');
+            msg.className = 'dynamic-feedback field-feedback error';
+            msg.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Este campo es obligatorio.';
+            el.parentElement.appendChild(msg);
+        }
+
+        function setFieldPending(el) {
+            el.classList.add('is-pending');
+            const msg = document.createElement('small');
+            msg.className = 'dynamic-feedback field-feedback pending';
+            msg.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Campo pendiente.';
+            el.parentElement.appendChild(msg);
+        }
+
+        // Limpia el estado al escribir en el campo
+        document.getElementById('manifestForm').addEventListener('input', function (e) {
+            const el = e.target;
+            if (el.classList.contains('is-invalid') || el.classList.contains('is-pending')) {
+                clearFieldFeedback(el);
+            }
+        }, true);
+
+        // ── Validación principal ──────────────────────────────────────────────
+        function validateAndOpen() {
+            const errors   = [];
+            const warnings = [];
+
+            // Limpiar estados previos
+            [...REQUIRED_FIELDS, ...PENDING_FIELDS].forEach(f => {
+                const el = document.getElementById(f.id);
+                if (el) clearFieldFeedback(el);
+            });
+            document.querySelectorAll('.dynamic-feedback').forEach(n => n.remove());
+
+            // Validar requeridos
+            for (const f of REQUIRED_FIELDS) {
+                const el = document.getElementById(f.id);
+                if (!el) continue;
+                if (!el.value.trim()) {
+                    setFieldError(el);
+                    errors.push(f.label);
+                }
+            }
+
+            // Validar pendientes
+            for (const f of PENDING_FIELDS) {
+                const el = document.getElementById(f.id);
+                if (!el) continue;
+                if (!el.value.trim()) {
+                    setFieldPending(el);
+                    warnings.push(f.label);
+                }
+            }
+
+            // Validar licencia chofer vs vehículo
+            const vehiculoSel = document.getElementById('vehiculoSelector');
+            const choferSel   = document.getElementById('choferSelect');
+            if (vehiculoSel?.value && choferSel?.value) {
+                const licRequerida = vehiculoSel.selectedOptions[0]?.dataset.licencia  || '';
+                const licTipoChofer = choferSel.selectedOptions[0]?.dataset.licenciaTipo || '';
+                if (licRequerida && licTipoChofer && licRequerida !== licTipoChofer) {
+                    const driverInput = document.getElementById('driverLicenseInput');
+                    if (driverInput) {
+                        driverInput.classList.add('is-invalid');
+                        const msg = document.createElement('small');
+                        msg.className = 'dynamic-feedback field-feedback error';
+                        msg.innerHTML = `<i class="bi bi-exclamation-circle-fill"></i> El conductor tiene licencia tipo <strong>${licTipoChofer}</strong>, pero el vehículo requiere tipo <strong>${licRequerida}</strong>.`;
+                        driverInput.parentElement.appendChild(msg);
+                    }
+                    errors.push(`Licencia del conductor (tipo ${licTipoChofer}) no corresponde al vehículo (requiere tipo ${licRequerida})`);
+                }
+            }
+
+            // Construir panel
+            const panel       = document.getElementById('validationPanel');
+            const errSection  = document.getElementById('errorSection');
+            const warnSection = document.getElementById('warningSection');
+            const errList     = document.getElementById('errorList');
+            const warnList    = document.getElementById('warningList');
+
+            errList.innerHTML  = errors.map(e   => `<li>${e}</li>`).join('');
+            warnList.innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
+
+            errSection.style.display  = errors.length   ? 'block' : 'none';
+            warnSection.style.display = warnings.length ? 'block' : 'none';
+
+            if (errors.length || warnings.length) {
+                panel.style.display = 'block';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                panel.style.display = 'none';
+            }
+
+            if (errors.length === 0) {
+                new bootstrap.Modal(document.getElementById('confirmModal')).show();
+            }
+        }
+
+        // ── Selectores de catálogo ─────────────────────────────────────────────
         function aplicarChofer(sel) {
             const opt = sel.selectedOptions[0];
             const nombre   = opt?.dataset.nombre   || '';
@@ -532,6 +698,21 @@
             const fLicencia = document.getElementById('driverLicenseInput');
             if (fNombre)   fNombre.value   = nombre;
             if (fLicencia) fLicencia.value = licencia;
+
+            // Avisar si el tipo de licencia no coincide con el vehículo seleccionado
+            const vehiculoSel = document.getElementById('vehiculoSelector');
+            if (vehiculoSel?.value) {
+                const licRequerida  = vehiculoSel.selectedOptions[0]?.dataset.licencia   || '';
+                const licTipoChofer = opt?.dataset.licenciaTipo || '';
+                const hint = document.getElementById('licenciaHint');
+                if (licRequerida && licTipoChofer && licRequerida !== licTipoChofer && hint) {
+                    hint.innerHTML = `<div class="alert alert-warning py-1 mb-0 small">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Atención: el conductor tiene licencia tipo <strong>${licTipoChofer}</strong> pero el vehículo requiere tipo <strong>${licRequerida}</strong>.
+                    </div>`;
+                    hint.classList.remove('d-none');
+                }
+            }
         }
 
         function onVehiculoChange(sel) {
@@ -552,7 +733,10 @@
             const hint = document.getElementById('licenciaHint');
             if (hint) {
                 if (licencia) {
-                    document.getElementById('licenciaTipo').textContent = licencia;
+                    hint.innerHTML = `<div class="alert alert-info py-1 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Este vehículo requiere licencia tipo <strong>${licencia}</strong>.
+                    </div>`;
                     hint.classList.remove('d-none');
                 } else {
                     hint.classList.add('d-none');
@@ -560,54 +744,31 @@
             }
         }
 
-        $.validator.messages.required = "Este campo es obligatorio.";
-        $.validator.messages.email = "Por favor ingrese un correo electrónico válido.";
-        $.validator.messages.number = "Por favor ingrese un número válido.";
-        $.validator.messages.range = $.validator.format("Por favor ingrese un valor entre {0} y {1}.");
-        $.validator.messages.min = $.validator.format("El valor mínimo es {0}.");
-        $.validator.messages.max = $.validator.format("El valor máximo es {0}.");
-
-        document.getElementById('btnOpenConfirm').addEventListener('click', function () {
-            const form = document.getElementById('manifestForm');
-            if ($(form).valid()) {
-                new bootstrap.Modal(document.getElementById('confirmModal')).show();
-            }
-        });
+        // ── Botones ───────────────────────────────────────────────────────────
+        document.getElementById('btnOpenConfirm').addEventListener('click', validateAndOpen);
 
         document.getElementById('btnConfirm').addEventListener('click', function () {
             document.getElementById('manifestForm').submit();
         });
 
+        // ── Tabla de residuos ─────────────────────────────────────────────────
         let residueIndex = @Model.Residues.Count;
 
         function deleteRow(btn) {
             const tbody = btn.closest('tbody');
-            if (tbody.rows.length > 1) {
-                btn.closest('tr').remove();
-            }
+            if (tbody.rows.length > 1) btn.closest('tr').remove();
         }
 
         function addResidueRow() {
             const tbody = document.getElementById('residues-body');
             const i = residueIndex++;
-
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>
-                    <input name="Residues[${i}].ResidueKey" class="form-control form-control-sm" placeholder="Ej. RI-001" />
-                </td>
-                <td>
-                    <input name="Residues[${i}].ResidueName" class="form-control form-control-sm" placeholder="Ej. Otros residuos inorgánicos (RSU)" />
-                </td>
-                <td>
-                    <input name="Residues[${i}].ContainerType" class="form-control form-control-sm" placeholder="Ej. OF" />
-                </td>
-                <td>
-                    <input name="Residues[${i}].ContainerCapacity" class="form-control form-control-sm" placeholder="Ej. N/A" />
-                </td>
-                <td>
-                    <input name="Residues[${i}].Weight" class="form-control form-control-sm" placeholder="Ej. 680" />
-                </td>
+                <td><input name="Residues[${i}].ResidueKey" class="form-control form-control-sm" placeholder="Ej. RI-001" /></td>
+                <td><input name="Residues[${i}].ResidueName" class="form-control form-control-sm" placeholder="Ej. Otros residuos inorgánicos (RSU)" /></td>
+                <td><input name="Residues[${i}].ContainerType" class="form-control form-control-sm" placeholder="Ej. OF" /></td>
+                <td><input name="Residues[${i}].ContainerCapacity" class="form-control form-control-sm" placeholder="Ej. N/A" /></td>
+                <td><input name="Residues[${i}].Weight" class="form-control form-control-sm" placeholder="Ej. 680" /></td>
                 <td>
                     <select name="Residues[${i}].Unit" class="form-select form-select-sm">
                         <option value="kg">kg</option>
@@ -621,8 +782,7 @@
                     <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Eliminar fila">
                         <i class="bi bi-x-lg"></i>
                     </button>
-                </td>
-            `;
+                </td>`;
             tbody.appendChild(row);
         }
     </script>
