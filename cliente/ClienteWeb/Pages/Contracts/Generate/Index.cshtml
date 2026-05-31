@@ -39,6 +39,8 @@
     <input type="hidden" asp-for="RFC" />
     <input type="hidden" asp-for="Address" />
     <input type="hidden" asp-for="Representative" />
+    <input type="hidden" asp-for="ContactEmail" />
+    <input type="hidden" asp-for="ContactPhone" />
     <input type="hidden" id="hidServicesJson" name="ServicesJsonHidden" value="@Model.ServicesJsonHidden" />
     <input type="hidden" id="hidPaymentsJson" name="PaymentsJsonHidden" value="@Model.PaymentsJsonHidden" />
     <input type="hidden" id="hidExtrasJson" name="ExtrasJsonHidden" value="@Model.ExtrasJsonHidden" />
@@ -104,11 +106,12 @@
                         
                         <button type="button" class="btn-simar-outline-gray w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar</button>
                         
-                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-outline-gray w-100" onclick="prepareDownload()">
+                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-outline-gray w-100" onclick="prepareDownload()" style="display:none"></button>
+                        <button type="button" class="btn-simar-outline-gray w-100" onclick="checkClientAndSave()">
                             <i class="bi bi-save me-1"></i> Solo Guardar
                         </button>
 
-                        <button type="button" id="btnDownloadPdf" class="btn-simar-primary w-100" onclick="saveAndDownloadPdf()">
+                        <button type="button" id="btnDownloadPdf" class="btn-simar-primary w-100" onclick="checkClientAndDownload()">
                             <i class="bi bi-file-earmark-pdf me-1"></i> Guardar y Descargar
                         </button>
                     </div>
@@ -296,6 +299,51 @@
         </div>
     </div>
 </form>
+
+<!-- Modal: aviso de cliente nuevo -->
+<div class="modal fade" id="modalClienteNuevo" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.12);">
+
+            <!-- Franja superior de color SIMAR -->
+            <div style="height: 5px; background: var(--simar-green);"></div>
+
+            <div class="modal-body p-4 text-center">
+                <!-- Ícono -->
+                <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3"
+                     style="width: 64px; height: 64px; background: var(--simar-green-light);">
+                    <i class="bi bi-person-plus-fill" style="font-size: 1.8rem; color: var(--simar-green);"></i>
+                </div>
+
+                <!-- Título -->
+                <h5 class="fw-bold mb-1" style="color: var(--simar-dark);">Nuevo cliente detectado</h5>
+                <p class="text-muted small mb-3">Este RFC no está registrado en el sistema.</p>
+
+                <!-- Datos -->
+                <div class="rounded-3 p-3 mb-3 text-start" style="background: var(--simar-gray-light); border: 1px solid var(--simar-border);">
+                    <div class="small text-muted mb-1">RFC</div>
+                    <div class="fw-bold" id="modalClienteRfc" style="color: var(--simar-green); letter-spacing: 1px; font-size: 0.95rem;"></div>
+                    <div class="small text-muted mt-2 mb-1">Razón social</div>
+                    <div class="fw-semibold" id="modalClienteNombre" style="color: var(--simar-dark); font-size: 0.9rem;"></div>
+                </div>
+
+                <p class="small text-muted mb-0">
+                    Al continuar, este cliente será <strong style="color: var(--simar-dark);">registrado automáticamente</strong> antes de guardar el contrato.
+                </p>
+            </div>
+
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                <button type="button" class="btn-simar-outline-gray flex-fill" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>Cancelar
+                </button>
+                <button type="button" id="btnConfirmarCliente" class="btn-simar-primary flex-fill" onclick="confirmarRegistroCliente()">
+                    <i class="bi bi-check2 me-1"></i>Aceptar y continuar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <script>
     function filterQuotations() {
@@ -524,6 +572,76 @@
     }
 
     var API_BASE = '@Model.ApiBaseUrl';
+    var _pendingAction = null;
+    
+    var USER_TOKEN = '@Model.Token';
+    if (!USER_TOKEN) {
+        var match = document.cookie.match(new RegExp('(^| )Authorization=([^;]+)'));
+        if (match) USER_TOKEN = decodeURIComponent(match[2]).replace('Bearer ', '').trim();
+    }
+
+    async function checkClientAndSave() {
+        _pendingAction = 'saveOnly';
+        await checkClientThenProceed();
+    }
+
+    async function checkClientAndDownload() {
+        _pendingAction = 'downloadPdf';
+        await checkClientThenProceed();
+    }
+
+    async function checkClientThenProceed() {
+        var rfc = (document.querySelector('input[name="RFC"]')?.value ?? '').trim();
+
+        if (!rfc) {
+            // Sin RFC: no hay nada que validar, continúa directo
+            executePendingAction();
+            return;
+        }
+
+        try {
+            // 🔒 Añadimos el token al check de cliente por si este endpoint también requiere auth
+            var headers = {};
+            if (USER_TOKEN) {
+                headers['Authorization'] = 'Bearer ' + USER_TOKEN;
+            }
+
+            var resp = await fetch(API_BASE + '/api/contracts/check-client?rfc=' + encodeURIComponent(rfc), {
+                headers: headers
+            });
+            if (!resp.ok) { executePendingAction(); return; }
+
+            var data = await resp.json();
+
+            if (data.exists) {
+                // Cliente ya registrado → continúa sin aviso
+                executePendingAction();
+            } else {
+                // Cliente nuevo → mostrar modal de aviso
+                var clientName = document.querySelector('input[name="BusinessName"]')?.value ?? '';
+                document.getElementById('modalClienteRfc').textContent = rfc;
+                document.getElementById('modalClienteNombre').textContent = clientName ? '"' + clientName + '" ' : '';
+                new bootstrap.Modal(document.getElementById('modalClienteNuevo')).show();
+            }
+        } catch (e) {
+            // Si el check falla por red, continúa de todas formas
+            executePendingAction();
+        }
+    }
+
+    function confirmarRegistroCliente() {
+        bootstrap.Modal.getInstance(document.getElementById('modalClienteNuevo')).hide();
+        executePendingAction();
+    }
+
+    function executePendingAction() {
+        if (_pendingAction === 'saveOnly') {
+            prepareDownload();
+            document.getElementById('btnSaveOnly').click();
+        } else if (_pendingAction === 'downloadPdf') {
+            saveAndDownloadPdf();
+        }
+    }
 
     async function saveAndDownloadPdf() {
         prepareDownload();
@@ -557,7 +675,18 @@
 
             var pdfController = new AbortController();
             var pdfTimeout = setTimeout(function() { pdfController.abort(); }, 30000);
-            var pdfResponse = await fetch(API_BASE + '/api/contracts/' + result.contractId + '/download', { signal: pdfController.signal });
+            
+            // 🛠️ Inyectamos las cabeceras con el JWT antes de consultar al microservicio la descarga
+            var pdfHeaders = {};
+            if (USER_TOKEN) {
+                pdfHeaders['Authorization'] = 'Bearer ' + USER_TOKEN;
+            }
+
+            var pdfResponse = await fetch(API_BASE + '/api/contracts/' + result.contractId + '/download', { 
+                signal: pdfController.signal,
+                headers: pdfHeaders
+            });
+            
             clearTimeout(pdfTimeout);
             if (pdfResponse.ok) {
                 var blob = await pdfResponse.blob();

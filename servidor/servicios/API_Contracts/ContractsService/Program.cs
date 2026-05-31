@@ -21,6 +21,14 @@ builder.Services.AddDbContext<ContractsDbContext>(options =>
 
 builder.Services.AddScoped<IContractService, ContractService>();
 
+// HttpClient hacia clientes_api (nombre de servicio en Docker)
+builder.Services.AddHttpClient<IClientesApiService, ClientesApiService>(client =>
+{
+    var url = builder.Configuration["ServiceUrls:ClientesApi"] ?? "http://clientes_api:8005";
+    client.BaseAddress = new Uri(url);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
@@ -51,7 +59,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseHttpsRedirection();
 
-app.MapPost("/api/contracts", async (Contract contractRequest, IContractService contractService) =>
+app.MapPost("/api/contracts", async (HttpContext httpContext, Contract contractRequest, IContractService contractService) =>
 {
     var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
     var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(contractRequest);
@@ -65,7 +73,14 @@ app.MapPost("/api/contracts", async (Contract contractRequest, IContractService 
 
     try
     {
-        var result = await contractService.CreateContractAsync(contractRequest);
+        string token = "";
+        var authHeader = httpContext.Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            token = authHeader["Bearer ".Length..].Trim();
+        }
+
+        var result = await contractService.CreateContractAsync(contractRequest, token);
         return Results.Created($"/api/contracts/{result.Id}", result);
     }
     catch (ArgumentException ex)
@@ -78,11 +93,28 @@ app.MapPost("/api/contracts", async (Contract contractRequest, IContractService 
     }
 }).WithName("CreateContract");
 
+// Verifica si un cliente ya existe en clientes_api por RFC.
+// Devuelve { exists: bool, clientId: int, clientName: string }
+// No crea ni modifica nada — solo consulta.
+app.MapGet("/api/contracts/check-client", async (string rfc, IClientesApiService clientesApi) =>
+{
+    if (string.IsNullOrWhiteSpace(rfc))
+        return Results.BadRequest(new { error = "RFC requerido." });
+
+    var cliente = await clientesApi.BuscarPorRfcAsync(rfc);
+
+    if (cliente != null)
+        return Results.Ok(new { exists = true,  clientId = cliente.Id, clientName = cliente.Name });
+
+    return Results.Ok(new { exists = false, clientId = 0, clientName = "" });
+}).WithName("CheckClientExists");
+
 app.MapGet("/api/contracts", async (string? search, string? status, DateTime? dateFilter, IContractService contractService) =>
 {
     var contracts = await contractService.GetContractsAsync(search, status, dateFilter);
     return Results.Ok(contracts);
 }).WithName("GetContracts");
+
  
 app.MapGet("/api/contracts/{id:int}", async (int id, IContractService contractService) =>
 {
@@ -203,6 +235,78 @@ app.MapGet("/api/quotations/{id:int}", async (int id, ContractsDbContext db) =>
     
     return Results.Ok(quote);
 }).WithName("GetQuotationById");
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Endpoint espejo para Manifiestos
+// Devuelve los servicios de una cotización con el campo "wastetype" que
+// espera API_MANIFEST, mapeando:
+//   JSON cotización: { name, type, unit }  →  { wastetype, unit }
+// GET /api/quotations/{id}/manifest-data
+// ──────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/quotations/{id:int}/manifest-data", async (int id, ContractsDbContext db) =>
+{
+    var quote = await db.Quotations.FindAsync(id);
+    if (quote == null) return Results.NotFound(new { error = "Cotización no encontrada." });
+
+    // Parsear los servicios raw almacenados en ServicesRawJson
+    var wasteItems = new List<object>();
+    try
+    {
+        var rawServices = JsonSerializer.Deserialize<List<JsonElement>>(quote.ServicesRawJson);
+        if (rawServices != null)
+        {
+            foreach (var svc in rawServices)
+            {
+                // Extraer ubicación del servicio
+                string address = "";
+                if (svc.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Object)
+                {
+                    var street = loc.TryGetProperty("street",       out var st) ? st.GetString() ?? "" : "";
+                    var muni   = loc.TryGetProperty("municipality", out var mu) ? mu.GetString() ?? "" : "";
+                    address = $"{street}, {muni}".Trim(',', ' ');
+                }
+
+                // Cada servicio puede tener múltiples residuos en "wastes"
+                if (svc.TryGetProperty("wastes", out var wastes) && wastes.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var w in wastes.EnumerateArray())
+                    {
+                        // "name" = nombre del residuo, "type" = categoría/tipo
+                        // Se devuelven como campos separados tal como los espera Manifiestos
+                        var name = w.TryGetProperty("name", out var nameProp) && nameProp.ValueKind == JsonValueKind.String
+                            ? nameProp.GetString() ?? ""
+                            : "";
+                        var type = w.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String
+                            ? typeProp.GetString() ?? ""
+                            : "";
+                        var unit = w.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "";
+
+                        wasteItems.Add(new
+                        {
+                            name           = name,
+                            type           = type,
+                            unit           = unit,
+                            serviceAddress = address
+                        });
+                    }
+                }
+            }
+        }
+    }
+    catch { /* JSON malformado: devolver lista vacía */ }
+
+    return Results.Ok(new
+    {
+        quotationId  = quote.Id,
+        folio        = quote.Folio,
+        clientName   = quote.ClientName,
+        clientRfc    = quote.ClientRfc,
+        status       = quote.Status,
+        frequency    = quote.Frequency,
+        total        = quote.Total,
+        wastes       = wasteItems
+    });
+}).WithName("GetQuotationManifestData");
 
 app.MapPost("/api/contracts/{id:int}/upload-pdf", async (int id, IFormFile file, ContractsDbContext db) =>
 {

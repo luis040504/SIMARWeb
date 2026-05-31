@@ -140,6 +140,8 @@ services:
       - .env
     environment:
       - DATABASE_CLIENT_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_client_db:5432/${POSTGRES_CLIENT_DB}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
     command: >
       sh -c "
         echo 'Esperando a PostgreSQL...';

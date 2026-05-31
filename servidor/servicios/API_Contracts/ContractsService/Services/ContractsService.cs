@@ -2,12 +2,82 @@ using ContractsService.Data;
 using ContractsService.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ContractsService.Services;
 
+public class ClienteApiDto
+{
+    [JsonPropertyName("id")]           public int    Id            { get; set; }
+    [JsonPropertyName("name")]         public string Name          { get; set; } = "";
+    [JsonPropertyName("businessName")] public string BusinessName  { get; set; } = "";
+    [JsonPropertyName("rfc")]          public string Rfc           { get; set; } = "";
+    [JsonPropertyName("contactEmail")] public string ContactEmail  { get; set; } = "";
+    [JsonPropertyName("phone")]        public string Phone         { get; set; } = "";
+    [JsonPropertyName("address")]      public string Address       { get; set; } = "";
+}
+
+public interface IClientesApiService
+{
+    Task<ClienteApiDto?> BuscarPorRfcAsync(string rfc);
+    Task<ClienteApiDto?> CrearClienteAsync(ClienteApiDto cliente, string token);
+}
+
+public class ClientesApiService : IClientesApiService
+{
+    private readonly HttpClient _http;
+    private static readonly JsonSerializerOptions _json =
+        new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+    public ClientesApiService(HttpClient http) => _http = http;
+
+    public async Task<ClienteApiDto?> BuscarPorRfcAsync(string rfc)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"/client/rfc/{Uri.EscapeDataString(rfc)}");
+            if (!response.IsSuccessStatusCode) return null;
+
+            var lista = await response.Content.ReadFromJsonAsync<List<ClienteApiDto>>(_json);
+            return lista?.FirstOrDefault();
+        }
+        catch { return null; }
+    }
+
+    public async Task<ClienteApiDto?> CrearClienteAsync(ClienteApiDto cliente, string token)
+    {
+        try
+        {
+            var payload = new
+            {
+                name         = cliente.Name,
+                businessName = cliente.BusinessName,
+                rfc          = cliente.Rfc,
+                contactEmail = cliente.ContactEmail,
+                phone        = cliente.Phone,
+                address      = cliente.Address,
+                semarnatNum  = "PENDIENTE"
+            };
+
+            // 🛠️ Construimos la petición manualmente para adjuntar el JWT
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/client");
+            request.Content = JsonContent.Create(payload);
+            
+            // Inyectar el token en las cabeceras
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return null;
+
+            return await response.Content.ReadFromJsonAsync<ClienteApiDto>(_json);
+        }
+        catch { return null; }
+    }
+}
+
 public interface IContractService
 {
-    Task<ContractResponseDto> CreateContractAsync(Contract request);
+    Task<ContractResponseDto> CreateContractAsync(Contract request, string token);
     Task<List<ContractListDto>> GetContractsAsync(string? search, string? status, DateTime? dateFilter);
     Task<ContractListDto> GetContractByIdAsync(int id);
     Task<ContractFullDetailDto> GetContractFullDetailAsync(int id);
@@ -18,29 +88,57 @@ public interface IContractService
 public class ContractService : IContractService
 {
     private readonly ContractsDbContext _context;
+    private readonly IClientesApiService _clientesApi;
 
-    public ContractService(ContractsDbContext context)
+    public ContractService(ContractsDbContext context, IClientesApiService clientesApi)
     {
-        _context = context;
+        _context     = context;
+        _clientesApi = clientesApi;
     }
 
-    public async Task<ContractResponseDto> CreateContractAsync(Contract request)
+    // Recuerda actualizar también la interfaz IContractService con esta nueva firma
+    public async Task<ContractResponseDto> CreateContractAsync(Contract request, string token)
     {
-        request.Folio = $"CON-{DateTime.Now:yyyyMM}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
+        request.Folio     = $"CON-{DateTime.Now:yyyyMM}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
         request.CreatedAt = DateTime.UtcNow;
-        request.Status = "Pendiente de firma";
+        request.Status    = "Pendiente de firma";
 
-        // Dejar los datos del cliente persistidos en el contrato
-        _context.Contracts.Add(request);
+        int quotationId = request.ClientId;
+        var quotation   = await _context.Quotations.FindAsync(quotationId);
 
-        var quote = await _context.Quotations.FindAsync(request.ClientId);
-        if (quote != null) 
+        if (!string.IsNullOrWhiteSpace(request.ClientRfc))
         {
-            quote.Status = "contracted";
+            var clienteExistente = await _clientesApi.BuscarPorRfcAsync(request.ClientRfc);
+
+            if (clienteExistente != null)
+            {
+                request.ClientId = clienteExistente.Id;
+            }
+            else
+            {
+                // 🔄 Pasamos el token aquí para autorizar la creación automática
+                var nuevoCliente = await _clientesApi.CrearClienteAsync(new ClienteApiDto
+                {
+                    Name         = request.ClientName,
+                    BusinessName = request.ClientName,
+                    Rfc          = request.ClientRfc,
+                    ContactEmail = quotation?.ContactEmail ?? "",
+                    Phone        = quotation?.ContactPhone ?? "",
+                    Address      = request.ClientAddress
+                }, token);
+
+                if (nuevoCliente != null)
+                    request.ClientId = nuevoCliente.Id;
+            }
         }
 
+        _context.Contracts.Add(request);
+
+        if (quotation != null)
+            quotation.Status = "contracted";
+
         await _context.SaveChangesAsync();
-        
+
         return new ContractResponseDto { Id = request.Id, Folio = request.Folio, Message = "Contrato creado exitosamente." };
     }
 
@@ -96,9 +194,8 @@ public class ContractService : IContractService
 
         return new ContractListDto
         {
-            Id = contract.Id, Folio = contract.Folio, ClientId = contract.ClientId, Status = contract.Status, CreatedAt = contract.CreatedAt,
-            SignedContractPath = contract.SignedContractPath,
-            ExpirationDate = contract.EndDate ?? (contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue))
+            Id = quote.Id, Folio = quote.Folio, ClientId = 0, Status = quote.Status, CreatedAt = quote.CreatedAt,
+            ExpirationDate = DateTime.MinValue
         };
     }
 
@@ -252,7 +349,8 @@ public class ContractService : IContractService
     }
 }
 
-public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } public string? SignedContractPath { get; set; } }public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
+public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } public string? SignedContractPath { get; set; } }
+public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
 
 public class ContractFullDetailDto
 {
