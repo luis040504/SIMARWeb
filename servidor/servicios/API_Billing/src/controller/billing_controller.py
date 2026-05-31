@@ -286,7 +286,7 @@ class BillingController:
                         razon_social=razon_social,
                         rfc=None,
                         direccion_fiscal=m.get("domicilio"),
-                        postal_code=m.get("codigo_postal") or (re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")).group(1) if re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")) else None)
+                        postal_code=m.get("codigo_postal") or (re.search(r'(\d{5})(?!\d)', m.get("domicilio") or "").group(1) if re.search(r'(\d{5})(?!\d)', m.get("domicilio") or "") else None)
                     )
 
                 m_detail = {}
