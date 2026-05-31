@@ -541,14 +541,14 @@ public class ManifestApiService
 
     // ─── DTOs INTERNOS ────────────────────────────────────────────────────────
 
-    private class ApiResponse<T>
+    public class ApiResponse<T>
     {
         [JsonPropertyName("success")] public bool Success { get; set; }
         [JsonPropertyName("data")]    public T? Data { get; set; }
         [JsonPropertyName("message")] public string? Message { get; set; }
     }
 
-    private class ManifestListItemDto
+    public class ManifestListItemDto
     {
         [JsonPropertyName("id")]                       public int Id { get; set; }
         [JsonPropertyName("id_cliente")]               public int IdCliente { get; set; }
@@ -565,7 +565,7 @@ public class ManifestApiService
         [JsonPropertyName("nombre_responsable_transportista")] public string? NombreResponsableTransportista { get; set; }
     }
 
-    private class ManifestDetailApiDto
+    public class ManifestDetailApiDto
     {
         [JsonPropertyName("id")]                       public int Id { get; set; }
         [JsonPropertyName("id_cliente")]               public int IdCliente { get; set; }
@@ -645,7 +645,7 @@ public class ManifestApiService
         [JsonPropertyName("residuos_peligrosos")] public List<PeligrosoResidueApiDto>? ResiduosPeligrosos { get; set; }
     }
 
-    private class EspecialResidueApiDto
+    public class EspecialResidueApiDto
     {
         [JsonPropertyName("clave_residuo")] public string? ClaveResiduo { get; set; }
         [JsonPropertyName("nombre_residuo")] public string? NombreResiduo { get; set; }
@@ -655,7 +655,7 @@ public class ManifestApiService
         [JsonPropertyName("unidad")]         public string? Unidad { get; set; }
     }
 
-    private class PeligrosoResidueApiDto
+    public class PeligrosoResidueApiDto
     {
         [JsonPropertyName("nombre_residuo")]  public string? NombreResiduo { get; set; }
         [JsonPropertyName("es_corrosivo")]    [JsonConverter(typeof(JsonBoolConverter))] public bool EsCorrosivo { get; set; }
@@ -671,7 +671,7 @@ public class ManifestApiService
         [JsonPropertyName("tiene_etiqueta")]  [JsonConverter(typeof(JsonNullableBoolConverter))] public bool? TieneEtiqueta { get; set; }
     }
 
-    private class CreateManifestDto
+    public class CreateManifestDto
     {
         [JsonPropertyName("id_cliente")]  public int? IdCliente { get; set; }
         [JsonPropertyName("contrato_id")] public int? ContratoId { get; set; }
@@ -743,7 +743,7 @@ public class ManifestApiService
         [JsonPropertyName("residuos_peligrosos")] public List<PeligrosoResidueSendDto>? ResiduosPeligrosos { get; set; }
     }
 
-    private class EspecialResidueSendDto
+    public class EspecialResidueSendDto
     {
         [JsonPropertyName("clave_residuo")] public string? ClaveResiduo { get; set; }
         [JsonPropertyName("nombre_residuo")] public string? NombreResiduo { get; set; }
@@ -753,7 +753,7 @@ public class ManifestApiService
         [JsonPropertyName("unidad")]         public string? Unidad { get; set; }
     }
 
-    private class PeligrosoResidueSendDto
+    public class PeligrosoResidueSendDto
     {
         [JsonPropertyName("nombre_residuo")]   public string? NombreResiduo { get; set; }
         [JsonPropertyName("es_corrosivo")]     public bool EsCorrosivo { get; set; }
@@ -769,7 +769,7 @@ public class ManifestApiService
         [JsonPropertyName("tiene_etiqueta")]   public bool? TieneEtiqueta { get; set; }
     }
 
-    private class UpdateStatusDto
+    public class UpdateStatusDto
     {
         [JsonPropertyName("estado")]      public string Estado { get; set; } = "";
         [JsonPropertyName("fecha_firma")] public string? FechaFirma { get; set; }

@@ -346,3 +346,119 @@ async def test_change_status_accepted_paid_mode_exceeds_limit_fallback(async_cli
     
     # Counter should NOT be incremented because we fell back to SIMULATED
     assert not mock_collection.pac_settings.update_one.called
+
+async def test_get_ready_to_bill_external_api_failure(async_client: AsyncClient, mock_collection):
+    from unittest.mock import patch, AsyncMock
+    
+    # Mocking httpx.AsyncClient specifically inside the controller to raise an exception or fail
+    with patch("src.controller.billing_controller.httpx.AsyncClient") as mock_client_class:
+        mock_instance = mock_client_class.return_value
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.get = AsyncMock(side_effect=Exception("Connection error"))
+        
+        response = await async_client.get("/billing/ready-to-bill")
+        assert response.status_code == 200
+        assert response.json() == []
+
+async def test_get_ready_to_bill_success(async_client: AsyncClient, mock_collection):
+    from unittest.mock import patch, MagicMock, AsyncMock
+    
+    # We need to mock several httpx responses
+    # 1. /api/manifiestos?estado=completado
+    # 2. /client/name/Cliente%20Test
+    # 3. /api/manifiestos/1
+    # 4. /api/contracts/10/detail
+    # 5. /api/contracts?status=Activo & status=Aceptado
+    
+    mock_manifests = {
+        "data": [
+            {
+                "id": 1,
+                "numero_manifiesto": "MAN-001",
+                "razon_social": "Cliente Test",
+                "tipo": "especial",
+                "fecha_manifiesto": "2026-05-31T00:00:00Z"
+            }
+        ]
+    }
+    
+    mock_client = {
+        "id": 123,
+        "businessName": "Cliente Test",
+        "rfc": "TES123456AAA",
+        "address": "Calle Falsa 123"
+    }
+    
+    mock_manifest_detail = {
+        "data": {
+            "id": 1,
+            "contrato_id": 10,
+            "residuos_especiales": [
+                {
+                    "nombre_residuo": "RPBI-01",
+                    "peso": 100.0,
+                    "unidad": "kg"
+                }
+            ]
+        }
+    }
+    
+    mock_contract_detail = {
+        "id": 10,
+        "folio": "CON-2026-001",
+        "totalBasePrice": 5000.0,
+        "contractDuration": "1 Año",
+        "clientId": 123,
+        "clientName": "Cliente Test",
+        "clientRfc": "TES123456AAA",
+        "clientAddress": "Calle Falsa 123",
+        "services": [
+            {
+                "wasteType": "RPBI-01",
+                "subtotal": 50.0,
+                "wasteUnit": "kg"
+            }
+        ]
+    }
+    
+    # Mocking httpx.AsyncClient inside the controller
+    with patch("src.controller.billing_controller.httpx.AsyncClient") as mock_client_class:
+        mock_instance = mock_client_class.return_value
+        mock_instance.__aenter__.return_value = mock_instance
+        
+        # Create mock responses
+        def side_effect(url, *args, **kwargs):
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            
+            url_str = str(url)
+            if "manifiestos?estado=completado" in url_str:
+                mock_resp.json.return_value = mock_manifests
+            elif "client/name" in url_str:
+                mock_resp.json.return_value = mock_client
+            elif "manifiestos/1" in url_str:
+                mock_resp.json.return_value = mock_manifest_detail
+            elif "contracts/10/detail" in url_str:
+                mock_resp.json.return_value = mock_contract_detail
+            elif "contracts?status=" in url_str:
+                mock_resp.json.return_value = [] # No active contracts to avoid infinite loop
+            else:
+                mock_resp.status_code = 404
+                mock_resp.json.return_value = {}
+                
+            return mock_resp
+            
+        mock_instance.get = AsyncMock(side_effect=side_effect)
+        
+        response = await async_client.get("/billing/ready-to-bill")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["numero_manifiesto"] == "MAN-001"
+        assert data[0]["cliente"]["rfc"] == "TES123456AAA"
+        assert data[0]["contrato"]["folio"] == "CON-2026-001"
+        assert len(data[0]["detalles_servicio"]) == 1
+        assert data[0]["detalles_servicio"][0]["subtotal"] == 5000.0 # 100 kg * 50 subtotal
+        assert data[0]["total_estimado"] == 5000.0
+
+

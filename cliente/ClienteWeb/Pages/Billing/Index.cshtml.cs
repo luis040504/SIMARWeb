@@ -47,6 +47,7 @@ namespace ClienteWeb.Pages.Billing
         public List<BillingRecord> DisplayedRecords { get; set; }
         public bool IsSearchResult { get; set; }
         public List<ClienteOutput> ActiveClients { get; set; } = new();
+        public BillingResponse FullSelectedInvoice { get; set; }
 
         [BindProperty]
         public string SelectedRecordId { get; set; }
@@ -109,6 +110,19 @@ namespace ClienteWeb.Pages.Billing
             if (!string.IsNullOrEmpty(SelectedRecordId))
             {
                 SelectedRecord = DisplayedRecords.FirstOrDefault(r => r.Id == SelectedRecordId);
+                
+                if (modalType == "Details")
+                {
+                    try
+                    {
+                        FullSelectedInvoice = await _billingService.GetInvoiceByIdAsync(SelectedRecordId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error fetching full selected invoice: {ex.Message}");
+                    }
+                }
+
                 if (SelectedRecord != null)
                 {
                     TaxId = SelectedRecord.TaxId;
@@ -729,28 +743,80 @@ namespace ClienteWeb.Pages.Billing
                     searchQuery: SearchQuery
                 );
 
-                var mappedInvoices = allInvoices.Select(i => new BillingRecord
+                List<ReadyToBill> readyToBillList = new();
+                try
                 {
-                    Id = i.Id,
-                    RecordType = "Invoice",
-                    ClientName = i.Receiver.Name,
-                    TaxId = i.Receiver.TaxId,
-                    Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
-                    Date = i.FiscalData.IssueDate,
-                    Amount = i.Financials.Total,
-                    InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
-                    Status = i.Status,
-                    Reason = i.Reason,
-                    PostalCode = i.Receiver.PostalCode,
-                    FiscalRegime = i.Receiver.FiscalRegime,
-                    CfdiUsage = i.Receiver.TaxUsage,
-                    PaymentForm = i.Financials.PaymentForm,
-                    PaymentMethod = i.Financials.PaymentMethod,
-                    ProductCode = i.Items.FirstOrDefault()?.ProductCode,
-                    UnitCode = i.Items.FirstOrDefault()?.UnitCode,
-                    TaxObject = i.Items.FirstOrDefault()?.TaxObject,
-                    ServiceId = i.ServiceId
-                });
+                    readyToBillList = await _billingService.GetReadyToBillAsync() ?? new List<ReadyToBill>();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error retrieving ready-to-bill items for comparison: {ex.Message}");
+                }
+
+                var mappedInvoices = allInvoices.Select(i => {
+                    var readyMatch = readyToBillList.FirstOrDefault(r => 
+                        (r.Source == "contract" && r.NumeroManifiesto == i.ServiceId) ||
+                        (r.Source == "manifest" && r.ManifestId.ToString() == i.ServiceId)
+                    );
+
+                    bool isModified = false;
+                    decimal originalAmount = 0m;
+                    if (readyMatch != null)
+                    {
+                        originalAmount = readyMatch.TotalEstimado;
+                        // Compare subtotal directly
+                        isModified = Math.Abs(i.Financials.Subtotal - readyMatch.TotalEstimado) > 0.01m;
+
+                        // Compare items count or items details
+                        if (!isModified && i.Items != null && readyMatch.DetallesServicio != null)
+                        {
+                            if (i.Items.Count != readyMatch.DetallesServicio.Count)
+                            {
+                                isModified = true;
+                            }
+                            else
+                            {
+                                for (int idx = 0; idx < i.Items.Count; idx++)
+                                {
+                                    var invItem = i.Items[idx];
+                                    var baseItem = readyMatch.DetallesServicio[idx];
+                                    if (Math.Abs((decimal)invItem.Quantity - (decimal)baseItem.Cantidad) > 0.001m ||
+                                        Math.Abs(invItem.UnitPrice - baseItem.PrecioUnitario) > 0.01m)
+                                    {
+                                        isModified = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return new BillingRecord
+                    {
+                        Id = i.Id,
+                        RecordType = "Invoice",
+                        ClientName = i.Receiver.Name,
+                        TaxId = i.Receiver.TaxId,
+                        Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
+                        Date = i.FiscalData.IssueDate,
+                        Amount = i.Financials.Total,
+                        InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
+                        Status = i.Status,
+                        Reason = i.Reason,
+                        PostalCode = i.Receiver.PostalCode,
+                        FiscalRegime = i.Receiver.FiscalRegime,
+                        CfdiUsage = i.Receiver.TaxUsage,
+                        PaymentForm = i.Financials.PaymentForm,
+                        PaymentMethod = i.Financials.PaymentMethod,
+                        ProductCode = i.Items.FirstOrDefault()?.ProductCode,
+                        UnitCode = i.Items.FirstOrDefault()?.UnitCode,
+                        TaxObject = i.Items.FirstOrDefault()?.TaxObject,
+                        ServiceId = i.ServiceId,
+                        IsModifiedFromContract = isModified,
+                        OriginalAmount = originalAmount,
+                        Source = readyMatch?.Source ?? "manifest"
+                    };
+                }).ToList();
 
                 var displayed = new List<BillingRecord>();
 
@@ -851,6 +917,8 @@ namespace ClienteWeb.Pages.Billing
         public string Source { get; set; }
         public string ServiceId { get; set; }
         public string RawItemsJson { get; set; }
+        public bool IsModifiedFromContract { get; set; }
+        public decimal OriginalAmount { get; set; }
     }
 
     public class InvoiceItemDto
