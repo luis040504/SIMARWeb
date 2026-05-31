@@ -145,16 +145,20 @@ namespace API_Usuarios.src.Services
     
             if (usuario == null) return false; // Si no existe, avisamos al controlador
 
-            usuario.Username = dto.Username;
-            usuario.Email = dto.Email;
-            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
-            // Actualizamos el rol si viene en el DTO
-            if (!string.IsNullOrEmpty(dto.Role))
+            // Solo actualizar si el campo NO es null
+            if (dto.Username != null)
+                usuario.Username = dto.Username;
+            
+            if (dto.Email != null)
+                usuario.Email = dto.Email;
+            
+            if (dto.Password != null)
+                usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            
+            if (dto.Role != null)
             {
-                usuario.Role = Enum.TryParse<RoleEnum>(dto.Role.ToLower(), out var roleResult) 
-                ? roleResult 
-                : usuario.Role;
+                usuario.Role = Enum.TryParse<RoleEnum>(dto.Role, true, out var role) 
+                    ? role : usuario.Role;
             }
 
             usuario.UpdatedAt = DateTime.UtcNow;
