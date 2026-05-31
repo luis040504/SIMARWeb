@@ -200,7 +200,7 @@
 
     <!-- 🔽 Combo -->
     <div class="select-container">
-        <select class="form-select-simar">
+        <select id="sortSelect" class="form-select-simar">
             <option value="default">Ordenar por</option>
             <option value="nombre">Nombre</option>
             <option value="razonSocial">Razón Social</option>
@@ -250,12 +250,14 @@
                     data-emailContacto="@cliente.ContactEmail"
                     data-username="@cliente.UserName"
                     data-razonSocial="@cliente.BusinessName"
+                    data-alias="@cliente.Alias"
                     data-nombre="@cliente.Name"
                     data-telefono="@cliente.Phone"
                     data-direccion="@cliente.Address"
                     data-rfc="@cliente.RFC"
                     data-fecha="@cliente.RegisterDate.ToShortDateString()"
                     data-semarnat="@cliente.SemarnatNum"
+                    data-sedema="@cliente.SedemaNum"
                     data-status="@cliente.Status"
                     data-idUser="@cliente.IdUser"
                     data-certificado='@(string.IsNullOrEmpty(cliente.UrlSatCertificate)
@@ -365,24 +367,74 @@
 
                     <div class="row g-3">
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email: *</strong>
-                            <input asp-for="Input.Email" type="email" class="form-control" name="Email" id="regEmail" placeholder="Email" required />
-                        </div>
+                        <!-- OPCIÓN CREAR ACCESO -->
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="chkCrearAcceso"
+                                       checked
+                                       onchange="toggleCamposUsuario()">
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username: *</strong>
-                            <input asp-for="Input.UserName" type="text" name="UserName" id="regUsername" class="form-control" placeholder="Username" required />
-                        </div>
-
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña *:</strong>
-                            <div class="input-group">
-                                <input asp-for="Input.Password" type="password" name="Password" id="regPassword" class="form-control" placeholder="Contraseña" required />
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('regPassword', this)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                                <label class="form-check-label fw-semibold" for="chkCrearAcceso">
+                                    Crear acceso al sistema para este cliente
+                                </label>
                             </div>
+                        </div>
+
+                        <!-- CAMPOS DE USUARIO -->
+                        <div id="camposUsuario" class="row g-3">
+
+                            <div class="col-md-6">
+                                <strong>
+                                    <i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>
+                                    Email: (para iniciar sesión) *
+                                </strong>
+
+                                <input asp-for="Input.Email"
+                                       type="email"
+                                       class="form-control"
+                                       name="Email"
+                                       id="regEmail"
+                                       placeholder="Email" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong>
+                                    <i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>
+                                    Username: *
+                                </strong>
+
+                                <input asp-for="Input.UserName"
+                                       type="text"
+                                       name="UserName"
+                                       id="regUsername"
+                                       class="form-control"
+                                       placeholder="Username" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong>
+                                    <i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>
+                                    Contraseña *:
+                                </strong>
+
+                                <div class="input-group">
+                                    <input asp-for="Input.Password"
+                                           type="password"
+                                           name="Password"
+                                           id="regPassword"
+                                           class="form-control"
+                                           placeholder="Contraseña" />
+
+                                    <button class="btn btn-outline-secondary"
+                                            type="button"
+                                            onclick="togglePassword('regPassword', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="col-md-6">
@@ -391,18 +443,23 @@
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social: *</strong>
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razón social: *</strong>
                             <input asp-for="Input.BusinessName" type="text" name="BusinessName" id="regRazonSocial" class="form-control" placeholder="Razon social" required />
                         </div>
 
                         <div class="col-md-6">
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Alias (nombre comercial): </strong>
+                            <input asp-for="Input.Alias" type="text" name="Alias" id="regAlias" class="form-control" placeholder="Alias" />
+                        </div>
+
+                        <div class="col-md-6">
                             <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i>Email de contacto: *</strong>
-                            <input asp-for="Input.ContactEmail" type="text" name="EmailContact" id="regEmailContacto" class="form-control" placeholder="Email contacto" required />
+                            <input asp-for="Input.ContactEmail" type="text" name="ContactEmail" id="regEmailContacto" class="form-control" placeholder="Email contacto" required />
                         </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-telephone-fill me-1" style="color: var(--simar-green);"></i>Teléfono:</strong>
-                            <input asp-for="Input.Phone" type="text" name="PhoneNumber" id="regTelefono" class="form-control" placeholder="Teléfono" />
+                            <input asp-for="Input.Phone" type="text" name="Phone" id="regTelefono" class="form-control" placeholder="Teléfono" />
                         </div>
 
                         <div class="col-md-6">
@@ -418,6 +475,11 @@
                         <div class="col-md-6">
                             <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i>Número de Semarnat:</strong>
                             <input asp-for="Input.SemarnatNum" type="text" name="SemarnatNumber" id="regSemarnat" class="form-control" placeholder="Número de SEMARNAT" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i>Número de Sedema:</strong>
+                            <input asp-for="Input.SedemaNum" type="text" name="SedemaNumber" id="regSedema" class="form-control" placeholder="Número de SEDEMA" />
                         </div>
 
                         <div class="col-12">
@@ -476,8 +538,13 @@
                     </div>
 
                     <div class="col-md-6">
-                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
+                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razón social:</strong>
                         <div id="detalleRazonSocial"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Alias:</strong>
+                        <div id="detalleAlias"></div>
                     </div>
 
                     <div class="col-md-6">
@@ -508,6 +575,11 @@
                     <div class="col-md-6">
                         <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Semarnat:</strong>
                         <div id="detalleSemarnat"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Sedema:</strong>
+                        <div id="detalleSedema"></div>
                     </div>
 
                     <div class="col-md-6">
@@ -559,29 +631,45 @@
 
                     <input type="hidden" id="editId" />
 
-                    <div class="row g-3">
+                    <div class="row g-3" >
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
-                            <input type="text" id="editUsername" class="form-control" placeholder="Username" />
-                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="chkCrearAccesoEdit"
+                                       onchange="toggleCamposUsuarioEdit()">
 
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
-                            <input type="text" id="editEmail" class="form-control" placeholder="Email" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
-                            <div class="input-group">
-                                <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                                <label class="form-check-label" for="chkCrearAccesoEdit">
+                                    Crear acceso al sistema para este cliente
+                                </label>
                             </div>
                         </div>
 
-                        <!--pendiente de agregar para editar ^ ^-->
+
+                        <div id="camposUsuarioEdit" class="row g-3">
+
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-person-fill me-1" style="color: var(--simar-green);"></i>Username:</strong>
+                                <input type="text" id="editUsername" class="form-control" placeholder="Username" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-envelope-fill me-1" style="color: var(--simar-green);"></i> Email:</strong>
+                                <input type="text" id="editEmail" class="form-control" placeholder="Email" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-lock-fill me-1" style="color: var(--simar-green);"></i>Contraseña:</strong>
+                                <div class="input-group">
+                                    <input type="password" id="editPassword" class="form-control" placeholder="Contraseña" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('editPassword', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
 
                         <div class="col-md-6">
                             <strong><i class="bi bi-person-badge-fill me-1" style="color: var(--simar-green);"></i> Nombre:</strong>
@@ -589,8 +677,13 @@
                         </div>
 
                         <div class="col-md-6">
-                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razon social:</strong>
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Razón social:</strong>
                             <input asp-for="EditInput.BusinessName" type="text" id="editRazonSocial" class="form-control" placeholder="Razon social" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-card-text me-1" style="color: var(--simar-green);"></i>Alias:</strong>
+                            <input asp-for="EditInput.Alias" type="text" id="editAlias" class="form-control" placeholder="Alias" required />
                         </div>
 
                         <div class="col-md-6">
@@ -618,6 +711,11 @@
                             <input asp-for="EditInput.SemarnatNum" type="text" id="editSemarnat" class="form-control" placeholder="SEMARNAT" />
                         </div>
 
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-tree-fill me-1" style="color: var(--simar-green);"></i> Número de Sedema:</strong>
+                            <input asp-for="EditInput.SedemaNum" type="text" id="editSedema" class="form-control" placeholder="SEDEMA" />
+                        </div>
+
                         <div class="col-12">
                             <strong><i class="bi bi-file-pdf-fill me-1" style="color: var(--simar-green);"></i>Certificado SAT</strong>
                             <input asp-for="CertificadoFile" type="file" id="editCertificado" class="form-control" />
@@ -640,100 +738,261 @@
 
 
 
-
 <script>
-
     async function registrarCliente() {
+
+        const crearAcceso = document.getElementById("chkCrearAcceso").checked;
+
+        // Validar campos requeridos
+        const email = document.getElementById("regEmail").value;
+        const username = document.getElementById("regUsername").value;
+        const password = document.getElementById("regPassword").value;
+        const name = document.getElementById("regNombre").value;
+        const businessName = document.getElementById("regRazonSocial").value;
+        const alias = document.getElementById("regAlias").value;
+        const contactEmail = document.getElementById("regEmailContacto").value;
+        const rfc = document.getElementById("regRFC").value;
+
+        const semarnat = document.getElementById("regSemarnat").value;
+        const sedema = document.getElementById("regSedema").value;
+
+        if(crearAcceso){
+            if (!email || !username || !password || !name || !businessName || !contactEmail || !rfc) {
+                alert("Por favor, complete todos los campos obligatorios (*)");
+                return;
+            }
+        }else{
+            if (!name || !businessName || !contactEmail || !rfc) {
+                alert("Por favor, complete todos los campos obligatorios (*)");
+                return;
+            }
+        }
+
+
+        //validar que tenga num de semarnat o de sedema
+
+        if(!semarnat && !sedema){
+            alert("Debe ingresar al menos el número de SEMARNAT o el de SEDEMA")
+            return;
+        }
+
+        function validarFormatoEmail(email) {
+            // Debe contener @@ y .com (o .[dominio] como .mx, .org, etc.)
+            const regexEmail = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            return regexEmail.test(email);
+        }
+
+        if(crearAcceso){
+            // ========================================
+            // VALIDACIÓN DE FORMATO DE EMAIL
+            // ========================================
+            
+            if (!validarFormatoEmail(email)) {
+                alert("❌ El correo electrónico no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+                return;
+            }
+
+            // ========================================
+            // VALIDACIÓN DE CONTRASEÑA (mínimo 8 caracteres)
+            // ========================================
+            if (password.length < 8) {
+                alert("❌ La contraseña debe tener al menos 8 caracteres");
+                return;
+            }
+        }
+
+        // También validar el email de contacto
+        if (contactEmail && !validarFormatoEmail(contactEmail)) {
+            alert("❌ El Email de contacto no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+            return;
+        }
+
 
         const fileInput = document.getElementById("regCertificado");
         const file = fileInput.files[0];
 
-        const data = {
-            Email: document.getElementById("regEmail").value,
-            UserName: document.getElementById("regUsername").value,
-            Password: document.getElementById("regPassword").value,
-            Role: "cliente",
+        // Crear FormData para enviar el archivo junto con los datos
+        const formData = new FormData();
 
-            Name: document.getElementById("regNombre").value,
-            BusinessName: document.getElementById("regRazonSocial").value,
-            ContactEmail: document.getElementById("regEmailContacto").value,
-            Phone: document.getElementById("regTelefono").value,
-            Address: document.getElementById("regDireccion").value,
-            RFC: document.getElementById("regRFC").value,
-            SemarnatNum: document.getElementById("regSemarnat").value
-        };
+        if(crearAcceso){
+            formData.append("Input.Email", email);
+            formData.append("Input.UserName", username);
+            formData.append("Input.Password", password);
+            formData.append("Input.Role", "cliente");
+        }
+
+        formData.append("Input.Name", name);
+        formData.append("Input.BusinessName", businessName);
+        formData.append("Input.Alias", alias);
+        formData.append("Input.ContactEmail", contactEmail);
+        formData.append("Input.Phone", document.getElementById("regTelefono").value || "");
+        formData.append("Input.Address", document.getElementById("regDireccion").value || "");
+        formData.append("Input.RFC", rfc);
+        formData.append("Input.SemarnatNum", document.getElementById("regSemarnat").value || "");
+        formData.append("Input.SedemaNum", document.getElementById("regSedema").value || "");
+
+        if (file) {
+            formData.append("CertificadoFile", file);
+        }
+
+        // Obtener el token antifalsificación
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
         try {
+            // Desactivar botón mientras carga
+            const btn = document.querySelector("#registroForm .btn-simar-primary");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Registrando...';
+            }
 
-            // 🔥 DESACTIVA botón mientras carga (evita doble submit)
-            const btn = document.querySelector("#registroForm button[type='submit']");
-            if (btn) btn.disabled = true;
+            let response;
 
-            // 🔥 1. REGISTRO COMPLETO EN RAZOR HANDLER
-            const response = await fetch("?handler=RegistrarCliente", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            });
+            if(crearAcceso){
+                // handler con usuario
+                response = await fetch("?handler=RegistrarCliente", {
+                    method: "POST",
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    body: formData
+                });
+            }else{
+                // handler sin usuario
+                response = await fetch("?handler=RegistrarClienteSinUser", {
+                    method: "POST",
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    body: formData
+                });
+            }
 
             const result = await response.json();
 
             console.log("RESPUESTA:", result);
 
             if (result.expired) {
-                alert("Sesión expirada");
+                alert("Sesión expirada. Por favor, inicie sesión nuevamente.");
                 window.location.href = "/Inicio";
                 return;
             }
 
             if (!result.success) {
                 alert(result.message || "Error al registrar cliente");
-                if (btn) btn.disabled = false;
                 return;
             }
 
-            const clientId = result.clientId;
-
-            // 🔥 2. SUBIR CERTIFICADO SI EXISTE
-            if (file) {
-
-                const formData = new FormData();
-                formData.append("file", file);
-
-                const certResponse = await fetch(`?handler=SubirCertificado&id=${clientId}`, {
-                    method: "POST",
-                    body: formData
-                });
-
-                const certResult = await certResponse.json();
-
-                console.log("CERT:", certResult);
-
-                if (!certResult.success) {
-                    alert("Cliente creado, pero falló el certificado");
-                    location.reload();
-                    return;
-                }
-            }
-
-            // 🔥 3. ÉXITO
+            // Éxito
             alert("Cliente registrado correctamente");
+
+            // Cerrar modal y recargar la página
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalRegistro'));
+            if (modal) modal.hide();
 
             location.reload();
 
         } catch (error) {
             console.error("ERROR REGISTRO:", error);
-            alert("Error inesperado al registrar cliente");
-
+            alert("Error inesperado al registrar cliente: " + error.message);
         } finally {
-            const btn = document.querySelector("#registroForm button[type='submit']");
-            if (btn) btn.disabled = false;
+            const btn = document.querySelector("#registroForm .btn-simar-primary");
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Registrar';
+            }
         }
     }
 
+     // Límite de peso (ejemplo: 5 MB)
+    const MAX_FILE_SIZE_MB = 5;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+    function validarTamañoArchivo(fileInputId) {
+        const fileInput = document.getElementById(fileInputId);
+        const file = fileInput.files[0];
+
+        if (!file) return true; // No hay archivo, no hay error
+
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            const tamañoMB = (file.size / (1024 * 1024)).toFixed(2);
+            alert(`El archivo es demasiado grande (${tamañoMB} MB). El límite máximo es ${MAX_FILE_SIZE_MB} MB.`);
+            fileInput.value = ''; // Limpiar el input
+            return false;
+        }
+
+        return true;
+    }
+
+    // También validar tipo de archivo (opcional)
+    function validarTipoArchivo(fileInputId) {
+        const fileInput = document.getElementById(fileInputId);
+        const file = fileInput.files[0];
+
+        if (!file) return true;
+
+        const tiposPermitidos = ['application/pdf', 'application/msword',
+                                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+        if (!tiposPermitidos.includes(file.type)) {
+            alert(`Tipo de archivo no permitido. Solo se permiten: PDF, DOC, DOCX`);
+            fileInput.value = '';
+            return false;
+        }
+
+        return true;
+    }
+
 </script>
+
+
+<script>
+    function toggleCamposUsuario() {
+
+        const checkbox = document.getElementById("chkCrearAcceso");
+        const campos = document.getElementById("camposUsuario");
+
+        const email = document.getElementById("regEmail");
+        const username = document.getElementById("regUsername");
+        const password = document.getElementById("regPassword");
+
+        if (checkbox.checked) {
+
+            campos.style.display = "flex";
+
+            email.required = true;
+            username.required = true;
+            password.required = true;
+
+        } else {
+
+            campos.style.display = "none";
+
+            email.required = false;
+            username.required = false;
+            password.required = false;
+
+            email.value = "";
+            username.value = "";
+            password.value = "";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", toggleCamposUsuario);
+
+
+    function toggleCamposUsuarioEdit() {
+
+        const checked =
+            document.getElementById("chkCrearAccesoEdit").checked;
+
+        const contenedor =
+            document.getElementById("camposUsuarioEdit");
+
+        contenedor.style.display = checked ? "flex" : "none";
+    }
+</script>
+
 
 <script>
     document.getElementById("registroForm").addEventListener("submit", async function(e) {
@@ -846,12 +1105,14 @@
         document.getElementById("detalleUsername").innerText = fila.getAttribute("data-username") || 'N/A';
         document.getElementById("detalleNombre").innerText = fila.getAttribute("data-nombre") || 'N/A';
         document.getElementById("detalleRazonSocial").innerText = fila.getAttribute("data-razonSocial") || 'N/A';
+        document.getElementById("detalleAlias").innerText = fila.getAttribute("data-alias") || 'N/A';
         document.getElementById("detalleEmailContacto").innerText = fila.getAttribute("data-emailContacto") || 'N/A';
         document.getElementById("detalleTelefono").innerText = fila.getAttribute("data-telefono") || 'N/A';
         document.getElementById("detalleDireccion").innerText = fila.getAttribute("data-direccion") || 'N/A';
         document.getElementById("detalleRFC").innerText = fila.getAttribute("data-rfc") || 'N/A';
         document.getElementById("detalleFecha").innerText = fila.getAttribute("data-fecha") || 'N/A';
         document.getElementById("detalleSemarnat").innerText = fila.getAttribute("data-semarnat") || 'N/A';
+        document.getElementById("detalleSedema").innerText = fila.getAttribute("data-sedema") || 'N/A';
         document.getElementById("detalleStatus").innerText = fila.getAttribute("data-status") || 'N/A';
 
         // botón historial
@@ -898,23 +1159,103 @@
 <script>
     let filaActual = null;
 
+    let usuarioOriginal = {}; // Guardar valores originales del usuario
+
+    function validarFormatoEmail(email) {
+        // Debe contener @@ y un dominio
+        const posicionArroba = email.indexOf('@@');
+        if (posicionArroba === -1) return false;
+        
+        const dominio = email.substring(posicionArroba + 1);
+        if (!dominio.includes('.')) return false;
+        
+        return true;
+    }
+
     function abrirModalEditar(id) {
 
         filaActual = document.getElementById("cliente-" + id);
 
+        const idUser = filaActual.getAttribute("data-idUser");
+
         document.getElementById("editId").value = id;
 
-        document.getElementById("editNombre").value = filaActual.getAttribute("data-nombre");
-        document.getElementById("editRazonSocial").value = filaActual.getAttribute("data-razonSocial");
-        document.getElementById("editUsername").value = filaActual.getAttribute("data-username");
-        document.getElementById("editEmail").value = filaActual.getAttribute("data-email");
-        document.getElementById("editEmailContacto").value = filaActual.getAttribute("data-emailContacto");
-        document.getElementById("editTelefono").value = filaActual.getAttribute("data-telefono");
-        document.getElementById("editDireccion").value = filaActual.getAttribute("data-direccion");
-        document.getElementById("editRFC").value = filaActual.getAttribute("data-rfc");
-        document.getElementById("editSemarnat").value = filaActual.getAttribute("data-semarnat");
+        // ============================================
+        // DATOS CLIENTE
+        // ============================================
 
-        let modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+        document.getElementById("editNombre").value =
+            filaActual.getAttribute("data-nombre");
+
+        document.getElementById("editRazonSocial").value =
+            filaActual.getAttribute("data-razonSocial");
+
+        document.getElementById("editAlias").value =
+            filaActual.getAttribute("data-alias");
+
+        document.getElementById("editEmailContacto").value =
+            filaActual.getAttribute("data-emailContacto");
+
+        document.getElementById("editTelefono").value =
+            filaActual.getAttribute("data-telefono");
+
+        document.getElementById("editDireccion").value =
+            filaActual.getAttribute("data-direccion");
+
+        document.getElementById("editRFC").value =
+            filaActual.getAttribute("data-rfc");
+
+        document.getElementById("editSemarnat").value =
+            filaActual.getAttribute("data-semarnat");
+
+        document.getElementById("editSedema").value =
+            filaActual.getAttribute("data-sedema");
+
+        // ============================================
+        // TIENE USUARIO
+        // ============================================
+
+        if (idUser && idUser !== "null") {
+
+            document.getElementById("chkCrearAccesoEdit").checked = true;
+
+            // bloquear checkbox
+            document.getElementById("chkCrearAccesoEdit").disabled = true;
+
+            // mostrar campos
+            document.getElementById("camposUsuarioEdit").style.display = "flex";
+
+            // cargar usuario
+            document.getElementById("editEmail").value =
+                filaActual.getAttribute("data-email") || "";
+
+            document.getElementById("editUsername").value =
+                filaActual.getAttribute("data-username") || "";
+
+            // guardar originales
+            usuarioOriginal = {
+                username: filaActual.getAttribute("data-username") || '',
+                email: filaActual.getAttribute("data-email") || ''
+            };
+
+        } else {
+
+            document.getElementById("chkCrearAccesoEdit").checked = false;
+
+            document.getElementById("chkCrearAccesoEdit").disabled = false;
+
+            document.getElementById("camposUsuarioEdit").style.display = "none";
+
+            // limpiar campos
+            document.getElementById("editEmail").value = "";
+            document.getElementById("editUsername").value = "";
+            document.getElementById("editPassword").value = "";
+        }
+
+        let modal = new bootstrap.Modal(
+            document.getElementById('modalEditar')
+        );
+
         modal.show();
     }
 
@@ -923,9 +1264,38 @@
     }
 
     function guardarEdicion(){
+
+        console.log("=== guardarEdicion() ha sido llamada ===");
+
+        
+
         const updatedData = {};
+        const userData = {};
+
 
         updatedData.id = parseInt(document.getElementById("editId").value);
+        const idUser = filaActual.getAttribute("data-idUser");
+
+
+        const crearAcceso = document.getElementById("chkCrearAccesoEdit").checked;
+        const yaTieneUsuario = idUser && idUser !== "null" && idUser !== "";
+
+        // ======================================
+        // VALIDAR CREAR USUARIO NUEVO
+        // ======================================
+
+        if (!yaTieneUsuario && crearAcceso) {
+
+            const username = document.getElementById("editUsername").value.trim();
+            const email = document.getElementById("editEmail").value.trim();
+            const password = document.getElementById("editPassword").value.trim();
+
+            if (!username || !email || !password) {
+                alert("Debe completar username, email y contraseña para crear el acceso al sistema");
+                return;
+            }
+
+        }
 
         const nombreNuevo = document.getElementById("editNombre").value;
         const nombreOriginal = filaActual.getAttribute("data-nombre");
@@ -955,10 +1325,23 @@
             updatedData.businessName = razonSocialNueva;
         }
 
+        const aliasNueva = document.getElementById("editAlias").value;
+        const aliasOriginal = filaActual.getAttribute("data-alias");
+
+        if (aliasNueva !== aliasOriginal) {
+            updatedData.alias = aliasNueva;
+        }
+
         const emailContactoNueva = document.getElementById("editEmailContacto").value;
         const emailContactoOriginal = filaActual.getAttribute("data-emailContacto");
 
         if (emailContactoNueva !== emailContactoOriginal) {
+
+            if (!validarFormatoEmail(emailContactoNueva)) {
+                alert("❌ El email de contacto no es válido. Debe contener '@@' y un dominio (ejemplo: usuario@dominio.com)");
+                return;
+            }
+
             updatedData.contactEmail = emailContactoNueva;
         }
 
@@ -976,7 +1359,67 @@
             updatedData.SemarnatNum = semarnatNumNueva;
         }
         
+        const sedemaNumNueva = document.getElementById("editSedema").value;
+        const sedemaNumOriginal = filaActual.getAttribute("data-sedema");
 
+        if (sedemaNumNueva !== sedemaNumOriginal) {
+            updatedData.SedemaNum = sedemaNumNueva;
+        }
+
+
+        // ======================================
+        // USUARIO
+        // ======================================
+
+        if (yaTieneUsuario || crearAcceso) {
+
+            const nuevoUsername =
+                document.getElementById("editUsername").value;
+
+            const usernameOriginal =
+                filaActual.getAttribute("data-username") || "";
+
+            if (nuevoUsername !== usernameOriginal) {
+
+                if (!nuevoUsername.trim()) {
+                    alert("El username es obligatorio");
+                    return;
+                }
+
+                userData.username = nuevoUsername;
+            }
+
+            const nuevoEmail =
+                document.getElementById("editEmail").value;
+
+            const emailOriginal =
+                filaActual.getAttribute("data-email") || "";
+
+            if (nuevoEmail !== emailOriginal) {
+
+                if (!validarFormatoEmail(nuevoEmail)) {
+                    alert("❌ El correo electrónico no es válido");
+                    return;
+                }
+
+                userData.email = nuevoEmail;
+            }
+
+            const nuevaPassword =
+                document.getElementById("editPassword").value;
+
+            if (nuevaPassword && nuevaPassword.trim() !== "") {
+
+                if (nuevaPassword.length < 8) {
+                    alert("❌ La contraseña debe tener al menos 8 caracteres");
+                    return;
+                }
+
+                userData.password = nuevaPassword;
+            }
+
+        }
+       
 
         const certificado = document.getElementById("editCertificado").files[0];
 
@@ -988,18 +1431,71 @@
         }
 
 
-        // Si no hay cambios ni certificado
-        if (Object.keys(updatedData).length === 1 && !certificado) {
+        // Verificar si hay cambios
+        const hasClientChanges = Object.keys(updatedData).length > 1; // más de solo id
+        const hasUserChanges = Object.keys(userData).length > 0;
+
+        if (!hasClientChanges && !hasUserChanges && !certificado) {
             alert("No se realizaron cambios");
             return;
         }
 
-        fetch('/Client_SimarUser/Client/ClientList?handler=Editar', {
+        // Construir payload (solo incluir lo que tiene datos)
+        const payload = {
+            hasClientChanges: hasClientChanges,
+            hasUserChanges: hasUserChanges,
+            idUser: idUser
+        };
+
+
+        if (hasClientChanges || (!yaTieneUsuario && crearAcceso)) {
+            payload.cliente = updatedData;
+        }
+
+
+        if (hasUserChanges) {
+            payload.usuario = userData;
+
+            if (yaTieneUsuario) {
+                payload.idUser = idUser;
+            }
+        }
+
+        // Si solo hay certificado sin cambios en datos
+        if (!hasClientChanges && !hasUserChanges && certificado) {
+            payload.soloCertificado = true;
+            payload.id = updatedData.id;
+        }
+
+        console.log("URL del fetch:", '/Client_SimarUser/Client/ClientList?handler=EditarCompleto');
+
+        // Antes del fetch
+        console.log("Payload a enviar:", JSON.stringify(payload));
+
+        // Validar que no esté vacío
+        if (Object.keys(payload).length === 0) {
+            alert("No hay datos para enviar");
+            return;
+        }
+
+        let handler = "EditarCliente";
+
+        if (yaTieneUsuario && hasUserChanges) {
+            handler = "EditarCompleto";
+        }
+        else if (!yaTieneUsuario && crearAcceso) {
+            handler = "EditarCrearUsuario";
+        }
+
+        console.log("Handler:", handler);
+        console.log("Payload:", payload);
+
+        fetch(`/Client_SimarUser/Client/ClientList?handler=${handler}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedData)
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
@@ -1011,43 +1507,41 @@
             }
 
             if (!data.success) {
-                alert(data.message || "Error");
+                alert(data.message || "Error al actualizar");
                 return;
             }
 
-            // Si NO hay certificado
-            if (!certificado) {
-                alert("Cliente actualizado");
+            if (certificado) {
+                const formData = new FormData();
+                formData.append("file", certificado);
+
+                fetch(`/Client_SimarUser/Client/ClientList?handler=ActualizarCertificado&id=${updatedData.id}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(certData => {
+                    if (certData.expired) {
+                        alert("Tu sesión expiró");
+                        window.location.href = "/inicio";
+                        return;
+                    }
+                    if (!certData.success) {
+                        alert("Cliente actualizado, pero falló el certificado");
+                        return;
+                    }
+                    alert("Cliente y certificado actualizados");
+                    location.reload();
+                });
+            } else {
+                alert("Cliente actualizado correctamente");
                 location.reload();
-                return;
             }
 
-            // Subir certificado
-            const formData = new FormData();
-
-            formData.append("file", certificado);
-
-            fetch(`/Client_SimarUser/Client/ClientList?handler=ActualizarCertificado&id=${updatedData.id}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(certData => {
-
-                if (certData.expired) {
-                    alert("Tu sesión expiró");
-                    window.location.href = "/inicio";
-                    return;
-                }
-
-                if (!certData.success) {
-                    alert("Cliente actualizado, pero falló el certificado");
-                    return;
-                }
-
-                alert("Cliente y certificado actualizados");
-                location.reload();
-            });
+        })
+            .catch(error => {
+            console.error("Error:", error);
+            alert("Error inesperado al guardar" + error);
         });
 
     }
@@ -1102,16 +1596,6 @@
         const searchTerm = document.querySelector('input[name="Search"]').value.toLowerCase().trim();
         const tbody = document.querySelector('.table-custom tbody');
         const filas = tbody.querySelectorAll('tr');
-        const filtrarClientesOriginal = filtrarClientes;
-        if (typeof filtrarClientesOriginal === 'function') {
-            window.filtrarClientes = function() {
-                filtrarClientesOriginal();
-                // Después de filtrar, restaurar el orden actual
-                if (currentSort !== 'default') {
-                    ordenarTabla();
-                }
-            };
-        }
         let resultadosEncontrados = 0;
 
         filas.forEach(fila => {
@@ -1126,19 +1610,23 @@
             const direccion = fila.getAttribute('data-direccion')?.toLowerCase() || '';
             const rfc = fila.getAttribute('data-rfc')?.toLowerCase() || '';
             const semarnat = fila.getAttribute('data-semarnat')?.toLowerCase() || '';
+            const sedema = fila.getAttribute('data-sedema')?.toLowerCase() || '';
             const username = fila.getAttribute('data-username')?.toLowerCase() || '';
+            const alias = fila.getAttribute('data-alias')?.toLowerCase() || '';
             const email = fila.getAttribute('data-email')?.toLowerCase() || '';
 
             // Verificar si el término de búsqueda está en algún campo
             const coincide = searchTerm === '' ||
                 nombre.includes(searchTerm) ||
                 razonSocial.includes(searchTerm) ||
+                alias.includes(searchTerm) ||
                 emailContacto.includes(searchTerm) ||
                 telefono.includes(searchTerm) ||
                 status.includes(searchTerm) ||
                 direccion.includes(searchTerm) ||
                 rfc.includes(searchTerm) ||
                 semarnat.includes(searchTerm) ||
+                sedema.includes(searchTerm) ||
                 username.includes(searchTerm) ||
                 email.includes(searchTerm);
 
@@ -1152,6 +1640,11 @@
 
         // Mostrar mensaje si no hay resultados
         mostrarMensajeSinResultados(resultadosEncontrados, searchTerm);
+
+        // ✅ Después de filtrar, restaurar el orden actual (si hay uno seleccionado)
+        if (currentSort !== 'default') {
+            ordenarTabla();
+        }
     }
 
     function mostrarMensajeSinResultados(cantidad, searchTerm) {
@@ -1350,5 +1843,69 @@
         }
         // Luego ordenar
         ordenarTabla();
+    }
+
+        // Inicializar eventos cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        const sortSelect = document.getElementById('sortSelect');
+        const orderDirection = document.getElementById('orderDirectionSelect');
+
+        if (sortSelect) {
+            sortSelect.addEventListener('change', ordenarYFiltrar);
+            console.log("Evento change agregado a sortSelect");
+        } else {
+            console.error("No se encontró el elemento sortSelect");
+        }
+
+        if (orderDirection) {
+            orderDirection.addEventListener('change', ordenarYFiltrar);
+            console.log("Evento change agregado a orderDirectionSelect");
+        } else {
+            console.error("No se encontró el elemento orderDirectionSelect");
+        }
+
+        // Agregar ordenamiento por clic en encabezados
+        agregarOrdenamientoPorEncabezados();
+    });
+
+    // Función para ordenar haciendo clic en los encabezados
+    function agregarOrdenamientoPorEncabezados() {
+        const headers = document.querySelectorAll('.table-custom thead th');
+        const columnasMap = {
+            1: 'nombre',
+            2: 'razonSocial',
+            3: 'email',
+            4: 'telefono',
+            5: 'fecha',
+            6: 'estatus'
+        };
+
+        headers.forEach((header, index) => {
+            if (columnasMap[index]) {
+                header.style.cursor = 'pointer';
+                header.addEventListener('click', () => {
+                    const sortSelect = document.getElementById('sortSelect');
+                    const directionSelect = document.getElementById('orderDirectionSelect');
+
+                    if (sortSelect) {
+                        const campo = columnasMap[index];
+
+                        // Si ya está ordenado por este campo, cambiar dirección
+                        if (sortSelect.value === campo) {
+                            if (directionSelect) {
+                                directionSelect.value = directionSelect.value === 'asc' ? 'desc' : 'asc';
+                            }
+                        } else {
+                            sortSelect.value = campo;
+                            if (directionSelect) {
+                                directionSelect.value = 'asc';
+                            }
+                        }
+
+                        ordenarYFiltrar();
+                    }
+                });
+            }
+        });
     }
 </script>
