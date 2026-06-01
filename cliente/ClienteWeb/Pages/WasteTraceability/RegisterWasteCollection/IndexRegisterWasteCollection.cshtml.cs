@@ -6,6 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClienteWeb.Services;
 
+using System.Net.Http;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Http;
+using ClienteWeb.Models;
+
 namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 {
     public class ContratoSeguimiento
@@ -45,11 +50,13 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
     {
         private readonly ContratosApiService _contratosService;
         private readonly ManifestApiService _manifestService;
+        private readonly HttpClient _clientesApi;
 
-        public IndexModel(ContratosApiService contratosService, ManifestApiService manifestService)
+        public IndexModel(ContratosApiService contratosService, ManifestApiService manifestService, IHttpClientFactory factory)
         {
             _contratosService = contratosService;
             _manifestService = manifestService;
+            _clientesApi = factory.CreateClient("ClientesApi");
         }
 
         public List<ContratoSeguimiento> Contratos { get; set; } = new();
@@ -57,31 +64,75 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 
         public async Task OnGetAsync(string rol = "empresa")
         {
-            Rol = rol;
-            ViewData["Rol"] = rol;
+            var sessionRole = HttpContext.Session.GetString("Rol");
+            Rol = !string.IsNullOrEmpty(sessionRole) ? sessionRole : rol;
+            ViewData["Rol"] = Rol;
             
-            var contratosApi = await _contratosService.GetAllAsync();
-            
-            foreach (var c in contratosApi)
+            try
             {
-                var manifests = await _manifestService.GetAllAsync(contratoId: c.Id);
-                
-                var cs = new ContratoSeguimiento
+                int? filterClientId = null;
+                if (Rol.ToLower() == "cliente")
                 {
-                    Id = c.Id,
-                    Folio = c.Folio,
-                    Cliente = c.ClientName,
-                    EstadoContrato = c.Status,
-                    FechaExpiracion = c.ExpirationDate,
-                    HistorialServicios = manifests.OrderByDescending(m => m.ManifestDate).ToList()
-                };
+                    var userId = HttpContext.Session.GetString("UserId");
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        try
+                        {
+                            var clientInfo = await _clientesApi.GetFromJsonAsync<ClienteOutput>($"client/user/{userId}");
+                            if (clientInfo != null)
+                            {
+                                filterClientId = clientInfo.Id;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error fetching client ID for traceability: {ex.Message}");
+                        }
+                    }
+                }
+
+                var contratosApi = await _contratosService.GetAllAsync();
                 
-                // El "último servicio en curso" (o el más reciente que no esté completado/cancelado)
-                cs.UltimoServicio = cs.HistorialServicios
-                    .FirstOrDefault(m => m.Status == "borrador" || m.Status == "en_transito") 
-                    ?? cs.HistorialServicios.FirstOrDefault();
-                
-                Contratos.Add(cs);
+                foreach (var c in contratosApi)
+                {
+                    if (filterClientId.HasValue && c.ClientId != filterClientId.Value)
+                    {
+                        continue;
+                    }
+
+                    List<ManifestSummary> manifests = new();
+                    try
+                    {
+                        manifests = await _manifestService.GetAllAsync(contratoId: c.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error fetching manifests for contract {c.Id}: {ex.Message}");
+                    }
+                    
+                    var cs = new ContratoSeguimiento
+                    {
+                        Id = c.Id,
+                        Folio = c.Folio,
+                        Cliente = c.ClientName,
+                        EstadoContrato = c.Status,
+                        FechaExpiracion = c.ExpirationDate,
+                        HistorialServicios = manifests.OrderByDescending(m => m.ManifestDate).ToList()
+                    };
+                    
+                    // El "último servicio en curso" (o el más reciente que no esté completado/cancelado)
+                    cs.UltimoServicio = cs.HistorialServicios
+                        .FirstOrDefault(m => m.Status == "borrador" || m.Status == "en_transito") 
+                        ?? cs.HistorialServicios.FirstOrDefault();
+                    
+                    Contratos.Add(cs);
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewData["MensajeError"] = $"Error al cargar la trazabilidad de residuos: {ex.Message}";
+                ViewData["TipoError"] = "danger";
+                Console.WriteLine($"Error general en OnGetAsync de RegisterWasteCollection: {ex}");
             }
 
             if (TempData["MensajeExito"] != null)
@@ -89,7 +140,7 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
                 ViewData["MensajeExito"] = TempData["MensajeExito"];
             }
 
-            if (TempData["MensajeError"] != null)
+            if (TempData["MensajeError"] != null && ViewData["MensajeError"] == null)
             {
                 ViewData["MensajeError"] = TempData["MensajeError"];
                 ViewData["TipoError"] = TempData["TipoError"];
@@ -113,12 +164,36 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
         {
             return status switch
             {
-                "borrador" => "bg-info",
-                "en_transito" => "bg-warning",
-                "completado" => "bg-success",
-                "cancelado" => "bg-danger",
-                _ => "bg-secondary"
+                "borrador" => "badge-simar badge-simar-programada",
+                "en_transito" => "badge-simar badge-simar-enruta",
+                "completado" => "badge-simar badge-simar-completada",
+                "cancelado" => "badge-simar badge-simar-cancelada",
+                _ => "badge-simar badge-simar-sin"
             };
+        }
+
+        public async Task<IActionResult> OnPostUpdateStatusAsync(string manifestId, string nuevoEstado)
+        {
+            var sessionRole = HttpContext.Session.GetString("Rol");
+            if (string.Equals(sessionRole, "cliente", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["MensajeError"] = "No tienes permisos para realizar esta acción.";
+                TempData["TipoError"] = "danger";
+                return RedirectToPage();
+            }
+
+            try
+            {
+                await _manifestService.UpdateStatusAsync(manifestId, nuevoEstado);
+                TempData["MensajeExito"] = "Estado del servicio actualizado correctamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = $"Error al actualizar el estado: {ex.Message}";
+                TempData["TipoError"] = "danger";
+            }
+
+            return RedirectToPage();
         }
     }
 }
