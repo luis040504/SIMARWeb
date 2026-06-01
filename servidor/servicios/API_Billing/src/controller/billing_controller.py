@@ -4,7 +4,7 @@ from bson import ObjectId
 import os
 import httpx
 import re
-from ..config.database import facturas_collection
+from ..config.database import facturas_collection, pac_settings_collection
 from ..models.billing import Billing
 from ..schemas.billing_schema import BillingCreateSchema, BillingUpdateSchema, BillingFilterSchema
 from ..schemas.aggregator_schema import ReadyToBillSchema, ClientSummarySchema, ContractSummarySchema, ResidueDetailSchema
@@ -13,7 +13,6 @@ class BillingController:
     
     @staticmethod
     async def get_all(filtro: BillingFilterSchema = None):
-        """Obtener todas las facturas con filtros"""
         query = {}
         
         if filtro and filtro.include_deleted:
@@ -55,14 +54,12 @@ class BillingController:
     
     @staticmethod
     async def get_by_client_id(client_id: str):
-        """Obtener facturas por ID de cliente"""
         cursor = facturas_collection.find({"receiver.client_id": client_id, "activo": True}).sort("metadata.created_at", -1)
         facturas = await cursor.to_list(length=None)
         return [Billing(**fac) for fac in facturas]
     
     @staticmethod
     async def get_by_id(billing_id: str):
-        """Obtener factura por ID (incluso inactivas si se sabe el ID)"""
         if not ObjectId.is_valid(billing_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
@@ -75,7 +72,6 @@ class BillingController:
     
     @staticmethod
     async def create(billing_data: BillingCreateSchema):
-        """Crear nueva factura"""
         
         import random
         # Generar un folio preliminar si no viene uno
@@ -105,7 +101,6 @@ class BillingController:
     
     @staticmethod
     async def update(billing_id: str, billing_data: BillingUpdateSchema):
-        """Actualizar factura"""
         if not ObjectId.is_valid(billing_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
@@ -120,14 +115,11 @@ class BillingController:
         
         update_data = billing_data.model_dump(exclude_unset=True)
         
-        # Manejo robusto de metadata para asegurar que updated_at siempre se actualice
         if update_data.get("metadata") is None:
-            # Si no viene metadata o es null, usamos la existente y actualizamos el timestamp
             current_metadata = existing.get("metadata", {})
             current_metadata["updated_at"] = datetime.now()
             update_data["metadata"] = current_metadata
         else:
-            # Si viene metadata, nos aseguramos de refrescar updated_at
             update_data["metadata"]["updated_at"] = datetime.now()
         
         if update_data:
@@ -141,7 +133,6 @@ class BillingController:
     
     @staticmethod
     async def delete(billing_id: str):
-        """Eliminar factura (soft delete)"""
         if not ObjectId.is_valid(billing_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
@@ -157,7 +148,6 @@ class BillingController:
 
     @staticmethod
     async def change_status(billing_id: str, new_status: str, reason: str = None):
-        """Actualizar únicamente el status y la razón (ideal para Aceptar/Rechazar)"""
         if not ObjectId.is_valid(billing_id):
             raise HTTPException(status_code=400, detail="ID inválido")
             
@@ -168,22 +158,49 @@ class BillingController:
         if new_status == "Accepted":
             import random
             import uuid
-            # Simular timbrado fiscal si no tiene datos
-            update_data["fiscal_data.invoice_folio"] = f"A-{random.randint(1000, 9999)}"
-            update_data["fiscal_data.uuid"] = str(uuid.uuid4()).upper()
+            
+            # Obtener estado de PAC de forma interna
+            settings = await BillingController.get_pac_settings()
+            pac_mode = settings.get("pac_mode", "SIMULATED")
+            timbres_used = settings.get("timbres_used", 0)
+            timbres_limit = settings.get("timbres_limit", 5)
+            
+            is_paid_mode = False
+            if pac_mode == "PAID" and timbres_used < timbres_limit:
+                is_paid_mode = True
+                new_timbres_used = timbres_used + 1
+                await pac_settings_collection.update_one(
+                    {"_id": "current_settings"},
+                    {"$set": {"timbres_used": new_timbres_used}}
+                )
+                print(f"PAC PAID MODE: Timbre consumido ({new_timbres_used}/{timbres_limit})")
+
             update_data["fiscal_data.issue_date"] = datetime.now()
             update_data["fiscal_data.certification_date"] = datetime.now()
-            update_data["fiscal_data.pac_rfc"] = "SAT970701NN3"
-            update_data["fiscal_data.sat_certificate_number"] = "00001000000504465028"
             update_data["fiscal_data.cfdi_version"] = "4.0"
-            
-            # Generar hashes simulados para sellos y cadena
-            dummy_hash = "T0Y0eCtSUEkwN0lXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0c"
-            update_data["fiscal_data.digital_seal_issuer"] = dummy_hash[:60] + "..."
-            update_data["fiscal_data.digital_seal_sat"] = dummy_hash[20:80] + "..."
-            update_data["fiscal_data.original_chain"] = f"||1.1|{update_data['fiscal_data.uuid']}|{datetime.now().isoformat()}|{update_data['fiscal_data.pac_rfc']}|{dummy_hash[:40]}...||"
-            
+            update_data["fiscal_data.uuid"] = str(uuid.uuid4()).upper()
             update_data["reason"] = ""  # Limpiar motivo de rechazo previo
+            
+            if is_paid_mode:
+                update_data["fiscal_data.invoice_folio"] = f"PAC-{random.randint(1000, 9999)}"
+                update_data["fiscal_data.pac_rfc"] = "FIN1203015JA"
+                update_data["fiscal_data.sat_certificate_number"] = "00001000000508881234"
+                
+                dummy_hash = "PAID_PAC_T0Y0eCtSUEkwN0lXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0c"
+                update_data["fiscal_data.digital_seal_issuer"] = dummy_hash[:60] + "..."
+                update_data["fiscal_data.digital_seal_sat"] = dummy_hash[20:80] + "..."
+                update_data["fiscal_data.original_chain"] = f"||1.1|{update_data['fiscal_data.uuid']}|{datetime.now().isoformat()}|{update_data['fiscal_data.pac_rfc']}|{dummy_hash[:40]}...||"
+                update_data["pac_type"] = "PAID"
+            else:
+                update_data["fiscal_data.invoice_folio"] = f"A-{random.randint(1000, 9999)}"
+                update_data["fiscal_data.pac_rfc"] = "SAT970701NN3"
+                update_data["fiscal_data.sat_certificate_number"] = "00001000000504465028"
+                
+                dummy_hash = "T0Y0eCtSUEkwN0lXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0clpXU3p0c"
+                update_data["fiscal_data.digital_seal_issuer"] = dummy_hash[:60] + "..."
+                update_data["fiscal_data.digital_seal_sat"] = dummy_hash[20:80] + "..."
+                update_data["fiscal_data.original_chain"] = f"||1.1|{update_data['fiscal_data.uuid']}|{datetime.now().isoformat()}|{update_data['fiscal_data.pac_rfc']}|{dummy_hash[:40]}...||"
+                update_data["pac_type"] = "SIMULATED"
 
         result = await facturas_collection.update_one(
             {"_id": ObjectId(billing_id), "activo": True},
@@ -197,7 +214,6 @@ class BillingController:
 
     @staticmethod
     async def upload_file(billing_id: str, file: UploadFile):
-        """Manejar la subida del documento físico"""
         if not ObjectId.is_valid(billing_id):
             raise HTTPException(status_code=400, detail="ID inválido")
             
@@ -222,22 +238,17 @@ class BillingController:
         return Billing(**updated)
 
     @staticmethod
-    async def get_ready_to_bill():
-        """
-        Orquesta llamadas a Manifiestos, Clientes y Contratos para obtener
-        servicios listos para facturar.
-        """
+    async def get_ready_to_bill(include_billed: bool = False):
+
         manifest_url = os.getenv("MANIFEST_API_URL", "http://simar_manifiestos_api:8007")
         client_url = os.getenv("CLIENTS_API_URL", "http://simar_clientes_api:8005")
         contract_url = os.getenv("CONTRACTS_API_URL", "http://simar_contratos_api:8006")
 
-        # 0. Obtener IDs de servicios que ya tienen factura activa para no duplicar
         cursor = facturas_collection.find({"activo": True, "service_id": {"$ne": None}}, {"service_id": 1})
         existing_invoices = await cursor.to_list(length=None)
-        billed_service_ids = {inv["service_id"] for inv in existing_invoices}
+        billed_service_ids = {inv["service_id"] for inv in existing_invoices} if not include_billed else set()
 
         async with httpx.AsyncClient() as client:
-            # 1. Obtener manifiestos completados
             try:
                 resp = await client.get(f"{manifest_url}/api/manifiestos?estado=completado")
                 if resp.status_code != 200:
@@ -254,7 +265,6 @@ class BillingController:
                     
                 razon_social = m.get("razon_social")
                 
-                # 2. Buscar cliente por razón social
                 client_info = None
                 try:
                     client_resp = await client.get(f"{client_url}/client/name/{razon_social}")
@@ -276,10 +286,9 @@ class BillingController:
                         razon_social=razon_social,
                         rfc=None,
                         direccion_fiscal=m.get("domicilio"),
-                        postal_code=m.get("codigo_postal") or (re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")).group(1) if re.search(r'(\d{5})(?!\d)', m.get("domicilio", "")) else None)
+                        postal_code=m.get("codigo_postal") or (re.search(r'(\d{5})(?!\d)', m.get("domicilio") or "").group(1) if re.search(r'(\d{5})(?!\d)', m.get("domicilio") or "") else None)
                     )
 
-                # 3. Obtener detalle del manifiesto para tener contrato_id y residuos
                 m_detail = {}
                 try:
                     detail_resp = await client.get(f"{manifest_url}/api/manifiestos/{m.get('id')}")
@@ -288,7 +297,6 @@ class BillingController:
                 except Exception:
                     pass
 
-                # 4. Buscar contrato para precios (usando contrato_id si existe, si no por nombre de cliente)
                 contract_info = None
                 contract_services = []
                 contrato_id = m_detail.get("contrato_id")
@@ -301,11 +309,9 @@ class BillingController:
                             target_contract = c_resp.json()
                     
                     if not target_contract:
-                        # Fallback: buscar por nombre de cliente
                         c_list_resp = await client.get(f"{contract_url}/api/contracts")
                         if c_list_resp.status_code == 200:
                             contracts = c_list_resp.json()
-                            # El campo es clientName en la lista de contratos
                             summary = next((c for c in contracts if c.get("clientName") == razon_social), None)
                             if summary:
                                 c_resp = await client.get(f"{contract_url}/api/contracts/{summary.get('id')}/detail")
@@ -321,7 +327,6 @@ class BillingController:
                         )
                         contract_services = target_contract.get("services", [])
                         
-                        # Priorizar RFC y Dirección del contrato si existen
                         if target_contract.get("clientRfc"):
                             client_info.rfc = target_contract.get("clientRfc")
                         if target_contract.get("clientAddress"):
@@ -329,7 +334,6 @@ class BillingController:
                 except Exception:
                     pass
 
-                # 5. Mapear residuos y calcular subtotales usando el contrato
                 residues = []
                 total_estimated = 0.0
                 raw_residues = m_detail.get("residuos") or m_detail.get("residuos_especiales") or m_detail.get("residuos_peligrosos") or []
@@ -339,10 +343,8 @@ class BillingController:
                     cantidad = float(r.get("peso") or r.get("cantidad_kg") or 0)
                     unidad = r.get("unidad") or r.get("capacidad") or r.get("capacidad_envase") or "kg"
                     
-                    # Buscar precio en el contrato para este tipo de residuo
                     unit_price = 0.0
                     if contract_services:
-                        # Coincidencia por nombre de residuo
                         match = next((s for s in contract_services if s.get("wasteType").lower() in nombre_residuo.lower() or nombre_residuo.lower() in s.get("wasteType").lower()), None)
                         if match:
                             unit_price = float(match.get("subtotal") or 0)
@@ -360,7 +362,6 @@ class BillingController:
                     ))
                     total_estimated += subtotal
 
-                # Asegurar que fecha_servicio sea de tipo date
                 fm_raw = m.get("fecha_manifiesto")
                 fm_date = datetime.now().date()
                 if fm_raw:
@@ -387,7 +388,6 @@ class BillingController:
                     source="manifest"
                 ))
 
-            # 5. Obtener servicios directos de contratos activos/aceptados
             try:
                 contract_services = await BillingController._get_services_from_contracts(billed_service_ids)
                 results.extend(contract_services)
@@ -398,7 +398,6 @@ class BillingController:
 
     @staticmethod
     async def _get_services_from_contracts(billed_service_ids: set = None):
-        """Recupera servicios de contratos activos o aceptados"""
         contract_url = os.getenv("CONTRACTS_API_URL", "http://simar_contratos_api:8006")
         results = []
         
@@ -407,7 +406,6 @@ class BillingController:
             
         async with httpx.AsyncClient() as client:
             try:
-                # Obtener contratos con status Activo o Aceptado
                 statuses = ["Activo", "Aceptado"]
                 all_contracts_data = []
                 
@@ -419,7 +417,6 @@ class BillingController:
                 for c_summary in all_contracts_data:
                     contract_id = c_summary.get("id")
                     
-                    # Obtener detalle completo para tener los servicios
                     detail_resp = await client.get(f"{contract_url}/api/contracts/{contract_id}/detail")
                     if detail_resp.status_code != 200:
                         continue
@@ -442,22 +439,17 @@ class BillingController:
                         condiciones=c_detail.get("contractDuration")
                     )
                     
-                    # Mapear los servicios definidos en el contrato
                     for s in c_detail.get("services", []):
                         waste_type = s.get("wasteType")
-                        # Crear un ID único para este servicio de contrato
-                        # Formato: CONTRACT:{folio}:{waste_type}
                         contract_service_id = f"CONTRACT:{folio}:{waste_type}"
                         
                         if contract_service_id in billed_service_ids:
                             continue
 
-                        # Asegurar que fecha_servicio sea de tipo date
                         fs_raw = c_detail.get("firstServiceDate")
                         fs_date = datetime.now().date()
                         if fs_raw:
                             try:
-                                # Si viene con formato ISO completo, tomamos solo la parte de la fecha
                                 if 'T' in fs_raw:
                                     fs_date = datetime.fromisoformat(fs_raw.split('Z')[0]).date()
                                 else:
@@ -488,3 +480,41 @@ class BillingController:
                 print(f"Error recuperando servicios de contratos: {e}")
                 
         return results
+
+    @staticmethod
+    async def get_pac_settings():
+        settings = await pac_settings_collection.find_one({"_id": "current_settings"})
+        if not settings:
+            settings = {
+                "_id": "current_settings",
+                "pac_mode": "PAID",
+                "timbres_used": 0,
+                "timbres_limit": 5
+            }
+            await pac_settings_collection.insert_one(settings)
+        return settings
+
+    @staticmethod
+    async def update_pac_settings(pac_mode: str, timbres_limit: int, timbres_used: int = None):
+        update_doc = {
+            "pac_mode": pac_mode,
+            "timbres_limit": timbres_limit
+        }
+        if timbres_used is not None:
+            update_doc["timbres_used"] = timbres_used
+            
+        await pac_settings_collection.update_one(
+            {"_id": "current_settings"},
+            {"$set": update_doc},
+            upsert=True
+        )
+        return await BillingController.get_pac_settings()
+
+    @staticmethod
+    async def reset_pac_timbres():
+        await pac_settings_collection.update_one(
+            {"_id": "current_settings"},
+            {"$set": {"timbres_used": 0}},
+            upsert=True
+        )
+        return await BillingController.get_pac_settings()

@@ -77,6 +77,5 @@ venv.bak/
 *.txt
 *.ps1
 *.seed_*.ps1
+*.md
 
-# Ignorar migraciones locales en desarrollo
-**/Migrations/

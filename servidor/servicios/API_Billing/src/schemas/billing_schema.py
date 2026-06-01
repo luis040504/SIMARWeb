@@ -27,6 +27,11 @@ class FiscalData(BaseModel):
     issue_date: datetime
     certification_date: Optional[datetime] = None
     cfdi_version: Optional[str] = None
+    digital_seal_issuer: Optional[str] = None
+    digital_seal_sat: Optional[str] = None
+    original_chain: Optional[str] = None
+    pac_rfc: Optional[str] = None
+    sat_certificate_number: Optional[str] = None
 
 class Financials(BaseModel):
     currency: str
@@ -74,6 +79,7 @@ class BillingBase(BaseModel):
     reason: Optional[str] = None
     service_id: Optional[str] = None
     activo: bool = True
+    pac_type: Optional[str] = None
 
 class BillingCreateSchema(BillingBase):
     pass

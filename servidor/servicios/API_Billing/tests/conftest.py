@@ -5,7 +5,9 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 @pytest.fixture
 def mock_collection():
-    with patch('src.controller.billing_controller.facturas_collection') as mock_coll:
+    with patch('src.controller.billing_controller.facturas_collection') as mock_coll, \
+         patch('src.controller.billing_controller.pac_settings_collection') as mock_pac_coll:
+        
         mock_coll.find_one = AsyncMock()
         mock_coll.insert_one = AsyncMock()
         mock_coll.update_one = AsyncMock()
@@ -15,6 +17,19 @@ def mock_collection():
         mock_cursor.to_list = AsyncMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
         mock_coll.find = MagicMock(return_value=mock_cursor)
+        
+        # Mock for pac_settings_collection
+        mock_pac_coll.find_one = AsyncMock(return_value={
+            "_id": "current_settings",
+            "pac_mode": "SIMULATED",
+            "timbres_used": 0,
+            "timbres_limit": 5
+        })
+        mock_pac_coll.insert_one = AsyncMock()
+        mock_pac_coll.update_one = AsyncMock()
+        
+        # Attach the PAC mock to the main collection mock for test accessibility
+        mock_coll.pac_settings = mock_pac_coll
         
         yield mock_coll
 

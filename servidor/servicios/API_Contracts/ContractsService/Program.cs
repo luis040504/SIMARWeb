@@ -21,6 +21,22 @@ builder.Services.AddDbContext<ContractsDbContext>(options =>
 
 builder.Services.AddScoped<IContractService, ContractService>();
 
+// HttpClient hacia clientes_api (nombre de servicio en Docker)
+builder.Services.AddHttpClient<IClientesApiService, ClientesApiService>(client =>
+{
+    var url = builder.Configuration["ServiceUrls:ClientesApi"] ?? "http://clientes_api:8005";
+    client.BaseAddress = new Uri(url);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+// HttpClient hacia catalog_api (nombre de servicio en Docker)
+builder.Services.AddHttpClient<ICatalogApiService, CatalogApiService>(client =>
+{
+    var url = builder.Configuration["ServiceUrls:CatalogApi"] ?? "http://catalog_api:8010";
+    client.BaseAddress = new Uri(url);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
@@ -39,41 +55,30 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ContractsDbContext>();
-    
-    if (app.Environment.IsDevelopment())
+    int retries = 10;
+    while (retries > 0)
     {
-        // En desarrollo, verificamos el estado de las migraciones sin eliminar la base de datos para no perder datos locales.
-        if (db.Database.HasPendingModelChanges())
+        try
         {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("==========================================================================");
-            Console.WriteLine("ADVERTENCIA: Se detectaron cambios pendientes en los modelos de C#.");
-            Console.WriteLine("Para aplicar estos cambios a la base de datos de forma automática,");
-            Console.WriteLine("por favor genera una nueva migración ejecutando:");
-            Console.WriteLine("   dotnet ef migrations add <NombreDeLaMigración>");
-            Console.WriteLine("==========================================================================");
-            Console.ResetColor();
-        }
-
-        var pendingMigrations = db.Database.GetPendingMigrations();
-        if (pendingMigrations.Any())
-        {
-            Console.WriteLine("Aplicando migraciones pendientes de forma automatizada...");
             db.Database.Migrate();
-            Console.WriteLine("Migraciones aplicadas con éxito.");
+            Console.WriteLine("Migración de base de datos completada exitosamente.");
+            break;
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("La base de datos de Contracts está al día. No se realizaron cambios.");
+            retries--;
+            if (retries == 0)
+            {
+                Console.WriteLine("Error crítico: no se pudo migrar la base de datos después de varios intentos.");
+                throw;
+            }
+            Console.WriteLine($"Error al conectar o migrar la base de datos (intentos restantes: {retries}): {ex.Message}. Reintentando en 5 segundos...");
+            Thread.Sleep(5000);
         }
-    }
-    else
-    {
-        db.Database.Migrate();
     }
 }
 
-// ─── AQUÍ REINTEGRAMOS SWAGGER Y EL ENTORNO ───────────────────────────
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -88,7 +93,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.MapPost("/api/contracts", async (Contract contractRequest, IContractService contractService) =>
+app.MapPost("/api/contracts", async (HttpContext httpContext, Contract contractRequest, IContractService contractService) =>
 {
     var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
     var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(contractRequest);
@@ -102,7 +107,14 @@ app.MapPost("/api/contracts", async (Contract contractRequest, IContractService 
 
     try
     {
-        var result = await contractService.CreateContractAsync(contractRequest);
+        string token = "";
+        var authHeader = httpContext.Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            token = authHeader["Bearer ".Length..].Trim();
+        }
+
+        var result = await contractService.CreateContractAsync(contractRequest, token);
         return Results.Created($"/api/contracts/{result.Id}", result);
     }
     catch (ArgumentException ex)
@@ -115,11 +127,28 @@ app.MapPost("/api/contracts", async (Contract contractRequest, IContractService 
     }
 }).WithName("CreateContract");
 
+// Verifica si un cliente ya existe en clientes_api por RFC.
+// Devuelve { exists: bool, clientId: int, clientName: string }
+// No crea ni modifica nada — solo consulta.
+app.MapGet("/api/contracts/check-client", async (string rfc, IClientesApiService clientesApi) =>
+{
+    if (string.IsNullOrWhiteSpace(rfc))
+        return Results.BadRequest(new { error = "RFC requerido." });
+
+    var cliente = await clientesApi.BuscarPorRfcAsync(rfc);
+
+    if (cliente != null)
+        return Results.Ok(new { exists = true,  clientId = cliente.Id, clientName = cliente.Name });
+
+    return Results.Ok(new { exists = false, clientId = 0, clientName = "" });
+}).WithName("CheckClientExists");
+
 app.MapGet("/api/contracts", async (string? search, string? status, DateTime? dateFilter, IContractService contractService) =>
 {
     var contracts = await contractService.GetContractsAsync(search, status, dateFilter);
     return Results.Ok(contracts);
 }).WithName("GetContracts");
+
  
 app.MapGet("/api/contracts/{id:int}", async (int id, IContractService contractService) =>
 {
@@ -240,6 +269,200 @@ app.MapGet("/api/quotations/{id:int}", async (int id, ContractsDbContext db) =>
     
     return Results.Ok(quote);
 }).WithName("GetQuotationById");
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Endpoint espejo para Manifiestos
+// Devuelve los servicios de una cotización con el campo "wastetype" que
+// espera API_MANIFEST, mapeando:
+//   JSON cotización: { name, type, unit }  →  { wastetype, unit }
+// GET /api/quotations/{id}/manifest-data
+// ──────────────────────────────────────────────────────────────────────────────
+app.MapGet("/api/quotations/{id:int}/manifest-data", async (int id, ContractsDbContext db, IClientesApiService clientesApi) =>
+{
+    var quote = await db.Quotations.FindAsync(id);
+    if (quote == null) return Results.NotFound(new { error = "Cotización no encontrada." });
+
+    int clientId = 0;
+    if (!string.IsNullOrWhiteSpace(quote.ClientRfc))
+    {
+        var cliente = await clientesApi.BuscarPorRfcAsync(quote.ClientRfc);
+        if (cliente != null)
+        {
+            clientId = cliente.Id;
+        }
+    }
+
+    // Parsear los servicios raw almacenados en ServicesRawJson
+    var wasteItems = new List<object>();
+    try
+    {
+        var rawServices = JsonSerializer.Deserialize<List<JsonElement>>(quote.ServicesRawJson);
+        if (rawServices != null)
+        {
+            foreach (var svc in rawServices)
+            {
+                // Extraer ubicación del servicio
+                string address = "";
+                if (svc.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Object)
+                {
+                    var street = loc.TryGetProperty("street",       out var st) ? st.GetString() ?? "" : "";
+                    var muni   = loc.TryGetProperty("municipality", out var mu) ? mu.GetString() ?? "" : "";
+                    address = $"{street}, {muni}".Trim(',', ' ');
+                }
+
+                // Cada servicio puede tener múltiples residuos en "wastes"
+                if (svc.TryGetProperty("wastes", out var wastes) && wastes.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var w in wastes.EnumerateArray())
+                    {
+                        // "name" = nombre del residuo, "type" = categoría/tipo, "clave" = code
+                        // Se devuelven como campos separados tal como los espera Manifiestos
+                        var name = w.TryGetProperty("name", out var nameProp) && nameProp.ValueKind == JsonValueKind.String
+                            ? nameProp.GetString() ?? ""
+                            : "";
+                        var type = w.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String
+                            ? typeProp.GetString() ?? ""
+                            : "";
+                        var code = w.TryGetProperty("clave", out var codeProp) && codeProp.ValueKind == JsonValueKind.String
+                            ? codeProp.GetString() ?? ""
+                            : "";
+                        var unit = w.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "";
+
+                        wasteItems.Add(new
+                        {
+                            code           = code,
+                            name           = name,
+                            type           = type,
+                            unit           = unit,
+                            serviceAddress = address
+                        });
+                    }
+                }
+            }
+        }
+    }
+    catch { /* JSON malformado: devolver lista vacía */ }
+
+    return Results.Ok(new
+    {
+        quotationId  = quote.Id,
+        folio        = quote.Folio,
+        clientId     = clientId,
+        clientName   = quote.ClientName,
+        clientRfc    = quote.ClientRfc,
+        status       = quote.Status,
+        frequency    = quote.Frequency,
+        total        = quote.Total,
+        wastes       = wasteItems
+    });
+});
+
+app.MapGet("/api/contracts/{id:int}/manifest-data",
+async (
+    int id,
+    ContractsDbContext db,
+    IClientesApiService clientesApi,
+    ICatalogApiService catalogApi
+) =>
+{
+    var contract = await db.Contracts
+        .Include(c => c.Services)
+        .FirstOrDefaultAsync(c => c.Id == id);
+
+    if (contract == null)
+        return Results.NotFound();
+
+    var cliente =
+        await clientesApi.ObtenerPorIdAsync(contract.ClientId);
+
+    // Obtener catálogo de residuos activos para mapear código y tipo de residuo
+    var allWastes = await catalogApi.GetActiveWastesAsync();
+
+    var wasteItems = contract.Services.Select(s =>
+    {
+        // 1. Buscar coincidencia exacta
+        var match = allWastes.FirstOrDefault(w => 
+            w.Name.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase) || 
+            w.Code.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase));
+
+        // 2. Coincidencia parcial por subcadena
+        if (match == null)
+        {
+            match = allWastes.FirstOrDefault(w => 
+                s.WasteType.Contains(w.Name, StringComparison.OrdinalIgnoreCase) || 
+                w.Name.Contains(s.WasteType, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 3. Mapeo inteligente por palabras clave conocidas para descripciones libres del contrato
+        if (match == null)
+        {
+            string lowerType = s.WasteType.ToLower();
+            if (lowerType.Contains("cartón") || lowerType.Contains("carton") || lowerType.Contains("papel"))
+            {
+                match = allWastes.FirstOrDefault(w => w.Code == "RO-002"); // Papel y cartón
+            }
+            else if (lowerType.Contains("pet") || lowerType.Contains("plástico") || lowerType.Contains("plastico"))
+            {
+                match = allWastes.FirstOrDefault(w => w.Code == "RI-010"); // Envases plásticos (especificar)
+            }
+            else if (lowerType.Contains("rpbi") || lowerType.Contains("biológico") || lowerType.Contains("biologico") || lowerType.Contains("infeccioso"))
+            {
+                match = allWastes.FirstOrDefault(w => w.Code == "RPBI-004"); // Residuos no anatómicos (RPBI)
+            }
+            else if (lowerType.Contains("aceite"))
+            {
+                match = allWastes.FirstOrDefault(w => w.Code == "RP-002"); // Agua con aceite
+            }
+            else if (lowerType.Contains("batería") || lowerType.Contains("bateria"))
+            {
+                match = allWastes.FirstOrDefault(w => w.Code == "RP-010"); // Baterías usadas
+            }
+            else if (lowerType.Contains("lámpara") || lowerType.Contains("lampara") || lowerType.Contains("foco"))
+            {
+                match = allWastes.FirstOrDefault(w => w.Code == "RP-022"); // Lámparas fluorescentes
+            }
+        }
+
+        // Determinar el tipo de residuo (especial / peligroso)
+        string determinedType = "especial";
+        if (match != null)
+        {
+            determinedType = match.Type;
+        }
+        else
+        {
+            string lowerType = s.WasteType.ToLower();
+            if (lowerType.Contains("rp") || lowerType.Contains("peligroso") || lowerType.Contains("biologico") || lowerType.Contains("biológico") || lowerType.Contains("infeccioso"))
+            {
+                determinedType = "peligroso";
+            }
+        }
+
+        return new
+        {
+            code = match?.Code ?? "",
+            name = s.WasteType,
+            type = determinedType,
+            unit = s.WasteUnit,
+            serviceAddress = s.ServiceAddress
+        };
+    }).ToList();
+
+    return Results.Ok(new
+    {
+        contractId = contract.Id,
+        quotationId = contract.QuotationId,
+        folio = contract.Folio,
+        clientId = contract.ClientId,
+        clientName = cliente?.BusinessName ?? cliente?.Name,
+        clientRfc = cliente?.Rfc,
+        status = contract.Status,
+        frequency = contract.Services.FirstOrDefault()?.Frequency ?? "",
+        total = contract.TotalBasePrice,
+        wastes = wasteItems
+    });
+});
+
 
 app.MapPost("/api/contracts/{id:int}/upload-pdf", async (int id, IFormFile file, ContractsDbContext db) =>
 {

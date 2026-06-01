@@ -398,6 +398,28 @@
     color: #fff;
 }
 
+.action-btn.rp {
+    color: #7b2d2d;
+    border-color: #7b2d2d;
+    background: transparent;
+}
+
+.action-btn.rp:hover {
+    background: #7b2d2d;
+    color: #fff;
+}
+
+.action-btn.rme {
+    color: #1a3a5c;
+    border-color: #1a3a5c;
+    background: transparent;
+}
+
+.action-btn.rme:hover {
+    background: #1a3a5c;
+    color: #fff;
+}
+
 
 /* Barra de resumen */
 .results-summary {
