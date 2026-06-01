@@ -60,10 +60,10 @@ public class SpecialWasteModel : PageModel
     [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
     public string? Email { get; set; }
 
-    [BindProperty]
+    [BindProperty][DataType(DataType.Date)]
     public DateOnly ManifestDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    [BindProperty]
+    [BindProperty][DataType(DataType.Time)]
     public TimeOnly ManifestTime { get; set; } = TimeOnly.FromDateTime(DateTime.Now);
 
     [BindProperty]
@@ -82,8 +82,8 @@ public class SpecialWasteModel : PageModel
     [BindProperty] public string? TransporterPostalCode          { get; set; }
     [BindProperty] public string? TransporterMunicipality        { get; set; }
     [BindProperty] public string? TransporterPhone               { get; set; }
-    [BindProperty] public DateOnly? TransporterDate              { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-    [BindProperty] public TimeOnly? TransporterTime              { get; set; }
+    [BindProperty][DataType(DataType.Date)] public DateOnly? TransporterDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Time)] public TimeOnly? TransporterTime { get; set; }
     [BindProperty] public string? VehicleType                    { get; set; }
     [BindProperty] public string? VehiclePlate                   { get; set; }
     [BindProperty] public string? DriverName                     { get; set; }
@@ -99,8 +99,8 @@ public class SpecialWasteModel : PageModel
     [BindProperty] public string? ReceiverPostalCode             { get; set; }
     [BindProperty] public string? ReceiverMunicipality           { get; set; }
     [BindProperty] public string? ReceiverPhone                  { get; set; }
-    [BindProperty] public DateOnly? ReceiverDate                 { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-    [BindProperty] public TimeOnly? ReceiverTime                 { get; set; }
+    [BindProperty][DataType(DataType.Date)] public DateOnly? ReceiverDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Time)] public TimeOnly? ReceiverTime { get; set; }
     [BindProperty] public string? DisposalType                   { get; set; }
     [BindProperty] public string? ReceiverObservations           { get; set; }
     [BindProperty] public string? ReceiverResponsibleName        { get; set; }
@@ -113,14 +113,14 @@ public class SpecialWasteModel : PageModel
         IdCliente  = clienteId;
         ContratoId = contratoId;
 
-        var clienteTask   = clienteId > 0 ? _clientes.GetByIdAsync(clienteId) : Task.FromResult<ClienteDto?>(null);
-        var vehiculosTask = _vehiculos.GetAllAsync();
-        var contratoTask  = contratoId > 0 ? _contratos.GetDetailAsync(contratoId) : Task.FromResult<ContratoDetailDto?>(null);
-        var choferesTask  = _empleados.GetChoferesAsync();
-        await Task.WhenAll(clienteTask, vehiculosTask, contratoTask, choferesTask);
+        var clienteTask      = clienteId > 0  ? _clientes.GetByIdAsync(clienteId)           : Task.FromResult<ClienteDto?>(null);
+        var vehiculosTask    = _vehiculos.GetAllAsync();
+        var manifestDataTask = contratoId > 0 ? _contratos.GetManifestDataAsync(contratoId) : Task.FromResult<ContratoManifestDataDto?>(null);
+        var choferesTask     = _empleados.GetChoferesAsync();
+        await Task.WhenAll(clienteTask, vehiculosTask, manifestDataTask, choferesTask);
 
-        var cliente  = clienteTask.Result;
-        var contrato = contratoTask.Result;
+        var cliente      = clienteTask.Result;
+        var manifestData = manifestDataTask.Result;
 
         if (cliente is not null)
         {
@@ -129,19 +129,46 @@ public class SpecialWasteModel : PageModel
             Address                         = cliente.Address ?? string.Empty;
             PhoneNumber                     = cliente.Phone ?? string.Empty;
             Email                           = cliente.ContactEmail;
-            EnvironmentalRegistrationNumber = cliente.SemarnatNum ?? string.Empty;
+            EnvironmentalRegistrationNumber = cliente.SedemaNum ?? cliente.SemarnatNum ?? string.Empty;
         }
 
-        if (contrato?.Services is { Count: > 0 })
+        if (manifestData is not null)
         {
-            ContratoFolio = contrato.Folio;
-            Residues = contrato.Services
-                .Select(s => new ResidueItem
-                {
-                    ResidueName = s.WasteType,
-                    Unit        = string.IsNullOrWhiteSpace(s.WasteUnit) ? "kg" : s.WasteUnit
-                })
+            ContratoFolio = manifestData.Folio;
+
+            var residuosEspeciales = manifestData.Wastes
+                .Where(w => w.Type.Equals("especial", StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            if (residuosEspeciales.Count > 0)
+                Residues = residuosEspeciales
+                    .Select(w => new ResidueItem
+                    {
+                        ResidueKey  = w.Code,
+                        ResidueName = w.Name,
+                        Unit        = string.IsNullOrWhiteSpace(w.Unit) ? "kg" : w.Unit
+                    })
+                    .ToList();
+
+            // Ubicación del generador desde servicio de recolección
+            var collection = manifestData.Services
+                .FirstOrDefault(s => s.Activity.Equals("collection", StringComparison.OrdinalIgnoreCase));
+            if (collection?.Location is { } loc)
+            {
+                Address      = loc.Street ?? Address;
+                PostalCode   = loc.Cp;
+                Municipality = loc.Municipality;
+            }
+
+            // Ubicación del destinatario desde servicio de disposición final
+            var disposal = manifestData.Services
+                .FirstOrDefault(s => s.Activity.Equals("final_disposal", StringComparison.OrdinalIgnoreCase));
+            if (disposal?.Location is { } dLoc)
+            {
+                ReceiverAddress      = dLoc.Street;
+                ReceiverPostalCode   = dLoc.Cp;
+                ReceiverMunicipality = dLoc.Municipality;
+            }
         }
 
         Vehiculos = vehiculosTask.Result;

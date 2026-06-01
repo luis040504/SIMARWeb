@@ -30,7 +30,8 @@ public class HazardousWasteModel : PageModel
     [BindProperty] public int IdCliente  { get; set; }
     [BindProperty] public int ContratoId { get; set; }
 
-    public string ClienteNombre { get; private set; } = string.Empty;
+    public string ClienteNombre  { get; private set; } = string.Empty;
+    public string ContratoFolio  { get; private set; } = string.Empty;
 
     // ===================== GENERADOR =====================
     [BindProperty]
@@ -59,7 +60,7 @@ public class HazardousWasteModel : PageModel
 
     [BindProperty] public string?   SafeHandlingInstructions { get; set; }
     [BindProperty] public string?   GeneratorResponsibleName { get; set; }
-    [BindProperty] public DateOnly? GeneratorSignDate        { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Date)] public DateOnly? GeneratorSignDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     // ===================== RESIDUOS =====================
     [BindProperty]
@@ -84,7 +85,7 @@ public class HazardousWasteModel : PageModel
     [BindProperty] public string?   DriverLicense                  { get; set; }
     [BindProperty] public string?   TransportRoute                 { get; set; }
     [BindProperty] public string?   TransporterResponsibleName     { get; set; }
-    [BindProperty] public DateOnly? TransporterSignDate            { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Date)] public DateOnly? TransporterSignDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     // ===================== DESTINATARIO =====================
     [BindProperty] public string?   ReceiverSocialReason           { get; set; }
@@ -101,7 +102,7 @@ public class HazardousWasteModel : PageModel
     [BindProperty] public string?   ReceiverPersonName             { get; set; }
     [BindProperty] public string?   ReceiverObservations           { get; set; }
     [BindProperty] public string?   ReceiverResponsibleName        { get; set; }
-    [BindProperty] public DateOnly? ReceiverSignDate               { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Date)] public DateOnly? ReceiverSignDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     public async Task<IActionResult> OnGetAsync(int clienteId = 0, int contratoId = 0)
     {
@@ -111,14 +112,14 @@ public class HazardousWasteModel : PageModel
         IdCliente  = clienteId;
         ContratoId = contratoId;
 
-        var clienteTask   = clienteId > 0 ? _clientes.GetByIdAsync(clienteId) : Task.FromResult<ClienteDto?>(null);
-        var vehiculosTask = _vehiculos.GetAllAsync();
-        var contratoTask  = contratoId > 0 ? _contratos.GetDetailAsync(contratoId) : Task.FromResult<ContratoDetailDto?>(null);
-        var choferesTask  = _empleados.GetChoferesAsync();
-        await Task.WhenAll(clienteTask, vehiculosTask, contratoTask, choferesTask);
+        var clienteTask      = clienteId > 0  ? _clientes.GetByIdAsync(clienteId)              : Task.FromResult<ClienteDto?>(null);
+        var vehiculosTask    = _vehiculos.GetAllAsync();
+        var manifestDataTask = contratoId > 0 ? _contratos.GetManifestDataAsync(contratoId)    : Task.FromResult<ContratoManifestDataDto?>(null);
+        var choferesTask     = _empleados.GetChoferesAsync();
+        await Task.WhenAll(clienteTask, vehiculosTask, manifestDataTask, choferesTask);
 
-        var cliente  = clienteTask.Result;
-        var contrato = contratoTask.Result;
+        var cliente      = clienteTask.Result;
+        var manifestData = manifestDataTask.Result;
 
         if (cliente is not null)
         {
@@ -126,14 +127,46 @@ public class HazardousWasteModel : PageModel
             SocialReason                    = cliente.Name;
             Street                          = cliente.Address ?? string.Empty;
             PhoneNumber                     = cliente.Phone ?? string.Empty;
+            Email                           = cliente.ContactEmail;
             EnvironmentalRegistrationNumber = cliente.SemarnatNum ?? string.Empty;
         }
 
-        if (contrato?.Services is { Count: > 0 })
+        if (manifestData is not null)
         {
-            Residues = contrato.Services
-                .Select(s => new HazardousResidueItem { ResidueName = s.WasteType })
+            ContratoFolio = manifestData.Folio;
+
+            var residuosPeligrosos = manifestData.Wastes
+                .Where(w => w.Type.Equals("peligroso", StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            if (residuosPeligrosos.Count > 0)
+                Residues = residuosPeligrosos
+                    .Select(w => new HazardousResidueItem { ResidueName = w.Name })
+                    .ToList();
+
+            // Ubicación del generador desde servicio de recolección
+            var collection = manifestData.Services
+                .FirstOrDefault(s => s.Activity.Equals("collection", StringComparison.OrdinalIgnoreCase));
+            if (collection?.Location is { } loc)
+            {
+                PostalCode   = loc.Cp;
+                Street       = loc.Street;
+                Municipality = loc.Municipality;
+                Colony       = loc.Neighborhood;
+                State        = loc.State;
+            }
+
+            // Ubicación del destinatario desde servicio de disposición final
+            var disposal = manifestData.Services
+                .FirstOrDefault(s => s.Activity.Equals("final_disposal", StringComparison.OrdinalIgnoreCase));
+            if (disposal?.Location is { } dLoc)
+            {
+                ReceiverPostalCode   = dLoc.Cp;
+                ReceiverStreet       = dLoc.Street;
+                ReceiverMunicipality = dLoc.Municipality;
+                ReceiverColony       = dLoc.Neighborhood;
+                ReceiverState        = dLoc.State;
+            }
         }
 
         Vehiculos = vehiculosTask.Result;

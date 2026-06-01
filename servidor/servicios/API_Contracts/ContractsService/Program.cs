@@ -375,78 +375,216 @@ async (
     var cliente =
         await clientesApi.ObtenerPorIdAsync(contract.ClientId);
 
-    // Obtener catálogo de residuos activos para mapear código y tipo de residuo
-    var allWastes = await catalogApi.GetActiveWastesAsync();
+    var quote = await db.Quotations.FindAsync(contract.QuotationId);
 
-    var wasteItems = contract.Services.Select(s =>
+    var serviceItems = new List<object>();
+    int serviceIndex = 1;
+    bool parsedQuotation = false;
+
+    if (quote != null && !string.IsNullOrEmpty(quote.ServicesRawJson))
     {
-        // 1. Buscar coincidencia exacta
-        var match = allWastes.FirstOrDefault(w => 
-            w.Name.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase) || 
-            w.Code.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase));
+        try
+        {
+            var rawServices = JsonSerializer.Deserialize<List<JsonElement>>(quote.ServicesRawJson);
+            if (rawServices != null)
+            {
+                foreach (var svc in rawServices)
+                {
+                    // 1. Extraer ID y Actividad
+                    int sId = svc.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.Number 
+                        ? idProp.GetInt32() 
+                        : serviceIndex++;
 
-        // 2. Coincidencia parcial por subcadena
-        if (match == null)
-        {
-            match = allWastes.FirstOrDefault(w => 
-                s.WasteType.Contains(w.Name, StringComparison.OrdinalIgnoreCase) || 
-                w.Name.Contains(s.WasteType, StringComparison.OrdinalIgnoreCase));
-        }
+                    string activity = svc.TryGetProperty("activity", out var actProp) 
+                        ? actProp.GetString() ?? "" 
+                        : (svc.TryGetProperty("name", out var nameProp) 
+                            ? nameProp.GetString() ?? "" 
+                            : (svc.TryGetProperty("description", out var descProp) 
+                                ? descProp.GetString() ?? "" 
+                                : ""));
 
-        // 3. Mapeo inteligente por palabras clave conocidas para descripciones libres del contrato
-        if (match == null)
-        {
-            string lowerType = s.WasteType.ToLower();
-            if (lowerType.Contains("cartón") || lowerType.Contains("carton") || lowerType.Contains("papel"))
-            {
-                match = allWastes.FirstOrDefault(w => w.Code == "RO-002"); // Papel y cartón
-            }
-            else if (lowerType.Contains("pet") || lowerType.Contains("plástico") || lowerType.Contains("plastico"))
-            {
-                match = allWastes.FirstOrDefault(w => w.Code == "RI-010"); // Envases plásticos (especificar)
-            }
-            else if (lowerType.Contains("rpbi") || lowerType.Contains("biológico") || lowerType.Contains("biologico") || lowerType.Contains("infeccioso"))
-            {
-                match = allWastes.FirstOrDefault(w => w.Code == "RPBI-004"); // Residuos no anatómicos (RPBI)
-            }
-            else if (lowerType.Contains("aceite"))
-            {
-                match = allWastes.FirstOrDefault(w => w.Code == "RP-002"); // Agua con aceite
-            }
-            else if (lowerType.Contains("batería") || lowerType.Contains("bateria"))
-            {
-                match = allWastes.FirstOrDefault(w => w.Code == "RP-010"); // Baterías usadas
-            }
-            else if (lowerType.Contains("lámpara") || lowerType.Contains("lampara") || lowerType.Contains("foco"))
-            {
-                match = allWastes.FirstOrDefault(w => w.Code == "RP-022"); // Lámparas fluorescentes
-            }
-        }
+                    // 2. Frequency mapping
+                    object freqObj = null;
+                    if (svc.TryGetProperty("frequency", out var freqProp))
+                    {
+                        if (freqProp.ValueKind == JsonValueKind.Object)
+                        {
+                            var fType = freqProp.TryGetProperty("type", out var ft) ? ft.GetString() ?? "" : "";
+                            var fDur = freqProp.TryGetProperty("duration", out var fd) 
+                                ? (fd.ValueKind == JsonValueKind.Number ? fd.GetInt32().ToString() : fd.GetString() ?? "") 
+                                : "";
+                            freqObj = new { type = fType, duration = fDur };
+                        }
+                        else if (freqProp.ValueKind == JsonValueKind.String)
+                        {
+                            freqObj = new { type = freqProp.GetString() ?? "", duration = "" };
+                        }
+                    }
+                    if (freqObj == null)
+                    {
+                        freqObj = new { type = quote.Frequency, duration = "" };
+                    }
 
-        // Determinar el tipo de residuo (especial / peligroso)
-        string determinedType = "especial";
-        if (match != null)
-        {
-            determinedType = match.Type;
-        }
-        else
-        {
-            string lowerType = s.WasteType.ToLower();
-            if (lowerType.Contains("rp") || lowerType.Contains("peligroso") || lowerType.Contains("biologico") || lowerType.Contains("biológico") || lowerType.Contains("infeccioso"))
-            {
-                determinedType = "peligroso";
+                    // 3. Location mapping
+                    object locObj = new
+                    {
+                        cp = "",
+                        street = "",
+                        municipality = "",
+                        neighborhood = "",
+                        state = ""
+                    };
+
+                    if (svc.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Object)
+                    {
+                        var cp = loc.TryGetProperty("cp", out var cpProp) 
+                            ? (cpProp.ValueKind == JsonValueKind.Number ? cpProp.GetInt32().ToString() : cpProp.GetString() ?? "") 
+                            : "";
+                        var street = loc.TryGetProperty("street", out var st) ? st.GetString() ?? "" : "";
+                        var muni   = loc.TryGetProperty("municipality", out var mu) ? mu.GetString() ?? "" : "";
+                        var neigh  = loc.TryGetProperty("neighborhood", out var ne) ? ne.GetString() ?? "" : "";
+                        var state  = loc.TryGetProperty("state", out var sa) ? sa.GetString() ?? "" : "";
+
+                        locObj = new
+                        {
+                            cp = cp,
+                            street = street,
+                            municipality = muni,
+                            neighborhood = neigh,
+                            state = state
+                        };
+                    }
+
+                    // 4. Wastes mapping directly inside the service
+                    var serviceWastes = new List<object>();
+                    if (svc.TryGetProperty("wastes", out var wastes) && wastes.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var w in wastes.EnumerateArray())
+                        {
+                            var name = w.TryGetProperty("name", out var wNameProp) && wNameProp.ValueKind == JsonValueKind.String
+                                ? wNameProp.GetString() ?? ""
+                                : "";
+                            var type = w.TryGetProperty("type", out var wTypeProp) && wTypeProp.ValueKind == JsonValueKind.String
+                                ? wTypeProp.GetString() ?? ""
+                                : "";
+                            var code = w.TryGetProperty("clave", out var wCodeProp) && wCodeProp.ValueKind == JsonValueKind.String
+                                ? wCodeProp.GetString() ?? ""
+                                : "";
+                            var unit = w.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "";
+
+                            serviceWastes.Add(new
+                            {
+                                code = code,
+                                name = name,
+                                type = type,
+                                unit = unit
+                            });
+                        }
+                    }
+
+                    // Add to serviceItems
+                    serviceItems.Add(new
+                    {
+                        id = sId,
+                        activity = activity,
+                        frequency = freqObj,
+                        location = locObj,
+                        wastes = serviceWastes
+                    });
+                }
+                parsedQuotation = true;
             }
         }
+        catch { /* Fallback to standard flow */ }
+    }
 
-        return new
+    // FALLBACK: Si no se pudo parsear la cotización o está vacía, usamos los servicios del contrato y el catálogo
+    if (!parsedQuotation || serviceItems.Count == 0)
+    {
+        var allWastes = await catalogApi.GetActiveWastesAsync();
+
+        foreach (var s in contract.Services)
         {
-            code = match?.Code ?? "",
-            name = s.WasteType,
-            type = determinedType,
-            unit = s.WasteUnit,
-            serviceAddress = s.ServiceAddress
-        };
-    }).ToList();
+            var match = allWastes.FirstOrDefault(w => 
+                w.Name.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase) || 
+                w.Code.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                match = allWastes.FirstOrDefault(w => 
+                    s.WasteType.Contains(w.Name, StringComparison.OrdinalIgnoreCase) || 
+                    w.Name.Contains(s.WasteType, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (match == null)
+            {
+                string lowerType = s.WasteType.ToLower();
+                if (lowerType.Contains("cartón") || lowerType.Contains("carton") || lowerType.Contains("papel"))
+                {
+                    match = allWastes.FirstOrDefault(w => w.Code == "RO-002");
+                }
+                else if (lowerType.Contains("pet") || lowerType.Contains("plástico") || lowerType.Contains("plastico"))
+                {
+                    match = allWastes.FirstOrDefault(w => w.Code == "RI-010");
+                }
+                else if (lowerType.Contains("rpbi") || lowerType.Contains("biológico") || lowerType.Contains("biologico") || lowerType.Contains("infeccioso"))
+                {
+                    match = allWastes.FirstOrDefault(w => w.Code == "RPBI-004");
+                }
+                else if (lowerType.Contains("aceite"))
+                {
+                    match = allWastes.FirstOrDefault(w => w.Code == "RP-002");
+                }
+                else if (lowerType.Contains("batería") || lowerType.Contains("bateria"))
+                {
+                    match = allWastes.FirstOrDefault(w => w.Code == "RP-010");
+                }
+                else if (lowerType.Contains("lámpara") || lowerType.Contains("lampara") || lowerType.Contains("foco"))
+                {
+                    match = allWastes.FirstOrDefault(w => w.Code == "RP-022");
+                }
+            }
+
+            string determinedType = "especial";
+            if (match != null)
+            {
+                determinedType = match.Type;
+            }
+            else
+            {
+                string lowerType = s.WasteType.ToLower();
+                if (lowerType.Contains("rp") || lowerType.Contains("peligroso") || lowerType.Contains("biologico") || lowerType.Contains("biológico") || lowerType.Contains("infeccioso"))
+                {
+                    determinedType = "peligroso";
+                }
+            }
+
+            serviceItems.Add(new
+            {
+                id = s.Id,
+                activity = s.WasteType,
+                frequency = new { type = s.Frequency, duration = "" },
+                location = new
+                {
+                    cp = "",
+                    street = s.ServiceAddress,
+                    municipality = "",
+                    neighborhood = "",
+                    state = ""
+                },
+                wastes = new List<object>
+                {
+                    new
+                    {
+                        code = match?.Code ?? "",
+                        name = s.WasteType,
+                        type = determinedType,
+                        unit = s.WasteUnit
+                    }
+                }
+            });
+        }
+    }
 
     return Results.Ok(new
     {
@@ -459,7 +597,7 @@ async (
         status = contract.Status,
         frequency = contract.Services.FirstOrDefault()?.Frequency ?? "",
         total = contract.TotalBasePrice,
-        wastes = wasteItems
+        services = serviceItems
     });
 });
 

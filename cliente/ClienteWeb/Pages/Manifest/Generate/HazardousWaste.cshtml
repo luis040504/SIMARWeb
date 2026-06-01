@@ -40,6 +40,8 @@
 
     <form method="post" id="manifestForm">
         @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="IdCliente" />
+        <input type="hidden" asp-for="ContratoId" />
 
         <!-- Panel de validación -->
         <div id="validationPanel" class="mb-3">
@@ -246,7 +248,7 @@
 
                 <div class="col-md-4">
                     <label asp-for="GeneratorSignDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="GeneratorSignDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="GeneratorSignDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
@@ -436,7 +438,7 @@
 
                 <div class="col-md-4">
                     <label asp-for="TransporterSignDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="TransporterSignDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="TransporterSignDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
@@ -545,7 +547,7 @@
 
                 <div class="col-md-4">
                     <label asp-for="ReceiverSignDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="ReceiverSignDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="ReceiverSignDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
