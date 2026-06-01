@@ -33,6 +33,10 @@ namespace ContractsService.Migrations
                     b.Property<string>("CancellationReason")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ServicesSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ClientDeclaraciones")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

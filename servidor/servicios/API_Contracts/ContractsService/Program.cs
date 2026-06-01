@@ -387,7 +387,11 @@ async (
     var cliente =
         await clientesApi.ObtenerPorIdAsync(contract.ClientId);
 
-    var quote = await db.Quotations.FindAsync(contract.QuotationId);
+    // Preferir el snapshot del contrato (refleja ediciones posteriores).
+    // Fallback a la cotización original si el snapshot aún está vacío (contratos viejos).
+    string servicesJson = !string.IsNullOrWhiteSpace(contract.ServicesSnapshotJson) && contract.ServicesSnapshotJson != "[]"
+        ? contract.ServicesSnapshotJson
+        : (await db.Quotations.FindAsync(contract.QuotationId))?.ServicesRawJson ?? "[]";
 
     // Normaliza el string largo de tipo a "peligroso" o "especial"
     static string NormalizeWasteType(string raw)
@@ -403,11 +407,11 @@ async (
     int serviceIndex = 1;
     bool parsedQuotation = false;
 
-    if (quote != null && !string.IsNullOrEmpty(quote.ServicesRawJson))
+    if (!string.IsNullOrEmpty(servicesJson) && servicesJson != "[]")
     {
         try
         {
-            var rawServices = JsonSerializer.Deserialize<List<JsonElement>>(quote.ServicesRawJson);
+            var rawServices = JsonSerializer.Deserialize<List<JsonElement>>(servicesJson);
             if (rawServices != null)
             {
                 foreach (var svc in rawServices)
@@ -444,7 +448,7 @@ async (
                     }
                     if (freqObj == null)
                     {
-                        freqObj = new { type = quote.Frequency, duration = "" };
+                        freqObj = new { type = contract.Services.FirstOrDefault()?.Frequency ?? "", duration = "" };
                     }
 
                     // 3. Location mapping

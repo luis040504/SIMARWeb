@@ -166,17 +166,20 @@ public class ContractService : IContractService
 
         var quotation = await _context.Quotations.FindAsync(request.QuotationId);
 
-        if (quotation != null && !string.IsNullOrWhiteSpace(quotation.ClientRfc))
+        if (quotation != null)
         {
-            var clienteExistente = await _clientesApi.BuscarPorRfcAsync(quotation.ClientRfc);
-            if (clienteExistente != null)
-                request.ClientId = clienteExistente.Id;
+            if (!string.IsNullOrWhiteSpace(quotation.ClientRfc))
+            {
+                var clienteExistente = await _clientesApi.BuscarPorRfcAsync(quotation.ClientRfc);
+                if (clienteExistente != null)
+                    request.ClientId = clienteExistente.Id;
+            }
+
+            request.ServicesSnapshotJson = quotation.ServicesRawJson;
+            quotation.Status = "contracted";
         }
 
         _context.Contracts.Add(request);
-
-        if (quotation != null)
-            quotation.Status = "contracted";
 
         await _context.SaveChangesAsync();
 
@@ -527,6 +530,9 @@ public class ContractService : IContractService
         existing.FirstServiceDate = request.FirstServiceDate;
         existing.EndDate = request.EndDate;
         existing.SignedContractPath = request.SignedContractPath;
+
+        if (!string.IsNullOrWhiteSpace(request.ServicesSnapshotJson) && request.ServicesSnapshotJson != "[]")
+            existing.ServicesSnapshotJson = request.ServicesSnapshotJson;
 
         if (!string.IsNullOrEmpty(existing.SignedContractPath) && request.Status != "Cancelado") {
             existing.Status = "Activo";

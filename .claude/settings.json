@@ -50,7 +50,10 @@
       "Bash(curl -v \"http://localhost:8080/api/contratos/contracts\")",
       "Bash(curl -s \"http://localhost:8006/api/contracts\")",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\neco3\\\\Desktop\\\\Proyecto soft\\\\SIMARWeb\" -Recurse -Force -ErrorAction SilentlyContinue)",
-      "Bash(Select-Object -First 20)"
+      "Bash(Select-Object -First 20)",
+      "PowerShell(docker exec simar_sqlserver_contratos /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"Simar123!\" -C -Q \"ALTER TABLE Contracts ADD ServicesSnapshotJson NVARCHAR\\(MAX\\) NOT NULL DEFAULT '[]'; INSERT INTO __EFMigrationsHistory \\(MigrationId, ProductVersion\\) VALUES \\('20260601200000_AddServicesSnapshotToContract', '9.0.0'\\);\")",
+      "PowerShell(docker exec simar_sqlserver_contratos /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"Simar123!\" -C -Q \"SELECT name FROM sys.databases\")",
+      "PowerShell(docker exec simar_sqlserver_contratos /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"Simar123!\" -C -d ContractsDB -Q \"ALTER TABLE Contracts ADD ServicesSnapshotJson NVARCHAR\\(MAX\\) NOT NULL DEFAULT '[]'; INSERT INTO __EFMigrationsHistory \\(MigrationId, ProductVersion\\) VALUES \\('20260601200000_AddServicesSnapshotToContract', '9.0.0'\\); SELECT 'OK' AS resultado;\")"
     ]
   }
 }
