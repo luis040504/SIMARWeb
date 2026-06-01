@@ -79,7 +79,7 @@ const manifestController = {
     async updateStatus(req, res) {
         try {
             const { estado, fecha_firma } = req.body;
-            const estadosValidos = ['borrador', 'en_transito', 'completado'];
+            const estadosValidos = ['borrador', 'en_transito', 'completado', 'cancelado'];
 
             if (!estadosValidos.includes(estado)) {
                 return res.status(400).json({ success: false, message: 'Estado inválido' });

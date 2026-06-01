@@ -18,7 +18,7 @@ public class ManifestSummary
     public int? ContratoId { get; set; }
     public string SocialReason { get; set; } = string.Empty;
     public string Municipality { get; set; } = string.Empty;
-    public DateOnly ManifestDate { get; set; }
+    public DateOnly? ManifestDate { get; set; }
     public string ResidueSummary { get; set; } = string.Empty;
     public string TransporterName { get; set; } = string.Empty;
     public string? TransporterResponsibleName { get; set; }
@@ -143,6 +143,7 @@ public class ManifestApiService
             Correo = model.Email,
             InstruccionesManejoSeguro = model.SafeHandlingInstructions,
             NombreResponsableGenerador = model.GeneratorResponsibleName,
+            FechaManifiesto     = model.GeneratorSignDate?.ToString("yyyy-MM-dd"),
             FechaFirmaGenerador = model.GeneratorSignDate?.ToString("yyyy-MM-dd"),
             NumeroAutorizacionTransportista = model.TransporterAuthorizationNumber,
             NumeroPermisoSct = model.TransporterSCTPermit,
@@ -387,7 +388,8 @@ public class ManifestApiService
 
     private static ManifestSummary MapToSummary(ManifestListItemDto dto)
     {
-        DateOnly.TryParse(dto.FechaManifiesto ?? dto.FechaFirmaGenerador, out var date);
+        var raw = dto.FechaManifiesto ?? dto.FechaFirmaGenerador;
+        DateOnly? date = raw is not null && DateOnly.TryParse(raw, out var d) ? d : null;
         return new ManifestSummary
         {
             Id              = dto.Id.ToString(),

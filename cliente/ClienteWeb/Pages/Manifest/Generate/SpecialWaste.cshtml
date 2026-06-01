@@ -40,6 +40,23 @@
         <input type="hidden" asp-for="IdCliente" />
         <input type="hidden" asp-for="ContratoId" />
 
+        <!-- Panel campos no llenados automáticamente -->
+        @if (Model.CamposPendientes.Count > 0)
+        {
+            <div class="alert py-2 mb-3" style="background:#fff3e0;border:1px solid #fd7e14;color:#bf5700;">
+                <div class="fw-semibold mb-1">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    Los siguientes campos no se llenaron automáticamente. Por favor verifica:
+                </div>
+                <ul class="mb-0 ps-3 small">
+                    @foreach (var campo in Model.CamposPendientes)
+                    {
+                        <li>@campo</li>
+                    }
+                </ul>
+            </div>
+        }
+
         <!-- Panel de validación -->
         <div id="validationPanel" class="mb-3">
             <div id="errorSection" style="display:none;" class="alert alert-danger py-2 mb-2">

@@ -63,10 +63,10 @@
             var rpCount  = Model.Results.Count(m => m.Type == "peligroso");
             var rmeCount = Model.Results.Count(m => m.Type == "especial");
             <div class="d-flex gap-2 mb-3 flex-wrap">
-                <span class="badge bg-danger fs-6 px-3 py-2">
+                <span class="badge badge-simar badge-simar-peligroso">
                     <i class="bi bi-radioactive me-1"></i> RP — Peligrosos: @rpCount manifiesto(s)
                 </span>
-                <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                <span class="badge badge-simar badge-simar-especial">
                     <i class="bi bi-recycle me-1"></i> RME — Especiales: @rmeCount manifiesto(s)
                 </span>
             </div>
@@ -186,7 +186,7 @@
                             </td>
                             <td>@m.SocialReason</td>
                             <td>@m.Municipality</td>
-                            <td>@m.ManifestDate.ToString("dd/MM/yyyy")</td>
+                            <td>@(m.ManifestDate.HasValue ? m.ManifestDate.Value.ToString("dd/MM/yyyy") : "—")</td>
                             <td>@m.ResidueSummary</td>
                             <td>@m.TransporterName</td>
                             <td class="text-center">

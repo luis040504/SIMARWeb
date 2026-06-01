@@ -179,7 +179,7 @@
                                         @ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.MapStatus(contrato.UltimoServicio.Status)
                                     </span>
                                     <br />
-                                    <small class="text-muted">#@contrato.UltimoServicio.ManifestNumber - @contrato.UltimoServicio.ManifestDate.ToString("dd/MM/yyyy")</small>
+                                    <small class="text-muted">#@contrato.UltimoServicio.ManifestNumber - @(contrato.UltimoServicio.ManifestDate.HasValue ? contrato.UltimoServicio.ManifestDate.Value.ToString("dd/MM/yyyy") : "—")</small>
                                 </div>
                             }
                             else

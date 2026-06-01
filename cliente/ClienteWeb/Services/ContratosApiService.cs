@@ -129,7 +129,7 @@ public class ContratoManifestWasteDto
 // activity: "final_disposal" → ubicación del destinatario
 public class ContratoManifestServiceDto
 {
-    [JsonPropertyName("id")]       public string Id { get; set; } = "";
+    [JsonPropertyName("id")]       public int Id { get; set; }
     [JsonPropertyName("activity")] public string Activity { get; set; } = "";
     [JsonPropertyName("location")] public ContratoServiceLocationDto? Location { get; set; }
 }

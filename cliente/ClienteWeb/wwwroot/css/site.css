@@ -346,6 +346,20 @@ body {
 }
 
 
+.badge-simar-peligroso {
+    background: rgba(123, 45, 45, 0.10);
+    color: #7b2d2d;
+    border-left: 3px solid #7b2d2d;
+}
+
+
+.badge-simar-especial {
+    background: rgba(26, 58, 92, 0.10);
+    color: #1a3a5c;
+    border-left: 3px solid #1a3a5c;
+}
+
+
 .modal-simar .modal-content {
     border-radius: 20px;
     border: none;

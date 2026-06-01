@@ -48,7 +48,9 @@
       "Bash(curl -s \"http://localhost:8080/api/contratos/contracts\")",
       "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f'id={c[\\\\\"id\\\\\"]} clientId={c[\\\\\"clientId\\\\\"]} status={c[\\\\\"status\\\\\"]} folio={c[\\\\\"folio\\\\\"]}'\\) for c in data]\")",
       "Bash(curl -v \"http://localhost:8080/api/contratos/contracts\")",
-      "Bash(curl -s \"http://localhost:8006/api/contracts\")"
+      "Bash(curl -s \"http://localhost:8006/api/contracts\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\neco3\\\\Desktop\\\\Proyecto soft\\\\SIMARWeb\" -Recurse -Force -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }

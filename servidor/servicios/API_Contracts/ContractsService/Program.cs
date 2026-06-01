@@ -37,6 +37,14 @@ builder.Services.AddHttpClient<ICatalogApiService, CatalogApiService>(client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+// HttpClient hacia manifiestos_api (nombre de servicio en Docker)
+builder.Services.AddHttpClient("ManifestosApi", client =>
+{
+    var url = builder.Configuration["ServiceUrls:ManifestosApi"] ?? "http://manifiestos_api:8007";
+    client.BaseAddress = new Uri(url);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
@@ -377,7 +385,17 @@ async (
 
     var quote = await db.Quotations.FindAsync(contract.QuotationId);
 
+    // Normaliza el string largo de tipo a "peligroso" o "especial"
+    static string NormalizeWasteType(string raw)
+    {
+        var lower = raw.ToLowerInvariant();
+        if (lower.Contains("peligroso") || lower.StartsWith("rp"))
+            return "peligroso";
+        return "especial";
+    }
+
     var serviceItems = new List<object>();
+    var flatWastes   = new List<object>();
     int serviceIndex = 1;
     bool parsedQuotation = false;
 
@@ -391,16 +409,16 @@ async (
                 foreach (var svc in rawServices)
                 {
                     // 1. Extraer ID y Actividad
-                    int sId = svc.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.Number 
-                        ? idProp.GetInt32() 
+                    int sId = svc.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.Number
+                        ? idProp.GetInt32()
                         : serviceIndex++;
 
-                    string activity = svc.TryGetProperty("activity", out var actProp) 
-                        ? actProp.GetString() ?? "" 
-                        : (svc.TryGetProperty("name", out var nameProp) 
-                            ? nameProp.GetString() ?? "" 
-                            : (svc.TryGetProperty("description", out var descProp) 
-                                ? descProp.GetString() ?? "" 
+                    string activity = svc.TryGetProperty("activity", out var actProp)
+                        ? actProp.GetString() ?? ""
+                        : (svc.TryGetProperty("name", out var nameProp)
+                            ? nameProp.GetString() ?? ""
+                            : (svc.TryGetProperty("description", out var descProp)
+                                ? descProp.GetString() ?? ""
                                 : ""));
 
                     // 2. Frequency mapping
@@ -410,8 +428,8 @@ async (
                         if (freqProp.ValueKind == JsonValueKind.Object)
                         {
                             var fType = freqProp.TryGetProperty("type", out var ft) ? ft.GetString() ?? "" : "";
-                            var fDur = freqProp.TryGetProperty("duration", out var fd) 
-                                ? (fd.ValueKind == JsonValueKind.Number ? fd.GetInt32().ToString() : fd.GetString() ?? "") 
+                            var fDur = freqProp.TryGetProperty("duration", out var fd)
+                                ? (fd.ValueKind == JsonValueKind.Number ? fd.GetInt32().ToString() : fd.GetString() ?? "")
                                 : "";
                             freqObj = new { type = fType, duration = fDur };
                         }
@@ -426,70 +444,63 @@ async (
                     }
 
                     // 3. Location mapping
-                    object locObj = new
-                    {
-                        cp = "",
-                        street = "",
-                        municipality = "",
-                        neighborhood = "",
-                        state = ""
-                    };
+                    string locStreet = "";
+                    string locMuni   = "";
+                    object locObj = new { cp = "", street = "", municipality = "", neighborhood = "", state = "" };
 
                     if (svc.TryGetProperty("location", out var loc) && loc.ValueKind == JsonValueKind.Object)
                     {
-                        var cp = loc.TryGetProperty("cp", out var cpProp) 
-                            ? (cpProp.ValueKind == JsonValueKind.Number ? cpProp.GetInt32().ToString() : cpProp.GetString() ?? "") 
+                        var cp    = loc.TryGetProperty("cp", out var cpProp)
+                            ? (cpProp.ValueKind == JsonValueKind.Number ? cpProp.GetInt32().ToString() : cpProp.GetString() ?? "")
                             : "";
-                        var street = loc.TryGetProperty("street", out var st) ? st.GetString() ?? "" : "";
-                        var muni   = loc.TryGetProperty("municipality", out var mu) ? mu.GetString() ?? "" : "";
-                        var neigh  = loc.TryGetProperty("neighborhood", out var ne) ? ne.GetString() ?? "" : "";
-                        var state  = loc.TryGetProperty("state", out var sa) ? sa.GetString() ?? "" : "";
+                        locStreet = loc.TryGetProperty("street",       out var st) ? st.GetString() ?? "" : "";
+                        locMuni   = loc.TryGetProperty("municipality", out var mu) ? mu.GetString() ?? "" : "";
+                        var neigh = loc.TryGetProperty("neighborhood", out var ne) ? ne.GetString() ?? "" : "";
+                        var state = loc.TryGetProperty("state",        out var sa) ? sa.GetString() ?? "" : "";
 
-                        locObj = new
-                        {
-                            cp = cp,
-                            street = street,
-                            municipality = muni,
-                            neighborhood = neigh,
-                            state = state
-                        };
+                        locObj = new { cp, street = locStreet, municipality = locMuni, neighborhood = neigh, state };
                     }
 
-                    // 4. Wastes mapping directly inside the service
+                    // 4. Wastes mapping
                     var serviceWastes = new List<object>();
                     if (svc.TryGetProperty("wastes", out var wastes) && wastes.ValueKind == JsonValueKind.Array)
                     {
+                        string serviceAddress = $"{locStreet}, {locMuni}".Trim(',', ' ');
+
                         foreach (var w in wastes.EnumerateArray())
                         {
-                            var name = w.TryGetProperty("name", out var wNameProp) && wNameProp.ValueKind == JsonValueKind.String
-                                ? wNameProp.GetString() ?? ""
-                                : "";
-                            var type = w.TryGetProperty("type", out var wTypeProp) && wTypeProp.ValueKind == JsonValueKind.String
-                                ? wTypeProp.GetString() ?? ""
-                                : "";
-                            var code = w.TryGetProperty("clave", out var wCodeProp) && wCodeProp.ValueKind == JsonValueKind.String
+                            var wName = w.TryGetProperty("name", out var wNameProp) && wNameProp.ValueKind == JsonValueKind.String
+                                ? wNameProp.GetString() ?? "" : "";
+                            var rawType = w.TryGetProperty("type", out var wTypeProp) && wTypeProp.ValueKind == JsonValueKind.String
+                                ? wTypeProp.GetString() ?? "" : "";
+                            // Intentar leer "code" primero; caer a "clave" para compatibilidad
+                            var wCode = w.TryGetProperty("code", out var wCodeProp) && wCodeProp.ValueKind == JsonValueKind.String
                                 ? wCodeProp.GetString() ?? ""
-                                : "";
-                            var unit = w.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "";
+                                : (w.TryGetProperty("clave", out var wClaveProp) && wClaveProp.ValueKind == JsonValueKind.String
+                                    ? wClaveProp.GetString() ?? "" : "");
+                            var wUnit = w.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "";
+                            var normalizedType = NormalizeWasteType(rawType);
 
-                            serviceWastes.Add(new
+                            var wasteEntry = new
                             {
-                                code = code,
-                                name = name,
-                                type = type,
-                                unit = unit
-                            });
+                                code           = wCode,
+                                name           = wName,
+                                type           = normalizedType,
+                                unit           = wUnit,
+                                serviceAddress = serviceAddress
+                            };
+                            serviceWastes.Add(wasteEntry);
+                            flatWastes.Add(wasteEntry);
                         }
                     }
 
-                    // Add to serviceItems
                     serviceItems.Add(new
                     {
-                        id = sId,
+                        id       = sId,
                         activity = activity,
                         frequency = freqObj,
-                        location = locObj,
-                        wastes = serviceWastes
+                        location  = locObj,
+                        wastes    = serviceWastes
                     });
                 }
                 parsedQuotation = true;
@@ -505,14 +516,14 @@ async (
 
         foreach (var s in contract.Services)
         {
-            var match = allWastes.FirstOrDefault(w => 
-                w.Name.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase) || 
+            var match = allWastes.FirstOrDefault(w =>
+                w.Name.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase) ||
                 w.Code.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase));
 
             if (match == null)
             {
-                match = allWastes.FirstOrDefault(w => 
-                    s.WasteType.Contains(w.Name, StringComparison.OrdinalIgnoreCase) || 
+                match = allWastes.FirstOrDefault(w =>
+                    s.WasteType.Contains(w.Name, StringComparison.OrdinalIgnoreCase) ||
                     w.Name.Contains(s.WasteType, StringComparison.OrdinalIgnoreCase));
             }
 
@@ -559,45 +570,40 @@ async (
                 }
             }
 
+            var fallbackWaste = new
+            {
+                code           = match?.Code ?? "",
+                name           = s.WasteType,
+                type           = determinedType,
+                unit           = s.WasteUnit,
+                serviceAddress = s.ServiceAddress
+            };
+
             serviceItems.Add(new
             {
-                id = s.Id,
-                activity = s.WasteType,
+                id        = s.Id,
+                activity  = s.WasteType,
                 frequency = new { type = s.Frequency, duration = "" },
-                location = new
-                {
-                    cp = "",
-                    street = s.ServiceAddress,
-                    municipality = "",
-                    neighborhood = "",
-                    state = ""
-                },
-                wastes = new List<object>
-                {
-                    new
-                    {
-                        code = match?.Code ?? "",
-                        name = s.WasteType,
-                        type = determinedType,
-                        unit = s.WasteUnit
-                    }
-                }
+                location  = new { cp = "", street = s.ServiceAddress, municipality = "", neighborhood = "", state = "" },
+                wastes    = new List<object> { fallbackWaste }
             });
+            flatWastes.Add(fallbackWaste);
         }
     }
 
     return Results.Ok(new
     {
-        contractId = contract.Id,
+        contractId  = contract.Id,
         quotationId = contract.QuotationId,
-        folio = contract.Folio,
-        clientId = contract.ClientId,
-        clientName = cliente?.BusinessName ?? cliente?.Name,
-        clientRfc = cliente?.Rfc,
-        status = contract.Status,
-        frequency = contract.Services.FirstOrDefault()?.Frequency ?? "",
-        total = contract.TotalBasePrice,
-        services = serviceItems
+        folio       = contract.Folio,
+        clientId    = contract.ClientId,
+        clientName  = cliente?.BusinessName ?? cliente?.Name,
+        clientRfc   = cliente?.Rfc,
+        status      = contract.Status,
+        frequency   = contract.Services.FirstOrDefault()?.Frequency ?? "",
+        total       = contract.TotalBasePrice,
+        wastes      = flatWastes,
+        services    = serviceItems
     });
 });
 
@@ -622,5 +628,81 @@ app.MapPost("/api/contracts/{id:int}/upload-pdf", async (int id, IFormFile file,
     }
     catch (Exception ex) { return Results.Problem(ex.Message); }
 }).DisableAntiforgery();
+
+app.MapPatch("/api/contracts/{id:int}/cancel", async (int id, ContractsDbContext db, IHttpClientFactory httpClientFactory) =>
+{
+    var contract = await db.Contracts.FindAsync(id);
+    if (contract is null)
+        return Results.NotFound(new { error = "Contrato no encontrado." });
+
+    if (contract.Status == "Cancelado")
+        return Results.Ok(new { message = "El contrato ya estaba cancelado.", cancelledManifests = 0 });
+
+    contract.Status = "Cancelado";
+    await db.SaveChangesAsync();
+
+    var http = httpClientFactory.CreateClient("ManifestosApi");
+    int cancelledCount = 0;
+    var errors = new List<string>();
+
+    try
+    {
+        var listResponse = await http.GetAsync($"/api/manifiestos?contrato_id={id}");
+        if (listResponse.IsSuccessStatusCode)
+        {
+            var json = await listResponse.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            JsonElement manifests;
+            // El API puede devolver { data: [...] } o directamente [...]
+            if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("data", out manifests))
+            {
+                // ok
+            }
+            else
+            {
+                manifests = doc.RootElement;
+            }
+
+            if (manifests.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var m in manifests.EnumerateArray())
+                {
+                    var estado = m.TryGetProperty("estado", out var e) ? e.GetString() : null;
+                    if (estado == "cancelado") continue;
+
+                    if (!m.TryGetProperty("id", out var idProp)) continue;
+                    var manifestId = idProp.GetInt32();
+
+                    var body = new StringContent(
+                        JsonSerializer.Serialize(new { estado = "cancelado" }),
+                        System.Text.Encoding.UTF8,
+                        "application/json");
+
+                    var patchResp = await http.PatchAsync($"/api/manifiestos/{manifestId}/estado", body);
+                    if (patchResp.IsSuccessStatusCode)
+                        cancelledCount++;
+                    else
+                        errors.Add($"Manifiesto {manifestId}: {patchResp.StatusCode}");
+                }
+            }
+        }
+        else
+        {
+            errors.Add($"No se pudo consultar manifiestos: {listResponse.StatusCode}");
+        }
+    }
+    catch (Exception ex)
+    {
+        errors.Add($"Error al comunicarse con API de manifiestos: {ex.Message}");
+    }
+
+    return Results.Ok(new
+    {
+        message = "Contrato cancelado.",
+        cancelledManifests = cancelledCount,
+        errors
+    });
+}).WithName("CancelContract");
 
 app.Run();

@@ -32,6 +32,7 @@ public class SpecialWasteModel : PageModel
     // Nombre del cliente y folio del contrato, solo para mostrar en el encabezado
     public string ClienteNombre  { get; private set; } = string.Empty;
     public string ContratoFolio  { get; private set; } = string.Empty;
+    public List<string> CamposPendientes { get; private set; } = [];
 
     // ===================== GENERADOR =====================
     [BindProperty]
@@ -173,7 +174,41 @@ public class SpecialWasteModel : PageModel
 
         Vehiculos = vehiculosTask.Result;
         Choferes  = choferesTask.Result;
+
+        if (contratoId > 0)
+            BuildCamposPendientes();
+
         return Page();
+    }
+
+    private void BuildCamposPendientes()
+    {
+        void Check(string? value, string label)
+        {
+            if (string.IsNullOrWhiteSpace(value)) CamposPendientes.Add(label);
+        }
+
+        // Generador
+        Check(GeneratorResponsibleName, "Nombre del responsable (Generador)");
+
+        // Transportista
+        Check(TransporterAuthorizationNumber, "No. de Autorización SEDEMA (Transportista)");
+        Check(TransporterSocialReason,        "Razón social (Transportista)");
+        Check(TransporterAddress,             "Domicilio (Transportista)");
+        Check(TransporterPostalCode,          "C.P. (Transportista)");
+        Check(TransporterMunicipality,        "Municipio (Transportista)");
+        Check(TransporterPhone,               "Teléfono (Transportista)");
+        Check(VehicleType,                    "Tipo de vehículo");
+        Check(VehiclePlate,                   "No. de placa");
+        Check(TransportRoute,                 "Ruta de transporte");
+        Check(TransporterResponsibleName,     "Nombre del responsable (Transportista)");
+
+        // Destinatario
+        Check(ReceiverAuthorizationNumber, "No. de autorización SEDEMA (Destinatario)");
+        Check(ReceiverSocialReason,        "Razón social (Destinatario)");
+        Check(ReceiverPhone,               "Teléfono (Destinatario)");
+        Check(DisposalType,                "Tipo de disposición");
+        Check(ReceiverResponsibleName,     "Nombre del responsable (Destinatario)");
     }
 
     public async Task<IActionResult> OnPostAsync()

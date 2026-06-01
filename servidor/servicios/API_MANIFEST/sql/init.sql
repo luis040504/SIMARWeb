@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS manifiestos (
     contrato_id         INT NULL,
     numero_manifiesto   VARCHAR(50) NOT NULL,
     tipo                ENUM('especial', 'peligroso') NOT NULL,
-    estado              ENUM('borrador', 'en_transito', 'completado') DEFAULT 'borrador',
+    estado              ENUM('borrador', 'en_transito', 'completado', 'cancelado') DEFAULT 'borrador',
 
     numero_registro_ambiental   VARCHAR(100),
     razon_social                VARCHAR(200) NOT NULL,

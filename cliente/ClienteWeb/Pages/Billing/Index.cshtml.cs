@@ -628,7 +628,7 @@ namespace ClienteWeb.Pages.Billing
                         manifestId = m.Id,
                         numeroManifiesto = m.ManifestNumber,
                         source = "manifest",
-                        date = m.ManifestDate.ToString("dd/MM/yyyy"),
+                        date = m.ManifestDate.HasValue ? m.ManifestDate.Value.ToString("dd/MM/yyyy") : "—",
                         residueType = m.ResidueSummary ?? (details.Type == "especial" ? "Residuos de Manejo Especial" : "Residuos Peligrosos"),
                         amount = totalEstimated,
                         contractFolio = folio,
