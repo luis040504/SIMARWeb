@@ -109,6 +109,7 @@
                         <option value="borrador">Borrador</option>
                         <option value="en_transito">En tránsito</option>
                         <option value="completado">Completado</option>
+                        <option value="cancelado">Cancelado</option>
                     </select>
                 </div>
 
@@ -178,6 +179,9 @@
                                         break;
                                     case "en_transito":
                                         <span class="badge-simar badge-simar-enruta">En tránsito</span>
+                                        break;
+                                    case "cancelado":
+                                        <span class="badge-simar badge-simar-cancelada">Cancelado</span>
                                         break;
                                     default:
                                         <span class="badge-simar badge-simar-programada">Borrador</span>

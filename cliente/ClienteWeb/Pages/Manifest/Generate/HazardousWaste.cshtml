@@ -2,6 +2,8 @@
 @model ClienteWeb.Pages.Manifest.Generate.HazardousWasteModel
 @{
     ViewData["Title"] = "Generate Manifest - Hazardous Waste";
+    bool fromContract = Model.ContratoId > 0;
+    Func<string?, bool> lk = val => fromContract && !string.IsNullOrEmpty(val) && !val.Equals("PENDIENTE", StringComparison.OrdinalIgnoreCase);
 }
 
 <style>
@@ -14,6 +16,9 @@
     #validationPanel { display: none; }
     /* Tooltips CRETIBM */
     .cretibm-th { cursor: help; text-decoration: underline dotted; }
+    /* Campos bloqueados por contrato */
+    .from-contract { background-color: #eef2f7 !important; cursor: not-allowed !important; border-color: #adb5bd !important; color: #495057; }
+    .from-contract:focus { box-shadow: none !important; outline: none !important; }
 </style>
 
 <div class="manifest-container">
@@ -80,7 +85,8 @@
                 <div class="col-md-4">
                     <label asp-for="EnvironmentalRegistrationNumber" class="form-label-sm">Núm. de registro ambiental<span class="required-star">*</span></label>
                     <input asp-for="EnvironmentalRegistrationNumber"
-                           class="form-control form-control-sm"
+                           class="form-control form-control-sm @(lk(Model.EnvironmentalRegistrationNumber) ? "from-contract" : "")"
+                           readonly="@(lk(Model.EnvironmentalRegistrationNumber) ? "readonly" : null)"
                            placeholder="Ej. CMORE3001711" />
                     <span asp-validation-for="EnvironmentalRegistrationNumber" class="text-danger small"></span>
                 </div>
@@ -88,7 +94,8 @@
                 <div class="col-md-8">
                     <label asp-for="SocialReason" class="form-label-sm">Nombre o razón social del generador<span class="required-star">*</span></label>
                     <input asp-for="SocialReason"
-                           class="form-control form-control-sm"
+                           class="form-control form-control-sm @(lk(Model.SocialReason) ? "from-contract" : "")"
+                           readonly="@(lk(Model.SocialReason) ? "readonly" : null)"
                            placeholder="Ej. CEMENTOS MOCTEZUMA S.A. DE C.V." />
                     <span asp-validation-for="SocialReason" class="text-danger small"></span>
                 </div>
@@ -97,12 +104,12 @@
             <div class="row g-2 mb-2">
                 <div class="col-md-2">
                     <label asp-for="PostalCode" class="form-label-sm">Código postal</label>
-                    <input asp-for="PostalCode" class="form-control form-control-sm" placeholder="Ej. 91645" />
+                    <input asp-for="PostalCode" class="form-control form-control-sm @(lk(Model.PostalCode) ? "from-contract" : "")" readonly="@(lk(Model.PostalCode) ? "readonly" : null)" placeholder="Ej. 91645" />
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="Street" class="form-label-sm">Calle</label>
-                    <input asp-for="Street" class="form-control form-control-sm" placeholder="Ej. Dom. conocido predio de los gallineros" />
+                    <input asp-for="Street" class="form-control form-control-sm @(lk(Model.Street) ? "from-contract" : "")" readonly="@(lk(Model.Street) ? "readonly" : null)" placeholder="Ej. Dom. conocido predio de los gallineros" />
                 </div>
 
                 <div class="col-md-2">
@@ -117,30 +124,30 @@
 
                 <div class="col-md-2">
                     <label asp-for="State" class="form-label-sm">Estado</label>
-                    <input asp-for="State" class="form-control form-control-sm" placeholder="Ej. Veracruz" />
+                    <input asp-for="State" class="form-control form-control-sm @(lk(Model.State) ? "from-contract" : "")" readonly="@(lk(Model.State) ? "readonly" : null)" placeholder="Ej. Veracruz" />
                 </div>
             </div>
 
             <div class="row g-2 mb-3">
                 <div class="col-md-4">
                     <label asp-for="Colony" class="form-label-sm">Colonia</label>
-                    <input asp-for="Colony" class="form-control form-control-sm" placeholder="Ej. Camino vecinal Cerro Colorado" />
+                    <input asp-for="Colony" class="form-control form-control-sm @(lk(Model.Colony) ? "from-contract" : "")" readonly="@(lk(Model.Colony) ? "readonly" : null)" placeholder="Ej. Camino vecinal Cerro Colorado" />
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="Municipality" class="form-label-sm">Municipio o delegación</label>
-                    <input asp-for="Municipality" class="form-control form-control-sm" placeholder="Ej. Apazapan" />
+                    <input asp-for="Municipality" class="form-control form-control-sm @(lk(Model.Municipality) ? "from-contract" : "")" readonly="@(lk(Model.Municipality) ? "readonly" : null)" placeholder="Ej. Apazapan" />
                 </div>
 
                 <div class="col-md-2">
                     <label asp-for="PhoneNumber" class="form-label-sm">Teléfono<span class="required-star">*</span></label>
-                    <input asp-for="PhoneNumber" class="form-control form-control-sm" placeholder="Ej. 2288343149" />
+                    <input asp-for="PhoneNumber" class="form-control form-control-sm @(lk(Model.PhoneNumber) ? "from-contract" : "")" readonly="@(lk(Model.PhoneNumber) ? "readonly" : null)" placeholder="Ej. 2288343149" />
                     <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-2">
                     <label asp-for="Email" class="form-label-sm">Correo electrónico</label>
-                    <input asp-for="Email" class="form-control form-control-sm" placeholder="Ej. operaciones@empresa.com" />
+                    <input asp-for="Email" class="form-control form-control-sm @(lk(Model.Email) ? "from-contract" : "")" readonly="@(lk(Model.Email) ? "readonly" : null)" placeholder="Ej. operaciones@empresa.com" />
                     <span asp-validation-for="Email" class="text-danger small"></span>
                 </div>
             </div>
@@ -488,12 +495,12 @@
             <div class="row g-2 mb-2">
                 <div class="col-md-2">
                     <label asp-for="ReceiverPostalCode" class="form-label-sm">Código postal</label>
-                    <input asp-for="ReceiverPostalCode" class="form-control form-control-sm" placeholder="Ej. 75235" />
+                    <input asp-for="ReceiverPostalCode" class="form-control form-control-sm @(lk(Model.ReceiverPostalCode) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverPostalCode) ? "readonly" : null)" placeholder="Ej. 75235" />
                 </div>
 
                 <div class="col-md-3">
                     <label asp-for="ReceiverStreet" class="form-label-sm">Calle</label>
-                    <input asp-for="ReceiverStreet" class="form-control form-control-sm" placeholder="Ej. Carr. Gpe. Victoria Valsequillo KM15" />
+                    <input asp-for="ReceiverStreet" class="form-control form-control-sm @(lk(Model.ReceiverStreet) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverStreet) ? "readonly" : null)" placeholder="Ej. Carr. Gpe. Victoria Valsequillo KM15" />
                 </div>
 
                 <div class="col-md-2">
@@ -508,19 +515,19 @@
 
                 <div class="col-md-3">
                     <label asp-for="ReceiverColony" class="form-label-sm">Colonia</label>
-                    <input asp-for="ReceiverColony" class="form-control form-control-sm" placeholder="Ej. Localidad San Baltasar Torija" />
+                    <input asp-for="ReceiverColony" class="form-control form-control-sm @(lk(Model.ReceiverColony) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverColony) ? "readonly" : null)" placeholder="Ej. Localidad San Baltasar Torija" />
                 </div>
             </div>
 
             <div class="row g-2 mb-2">
                 <div class="col-md-3">
                     <label asp-for="ReceiverMunicipality" class="form-label-sm">Municipio o delegación</label>
-                    <input asp-for="ReceiverMunicipality" class="form-control form-control-sm" placeholder="Ej. Cuautinchan" />
+                    <input asp-for="ReceiverMunicipality" class="form-control form-control-sm @(lk(Model.ReceiverMunicipality) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverMunicipality) ? "readonly" : null)" placeholder="Ej. Cuautinchan" />
                 </div>
 
                 <div class="col-md-3">
                     <label asp-for="ReceiverState" class="form-label-sm">Estado</label>
-                    <input asp-for="ReceiverState" class="form-control form-control-sm" placeholder="Ej. Puebla" />
+                    <input asp-for="ReceiverState" class="form-control form-control-sm @(lk(Model.ReceiverState) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverState) ? "readonly" : null)" placeholder="Ej. Puebla" />
                 </div>
 
                 <div class="col-md-2">
@@ -583,6 +590,22 @@
     </form>
 </div>
 
+<!-- Modal datos bloqueados por contrato -->
+<div class="modal fade" id="contratoLockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-semibold"><i class="bi bi-lock-fill me-1"></i> Dato del contrato</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3 small">
+                <p class="mb-1">Este campo fue llenado automáticamente desde el contrato firmado <strong>@Model.ContratoFolio</strong>.</p>
+                <p class="mb-0 text-muted">Si el dato es incorrecto, contacta al administrador del sistema.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de confirmación -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -608,6 +631,13 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        // ── Campos bloqueados por contrato ───────────────────────────────────
+        document.querySelectorAll('.from-contract').forEach(function(el) {
+            el.addEventListener('click', function() {
+                new bootstrap.Modal(document.getElementById('contratoLockModal')).show();
+            });
+        });
+
         // ── Campos requeridos (bloquean el guardado) ──────────────────────────
         const REQUIRED_FIELDS = [
             { id: 'EnvironmentalRegistrationNumber', label: 'Núm. de registro ambiental' },
