@@ -633,7 +633,7 @@ app.MapPost("/api/contracts/{id:int}/upload-pdf", async (int id, IFormFile file,
     catch (Exception ex) { return Results.Problem(ex.Message); }
 }).DisableAntiforgery();
 
-app.MapPatch("/api/contracts/{id:int}/cancel", async (int id, ContractsDbContext db, IHttpClientFactory httpClientFactory) =>
+app.MapPatch("/api/contracts/{id:int}/cancel", async (int id, CancelContractRequest request, ContractsDbContext db, IHttpClientFactory httpClientFactory) =>
 {
     var contract = await db.Contracts.FindAsync(id);
     if (contract is null)
@@ -643,6 +643,7 @@ app.MapPatch("/api/contracts/{id:int}/cancel", async (int id, ContractsDbContext
         return Results.Ok(new { message = "El contrato ya estaba cancelado.", cancelledManifests = 0 });
 
     contract.Status = "Cancelado";
+    contract.CancellationReason = request.CancellationReason;
     await db.SaveChangesAsync();
 
     var http = httpClientFactory.CreateClient("ManifestosApi");
@@ -710,3 +711,5 @@ app.MapPatch("/api/contracts/{id:int}/cancel", async (int id, ContractsDbContext
 }).WithName("CancelContract");
 
 app.Run();
+
+public record CancelContractRequest(string? CancellationReason);
