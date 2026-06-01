@@ -129,7 +129,7 @@ public class WasteCatalogItemDto
     [JsonPropertyName("units")]           public List<string> Units      { get; set; } = [];
 
     public string TypeLabel    => Type == "peligroso" ? "Peligroso (RP)" : "Manejo Especial (RME)";
-    public string TypeBadgeCss => Type == "peligroso" ? "danger" : "warning";
+    public string TypeBadgeCss => Type == "peligroso" ? "simar badge-simar-peligroso" : "simar badge-simar-especial";
 
     public string CretiString
     {
