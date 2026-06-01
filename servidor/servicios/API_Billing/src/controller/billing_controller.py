@@ -439,43 +439,58 @@ class BillingController:
                         condiciones=c_detail.get("contractDuration")
                     )
                     
+                    contract_service_id = f"CONTRACT:{folio}"
+                    if contract_service_id in billed_service_ids:
+                        continue
+
+                    active_services = []
                     for s in c_detail.get("services", []):
                         waste_type = s.get("wasteType")
-                        contract_service_id = f"CONTRACT:{folio}:{waste_type}"
-                        
-                        if contract_service_id in billed_service_ids:
-                            continue
+                        specific_id = f"CONTRACT:{folio}:{waste_type}"
+                        if specific_id not in billed_service_ids:
+                            active_services.append(s)
 
-                        fs_raw = c_detail.get("firstServiceDate")
-                        fs_date = datetime.now().date()
-                        if fs_raw:
-                            try:
-                                if 'T' in fs_raw:
-                                    fs_date = datetime.fromisoformat(fs_raw.split('Z')[0]).date()
-                                else:
-                                    fs_date = datetime.strptime(fs_raw[:10], '%Y-%m-%d').date()
-                            except:
-                                pass
+                    if not active_services:
+                        continue
 
-                        results.append(ReadyToBillSchema(
-                            manifest_id=0,
-                            numero_manifiesto=contract_service_id, # Usamos el ID generado como numero_manifiesto para que el front lo use
-                            fecha_servicio=fs_date,
-                            tipo_residuo=waste_type,
-                            cliente=client_info,
-                            contrato=contract_info,
-                            detalles_servicio=[
-                                ResidueDetailSchema(
-                                    residuo=waste_type,
-                                    cantidad=1.0,
-                                    unidad=s.get("wasteUnit"),
-                                    precio_unitario=float(s.get("subtotal") or 0),
-                                    subtotal=float(s.get("subtotal") or 0)
-                                )
-                            ],
-                            total_estimado=float(s.get("subtotal") or 0),
-                            source="contract"
+                    residues = []
+                    total_estimated = 0.0
+                    waste_types = []
+                    for s in active_services:
+                        waste_type = s.get("wasteType")
+                        waste_types.append(waste_type)
+                        subtotal = float(s.get("subtotal") or 0)
+                        residues.append(ResidueDetailSchema(
+                            residuo=waste_type,
+                            cantidad=1.0,
+                            unidad=s.get("wasteUnit") or "Servicio",
+                            precio_unitario=subtotal,
+                            subtotal=subtotal
                         ))
+                        total_estimated += subtotal
+
+                    fs_raw = c_detail.get("firstServiceDate")
+                    fs_date = datetime.now().date()
+                    if fs_raw:
+                        try:
+                            if 'T' in fs_raw:
+                                fs_date = datetime.fromisoformat(fs_raw.split('Z')[0]).date()
+                            else:
+                                fs_date = datetime.strptime(fs_raw[:10], '%Y-%m-%d').date()
+                        except:
+                            pass
+
+                    results.append(ReadyToBillSchema(
+                        manifest_id=0,
+                        numero_manifiesto=contract_service_id,
+                        fecha_servicio=fs_date,
+                        tipo_residuo=", ".join(waste_types) if len(waste_types) <= 2 else "Varios Residuos",
+                        cliente=client_info,
+                        contrato=contract_info,
+                        detalles_servicio=residues,
+                        total_estimado=total_estimated,
+                        source="contract"
+                    ))
             except Exception as e:
                 print(f"Error recuperando servicios de contratos: {e}")
                 
