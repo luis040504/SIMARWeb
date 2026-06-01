@@ -334,8 +334,10 @@
 <body class="no-transitions">
 
     @{
-        var usuarioNombre = "Luis López";
+        // Obtenemos los datos reales de la sesión
+        var usuarioNombre = Context.Session.GetString("Username") ?? "Usuario";
         var rolUsuario = Context.Session.GetString("Rol");
+        var usuarioId = Context.Session.GetString("UserId");
     }
 
 
@@ -380,7 +382,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown">
                             <li>
-                                <a class="dropdown-item" href="/editar/@usuarioNombre">
+                                <a class="dropdown-item" href="/editar/@usuarioId">
                                     <i class="bi bi-pencil-square me-2"></i>Editar Perfil
                                 </a>
                             </li>
