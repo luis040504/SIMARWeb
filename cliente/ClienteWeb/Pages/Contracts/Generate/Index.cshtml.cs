@@ -243,6 +243,16 @@ namespace ClienteWeb.Pages.Contracts.Generate
         {
             await TryPreCreateClientAsync();
 
+            int clientId = await GetClientIdAsync();
+
+            if (clientId <= 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "No fue posible obtener el ID del cliente.");
+                return 0;
+            }
+
             try
             {
                 var services = string.IsNullOrEmpty(ServicesJsonHidden) ? new List<ContractServiceItem>() : JsonSerializer.Deserialize<List<ContractServiceItem>>(ServicesJsonHidden);
@@ -253,7 +263,8 @@ namespace ClienteWeb.Pages.Contracts.Generate
 
                 var newContract = new 
                 {
-                    ClientId = QuotationId,
+                    ClientId = clientId,
+                    QuotationId = QuotationId,
                     TotalBasePrice = TotalPrice,
                     ClientName = BusinessName,
                     ClientRfc = RFC,
@@ -268,7 +279,6 @@ namespace ClienteWeb.Pages.Contracts.Generate
                     Extras = extras
                 };
 
-                // 🔑 REQUISITO CRÍTICO: Asegurar que el httpClient de la PageModel lleve el token hacia la Minimal API
                 if (!string.IsNullOrEmpty(Token))
                 {
                     _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
@@ -325,22 +335,51 @@ namespace ClienteWeb.Pages.Contracts.Generate
             }
         }
 
-        // 🛠️ MÉTODOS DE EXTRACCIÓN DE SEGURIDAD
         private void ExtaerEInyectarToken()
         {
-            // 1. Leer el JWT desde la sesión (clave usada en Login.cshtml.cs)
             Token = HttpContext.Session.GetString("JWT");
 
-            // 2. Fallback: intentar obtener desde claims
             if (string.IsNullOrEmpty(Token))
                 Token = User.FindFirst("JWToken")?.Value ?? User.FindFirst("access_token")?.Value;
 
-            // 3. Fallback: intentar desde cookie
             if (string.IsNullOrEmpty(Token) && Request.Cookies.TryGetValue("Authorization", out var cookieToken))
                 Token = cookieToken.Replace("Bearer ", "").Trim();
 
             if (!string.IsNullOrEmpty(Token))
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        }
+
+        private async Task<int> GetClientIdAsync()
+        {
+            if (string.IsNullOrWhiteSpace(RFC))
+                return 0;
+
+            try
+            {
+                var response = await _clientesHttp.GetAsync(
+                    $"/client/rfc/{Uri.EscapeDataString(RFC)}");
+
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                using var doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                    return 0;
+
+                var clients = doc.RootElement;
+
+                if (clients.GetArrayLength() == 0)
+                    return 0;
+
+                return clients[0].GetProperty("id").GetInt32();
+            }
+            catch
+            {
+                return 0;
+            }
         }
     }
 
