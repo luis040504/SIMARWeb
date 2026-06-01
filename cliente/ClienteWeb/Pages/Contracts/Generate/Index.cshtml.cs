@@ -209,7 +209,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
 
         private async Task TryPreCreateClientAsync()
         {
-            if (string.IsNullOrWhiteSpace(RFC) || string.IsNullOrEmpty(Token)) return;
+            if (string.IsNullOrWhiteSpace(RFC)) return;
 
             try
             {
@@ -222,26 +222,35 @@ namespace ClienteWeb.Pages.Contracts.Generate
             }
             catch { return; }
 
+            if (string.IsNullOrEmpty(Token)) return;
+
             using var request = new HttpRequestMessage(HttpMethod.Post, "/client");
             request.Content = JsonContent.Create(new
             {
                 name         = BusinessName,
                 businessName = BusinessName,
                 rfc          = RFC,
-                contactEmail = ContactEmail,
+                contactEmail = string.IsNullOrWhiteSpace(ContactEmail) ? "pendiente@simar.mx" : ContactEmail,
                 phone        = ContactPhone,
                 address      = Address,
                 semarnatNum  = "PENDIENTE"
             });
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Token);
 
-            try { await _clientesHttp.SendAsync(request); }
-            catch { }
+            var resp = await _clientesHttp.SendAsync(request);
+            if (!resp.IsSuccessStatusCode)
+            {
+                var err = await resp.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty,
+                    $"No se pudo crear el cliente en el sistema ({(int)resp.StatusCode}): {err}");
+            }
         }
 
         private async Task<int> SaveContractToApiAsync()
         {
             await TryPreCreateClientAsync();
+
+            if (!ModelState.IsValid) return 0;
 
             int clientId = await GetClientIdAsync();
 
@@ -249,7 +258,9 @@ namespace ClienteWeb.Pages.Contracts.Generate
             {
                 ModelState.AddModelError(
                     string.Empty,
-                    "No fue posible obtener el ID del cliente.");
+                    string.IsNullOrEmpty(Token)
+                        ? "Sesión expirada. Cierra sesión e inicia nuevamente."
+                        : "No fue posible obtener el ID del cliente. Verifica que el cliente exista en el sistema.");
                 return 0;
             }
 

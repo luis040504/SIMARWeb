@@ -37,6 +37,8 @@
 
     <form method="post" id="manifestForm">
         @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="IdCliente" />
+        <input type="hidden" asp-for="ContratoId" />
 
         <!-- Panel de validación -->
         <div id="validationPanel" class="mb-3">
@@ -115,12 +117,12 @@
 
                 <div class="col-md-3">
                     <label asp-for="ManifestDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="ManifestDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="ManifestDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-3">
                     <label asp-for="ManifestTime" class="form-label-sm">Hora</label>
-                    <input asp-for="ManifestTime" type="time" class="form-control form-control-sm" />
+                    <input asp-for="ManifestTime" asp-format="{0:HH:mm}" type="time" class="form-control form-control-sm" />
                 </div>
             </div>
 
@@ -307,12 +309,12 @@
 
                 <div class="col-md-4">
                     <label asp-for="TransporterDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="TransporterDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="TransporterDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="TransporterTime" class="form-label-sm">Hora</label>
-                    <input asp-for="TransporterTime" type="time" class="form-control form-control-sm" />
+                    <input asp-for="TransporterTime" asp-format="{0:HH:mm}" type="time" class="form-control form-control-sm" />
                 </div>
             </div>
 
@@ -465,12 +467,12 @@
 
                 <div class="col-md-4">
                     <label asp-for="ReceiverDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="ReceiverDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="ReceiverDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="ReceiverTime" class="form-label-sm">Hora</label>
-                    <input asp-for="ReceiverTime" type="time" class="form-control form-control-sm" />
+                    <input asp-for="ReceiverTime" asp-format="{0:HH:mm}" type="time" class="form-control form-control-sm" />
                 </div>
             </div>
 

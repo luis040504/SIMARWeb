@@ -45,6 +45,18 @@ public class ContratosApiService
             return null;
         }
     }
+
+    public async Task<ContratoManifestDataDto?> GetManifestDataAsync(int id)
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<ContratoManifestDataDto>($"api/contracts/{id}/manifest-data");
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
 
 public class ContratoDto
@@ -85,4 +97,48 @@ public class ContratoWasteItemDto
     [JsonPropertyName("clave")]          public string Clave { get; set; } = "";
     [JsonPropertyName("quantity")]       public decimal Quantity { get; set; }
     [JsonPropertyName("unit")]           public string Unit { get; set; } = "";
+}
+
+// DTOs para GET /api/contracts/{id}/manifest-data
+public class ContratoManifestDataDto
+{
+    [JsonPropertyName("contractId")]   public int ContractId { get; set; }
+    [JsonPropertyName("quotationId")]  public int QuotationId { get; set; }
+    [JsonPropertyName("folio")]        public string Folio { get; set; } = "";
+    [JsonPropertyName("clientId")]     public int ClientId { get; set; }
+    [JsonPropertyName("clientName")]   public string ClientName { get; set; } = "";
+    [JsonPropertyName("clientRfc")]    public string ClientRfc { get; set; } = "";
+    [JsonPropertyName("status")]       public string Status { get; set; } = "";
+    [JsonPropertyName("frequency")]    public string Frequency { get; set; } = "";
+    [JsonPropertyName("total")]        public decimal Total { get; set; }
+    [JsonPropertyName("wastes")]       public List<ContratoManifestWasteDto> Wastes { get; set; } = [];
+    // Servicios con ubicación por actividad — pendiente exposición en backend
+    [JsonPropertyName("services")]     public List<ContratoManifestServiceDto> Services { get; set; } = [];
+}
+
+public class ContratoManifestWasteDto
+{
+    [JsonPropertyName("code")]           public string Code { get; set; } = "";
+    [JsonPropertyName("name")]           public string Name { get; set; } = "";
+    [JsonPropertyName("type")]           public string Type { get; set; } = "";   // "peligroso" | "especial"
+    [JsonPropertyName("unit")]           public string Unit { get; set; } = "";
+    [JsonPropertyName("serviceAddress")] public string ServiceAddress { get; set; } = "";
+}
+
+// activity: "collection" → ubicación del generador
+// activity: "final_disposal" → ubicación del destinatario
+public class ContratoManifestServiceDto
+{
+    [JsonPropertyName("id")]       public string Id { get; set; } = "";
+    [JsonPropertyName("activity")] public string Activity { get; set; } = "";
+    [JsonPropertyName("location")] public ContratoServiceLocationDto? Location { get; set; }
+}
+
+public class ContratoServiceLocationDto
+{
+    [JsonPropertyName("cp")]           public string? Cp { get; set; }
+    [JsonPropertyName("street")]       public string? Street { get; set; }
+    [JsonPropertyName("municipality")] public string? Municipality { get; set; }
+    [JsonPropertyName("neighborhood")] public string? Neighborhood { get; set; }
+    [JsonPropertyName("state")]        public string? State { get; set; }
 }
