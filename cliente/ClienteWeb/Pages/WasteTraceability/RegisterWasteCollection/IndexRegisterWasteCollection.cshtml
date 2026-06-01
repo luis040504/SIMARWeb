@@ -5,85 +5,6 @@
 }
 
 <style>
-    :root {
-        --simar-green: #5aad31;
-        --simar-dark: #4a4a4a;
-        --simar-gray-light: #f8f9fa;
-        --simar-border: #e9ecef;
-    }
-    
-    * {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .container-fluid-custom {
-        width: 100%;
-        padding-right: 1rem;
-        padding-left: 1rem;
-    }
-    
-    h1 {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: var(--simar-dark);
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid var(--simar-green);
-    }
-    
-    h1 i {
-        color: var(--simar-green);
-        margin-right: 0.5rem;
-    }
-    
-    .table-container {
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid var(--simar-border);
-        margin-top: 1rem;
-    }
-    
-    .table-simar {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .table-simar thead tr {
-        background: var(--simar-gray-light);
-        border-bottom: 2px solid var(--simar-green);
-    }
-    
-    .table-simar th {
-        padding: 1rem 1.25rem;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: var(--simar-dark);
-        text-transform: uppercase;
-    }
-    
-    .table-simar td {
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--simar-border);
-        vertical-align: middle;
-        font-size: 0.9rem;
-    }
-    
-    .table-simar tbody tr:hover {
-        background: rgba(90, 173, 49, 0.05);
-        cursor: pointer;
-    }
-    
-    .badge-status {
-        padding: 0.35rem 0.85rem;
-        border-radius: 30px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: white;
-    }
-    
     .modal-simar {
         display: none;
         position: fixed;
@@ -94,14 +15,14 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(4px);
+        overflow-y: auto; /* Permite scroll vertical si la pantalla es muy pequeña */
     }
     
     .modal-content-simar {
         background: white;
-        margin: 2% auto;
+        margin: 90px auto 2rem auto; /* Libera el header fijo de 70px y deja espacio abajo */
         width: 90%;
-        max-width: 900px;
-        max-height: 90vh;
+        max-width: 750px;
         border-radius: 20px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         overflow: hidden;
@@ -136,59 +57,118 @@
     }
 </style>
 
-<div class="container-fluid-custom">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="consult-container">
+    @if (ViewData["MensajeError"] != null)
+    {
+        <div class="alert alert-@(ViewData["TipoError"] ?? "danger") alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @ViewData["MensajeError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (ViewData["MensajeExito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @ViewData["MensajeExito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Encabezado -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
-            <h1>
-                <i class="bi bi-clipboard-pulse"></i>
+            <h2 class="fw-semibold mb-0" style="color: var(--simar-dark);">
+                <i class="bi bi-clipboard-pulse me-2" style="color: var(--simar-green);"></i>
                 Seguimiento de Contratos y Servicios
-            </h1>
-            <p class="text-muted">Consulte el estado actual de sus servicios por contrato</p>
+            </h2>
+            <p class="text-muted small mb-0">Consulte el estado actual de sus servicios por contrato</p>
         </div>
     </div>
 
-    <div class="table-container">
+    <div class="table-responsive-simar">
         <table class="table-simar">
             <thead>
                 <tr>
-                    <th>Folio Contrato</th>
+                    <th>Servicio (Manifiesto)</th>
+                    <th>Fecha Servicio</th>
                     <th>Cliente</th>
-                    <th>Estado Contrato</th>
-                    <th>Vencimiento</th>
-                    <th>Último Servicio / En Curso</th>
-                    <th>Acción</th>
+                    <th>Residuo</th>
+                    <th>Estado del Servicio</th>
+                    <th>Contrato</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var contrato in Model.Contratos)
                 {
                     <tr onclick="abrirHistorial(@contrato.Id)">
-                        <td><strong>@contrato.Folio</strong></td>
-                        <td>@contrato.Cliente</td>
-                        <td>
-                            <span class="badge @(contrato.EstadoContrato == "activo" ? "bg-success" : "bg-secondary")">
-                                @contrato.EstadoContrato
-                            </span>
-                        </td>
-                        <td>@(contrato.FechaExpiracion?.ToString("dd/MM/yyyy") ?? "N/A")</td>
                         <td>
                             @if (contrato.UltimoServicio != null)
                             {
-                                <div>
-                                    <span class="badge @ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.GetStatusClass(contrato.UltimoServicio.Status)">
-                                        @ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.MapStatus(contrato.UltimoServicio.Status)
-                                    </span>
-                                    <br />
-                                    <small class="text-muted">#@contrato.UltimoServicio.ManifestNumber - @contrato.UltimoServicio.ManifestDate.ToString("dd/MM/yyyy")</small>
-                                </div>
+                                <strong>#@contrato.UltimoServicio.ManifestNumber</strong>
                             }
                             else
                             {
-                                <span class="text-muted small">Sin servicios registrados</span>
+                                <span class="text-muted small">-</span>
                             }
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-outline-success rounded-pill">
+                            @if (contrato.UltimoServicio != null)
+                            {
+                                <span>@contrato.UltimoServicio.ManifestDate.ToString("dd/MM/yyyy")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">-</span>
+                            }
+                        </td>
+                        <td>@contrato.Cliente</td>
+                        <td>
+                            @if (contrato.UltimoServicio != null)
+                            {
+                                <span class="text-truncate d-inline-block" style="max-width: 180px;" title="@contrato.UltimoServicio.ResidueSummary">
+                                    @(string.IsNullOrEmpty(contrato.UltimoServicio.ResidueSummary) ? "Sin descripción" : contrato.UltimoServicio.ResidueSummary)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Sin servicios</span>
+                            }
+                        </td>
+                        <td onclick="event.stopPropagation()">
+                            @if (contrato.UltimoServicio != null)
+                            {
+                                @if (Model.Rol.ToLower() != "cliente" && contrato.UltimoServicio.Status != "completado")
+                                {
+                                    <form method="post" action="?handler=UpdateStatus" class="d-inline-block">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="manifestId" value="@contrato.UltimoServicio.Id" />
+                                        <select name="nuevoEstado" class="form-select form-select-sm d-inline-block fw-semibold" style="width: auto; padding: 0.15rem 1.5rem 0.15rem 0.5rem; font-size: 0.8rem; height: auto; border-radius: 30px; border-color: var(--simar-green);" onchange="this.form.submit()">
+                                            <option value="borrador" selected="@(contrato.UltimoServicio.Status == "borrador")">Programado</option>
+                                            <option value="en_transito" selected="@(contrato.UltimoServicio.Status == "en_transito")">En ruta</option>
+                                            <option value="completado" selected="@(contrato.UltimoServicio.Status == "completado")">Concluido</option>
+                                            <option value="cancelado" selected="@(contrato.UltimoServicio.Status == "cancelado")">Cancelado</option>
+                                        </select>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="@ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.GetStatusClass(contrato.UltimoServicio.Status)">
+                                        @ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection.IndexModel.MapStatus(contrato.UltimoServicio.Status)
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge-simar badge-simar-sin">Sin asignar</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-dark">@contrato.Folio</span>
+                        </td>
+                        <td>
+                            <button type="button" class="action-btn ver" style="border: none;">
                                 <i class="bi bi-eye"></i> Historial
                             </button>
                         </td>
@@ -214,6 +194,7 @@
 
 <script>
     const contratos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Contratos));
+    const userRole = '@ViewData["Rol"]';
 
     function abrirHistorial(id) {
         const contrato = contratos.find(c => c.Id === id);
@@ -233,6 +214,25 @@
                 let statusName = mapStatus(m.Status);
                 let statusClass = getStatusClass(m.Status);
 
+                let statusSelectorHtml = '';
+                if (userRole.toLowerCase() !== 'cliente') {
+                    statusSelectorHtml = `
+                        <div class="mt-2 pt-2 border-top">
+                            <form method="post" action="?handler=UpdateStatus" class="d-flex align-items-center gap-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="manifestId" value="${m.Id}" />
+                                <label class="small text-muted mb-0 me-1">Actualizar estado:</label>
+                                <select name="nuevoEstado" class="form-select form-select-sm d-inline-block" style="width: auto; max-width: 140px; padding: 0.15rem 0.5rem; font-size: 0.8rem; height: auto;" onchange="this.form.submit()" ${m.Status === 'completado' ? 'disabled' : ''}>
+                                    <option value="borrador" ${m.Status === 'borrador' ? 'selected' : ''}>Programado</option>
+                                    <option value="en_transito" ${m.Status === 'en_transito' ? 'selected' : ''}>En ruta</option>
+                                    <option value="completado" ${m.Status === 'completado' ? 'selected' : ''}>Concluido</option>
+                                    <option value="cancelado" ${m.Status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                                </select>
+                            </form>
+                        </div>
+                    `;
+                }
+
                 item.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -241,9 +241,10 @@
                             <p class="mb-0 small text-muted"><i class="bi bi-recycle"></i> ${m.ResidueSummary || 'Sin descripción'}</p>
                         </div>
                         <div>
-                            <span class="badge ${statusClass}">${statusName}</span>
+                            <span class="${statusClass}">${statusName}</span>
                         </div>
                     </div>
+                    ${statusSelectorHtml}
                 `;
                 body.appendChild(item);
             });
@@ -268,11 +269,11 @@
 
     function getStatusClass(status) {
         switch(status) {
-            case 'borrador': return 'bg-info';
-            case 'en_transito': return 'bg-warning';
-            case 'completado': return 'bg-success';
-            case 'cancelado': return 'bg-danger';
-            default: return 'bg-secondary';
+            case 'borrador': return 'badge-simar badge-simar-programada';
+            case 'en_transito': return 'badge-simar badge-simar-enruta';
+            case 'completado': return 'badge-simar badge-simar-completada';
+            case 'cancelado': return 'badge-simar badge-simar-cancelada';
+            default: return 'badge-simar badge-simar-sin';
         }
     }
 
