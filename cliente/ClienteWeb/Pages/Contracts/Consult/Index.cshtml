@@ -121,7 +121,7 @@
 
             <div class="col-md-3">
                 <label class="form-label-simar">Filtrar por Estatus</label>
-                <select name="Status" class="form-select-simar w-100" onchange="this.form.submit()" @(string.IsNullOrEmpty(Model.Search) ? "disabled" : "")>
+                <select name="Status" class="form-select-simar w-100" onchange="this.form.submit()">
                     <option value="">Todos los estados</option>
                     <option value="Activo" selected="@(Model.Status == "Activo")">Activo</option>
                     <option value="Vencido" selected="@(Model.Status == "Vencido")">Vencido</option>
@@ -133,8 +133,7 @@
                 <label class="form-label-simar">Vigentes en la fecha:</label>
                 <input type="date" name="DateFilter" class="form-control-simar w-100" 
                     value="@(Model.DateFilter?.ToString("yyyy-MM-dd"))" 
-                    onchange="this.form.submit()" 
-                    @(string.IsNullOrEmpty(Model.Search) ? "disabled" : "") />
+                    onchange="this.form.submit()" />
             </div>
 
             <div class="col-md-1">
