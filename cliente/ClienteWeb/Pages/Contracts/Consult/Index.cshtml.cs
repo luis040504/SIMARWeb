@@ -37,6 +37,8 @@ namespace ClienteWeb.Pages.Contracts.Consult
         [BindProperty] public string ServicesJson { get; set; } = "[]";
         [BindProperty] public string PaymentsJson { get; set; } = "[]";
         [BindProperty] public string ExtrasJson { get; set; } = "[]";
+        [BindProperty] public bool IsCancellation { get; set; } = false;
+        [BindProperty] public string? CancellationReason { get; set; }
 
         public bool ShowSuccessMessage { get; set; }
         public string ErrorMessage { get; set; } = "";
@@ -74,7 +76,8 @@ namespace ClienteWeb.Pages.Contracts.Consult
                         StartDate = c.CreatedAt,
                         EndDate = c.ExpirationDate,
                         Status = c.Status,
-                        SignedContractPath = c.SignedContractPath
+                        SignedContractPath = c.SignedContractPath,
+                        CancellationReason = c.CancellationReason
                     }).ToList();
                 }
             }
@@ -91,6 +94,54 @@ namespace ClienteWeb.Pages.Contracts.Consult
         {
             try
             {
+                if (IsCancellation)
+                {
+                    if (string.IsNullOrWhiteSpace(CancellationReason))
+                    {
+                        ErrorMessage = "Debe proporcionar una razón para la cancelación del contrato.";
+                        await LoadContractsAsync();
+                        return Page();
+                    }
+
+                    var cancelDetailUrl = $"/api/contracts/{UpdateDbId}/detail";
+                    var cancelCurrent = await _httpClient.GetFromJsonAsync<JsonElement>(cancelDetailUrl);
+
+                    var cancelData = new {
+                        id = UpdateDbId,
+                        folio = cancelCurrent.GetProperty("folio").GetString(),
+                        clientId = cancelCurrent.GetProperty("clientId").GetInt32(),
+                        totalBasePrice = cancelCurrent.GetProperty("totalBasePrice").GetDecimal(),
+                        clientName = UpdateClient,
+                        clientRfc = cancelCurrent.GetProperty("clientRfc").GetString(),
+                        representative = cancelCurrent.GetProperty("representative").GetString(),
+                        clientAddress = cancelCurrent.GetProperty("clientAddress").GetString(),
+                        clientObjetoSocial = cancelCurrent.GetProperty("clientObjetoSocial").GetString(),
+                        clientDeclaraciones = cancelCurrent.GetProperty("clientDeclaraciones").GetString(),
+                        contractDuration = cancelCurrent.GetProperty("contractDuration").GetString(),
+                        firstServiceDate = UpdateStartDate,
+                        endDate = cancelCurrent.TryGetProperty("endDate", out var edVal) && edVal.ValueKind != JsonValueKind.Null ? edVal.GetDateTime() : (DateTime?)null,
+                        status = "Cancelado",
+                        cancellationReason = CancellationReason,
+                        services = JsonSerializer.Deserialize<List<object>>(cancelCurrent.GetProperty("services").GetRawText()) ?? new(),
+                        payments = JsonSerializer.Deserialize<List<object>>(cancelCurrent.GetProperty("payments").GetRawText()) ?? new(),
+                        extras = JsonSerializer.Deserialize<List<object>>(cancelCurrent.GetProperty("extras").GetRawText()) ?? new()
+                    };
+
+                    var cancelPutResponse = await _httpClient.PutAsJsonAsync($"/api/contracts/{UpdateDbId}", cancelData);
+                    if (!cancelPutResponse.IsSuccessStatusCode) 
+                    {
+                        var errorContent = await cancelPutResponse.Content.ReadAsStringAsync();
+                        throw new Exception($"Error del servidor al cancelar (PUT): {cancelPutResponse.StatusCode} - {errorContent}");
+                    }
+
+                    ShowSuccessMessage = true;
+                    AuditTrail.Add($"Usuario: Administrador | Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                    AuditTrail.Add($"Contrato cancelado exitosamente. Motivo: {CancellationReason}");
+
+                    await LoadContractsAsync();
+                    return Page();
+                }
+
                 if (UpdateEndDate.HasValue && UpdateEndDate.Value <= UpdateStartDate)
                 {
                     ErrorMessage = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
@@ -179,6 +230,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public DateTime EndDate { get; set; }
         public string Status { get; set; } = "";
         public string? SignedContractPath { get; set; }
+        public string? CancellationReason { get; set; }
     }
 
     public class ApiContractDto
@@ -193,5 +245,6 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public DateTime CreatedAt { get; set; }
         public DateTime ExpirationDate { get; set; }
         public string? SignedContractPath { get; set; }
+        public string? CancellationReason { get; set; }
     }
 }

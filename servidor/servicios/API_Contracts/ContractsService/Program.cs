@@ -201,11 +201,15 @@ app.MapPut("/api/contracts/{id:int}", async (int id, Contract contractRequest, I
     }
 }).WithName("UpdateContract");
 
-app.MapGet("/api/contracts/{id:int}/download", async (int id, IContractService contractService) =>
+app.MapGet("/api/contracts/{id:int}/download", async (int id, bool? inline, IContractService contractService) =>
 {
     try
     {
         var (content, contentType, fileName) = await contractService.GetContractPdfAsync(id);
+        if (inline == true)
+        {
+            return Results.File(content, contentType);
+        }
         return Results.File(content, contentType, fileName);
     }
     catch (KeyNotFoundException ex)
