@@ -511,11 +511,62 @@ public class ContractService : IContractService
 
     public async Task<ContractResponseDto> UpdateContractAsync(int id, Contract request)
     {
+        if (id <= 0) throw new ArgumentException("ID de contrato inválido.");
+        if (request == null) throw new ArgumentNullException(nameof(request), "La petición no puede ser nula.");
+
         var existing = await _context.Contracts
             .Include(c => c.Services).Include(c => c.Payments).Include(c => c.Extras)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (existing == null) throw new KeyNotFoundException("Contrato no encontrado.");
+
+        if (existing.Status == "Cancelado")
+        {
+            throw new InvalidOperationException("No se puede modificar un contrato que ya se encuentra cancelado.");
+        }
+
+        if (existing.Status == "Activo")
+        {
+            // Un contrato activo/firmado solo se puede cancelar.
+            if (request.Status != "Cancelado")
+            {
+                throw new InvalidOperationException("Este contrato ya está firmado y activo. No se permiten modificaciones en sus términos o condiciones, únicamente su cancelación.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.CancellationReason))
+            {
+                throw new ArgumentException("Debe proporcionar un motivo de cancelación para cancelar este contrato.");
+            }
+
+            existing.Status = "Cancelado";
+            existing.CancellationReason = request.CancellationReason;
+            if (!string.IsNullOrEmpty(request.SignedContractPath))
+            {
+                existing.SignedContractPath = request.SignedContractPath;
+            }
+            await _context.SaveChangesAsync();
+            return new ContractResponseDto { Id = existing.Id, Folio = existing.Folio, Message = "Contrato cancelado exitosamente." };
+        }
+
+        if (request.Status == "Cancelado")
+        {
+            if (string.IsNullOrWhiteSpace(request.CancellationReason))
+            {
+                throw new ArgumentException("Debe proporcionar un motivo de cancelación.");
+            }
+        }
+        else
+        {
+            if (request.TotalBasePrice <= 0m)
+            {
+                throw new ArgumentException("El precio total base debe ser mayor a cero.");
+            }
+
+            if (request.EndDate.HasValue && request.FirstServiceDate.HasValue && request.EndDate.Value <= request.FirstServiceDate.Value)
+            {
+                throw new ArgumentException("La nueva fecha de término debe ser posterior a la fecha de inicio.");
+            }
+        }
 
         existing.Status = request.Status;
         existing.CancellationReason = request.CancellationReason;

@@ -186,6 +186,16 @@ app.MapGet("/api/contracts/{id:int}/detail", async (int id, IContractService con
 
 app.MapPut("/api/contracts/{id:int}", async (int id, Contract contractRequest, IContractService contractService) =>
 {
+    var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+    var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(contractRequest);
+    bool isValid = System.ComponentModel.DataAnnotations.Validator.TryValidateObject(contractRequest, validationContext, validationResults, true);
+    
+    if (!isValid)
+    {
+        var errors = validationResults.Select(v => v.ErrorMessage);
+        return Results.BadRequest(new { error = "Errores de validación", detalles = errors });
+    }
+
     try
     {
         var result = await contractService.UpdateContractAsync(id, contractRequest);
@@ -195,9 +205,17 @@ app.MapPut("/api/contracts/{id:int}", async (int id, Contract contractRequest, I
     {
         return Results.NotFound(new { error = ex.Message });
     }
-    catch (Exception)
+    catch (ArgumentException ex)
     {
-        return Results.Problem("Error al actualizar el contrato.");
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Error al actualizar el contrato: {ex.Message}");
     }
 }).WithName("UpdateContract");
 

@@ -647,14 +647,129 @@
         }
 
         function submitUpdateForm() {
+            const errorDiv = document.getElementById('modalUpdateError');
+            errorDiv.classList.add('d-none');
+            errorDiv.textContent = "";
+
             const startDateStr = document.getElementById('updateStartDate').value;
             const endDateStr = document.getElementById('updateEndDate').value;
 
-            if (startDateStr && endDateStr && endDateStr <= startDateStr) {
-                const errorDiv = document.getElementById('modalUpdateError');
-                errorDiv.textContent = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
-                errorDiv.classList.remove('d-none');
-                return; 
+            // 1. Validar fechas del contrato
+            if (currentUpdateStatus !== 'Activo') {
+                if (!endDateStr) {
+                    errorDiv.textContent = "La nueva fecha de término es requerida.";
+                    errorDiv.classList.remove('d-none');
+                    document.querySelector('.modal-body').scrollTop = 0;
+                    return;
+                }
+
+                if (startDateStr && endDateStr && endDateStr <= startDateStr) {
+                    errorDiv.textContent = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
+                    errorDiv.classList.remove('d-none');
+                    document.querySelector('.modal-body').scrollTop = 0;
+                    return; 
+                }
+            }
+
+            // 2. Validar tabla de Servicios
+            if (currentUpdateStatus !== 'Activo') {
+                for (let i = 0; i < currentUpdateData.services.length; i++) {
+                    const s = currentUpdateData.services[i];
+                    const numRow = i + 1;
+                    
+                    if (!s.wasteType || s.wasteType.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: El tipo de residuo es requerido.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!s.wasteUnit || s.wasteUnit.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: La unidad de medida es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!s.frequency || s.frequency.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: La frecuencia del servicio es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!s.serviceAddress || s.serviceAddress.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: La dirección de servicio es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (s.vehicles === undefined || isNaN(s.vehicles) || s.vehicles <= 0) {
+                        errorDiv.textContent = `Servicio #${numRow}: La cantidad de vehículos debe ser un número entero mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (s.technicians === undefined || isNaN(s.technicians) || s.technicians <= 0) {
+                        errorDiv.textContent = `Servicio #${numRow}: La cantidad de técnicos debe ser un número entero mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (s.subtotal === undefined || isNaN(s.subtotal) || s.subtotal < 0) {
+                        errorDiv.textContent = `Servicio #${numRow}: El subtotal debe ser un número mayor o igual a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                }
+
+                // 3. Validar tabla de Pagos
+                for (let i = 0; i < currentUpdateData.payments.length; i++) {
+                    const p = currentUpdateData.payments[i];
+                    const numRow = i + 1;
+
+                    if (!p.description || p.description.trim() === "") {
+                        errorDiv.textContent = `Pago #${numRow}: El concepto del pago es requerido.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (p.amount === undefined || isNaN(p.amount) || p.amount <= 0) {
+                        errorDiv.textContent = `Pago #${numRow}: El monto del pago debe ser un número mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!p.paymentDate || p.paymentDate.trim() === "") {
+                        errorDiv.textContent = `Pago #${numRow}: La fecha del pago es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                }
+
+                // 4. Validar tabla de Extras
+                for (let i = 0; i < currentUpdateData.extras.length; i++) {
+                    const x = currentUpdateData.extras[i];
+                    const numRow = i + 1;
+
+                    if (!x.description || x.description.trim() === "") {
+                        errorDiv.textContent = `Extra #${numRow}: La descripción es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (x.unitCost === undefined || isNaN(x.unitCost) || x.unitCost <= 0) {
+                        errorDiv.textContent = `Extra #${numRow}: El costo unitario debe ser un número mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (x.quantity === undefined || isNaN(x.quantity) || x.quantity <= 0) {
+                        errorDiv.textContent = `Extra #${numRow}: La cantidad debe ser un número entero mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                }
             }
 
             document.getElementById('updateServicesJson').value = JSON.stringify(currentUpdateData.services);

@@ -326,7 +326,7 @@ namespace ContractsService.Tests
                 }
             };
 
-            var result = await service.UpdateContractAsync(1, updateRequest);
+            var result = await service.UpdateContractAsync(3, updateRequest);
 
             Assert.Equal("Contrato actualizado exitosamente.", result.Message);
 
@@ -334,7 +334,7 @@ namespace ContractsService.Tests
                 .Include(c => c.Services)
                 .Include(c => c.Payments)
                 .Include(c => c.Extras)
-                .FirstAsync(c => c.Id == 1);
+                .FirstAsync(c => c.Id == 3);
 
             Assert.Equal("Activo", updated.Status);
             Assert.Equal(20000m, updated.TotalBasePrice);
@@ -355,7 +355,8 @@ namespace ContractsService.Tests
 
             var updateRequest = new Contract
             {
-                SignedContractPath = "/uploads/signed/1.pdf"
+                SignedContractPath = "/uploads/signed/1.pdf",
+                TotalBasePrice = 15000m
             };
 
             await service.UpdateContractAsync(3, updateRequest);
@@ -423,6 +424,176 @@ namespace ContractsService.Tests
 
             var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.GetContractPdfAsync(-1));
             Assert.Equal("ID inválido", exception.Message);
+        }
+
+        // ==========================================
+        // ADDITIONAL TESTS
+        // ==========================================
+
+        [Fact]
+        public async Task GetContractsAsync_NullStatus_ExcludesCanceledContracts()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            
+            // Add a canceled contract
+            context.Contracts.Add(new Contract { Id = 4, Folio = "CON-CANCELED", ClientId = 10, Status = "Cancelado" });
+            await context.SaveChangesAsync();
+
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var result = await service.GetContractsAsync(null, null, null);
+
+            // SeedDataAsync has 3 contracts, and the new one is Canceled, so it should exclude it and return 3.
+            Assert.Equal(3, result.Count);
+            Assert.All(result, c => Assert.NotEqual("Cancelado", c.Status));
+        }
+
+        [Fact]
+        public async Task GetContractsAsync_CanceledStatusExplicitly_IncludesCanceledContractsOnly()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            
+            // Add a canceled contract
+            context.Contracts.Add(new Contract { Id = 4, Folio = "CON-CANCELED", ClientId = 10, Status = "Cancelado" });
+            await context.SaveChangesAsync();
+
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var result = await service.GetContractsAsync(null, "Cancelado", null);
+
+            Assert.Single(result);
+            Assert.Equal("CON-CANCELED", result.First().Folio);
+            Assert.Equal("Cancelado", result.First().Status);
+        }
+
+        [Fact]
+        public async Task GetContractFullDetailAsync_NonExistentId_ThrowsKeyNotFoundException()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetContractFullDetailAsync(999));
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_CancellationRequest_UpdatesStatusAndCancellationReason()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+
+            var request = new Contract
+            {
+                Status = "Cancelado",
+                CancellationReason = "Falta de presupuesto"
+            };
+
+            var result = await service.UpdateContractAsync(1, request);
+
+            Assert.Equal("Contrato cancelado exitosamente.", result.Message);
+
+            var updated = await context.Contracts.FindAsync(1);
+            Assert.Equal("Cancelado", updated!.Status);
+            Assert.Equal("Falta de presupuesto", updated.CancellationReason);
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_WithStatusCanceladoAndSignedPath_RetainsCanceladoStatus()
+        {
+            var context = GetInMemoryDbContext();
+            await SeedDataAsync(context);
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+
+            var request = new Contract
+            {
+                Status = "Cancelado",
+                CancellationReason = "Mal servicio",
+                SignedContractPath = "/uploads/signed/contract.pdf"
+            };
+
+            await service.UpdateContractAsync(1, request);
+
+            var updated = await context.Contracts.FindAsync(1);
+            Assert.Equal("Cancelado", updated!.Status);
+            Assert.Equal("Mal servicio", updated.CancellationReason);
+            Assert.Equal("/uploads/signed/contract.pdf", updated.SignedContractPath);
+        }
+
+        [Fact]
+        public async Task CreateContractAsync_HappyPath_PersistsContractInDb()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var newContract = new Contract { ClientId = 99, TotalBasePrice = 12000m, Representative = "John Doe" };
+
+            await service.CreateContractAsync(newContract, "token");
+
+            var persisted = await context.Contracts.FirstOrDefaultAsync(c => c.ClientId == 99);
+            Assert.NotNull(persisted);
+            Assert.Equal(12000m, persisted.TotalBasePrice);
+            Assert.Equal("John Doe", persisted.Representative);
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_WhenContractCanceled_ThrowsInvalidOperationException()
+        {
+            var context = GetInMemoryDbContext();
+            context.Contracts.Add(new Contract { Id = 5, Status = "Cancelado", Folio = "CON-C" });
+            await context.SaveChangesAsync();
+
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var request = new Contract { Status = "Activo" };
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateContractAsync(5, request));
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_WhenActiveAndModified_ThrowsInvalidOperationException()
+        {
+            var context = GetInMemoryDbContext();
+            context.Contracts.Add(new Contract { Id = 6, Status = "Activo", Folio = "CON-A", TotalBasePrice = 1000m });
+            await context.SaveChangesAsync();
+
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var request = new Contract { Status = "Activo", TotalBasePrice = 2000m };
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateContractAsync(6, request));
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_InvalidDates_ThrowsArgumentException()
+        {
+            var context = GetInMemoryDbContext();
+            context.Contracts.Add(new Contract { Id = 7, Status = "Pendiente de firma", Folio = "CON-D", TotalBasePrice = 1000m });
+            await context.SaveChangesAsync();
+
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var request = new Contract 
+            { 
+                Status = "Pendiente de firma", 
+                TotalBasePrice = 1000m,
+                FirstServiceDate = new DateTime(2026, 6, 1),
+                EndDate = new DateTime(2026, 5, 1)
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateContractAsync(7, request));
+        }
+
+        [Fact]
+        public async Task UpdateContractAsync_InvalidBasePrice_ThrowsArgumentException()
+        {
+            var context = GetInMemoryDbContext();
+            context.Contracts.Add(new Contract { Id = 8, Status = "Pendiente de firma", Folio = "CON-P", TotalBasePrice = 1000m });
+            await context.SaveChangesAsync();
+
+            var service = new ContractService(context, new MockClientesApiService(), new MockCatalogApiService());
+            var request = new Contract 
+            { 
+                Status = "Pendiente de firma", 
+                TotalBasePrice = -500m
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateContractAsync(8, request));
         }
     }
 }
