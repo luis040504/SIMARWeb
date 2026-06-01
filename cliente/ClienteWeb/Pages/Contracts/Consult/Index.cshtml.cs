@@ -103,40 +103,25 @@ namespace ClienteWeb.Pages.Contracts.Consult
                         return Page();
                     }
 
-                    var cancelDetailUrl = $"/api/contracts/{UpdateDbId}/detail";
-                    var cancelCurrent = await _httpClient.GetFromJsonAsync<JsonElement>(cancelDetailUrl);
-
-                    var cancelData = new {
-                        id = UpdateDbId,
-                        folio = cancelCurrent.GetProperty("folio").GetString(),
-                        clientId = cancelCurrent.GetProperty("clientId").GetInt32(),
-                        totalBasePrice = cancelCurrent.GetProperty("totalBasePrice").GetDecimal(),
-                        clientName = UpdateClient,
-                        clientRfc = cancelCurrent.GetProperty("clientRfc").GetString(),
-                        representative = cancelCurrent.GetProperty("representative").GetString(),
-                        clientAddress = cancelCurrent.GetProperty("clientAddress").GetString(),
-                        clientObjetoSocial = cancelCurrent.GetProperty("clientObjetoSocial").GetString(),
-                        clientDeclaraciones = cancelCurrent.GetProperty("clientDeclaraciones").GetString(),
-                        contractDuration = cancelCurrent.GetProperty("contractDuration").GetString(),
-                        firstServiceDate = UpdateStartDate,
-                        endDate = cancelCurrent.TryGetProperty("endDate", out var edVal) && edVal.ValueKind != JsonValueKind.Null ? edVal.GetDateTime() : (DateTime?)null,
-                        status = "Cancelado",
-                        cancellationReason = CancellationReason,
-                        services = JsonSerializer.Deserialize<List<object>>(cancelCurrent.GetProperty("services").GetRawText()) ?? new(),
-                        payments = JsonSerializer.Deserialize<List<object>>(cancelCurrent.GetProperty("payments").GetRawText()) ?? new(),
-                        extras = JsonSerializer.Deserialize<List<object>>(cancelCurrent.GetProperty("extras").GetRawText()) ?? new()
-                    };
-
-                    var cancelPutResponse = await _httpClient.PutAsJsonAsync($"/api/contracts/{UpdateDbId}", cancelData);
-                    if (!cancelPutResponse.IsSuccessStatusCode) 
+                    var cancelRequest = new { CancellationReason = CancellationReason };
+                    var cancelResponse = await _httpClient.PatchAsJsonAsync($"/api/contracts/{UpdateDbId}/cancel", cancelRequest);
+                    
+                    if (!cancelResponse.IsSuccessStatusCode) 
                     {
-                        var errorContent = await cancelPutResponse.Content.ReadAsStringAsync();
-                        throw new Exception($"Error del servidor al cancelar (PUT): {cancelPutResponse.StatusCode} - {errorContent}");
+                        var errorContent = await cancelResponse.Content.ReadAsStringAsync();
+                        throw new Exception($"Error del servidor al cancelar contrato: {cancelResponse.StatusCode} - {errorContent}");
                     }
+
+                    var cancelResult = await cancelResponse.Content.ReadFromJsonAsync<JsonElement>();
+                    int cancelledManifests = cancelResult.TryGetProperty("cancelledManifests", out var cmVal) ? cmVal.GetInt32() : 0;
 
                     ShowSuccessMessage = true;
                     AuditTrail.Add($"Usuario: Administrador | Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}");
                     AuditTrail.Add($"Contrato cancelado exitosamente. Motivo: {CancellationReason}");
+                    if (cancelledManifests > 0)
+                    {
+                        AuditTrail.Add($"Se cancelaron automáticamente {cancelledManifests} manifiesto(s) asociado(s).");
+                    }
 
                     await LoadContractsAsync();
                     return Page();
