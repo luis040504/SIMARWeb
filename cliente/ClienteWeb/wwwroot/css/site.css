@@ -657,3 +657,28 @@ body {
         padding-left: 0.75rem;
     }
 }
+
+/* --- Premium Danger Button Style --- */
+.btn-simar-danger {
+    background: #dc3545;
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 0.5rem 1.2rem;
+    transition: var(--simar-transition);
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-simar-danger:hover {
+    background: #bd2130;
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-simar-danger:active {
+    transform: translateY(0);
+}

@@ -188,7 +188,13 @@ public class ContractService : IContractService
         var query = _context.Contracts.Include(c => c.Payments).AsQueryable();
 
         if (!string.IsNullOrEmpty(status))
+        {
             query = query.Where(c => c.Status == status);
+        }
+        else
+        {
+            query = query.Where(c => c.Status != "Cancelado");
+        }
 
         if (dateFilter.HasValue)
         {
@@ -221,6 +227,7 @@ public class ContractService : IContractService
                 Status          = c.Status,
                 CreatedAt       = c.CreatedAt,
                 SignedContractPath = c.SignedContractPath,
+                CancellationReason = c.CancellationReason,
                 ExpirationDate  = c.EndDate ?? (c.Payments.Any() ? c.Payments.Max(p => p.PaymentDate) : (c.FirstServiceDate ?? DateTime.MinValue))
             });
         }
@@ -280,6 +287,8 @@ public class ContractService : IContractService
                 Status = contract.Status, 
                 CreatedAt = contract.CreatedAt,
                 ExpirationDate = contract.Payments.Any() ? contract.Payments.Max(p => p.PaymentDate) : (contract.FirstServiceDate ?? DateTime.MinValue),
+                SignedContractPath = contract.SignedContractPath,
+                CancellationReason = contract.CancellationReason,
                 ResidueId = firstWaste?.Id,
                 ResidueCode = firstWaste?.Code,
                 ResidueName = firstWaste?.Name,
@@ -415,6 +424,9 @@ public class ContractService : IContractService
                 ClientDeclaraciones = contract.ClientDeclaraciones,
                 ContractDuration    = contract.ContractDuration,
                 FirstServiceDate    = contract.FirstServiceDate,
+                EndDate             = contract.EndDate,
+                SignedContractPath  = contract.SignedContractPath,
+                CancellationReason  = contract.CancellationReason,
                 Services            = contract.Services,
                 Payments            = contract.Payments,
                 Extras              = contract.Extras,
@@ -506,6 +518,7 @@ public class ContractService : IContractService
         if (existing == null) throw new KeyNotFoundException("Contrato no encontrado.");
 
         existing.Status = request.Status;
+        existing.CancellationReason = request.CancellationReason;
         existing.TotalBasePrice = request.TotalBasePrice;
         existing.Representative = request.Representative;
         existing.ClientObjetoSocial = request.ClientObjetoSocial;
@@ -515,7 +528,7 @@ public class ContractService : IContractService
         existing.EndDate = request.EndDate;
         existing.SignedContractPath = request.SignedContractPath;
 
-        if (!string.IsNullOrEmpty(existing.SignedContractPath)) {
+        if (!string.IsNullOrEmpty(existing.SignedContractPath) && request.Status != "Cancelado") {
             existing.Status = "Activo";
         }
 
@@ -572,7 +585,7 @@ public class ContractService : IContractService
     }
 }
 
-public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } public string? SignedContractPath { get; set; } public int? ResidueId { get; set; } public string? ResidueCode { get; set; } public string? ResidueName { get; set; } public string? ResidueType { get; set; } public List<ContractWasteDto> Wastes { get; set; } = new(); }
+public class ContractListDto { public int Id { get; set; } public string Folio { get; set; } = ""; public int ClientId { get; set; } public string ClientName { get; set; } = ""; public string Status { get; set; } = ""; public DateTime CreatedAt { get; set; } public DateTime ExpirationDate { get; set; } public string? SignedContractPath { get; set; } public string? CancellationReason { get; set; } public int? ResidueId { get; set; } public string? ResidueCode { get; set; } public string? ResidueName { get; set; } public string? ResidueType { get; set; } public List<ContractWasteDto> Wastes { get; set; } = new(); }
 public class ContractResponseDto { public int Id { get; set; } public string Folio { get; set; } = ""; public string Message { get; set; } = ""; }
 
 public class ContractFullDetailDto
@@ -593,6 +606,7 @@ public class ContractFullDetailDto
     public DateTime? FirstServiceDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string? SignedContractPath { get; set; }
+    public string? CancellationReason { get; set; }
     public List<ContractServiceItem> Services { get; set; } = new();
     public List<ContractPaymentItem> Payments { get; set; } = new();
     public List<ContractExtra> Extras { get; set; } = new();

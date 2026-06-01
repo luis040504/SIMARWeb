@@ -26,6 +26,7 @@ public class Contract
     public DateTime? FirstServiceDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string? SignedContractPath { get; set; }
+    public string? CancellationReason { get; set; }
 
     public List<ContractServiceItem> Services { get; set; } = new();
     public List<ContractPaymentItem> Payments { get; set; } = new();
