@@ -402,8 +402,9 @@ async (
         return "especial";
     }
 
-    var serviceItems = new List<object>();
-    var flatWastes   = new List<object>();
+    var serviceItems     = new List<object>();
+    var flatWastes       = new List<object>();
+    var snapshotWasteNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     int serviceIndex = 1;
     bool parsedQuotation = false;
 
@@ -499,6 +500,7 @@ async (
                             };
                             serviceWastes.Add(wasteEntry);
                             flatWastes.Add(wasteEntry);
+                            snapshotWasteNames.Add(wName);
                         }
                     }
 
@@ -517,7 +519,46 @@ async (
         catch { /* Fallback to standard flow */ }
     }
 
-    // FALLBACK: Si no se pudo parsear la cotización o está vacía, usamos los servicios del contrato y el catálogo
+    // Agregar residuos del contrato que NO están en el snapshot (agregados desde el catálogo al crear el contrato)
+    var extraContractServices = contract.Services
+        .Where(s => !snapshotWasteNames.Contains(s.WasteType))
+        .ToList();
+
+    if (extraContractServices.Count > 0)
+    {
+        var allWastes = await catalogApi.GetActiveWastesAsync();
+        foreach (var s in extraContractServices)
+        {
+            var match = allWastes.FirstOrDefault(w =>
+                w.Name.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase) ||
+                w.Code.Equals(s.WasteType, StringComparison.OrdinalIgnoreCase));
+
+            string extraType = match?.Type
+                ?? (s.WasteType.ToLower().Contains("peligroso") || s.WasteType.ToLower().StartsWith("rp")
+                    ? "peligroso" : "especial");
+            string extraCode = match?.Code ?? "";
+
+            var extraWaste = new
+            {
+                code           = extraCode,
+                name           = s.WasteType,
+                type           = extraType,
+                unit           = s.WasteUnit,
+                serviceAddress = s.ServiceAddress
+            };
+            flatWastes.Add(extraWaste);
+            serviceItems.Add(new
+            {
+                id        = s.Id,
+                activity  = s.WasteType,
+                frequency = new { type = s.Frequency, duration = "" },
+                location  = new { cp = "", street = s.ServiceAddress, municipality = "", neighborhood = "", state = "" },
+                wastes    = new List<object> { extraWaste }
+            });
+        }
+    }
+
+    // FALLBACK: Si no se pudo parsear el snapshot NI hay servicios en contrato, usar catálogo puro
     if (!parsedQuotation || serviceItems.Count == 0)
     {
         var allWastes = await catalogApi.GetActiveWastesAsync();

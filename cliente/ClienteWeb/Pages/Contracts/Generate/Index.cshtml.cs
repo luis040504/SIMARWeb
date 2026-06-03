@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using ClienteWeb.Services;
 
 namespace ClienteWeb.Pages.Contracts.Generate
 {
@@ -9,15 +10,18 @@ namespace ClienteWeb.Pages.Contracts.Generate
     {
         private readonly HttpClient _httpClient;
         private readonly HttpClient _clientesHttp;
+        private readonly WasteCatalogApiService _catalog;
 
         public string ApiBaseUrl { get; private set; } = "";
         public string Token { get; private set; } = "";
+        public List<WasteCatalogItemDto> CatalogWastes { get; set; } = [];
 
-        public GenerateModel(IHttpClientFactory httpClientFactory)
+        public GenerateModel(IHttpClientFactory httpClientFactory, WasteCatalogApiService catalog)
         {
             _httpClient = httpClientFactory.CreateClient("ContractsApi");
             _clientesHttp = httpClientFactory.CreateClient("ClientesApi");
             ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
+            _catalog = catalog;
         }
 
         [BindProperty] public int QuotationId { get; set; }
@@ -47,7 +51,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
         public async Task OnGetAsync()
         {
             ExtaerEInyectarToken();
-            await LoadQuotationsAsync();
+            await Task.WhenAll(LoadQuotationsAsync(), LoadCatalogAsync());
         }
 
         public async Task<IActionResult> OnPostAsync(string action)
@@ -55,7 +59,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
             ModelState.Clear(); 
             ExtaerEInyectarToken();
             
-            await LoadQuotationsAsync();
+            await Task.WhenAll(LoadQuotationsAsync(), LoadCatalogAsync());
 
             if (action == "preview")
             {
@@ -319,6 +323,12 @@ namespace ClienteWeb.Pages.Contracts.Generate
                 return 0;
             }
         }
+        private async Task LoadCatalogAsync()
+        {
+            var result = await _catalog.GetAllAsync(size: 200);
+            CatalogWastes = result.Items;
+        }
+
         private async Task LoadQuotationsAsync()
         {
             try 
