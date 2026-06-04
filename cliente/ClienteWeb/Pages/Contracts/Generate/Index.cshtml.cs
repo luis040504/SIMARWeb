@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using ClienteWeb.Services;
 
 namespace ClienteWeb.Pages.Contracts.Generate
 {
@@ -9,14 +10,17 @@ namespace ClienteWeb.Pages.Contracts.Generate
     {
         private readonly HttpClient _httpClient;
         private readonly HttpClient _clientesHttp;
+        private readonly WasteCatalogApiService _wasteCatalogService;
 
         public string ApiBaseUrl { get; private set; } = "";
         public string Token { get; private set; } = "";
+        public List<WasteCatalogItemDto> RegisteredWastes { get; set; } = new();
 
-        public GenerateModel(IHttpClientFactory httpClientFactory)
+        public GenerateModel(IHttpClientFactory httpClientFactory, WasteCatalogApiService wasteCatalogService)
         {
             _httpClient = httpClientFactory.CreateClient("ContractsApi");
             _clientesHttp = httpClientFactory.CreateClient("ClientesApi");
+            _wasteCatalogService = wasteCatalogService;
             ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
         }
 
@@ -48,6 +52,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
         {
             ExtaerEInyectarToken();
             await LoadQuotationsAsync();
+            await LoadWastesAsync();
         }
 
         public async Task<IActionResult> OnPostAsync(string action)
@@ -56,6 +61,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
             ExtaerEInyectarToken();
             
             await LoadQuotationsAsync();
+            await LoadWastesAsync();
 
             if (action == "preview")
             {
@@ -184,6 +190,7 @@ namespace ClienteWeb.Pages.Contracts.Generate
         {
             ModelState.Clear();
             ExtaerEInyectarToken();
+            await LoadWastesAsync();
 
             var savedContractId = await SaveContractToApiAsync();
             if (savedContractId > 0)
@@ -390,6 +397,33 @@ namespace ClienteWeb.Pages.Contracts.Generate
             catch
             {
                 return 0;
+            }
+        }
+
+        private async Task LoadWastesAsync()
+        {
+            try
+            {
+                var allItems = new List<WasteCatalogItemDto>();
+                int page = 1;
+                int size = 100;
+                while (true)
+                {
+                    var result = await _wasteCatalogService.GetAllAsync(page: page, size: size);
+                    if (result?.Items == null || !result.Items.Any())
+                        break;
+
+                    allItems.AddRange(result.Items);
+                    if (allItems.Count >= result.TotalCount)
+                        break;
+
+                    page++;
+                }
+                RegisteredWastes = allItems;
+            }
+            catch
+            {
+                RegisteredWastes = new List<WasteCatalogItemDto>();
             }
         }
     }

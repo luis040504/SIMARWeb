@@ -1,18 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
+using ClienteWeb.Services;
 
 namespace ClienteWeb.Pages.Contracts.Consult
 {
     public class ConsultModel : PageModel
     {
         private readonly HttpClient _httpClient;
+        private readonly WasteCatalogApiService _wasteCatalogService;
 
         public string ApiBaseUrl { get; private set; } = "";
+        public List<WasteCatalogItemDto> RegisteredWastes { get; set; } = new();
 
-        public ConsultModel(IHttpClientFactory httpClientFactory)
+        public ConsultModel(IHttpClientFactory httpClientFactory, WasteCatalogApiService wasteCatalogService)
         {
             _httpClient = httpClientFactory.CreateClient("ContractsApi");
+            _wasteCatalogService = wasteCatalogService;
             ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
         }
 
@@ -47,6 +51,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public async Task OnGetAsync()
         {
             await LoadContractsAsync();
+            await LoadWastesAsync();
         }
 
         private async Task LoadContractsAsync()
@@ -201,7 +206,35 @@ namespace ClienteWeb.Pages.Contracts.Consult
             }
 
             await LoadContractsAsync();
+            await LoadWastesAsync();
             return Page();
+        }
+
+        private async Task LoadWastesAsync()
+        {
+            try
+            {
+                var allItems = new List<WasteCatalogItemDto>();
+                int page = 1;
+                int size = 100;
+                while (true)
+                {
+                    var result = await _wasteCatalogService.GetAllAsync(page: page, size: size);
+                    if (result?.Items == null || !result.Items.Any())
+                        break;
+
+                    allItems.AddRange(result.Items);
+                    if (allItems.Count >= result.TotalCount)
+                        break;
+
+                    page++;
+                }
+                RegisteredWastes = allItems;
+            }
+            catch
+            {
+                RegisteredWastes = new List<WasteCatalogItemDto>();
+            }
         }
     }
 

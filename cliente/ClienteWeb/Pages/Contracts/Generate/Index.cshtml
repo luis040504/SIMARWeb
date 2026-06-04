@@ -364,6 +364,29 @@
     let services = @Html.Raw(Model.ServicesJsonHidden ?? "[]");
     let payments = @Html.Raw(Model.PaymentsJsonHidden ?? "[]");
     let extras = @Html.Raw(Model.ExtrasJsonHidden ?? "[]");
+    const registeredWastes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegisteredWastes));
+
+    function esc(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function onWasteChange(selectEl) {
+        let selectedOption = selectEl.options[selectEl.selectedIndex];
+        let unitsStr = selectedOption.getAttribute('data-units') || 'kg';
+        let unitsArr = unitsStr.split(',').map(x => x.trim());
+        
+        let tr = selectEl.closest('tr');
+        let unitSelect = tr.querySelector('.select-unit');
+        
+        let unitOptions = '';
+        unitsArr.forEach(unit => {
+            unitOptions += `<option value="${esc(unit)}">${esc(unit)}</option>`;
+        });
+        unitSelect.innerHTML = unitOptions;
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
         if (@(Model.ShowPreview ? "true" : "false")) {
@@ -388,7 +411,51 @@
     }
 
     function appendServiceRow(w, u, f, v, t, sa, wa, sub) {
-        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" class="form-control form-control-sm" value="${w}"></td><td><input type="text" class="form-control form-control-sm" value="${u}"></td><td><input type="text" class="form-control form-control-sm" value="${f}"></td><td><input type="number" class="form-control form-control-sm" value="${v}"></td><td><input type="number" class="form-control form-control-sm" value="${t}"></td><td><input type="text" class="form-control form-control-sm" value="${sa}"></td><td><input type="text" class="form-control form-control-sm" value="${wa}"></td><td><input type="number" step="0.01" class="form-control form-control-sm" value="${sub || 0}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+        let options = '<option value="">-- Seleccione un residuo --</option>';
+        registeredWastes.forEach(rw => {
+            let selected = (rw.name === w || rw.code === w) ? 'selected' : '';
+            options += `<option value="${esc(rw.name)}" data-units="${esc(rw.validUnits)}" ${selected}>[${esc(rw.code)}] ${esc(rw.name)}</option>`;
+        });
+        let found = registeredWastes.some(rw => rw.name === w || rw.code === w);
+        if (!found && w && w.trim() !== '') {
+            options += `<option value="${esc(w)}" selected>${esc(w)} (No registrado)</option>`;
+        }
+
+        let wasteObj = registeredWastes.find(rw => rw.name === w || rw.code === w);
+        let validUnitsArr = ['kg'];
+        if (wasteObj && wasteObj.validUnits) {
+            validUnitsArr = wasteObj.validUnits.split(',').map(x => x.trim());
+        } else if (u) {
+            validUnitsArr = [u];
+        }
+        
+        let unitOptions = '';
+        validUnitsArr.forEach(unit => {
+            let selected = (unit === u) ? 'selected' : '';
+            unitOptions += `<option value="${esc(unit)}" ${selected}>${esc(unit)}</option>`;
+        });
+
+        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `
+            <tr>
+                <td>
+                    <select class="form-select form-select-sm select-waste" onchange="onWasteChange(this)">
+                        ${options}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm select-unit">
+                        ${unitOptions}
+                    </select>
+                </td>
+                <td><input type="text" class="form-control form-control-sm input-frequency" value="${esc(f)}"></td>
+                <td><input type="number" class="form-control form-control-sm input-vehicles" value="${v}"></td>
+                <td><input type="number" class="form-control form-control-sm input-technicians" value="${t}"></td>
+                <td><input type="text" class="form-control form-control-sm input-serviceaddress" value="${esc(sa)}"></td>
+                <td><input type="text" class="form-control form-control-sm input-warehouseaddress" value="${esc(wa)}"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm input-subtotal" value="${sub || 0}"></td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>
+            </tr>
+        `);
     }
 
     function appendPaymentRow(d, a, pd) {
@@ -430,6 +497,12 @@
         } else {
             let tableHasErrors = false;
             sRows.forEach(tr => {
+                tr.querySelectorAll('select').forEach(sel => {
+                    if (!sel.value.trim()) {
+                        sel.classList.add('is-invalid');
+                        tableHasErrors = true;
+                    }
+                });
                 tr.querySelectorAll('input').forEach(inp => {
                     if (!inp.value.trim()) {
                         inp.classList.add('is-invalid');
@@ -494,7 +567,30 @@
         let tp = parseFloat(price);
         document.getElementById('lblTotalPrice').innerText = tp.toLocaleString('es-MX', {style: 'currency', currency: 'MXN'});
 
-        services = []; document.querySelectorAll('#modServicesBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value, Subtotal: parseFloat(i[7].value || 0) }); });
+        services = []; 
+        document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
+            let wasteSelect = tr.querySelector('.select-waste');
+            let unitSelect = tr.querySelector('.select-unit');
+            let freqInput = tr.querySelector('.input-frequency');
+            let vehInput = tr.querySelector('.input-vehicles');
+            let techInput = tr.querySelector('.input-technicians');
+            let saInput = tr.querySelector('.input-serviceaddress');
+            let waInput = tr.querySelector('.input-warehouseaddress');
+            let subInput = tr.querySelector('.input-subtotal');
+            
+            if (wasteSelect && unitSelect && freqInput) {
+                services.push({ 
+                    WasteType: wasteSelect.value, 
+                    WasteUnit: unitSelect.value, 
+                    Frequency: freqInput.value, 
+                    Vehicles: parseInt(vehInput.value) || 0, 
+                    Technicians: parseInt(techInput.value) || 0, 
+                    ServiceAddress: saInput.value, 
+                    WarehouseAddress: waInput.value, 
+                    Subtotal: parseFloat(subInput.value || 0) 
+                }); 
+            }
+        });
         document.getElementById('hidServicesJson').value = JSON.stringify(services);
 
         payments = []; document.querySelectorAll('#modPaymentsBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); payments.push({ Description: i[0].value, Amount: parseFloat(i[1].value), PaymentDate: i[2].value }); });
@@ -545,9 +641,26 @@
     function prepareDownload() {
         services = []; 
         document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
-            let i = tr.querySelectorAll('input'); 
-            if (i.length >= 8) {
-                services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value, Subtotal: parseFloat(i[7].value || 0) }); 
+            let wasteSelect = tr.querySelector('.select-waste');
+            let unitSelect = tr.querySelector('.select-unit');
+            let freqInput = tr.querySelector('.input-frequency');
+            let vehInput = tr.querySelector('.input-vehicles');
+            let techInput = tr.querySelector('.input-technicians');
+            let saInput = tr.querySelector('.input-serviceaddress');
+            let waInput = tr.querySelector('.input-warehouseaddress');
+            let subInput = tr.querySelector('.input-subtotal');
+            
+            if (wasteSelect && unitSelect && freqInput) {
+                services.push({ 
+                    WasteType: wasteSelect.value, 
+                    WasteUnit: unitSelect.value, 
+                    Frequency: freqInput.value, 
+                    Vehicles: parseInt(vehInput.value) || 0, 
+                    Technicians: parseInt(techInput.value) || 0, 
+                    ServiceAddress: saInput.value, 
+                    WarehouseAddress: waInput.value, 
+                    Subtotal: parseFloat(subInput.value || 0) 
+                }); 
             }
         });
         if (services.length > 0) document.getElementById('hidServicesJson').value = JSON.stringify(services);

@@ -432,6 +432,25 @@
         var currentModalDbId = null;
         var API_BASE = '@Model.ApiBaseUrl';
         var currentUpdateStatus = '';
+        const registeredWastes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegisteredWastes));
+
+        function onConsultWasteChange(selectEl, index) {
+            let selectedOption = selectEl.options[selectEl.selectedIndex];
+            let unitsStr = selectedOption.getAttribute('data-units') || 'kg';
+            let unitsArr = unitsStr.split(',').map(x => x.trim());
+            
+            let tr = selectEl.closest('tr');
+            let unitSelect = tr.querySelector('.select-unit');
+            
+            let unitOptions = '';
+            unitsArr.forEach(unit => {
+                unitOptions += `<option value="${esc(unit)}">${esc(unit)}</option>`;
+            });
+            unitSelect.innerHTML = unitOptions;
+
+            updateDataValue('services', index, 'wasteType', selectEl.value);
+            updateDataValue('services', index, 'wasteUnit', unitSelect.value);
+        }
 
         var currentUpdateData = { services: [], payments: [], extras: [] };
 
@@ -589,17 +608,51 @@
 
         function renderUpdateTables() {
             const sBody = document.querySelector('#tableUpdateServices tbody');
-            sBody.innerHTML = currentUpdateData.services.map((s, i) => `
+            sBody.innerHTML = currentUpdateData.services.map((s, i) => {
+                let options = '<option value="">-- Seleccione un residuo --</option>';
+                registeredWastes.forEach(rw => {
+                    let selected = (rw.name === s.wasteType || rw.code === s.wasteType) ? 'selected' : '';
+                    options += `<option value="${esc(rw.name)}" data-units="${esc(rw.validUnits)}" ${selected}>[${esc(rw.code)}] ${esc(rw.name)}</option>`;
+                });
+                let found = registeredWastes.some(rw => rw.name === s.wasteType || rw.code === s.wasteType);
+                if (!found && s.wasteType && s.wasteType.trim() !== '') {
+                    options += `<option value="${esc(s.wasteType)}" selected>${esc(s.wasteType)} (No registrado)</option>`;
+                }
+
+                let wasteObj = registeredWastes.find(rw => rw.name === s.wasteType || rw.code === s.wasteType);
+                let validUnitsArr = ['kg'];
+                if (wasteObj && wasteObj.validUnits) {
+                    validUnitsArr = wasteObj.validUnits.split(',').map(x => x.trim());
+                } else if (s.wasteUnit) {
+                    validUnitsArr = [s.wasteUnit];
+                }
+                
+                let unitOptions = '';
+                validUnitsArr.forEach(unit => {
+                    let selected = (unit === s.wasteUnit) ? 'selected' : '';
+                    unitOptions += `<option value="${esc(unit)}" ${selected}>${esc(unit)}</option>`;
+                });
+
+                return `
                 <tr>
-                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.wasteType)}" onchange="updateDataValue('services', ${i}, 'wasteType', this.value)"></td>
-                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.wasteUnit)}" onchange="updateDataValue('services', ${i}, 'wasteUnit', this.value)"></td>
+                    <td>
+                        <select class="form-select form-select-sm select-waste" onchange="onConsultWasteChange(this, ${i})">
+                            ${options}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm select-unit" onchange="updateDataValue('services', ${i}, 'wasteUnit', this.value)">
+                            ${unitOptions}
+                        </select>
+                    </td>
                     <td><input type="text" class="form-control form-control-sm" value="${esc(s.frequency)}" onchange="updateDataValue('services', ${i}, 'frequency', this.value)"></td>
                     <td><input type="number" class="form-control form-control-sm" value="${s.vehicles}" onchange="updateDataValue('services', ${i}, 'vehicles', this.value)"></td>
                     <td><input type="number" class="form-control form-control-sm" value="${s.technicians}" onchange="updateDataValue('services', ${i}, 'technicians', this.value)"></td>
                     <td><input type="text" class="form-control form-control-sm" value="${esc(s.serviceAddress)}" onchange="updateDataValue('services', ${i}, 'serviceAddress', this.value)"></td>
                     <td><input type="number" step="0.01" class="form-control form-control-sm" value="${s.subtotal}" onchange="updateDataValue('services', ${i}, 'subtotal', this.value)"></td>
                     <td class="text-center"><button type="button" class="btn btn-sm text-danger" onclick="removeUpdateItem('services', ${i})"><i class="bi bi-trash"></i></button></td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
             
             const pBody = document.querySelector('#tableUpdatePayments tbody');
             pBody.innerHTML = currentUpdateData.payments.map((p, i) => `

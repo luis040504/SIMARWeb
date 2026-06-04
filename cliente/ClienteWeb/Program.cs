@@ -51,6 +51,7 @@ builder.Services.AddHttpClient<VehiculosApiService>(client =>
 builder.Services.AddHttpClient<WasteCatalogApiService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["WasteCatalogApiBaseUrl"] ?? "http://localhost/api/catalog/");
+    client.DefaultRequestHeaders.Add("X-Api-Key", builder.Configuration["WasteCatalogApiKey"] ?? "dev-catalog-key-local");
 });
 
 builder.Services.AddHttpClient("ClientesApi", client =>
