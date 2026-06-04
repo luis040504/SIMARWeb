@@ -13,6 +13,7 @@ public static class ContractPdfGenerator
 
     public static byte[] Generate(Contract contract, string clientName, string clientRfc, string clientAddress)
     {
+        bool isCancelled = string.Equals(contract.Status, "Cancelado", StringComparison.OrdinalIgnoreCase);
 
         var document = Document.Create(container =>
         {
@@ -22,6 +23,9 @@ public static class ContractPdfGenerator
                 page.MarginVertical(1.8f, Unit.Centimetre);
                 page.MarginHorizontal(2.2f, Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(9));
+
+                if (isCancelled)
+                    ApplyCancelledWatermark(page);
 
                 page.Content().Column(col =>
                 {
@@ -58,6 +62,9 @@ public static class ContractPdfGenerator
                     page.MarginHorizontal(2.2f, Unit.Centimetre);
                     page.DefaultTextStyle(x => x.FontSize(9));
 
+                    if (isCancelled)
+                        ApplyCancelledWatermark(page);
+
                     page.Content().Column(col =>
                     {
                         col.Item().Background(Color.FromHex(Black))
@@ -84,6 +91,29 @@ public static class ContractPdfGenerator
 
         return document.GeneratePdf();
     }
+
+    /// <summary>
+    /// Aplica una marca de agua diagonal "CANCELADO" en rojo semitransparente
+    /// sobre la página usando la API de QuestPDF.
+    /// </summary>
+    private static void ApplyCancelledWatermark(PageDescriptor page)
+    {
+        page.Foreground()
+            .AlignCenter()
+            .AlignMiddle()
+            .Rotate(-45)
+            .Text(t =>
+            {
+                t.DefaultTextStyle(s => s
+                    .Bold()
+                    .FontSize(72)
+                    .FontColor(Color.FromHex("#DC3545").WithAlpha(45))
+                    .LetterSpacing(0.3f));
+                t.Span("CANCELADO");
+            });
+    }
+
+
 
     private static void BuildHeaderTable(ColumnDescriptor col, Contract contract, string clientName, string clientRfc, string representative, string clientAddress)
     {

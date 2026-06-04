@@ -36,7 +36,7 @@ public class WasteCatalogService : IWasteCatalogService
 
         var totalCount = await query.CountAsync();
 
-        var pageSize   = Math.Clamp(filters.PageSize, 1, 1000);
+        var pageSize   = Math.Clamp(filters.PageSize, 1, 100);
         var pageNumber = Math.Max(filters.PageNumber, 1);
 
         var items = await query
