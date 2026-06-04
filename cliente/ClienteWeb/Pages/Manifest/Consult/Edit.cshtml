@@ -7,10 +7,12 @@
     string hdrClass = esEspecial ? "consult-section-header especial" : "consult-section-header peligroso";
 }
 
-<form method="post">
+<form method="post" id="editForm">
     <input type="hidden" asp-for="Manifest.Id" />
     <input type="hidden" asp-for="Manifest.Type" />
     <input type="hidden" asp-for="Manifest.ManifestNumber" />
+    <input type="hidden" asp-for="Manifest.IdCliente" />
+    <input type="hidden" asp-for="Manifest.ContratoId" />
 
     <div class="consult-container">
 
@@ -173,6 +175,7 @@
                                 @for (int i = 0; i < m.SpecialResidues.Count; i++)
                                 {
                                     <tr class="residue-row">
+                                        <input type="hidden" name="Manifest.SpecialResidues.Index" value="@i" />
                                         <td><input name="Manifest.SpecialResidues[@i].ResidueKey" value="@m.SpecialResidues[i].ResidueKey" class="form-control form-control-sm" style="min-width:70px" /></td>
                                         <td><input name="Manifest.SpecialResidues[@i].ResidueName" value="@m.SpecialResidues[i].ResidueName" class="form-control form-control-sm" style="min-width:160px" /></td>
                                         <td><input name="Manifest.SpecialResidues[@i].ContainerType" value="@m.SpecialResidues[i].ContainerType" class="form-control form-control-sm" style="min-width:60px" /></td>
@@ -226,6 +229,7 @@
                                 {
                                     var r = m.HazardousResidues[i];
                                     <tr class="residue-row">
+                                        <input type="hidden" name="Manifest.HazardousResidues.Index" value="@i" />
                                         <td><input name="Manifest.HazardousResidues[@i].ResidueName" value="@r.ResidueName" class="form-control form-control-sm" style="min-width:160px" /></td>
                                         <td style="min-width:260px">
                                             <div class="d-flex flex-nowrap gap-1">
@@ -576,7 +580,7 @@
 @section Scripts {
 <script>
     document.getElementById('btnConfirmSave').addEventListener('click', function () {
-        document.querySelector('form').submit();
+        document.getElementById('editForm').submit();
     });
 
     function toggleSection(header) {
@@ -599,6 +603,7 @@
 
         body.insertAdjacentHTML('beforeend', `
         <tr class="residue-row">
+            <input type="hidden" name="Manifest.SpecialResidues.Index" value="${idx}" />
             <td><input name="Manifest.SpecialResidues[${idx}].ResidueKey" class="form-control form-control-sm" style="min-width:70px" /></td>
             <td><input name="Manifest.SpecialResidues[${idx}].ResidueName" class="form-control form-control-sm" style="min-width:160px" /></td>
             <td><input name="Manifest.SpecialResidues[${idx}].ContainerType" class="form-control form-control-sm" style="min-width:60px" /></td>
@@ -623,6 +628,7 @@
 
         body.insertAdjacentHTML('beforeend', `
         <tr class="residue-row">
+            <input type="hidden" name="Manifest.HazardousResidues.Index" value="${idx}" />
             <td><input name="Manifest.HazardousResidues[${idx}].ResidueName" class="form-control form-control-sm" style="min-width:160px" /></td>
             <td style="min-width:260px"><div class="d-flex flex-nowrap gap-1">${checks}</div></td>
             <td><input name="Manifest.HazardousResidues[${idx}].ContainerType" class="form-control form-control-sm" style="min-width:60px" /></td>

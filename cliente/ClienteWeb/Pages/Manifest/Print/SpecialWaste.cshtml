@@ -1,0 +1,391 @@
+@page "/Manifest/Print/SpecialWaste/{id}"
+@model ClienteWeb.Pages.Manifest.Print.SpecialWastePrintModel
+@{
+    Layout = null;
+    var m = Model.Manifest;
+    string V(string? s) => string.IsNullOrWhiteSpace(s) ? "" : s;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Manifiesto @m.ManifestNumber</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.5pt;
+            color: #000;
+            background: #fff;
+            padding: 8mm 8mm;
+        }
+        /* ── Print settings ── */
+        @@media print {
+            body { padding: 4mm 6mm; }
+            .no-print { display: none !important; }
+            @@page { size: letter portrait; margin: 8mm; }
+        }
+
+        /* ── Header ── */
+        .hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1.5px solid #000;
+            padding: 4px 8px;
+            margin-bottom: 0;
+        }
+        .hdr-logo { font-size: 22pt; font-weight: 900; letter-spacing: -1px; }
+        .hdr-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 7.5pt;
+            line-height: 1.3;
+            flex: 1;
+            padding: 0 8px;
+        }
+        .hdr-num { text-align: right; font-size: 7.5pt; white-space: nowrap; }
+        .hdr-num strong { font-size: 11pt; display: block; }
+
+        /* ── Section wrapper (G/T/D label on left) ── */
+        .section-row {
+            display: flex;
+            border-left: 1.5px solid #000;
+            border-right: 1.5px solid #000;
+            border-bottom: 1.5px solid #000;
+        }
+        .section-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-weight: bold;
+            font-size: 7pt;
+            letter-spacing: 3px;
+            padding: 6px 3px;
+            border-right: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            background: #f5f5f5;
+        }
+        .section-body { flex: 1; padding: 4px 6px; }
+
+        /* ── Field rows ── */
+        .frow { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 2px; align-items: baseline; }
+        .flabel { font-size: 7pt; white-space: nowrap; margin-right: 3px; }
+        .fval {
+            border-bottom: 1px solid #000;
+            min-width: 80px;
+            flex: 1;
+            font-size: 8pt;
+            padding: 0 2px;
+            line-height: 1.4;
+        }
+        .fval-sm { min-width: 40px; flex: 0 0 auto; }
+        .fval-md { min-width: 80px; }
+
+        /* ── Residues table ── */
+        table { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin: 3px 0; }
+        th { background: #e8e8e8; font-weight: bold; text-align: center; padding: 2px 3px; border: 1px solid #000; }
+        td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
+        td.center { text-align: center; }
+        tr.empty-row td { height: 16px; }
+
+        /* ── Declaration text ── */
+        .declaration {
+            font-size: 6.5pt;
+            font-style: italic;
+            color: #333;
+            margin: 4px 0;
+            line-height: 1.3;
+        }
+
+        /* ── Signature row ── */
+        .sig-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            align-items: flex-end;
+        }
+        .sig-field { flex: 1; }
+        .sig-line {
+            border-bottom: 1px solid #000;
+            min-height: 28px;
+            margin-top: 2px;
+        }
+        .sig-label { font-size: 6.5pt; text-align: center; margin-top: 1px; }
+
+        /* ── Print button ── */
+        .print-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10pt;
+            z-index: 999;
+        }
+        .obs-box {
+            border: 1px solid #000;
+            min-height: 20px;
+            padding: 2px 4px;
+            margin: 2px 0;
+            font-size: 8pt;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+
+    <!-- ══════ HEADER ══════ -->
+    <div class="hdr">
+        <div class="hdr-logo">SIMAR</div>
+        <div class="hdr-title">
+            MANIFIESTO DE GENERADOR, TRANSPORTE Y DISPOSICIÓN FINAL,<br />
+            TRATAMIENTO O REUTILIZACIÓN DE RESIDUOS DE MANEJO ESPECIAL
+        </div>
+        <div class="hdr-num">
+            <span>No. de Manifiesto</span>
+            <strong>@V(m.ManifestNumber)</strong>
+        </div>
+    </div>
+
+    <!-- ══════ GENERADOR ══════ -->
+    <div class="section-row">
+        <div class="section-label">G E N E R A D O R</div>
+        <div class="section-body">
+            <div class="frow">
+                <span class="flabel">Nº de Registro SEDEMA:</span>
+                <span class="fval">@V(m.EnvironmentalRegistrationNumber)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Razón social:</span>
+                <span class="fval">@V(m.SocialReason)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Domicilio:</span>
+                <span class="fval" style="flex:3">@V(m.Address)</span>
+                <span class="flabel" style="margin-left:6px">C.P.</span>
+                <span class="fval fval-sm">@V(m.PostalCode)</span>
+                <span class="flabel" style="margin-left:6px">Municipio:</span>
+                <span class="fval fval-md">@V(m.Municipality)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Teléfono:</span>
+                <span class="fval fval-md">@V(m.PhoneNumber)</span>
+                <span class="flabel" style="margin-left:10px">Fecha:</span>
+                <span class="fval fval-md">@(m.ManifestDate?.ToString("dd/MM/yyyy") ?? "")</span>
+                <span class="flabel" style="margin-left:10px">Hora:</span>
+                <span class="fval fval-sm">@(m.ManifestTime?.ToString("HH:mm") ?? "")</span>
+            </div>
+
+            <!-- Residues table -->
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:80px">Clave del residuo</th>
+                        <th>Tipo de residuo</th>
+                        <th colspan="2">Envase</th>
+                        <th style="width:90px">Peso y unidad</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th style="width:50px">Tipo</th>
+                        <th style="width:60px">Capacidad</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (m.SpecialResidues.Count > 0)
+                    {
+                        @foreach (var r in m.SpecialResidues)
+                        {
+                            <tr>
+                                <td class="center">@V(r.ResidueKey)</td>
+                                <td>@V(r.ResidueName)</td>
+                                <td class="center">@V(r.ContainerType)</td>
+                                <td class="center">@V(r.ContainerCapacity)</td>
+                                <td class="center">@(r.Weight > 0 ? r.Weight.ToString("0.##") : "") @V(r.Unit)</td>
+                            </tr>
+                        }
+                        @for (int i = m.SpecialResidues.Count; i < 4; i++)
+                        {
+                            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+                        }
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td></tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            <div class="frow">
+                <span class="flabel">Observaciones:</span>
+                <span class="fval">@V(m.GeneratorObservations)</span>
+            </div>
+
+            <div class="declaration">
+                DECLARO BAJO PROTESTA DE DECIR VERDAD, que el contenido de este lote está total y correctamente descrito mediante el número de manifiesto, nombre del residuo; debidamente
+                envasado y etiquetado y que se han previsto las condiciones de seguridad para su transporte por vía terrestre, de acuerdo con la legislación vigente.
+            </div>
+            <div class="sig-row">
+                <div class="sig-field">
+                    <div class="flabel">Nombre del responsable</div>
+                    <div class="sig-line">@V(m.GeneratorResponsibleName)</div>
+                </div>
+                <div class="sig-field">
+                    <div class="flabel">Firma</div>
+                    <div class="sig-line"></div>
+                </div>
+                <div class="sig-field">
+                    <div class="flabel">Sello</div>
+                    <div class="sig-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ TRANSPORTISTA ══════ -->
+    <div class="section-row">
+        <div class="section-label">T R A N S P O R T I S T A</div>
+        <div class="section-body">
+            <div class="frow">
+                <span class="flabel">Nº de Autorización SEDEMA:</span>
+                <span class="fval">@V(m.TransporterAuthorizationNumber)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Razón social:</span>
+                <span class="fval">@V(m.TransporterSocialReason)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Domicilio:</span>
+                <span class="fval" style="flex:3">@V(m.TransporterAddress)</span>
+                <span class="flabel" style="margin-left:6px">C.P.</span>
+                <span class="fval fval-sm">@V(m.TransporterPostalCode)</span>
+                <span class="flabel" style="margin-left:6px">Municipio:</span>
+                <span class="fval fval-md">@V(m.TransporterMunicipality)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Teléfono:</span>
+                <span class="fval fval-md">@V(m.TransporterPhone)</span>
+                <span class="flabel" style="margin-left:10px">Fecha:</span>
+                <span class="fval fval-md">@(m.TransporterDate?.ToString("dd/MM/yyyy") ?? "")</span>
+                <span class="flabel" style="margin-left:10px">Hora:</span>
+                <span class="fval fval-sm">@(m.TransporterTime?.ToString("HH:mm") ?? "")</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Tipo de Vehículo:</span>
+                <span class="fval fval-md">@V(m.VehicleType)</span>
+                <span class="flabel" style="margin-left:10px">No. de placa:</span>
+                <span class="fval fval-md">@V(m.VehiclePlate)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Nombre del conductor:</span>
+                <span class="fval" style="flex:2">@V(m.TransporterResponsibleName)</span>
+                <span class="flabel" style="margin-left:10px">No. de Licencia de conducir:</span>
+                <span class="fval fval-md">@V(m.DriverLicense)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Ruta de transporte:</span>
+                <span class="fval">@V(m.TransportRoute)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Observaciones:</span>
+                <span class="fval">@V(m.TransporterObservations)</span>
+            </div>
+            <div class="declaration">
+                DECLARO BAJO PROTESTA DE DECIR VERDAD, que recibí los residuos descritos en el manifiesto para su transporte al establecimiento destinatario señalado por el generador.
+            </div>
+            <div class="sig-row">
+                <div class="sig-field">
+                    <div class="flabel">Nombre del responsable</div>
+                    <div class="sig-line">@V(m.TransporterResponsibleName)</div>
+                </div>
+                <div class="sig-field">
+                    <div class="flabel">Firma</div>
+                    <div class="sig-line"></div>
+                </div>
+                <div class="sig-field">
+                    <div class="flabel">Sello</div>
+                    <div class="sig-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ DESTINATARIO ══════ -->
+    <div class="section-row">
+        <div class="section-label">D E S T I N A T A R I O</div>
+        <div class="section-body">
+            <div class="frow">
+                <span class="flabel">Nº de autorización SEDEMA:</span>
+                <span class="fval">@V(m.ReceiverAuthorizationNumber)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Razón social:</span>
+                <span class="fval">@V(m.ReceiverSocialReason)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Domicilio:</span>
+                <span class="fval" style="flex:3">@V(m.ReceiverAddress)</span>
+                <span class="flabel" style="margin-left:6px">C.P.</span>
+                <span class="fval fval-sm">@V(m.ReceiverPostalCode)</span>
+                <span class="flabel" style="margin-left:6px">Municipio:</span>
+                <span class="fval fval-md">@V(m.ReceiverMunicipality)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Teléfono:</span>
+                <span class="fval fval-md">@V(m.ReceiverPhone)</span>
+                <span class="flabel" style="margin-left:10px">Fecha:</span>
+                <span class="fval fval-md">@(m.ReceiverDate?.ToString("dd/MM/yyyy") ?? "")</span>
+                <span class="flabel" style="margin-left:10px">Hora:</span>
+                <span class="fval fval-sm"></span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Tipo de disposición:</span>
+                <span class="fval">@V(m.DisposalType)</span>
+            </div>
+            <div class="frow">
+                <span class="flabel">Observaciones:</span>
+                <span class="fval">@V(m.ReceiverObservations)</span>
+            </div>
+            <div class="declaration">
+                DECLARO BAJO PROTESTA DE DECIR VERDAD, que recibí los residuos descritos en el manifiesto para su manejo adecuado conforme la legislación vigente.
+            </div>
+            <div class="sig-row">
+                <div class="sig-field">
+                    <div class="flabel">Nombre del responsable</div>
+                    <div class="sig-line">@V(m.ReceiverResponsibleName)</div>
+                </div>
+                <div class="sig-field">
+                    <div class="flabel">Firma</div>
+                    <div class="sig-line"></div>
+                </div>
+                <div class="sig-field">
+                    <div class="flabel">Sello</div>
+                    <div class="sig-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-top:6px; font-size:7.5pt;">1 de 1</div>
+
+    <script>
+        // Auto-print when opened in new tab
+        window.addEventListener('load', function () {
+            // Small delay to let the page render fully
+            setTimeout(function () { window.print(); }, 400);
+        });
+    </script>
+</body>
+</html>

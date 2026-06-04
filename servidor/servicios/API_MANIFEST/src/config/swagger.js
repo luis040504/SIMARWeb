@@ -45,7 +45,7 @@ const options = {
                     properties: {
                         id_cliente:   { type: 'integer', example: 1 },
                         tipo:         { type: 'string', enum: ['peligroso', 'especial'], example: 'peligroso' },
-                        estado:       { type: 'string', enum: ['borrador', 'en_transito', 'completado'], example: 'borrador' },
+                        estado:       { type: 'string', enum: ['borrador', 'en_transito', 'completado', 'cancelado'], example: 'borrador' },
                         // Generador
                         numero_registro_ambiental:   { type: 'string', example: 'SEMARNAT-2024-001' },
                         razon_social:                { type: 'string', example: 'Empresa Generadora S.A. de C.V.' },
@@ -137,7 +137,7 @@ const options = {
                         { in: 'query', name: 'numero',       schema: { type: 'string' }, description: 'Filtrar por número de manifiesto' },
                         { in: 'query', name: 'razon_social', schema: { type: 'string' }, description: 'Filtrar por razón social del generador' },
                         { in: 'query', name: 'tipo',         schema: { type: 'string', enum: ['peligroso', 'especial'] } },
-                        { in: 'query', name: 'estado',       schema: { type: 'string', enum: ['borrador', 'en_transito', 'completado'] } },
+                        { in: 'query', name: 'estado',       schema: { type: 'string', enum: ['borrador', 'en_transito', 'completado', 'cancelado'] } },
                         { in: 'query', name: 'fecha_desde',  schema: { type: 'string', format: 'date' } },
                         { in: 'query', name: 'fecha_hasta',  schema: { type: 'string', format: 'date' } },
                     ],
@@ -198,7 +198,7 @@ const options = {
                                     type: 'object',
                                     required: ['estado'],
                                     properties: {
-                                        estado:      { type: 'string', enum: ['borrador', 'en_transito', 'completado'], example: 'en_transito' },
+                                        estado:      { type: 'string', enum: ['borrador', 'en_transito', 'completado', 'cancelado'], example: 'en_transito' },
                                         fecha_firma: { type: 'string', format: 'date', nullable: true }
                                     }
                                 }

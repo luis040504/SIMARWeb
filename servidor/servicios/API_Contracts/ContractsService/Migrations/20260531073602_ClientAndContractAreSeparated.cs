@@ -1,4 +1,3 @@
-﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ContractsService.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class ClientAndContractAreSeparated : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,17 +18,19 @@ namespace ContractsService.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Folio = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientId = table.Column<int>(type: "int", nullable: false),
-                    TotalBasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientRfc = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Representative = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientObjetoSocial = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientDeclaraciones = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContractDuration = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FirstServiceDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FirstServiceDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Representative = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SignedContractPath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TotalBasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -145,25 +146,42 @@ namespace ContractsService.Migrations
                 name: "IX_ContractServices_ContractId",
                 table: "ContractServices",
                 column: "ContractId");
+
+            // Eliminar columnas de cliente que ahora vienen de API_Clientes
+            migrationBuilder.DropColumn(name: "ClientAddress", table: "Contracts");
+            migrationBuilder.DropColumn(name: "ClientName",    table: "Contracts");
+            migrationBuilder.DropColumn(name: "ClientRfc",     table: "Contracts");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ContractExtras");
+            migrationBuilder.AddColumn<string>(
+                name: "ClientAddress",
+                table: "Contracts",
+                type: "nvarchar(max)",
+                nullable: false,
+                defaultValue: "");
 
-            migrationBuilder.DropTable(
-                name: "ContractPayments");
+            migrationBuilder.AddColumn<string>(
+                name: "ClientName",
+                table: "Contracts",
+                type: "nvarchar(max)",
+                nullable: false,
+                defaultValue: "");
 
-            migrationBuilder.DropTable(
-                name: "ContractServices");
+            migrationBuilder.AddColumn<string>(
+                name: "ClientRfc",
+                table: "Contracts",
+                type: "nvarchar(max)",
+                nullable: false,
+                defaultValue: "");
 
-            migrationBuilder.DropTable(
-                name: "Quotations");
-
-            migrationBuilder.DropTable(
-                name: "Contracts");
+            migrationBuilder.DropTable(name: "ContractServices");
+            migrationBuilder.DropTable(name: "ContractPayments");
+            migrationBuilder.DropTable(name: "ContractExtras");
+            migrationBuilder.DropTable(name: "Quotations");
+            migrationBuilder.DropTable(name: "Contracts");
         }
     }
 }

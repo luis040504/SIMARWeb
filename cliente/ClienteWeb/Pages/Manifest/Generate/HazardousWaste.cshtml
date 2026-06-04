@@ -2,7 +2,24 @@
 @model ClienteWeb.Pages.Manifest.Generate.HazardousWasteModel
 @{
     ViewData["Title"] = "Generate Manifest - Hazardous Waste";
+    bool fromContract = Model.ContratoId > 0;
+    Func<string?, bool> lk = val => fromContract && !string.IsNullOrEmpty(val) && !val.Equals("PENDIENTE", StringComparison.OrdinalIgnoreCase);
 }
+
+<style>
+    .required-star { color: #dc3545; margin-left: 2px; font-weight: 700; }
+    .form-control.is-pending,
+    .form-select.is-pending { border-color: #fd7e14 !important; background-color: #fff9f5 !important; }
+    .field-feedback { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+    .field-feedback.error  { color: #dc3545; }
+    .field-feedback.pending { color: #fd7e14; }
+    #validationPanel { display: none; }
+    /* Tooltips CRETIBM */
+    .cretibm-th { cursor: help; text-decoration: underline dotted; }
+    /* Campos bloqueados por contrato */
+    .from-contract { background-color: #eef2f7 !important; cursor: not-allowed !important; border-color: #adb5bd !important; color: #495057; }
+    .from-contract:focus { box-shadow: none !important; outline: none !important; }
+</style>
 
 <div class="manifest-container">
 
@@ -26,8 +43,39 @@
         </div>
     </div>
 
-    <form method="post">
+    <form method="post" id="manifestForm">
         @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="IdCliente" />
+        <input type="hidden" asp-for="ContratoId" />
+
+        <!-- Panel campos no llenados automáticamente -->
+        @if (Model.CamposPendientes.Count > 0)
+        {
+            <div class="alert py-2 mb-3" style="background:#fff3e0;border:1px solid #fd7e14;color:#bf5700;">
+                <div class="fw-semibold mb-1">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    Los siguientes campos no se llenaron automáticamente. Por favor verifica:
+                </div>
+                <ul class="mb-0 ps-3 small">
+                    @foreach (var campo in Model.CamposPendientes)
+                    {
+                        <li>@campo</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <!-- Panel de validación -->
+        <div id="validationPanel" class="mb-3">
+            <div id="errorSection" style="display:none;" class="alert alert-danger py-2 mb-2">
+                <div class="fw-semibold mb-1"><i class="bi bi-exclamation-circle-fill me-1"></i>Por favor corrige los siguientes errores:</div>
+                <ul id="errorList" class="mb-0 ps-3 small"></ul>
+            </div>
+            <div id="warningSection" style="display:none;" class="alert py-2 mb-0" style="background:#fff3e0;border-color:#fd7e14;color:#bf5700;">
+                <div class="fw-semibold mb-1" style="color:#bf5700;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Los siguientes campos están pendientes:</div>
+                <ul id="warningList" class="mb-0 ps-3 small" style="color:#bf5700;"></ul>
+            </div>
+        </div>
 
         <!-- GENERADOR -->
         <div class="section-card mb-3">
@@ -35,17 +83,19 @@
 
             <div class="row g-2 mb-2">
                 <div class="col-md-4">
-                    <label asp-for="EnvironmentalRegistrationNumber" class="form-label-sm">Núm. de registro ambiental</label>
+                    <label asp-for="EnvironmentalRegistrationNumber" class="form-label-sm">Núm. de registro ambiental<span class="required-star">*</span></label>
                     <input asp-for="EnvironmentalRegistrationNumber"
-                           class="form-control form-control-sm"
+                           class="form-control form-control-sm @(lk(Model.EnvironmentalRegistrationNumber) ? "from-contract" : "")"
+                           readonly="@(lk(Model.EnvironmentalRegistrationNumber) ? "readonly" : null)"
                            placeholder="Ej. CMORE3001711" />
                     <span asp-validation-for="EnvironmentalRegistrationNumber" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-8">
-                    <label asp-for="SocialReason" class="form-label-sm">Nombre o razón social del generador</label>
+                    <label asp-for="SocialReason" class="form-label-sm">Nombre o razón social del generador<span class="required-star">*</span></label>
                     <input asp-for="SocialReason"
-                           class="form-control form-control-sm"
+                           class="form-control form-control-sm @(lk(Model.SocialReason) ? "from-contract" : "")"
+                           readonly="@(lk(Model.SocialReason) ? "readonly" : null)"
                            placeholder="Ej. CEMENTOS MOCTEZUMA S.A. DE C.V." />
                     <span asp-validation-for="SocialReason" class="text-danger small"></span>
                 </div>
@@ -54,12 +104,12 @@
             <div class="row g-2 mb-2">
                 <div class="col-md-2">
                     <label asp-for="PostalCode" class="form-label-sm">Código postal</label>
-                    <input asp-for="PostalCode" class="form-control form-control-sm" placeholder="Ej. 91645" />
+                    <input asp-for="PostalCode" class="form-control form-control-sm @(lk(Model.PostalCode) ? "from-contract" : "")" readonly="@(lk(Model.PostalCode) ? "readonly" : null)" placeholder="Ej. 91645" />
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="Street" class="form-label-sm">Calle</label>
-                    <input asp-for="Street" class="form-control form-control-sm" placeholder="Ej. Dom. conocido predio de los gallineros" />
+                    <input asp-for="Street" class="form-control form-control-sm @(lk(Model.Street) ? "from-contract" : "")" readonly="@(lk(Model.Street) ? "readonly" : null)" placeholder="Ej. Dom. conocido predio de los gallineros" />
                 </div>
 
                 <div class="col-md-2">
@@ -74,30 +124,30 @@
 
                 <div class="col-md-2">
                     <label asp-for="State" class="form-label-sm">Estado</label>
-                    <input asp-for="State" class="form-control form-control-sm" placeholder="Ej. Veracruz" />
+                    <input asp-for="State" class="form-control form-control-sm @(lk(Model.State) ? "from-contract" : "")" readonly="@(lk(Model.State) ? "readonly" : null)" placeholder="Ej. Veracruz" />
                 </div>
             </div>
 
             <div class="row g-2 mb-3">
                 <div class="col-md-4">
                     <label asp-for="Colony" class="form-label-sm">Colonia</label>
-                    <input asp-for="Colony" class="form-control form-control-sm" placeholder="Ej. Camino vecinal Cerro Colorado" />
+                    <input asp-for="Colony" class="form-control form-control-sm @(lk(Model.Colony) ? "from-contract" : "")" readonly="@(lk(Model.Colony) ? "readonly" : null)" placeholder="Ej. Camino vecinal Cerro Colorado" />
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="Municipality" class="form-label-sm">Municipio o delegación</label>
-                    <input asp-for="Municipality" class="form-control form-control-sm" placeholder="Ej. Apazapan" />
+                    <input asp-for="Municipality" class="form-control form-control-sm @(lk(Model.Municipality) ? "from-contract" : "")" readonly="@(lk(Model.Municipality) ? "readonly" : null)" placeholder="Ej. Apazapan" />
                 </div>
 
                 <div class="col-md-2">
-                    <label asp-for="PhoneNumber" class="form-label-sm">Teléfono</label>
-                    <input asp-for="PhoneNumber" class="form-control form-control-sm" placeholder="Ej. 2288343149" />
+                    <label asp-for="PhoneNumber" class="form-label-sm">Teléfono<span class="required-star">*</span></label>
+                    <input asp-for="PhoneNumber" class="form-control form-control-sm @(lk(Model.PhoneNumber) ? "from-contract" : "")" readonly="@(lk(Model.PhoneNumber) ? "readonly" : null)" placeholder="Ej. 2288343149" />
                     <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-2">
                     <label asp-for="Email" class="form-label-sm">Correo electrónico</label>
-                    <input asp-for="Email" class="form-control form-control-sm" placeholder="Ej. operaciones@empresa.com" />
+                    <input asp-for="Email" class="form-control form-control-sm @(lk(Model.Email) ? "from-contract" : "")" readonly="@(lk(Model.Email) ? "readonly" : null)" placeholder="Ej. operaciones@empresa.com" />
                     <span asp-validation-for="Email" class="text-danger small"></span>
                 </div>
             </div>
@@ -124,13 +174,13 @@
                             <th rowspan="2" style="width:36px;"></th>
                         </tr>
                         <tr>
-                            <th>C</th>
-                            <th>R</th>
-                            <th>E</th>
-                            <th>T</th>
-                            <th>I</th>
-                            <th>B</th>
-                            <th>M</th>
+                            <th class="cretibm-th" title="Corrosividad — capacidad de corroer tejidos vivos y materiales">C</th>
+                            <th class="cretibm-th" title="Reactividad — inestabilidad química o reacción violenta">R</th>
+                            <th class="cretibm-th" title="Explosividad — liberación súbita de energía con onda expansiva">E</th>
+                            <th class="cretibm-th" title="Toxicidad — daño a la salud humana por ingestión, inhalación o contacto">T</th>
+                            <th class="cretibm-th" title="Inflamabilidad — capacidad de encenderse y mantener combustión">I</th>
+                            <th class="cretibm-th" title="Biológico-infeccioso — contiene microorganismos o toxinas patógenas (NOM-087)">B</th>
+                            <th class="cretibm-th" title="Mutagénico / Teratogénico — altera material genético o daña el desarrollo fetal">M</th>
                             <th>Tipo</th>
                             <th>Capacidad</th>
                             <th>Sí</th>
@@ -222,7 +272,7 @@
 
                 <div class="col-md-4">
                     <label asp-for="GeneratorSignDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="GeneratorSignDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="GeneratorSignDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
@@ -351,6 +401,46 @@
                 </div>
             </div>
 
+            <div class="row g-2 mb-2">
+                <div class="col-12">
+                    <label class="form-label-sm">Chofer</label>
+                    <span class="text-muted">(opcional — pre-llena nombre y licencia)</span>
+                    <select id="choferSelect" class="form-select form-select-sm"
+                            onchange="aplicarChofer(this)">
+                        <option value="">— Seleccionar chofer del catálogo —</option>
+                        @foreach (var c in Model.Choferes)
+                        {
+                            <option value="@c.UserId"
+                                    data-nombre="@c.FullName"
+                                    data-licencia="@c.LicenseNumber"
+                                    data-licencia-tipo="@c.LicenseType">
+                                @c.FullName @(string.IsNullOrEmpty(c.LicenseNumber) ? "" : $"— Lic. {c.LicenseNumber}")
+                            </option>
+                        }
+                    </select>
+                    @if (!Model.Choferes.Any())
+                    {
+                        <small class="text-muted">No hay choferes registrados en el sistema.</small>
+                    }
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label asp-for="DriverName" class="form-label-sm">Nombre del conductor</label>
+                    <input asp-for="DriverName"
+                           id="driverNameInput"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. Fernando López Sánchez" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="DriverLicense" class="form-label-sm">No. de licencia de conducir</label>
+                    <input asp-for="DriverLicense"
+                           id="driverLicenseInput"
+                           class="form-control form-control-sm"
+                           placeholder="Ej. UB0030UNC" />
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="TransportRoute" class="form-label-sm">Ruta de la empresa generadora hasta su entrega</label>
                 <input asp-for="TransportRoute"
@@ -372,7 +462,7 @@
 
                 <div class="col-md-4">
                     <label asp-for="TransporterSignDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="TransporterSignDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="TransporterSignDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
@@ -405,12 +495,12 @@
             <div class="row g-2 mb-2">
                 <div class="col-md-2">
                     <label asp-for="ReceiverPostalCode" class="form-label-sm">Código postal</label>
-                    <input asp-for="ReceiverPostalCode" class="form-control form-control-sm" placeholder="Ej. 75235" />
+                    <input asp-for="ReceiverPostalCode" class="form-control form-control-sm @(lk(Model.ReceiverPostalCode) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverPostalCode) ? "readonly" : null)" placeholder="Ej. 75235" />
                 </div>
 
                 <div class="col-md-3">
                     <label asp-for="ReceiverStreet" class="form-label-sm">Calle</label>
-                    <input asp-for="ReceiverStreet" class="form-control form-control-sm" placeholder="Ej. Carr. Gpe. Victoria Valsequillo KM15" />
+                    <input asp-for="ReceiverStreet" class="form-control form-control-sm @(lk(Model.ReceiverStreet) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverStreet) ? "readonly" : null)" placeholder="Ej. Carr. Gpe. Victoria Valsequillo KM15" />
                 </div>
 
                 <div class="col-md-2">
@@ -425,19 +515,19 @@
 
                 <div class="col-md-3">
                     <label asp-for="ReceiverColony" class="form-label-sm">Colonia</label>
-                    <input asp-for="ReceiverColony" class="form-control form-control-sm" placeholder="Ej. Localidad San Baltasar Torija" />
+                    <input asp-for="ReceiverColony" class="form-control form-control-sm @(lk(Model.ReceiverColony) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverColony) ? "readonly" : null)" placeholder="Ej. Localidad San Baltasar Torija" />
                 </div>
             </div>
 
             <div class="row g-2 mb-2">
                 <div class="col-md-3">
                     <label asp-for="ReceiverMunicipality" class="form-label-sm">Municipio o delegación</label>
-                    <input asp-for="ReceiverMunicipality" class="form-control form-control-sm" placeholder="Ej. Cuautinchan" />
+                    <input asp-for="ReceiverMunicipality" class="form-control form-control-sm @(lk(Model.ReceiverMunicipality) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverMunicipality) ? "readonly" : null)" placeholder="Ej. Cuautinchan" />
                 </div>
 
                 <div class="col-md-3">
                     <label asp-for="ReceiverState" class="form-label-sm">Estado</label>
-                    <input asp-for="ReceiverState" class="form-control form-control-sm" placeholder="Ej. Puebla" />
+                    <input asp-for="ReceiverState" class="form-control form-control-sm @(lk(Model.ReceiverState) ? "from-contract" : "")" readonly="@(lk(Model.ReceiverState) ? "readonly" : null)" placeholder="Ej. Puebla" />
                 </div>
 
                 <div class="col-md-2">
@@ -481,7 +571,7 @@
 
                 <div class="col-md-4">
                     <label asp-for="ReceiverSignDate" class="form-label-sm">Fecha</label>
-                    <input asp-for="ReceiverSignDate" type="date" class="form-control form-control-sm" />
+                    <input asp-for="ReceiverSignDate" asp-format="{0:yyyy-MM-dd}" type="date" class="form-control form-control-sm" />
                 </div>
 
                 <div class="col-md-4">
@@ -498,6 +588,22 @@
             </button>
         </div>
     </form>
+</div>
+
+<!-- Modal datos bloqueados por contrato -->
+<div class="modal fade" id="contratoLockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-semibold"><i class="bi bi-lock-fill me-1"></i> Dato del contrato</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3 small">
+                <p class="mb-1">Este campo fue llenado automáticamente desde el contrato firmado <strong>@Model.ContratoFolio</strong>.</p>
+                <p class="mb-0 text-muted">Si el dato es incorrecto, contacta al administrador del sistema.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal de confirmación -->
@@ -525,6 +631,185 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        // ── Campos bloqueados por contrato ───────────────────────────────────
+        document.querySelectorAll('.from-contract').forEach(function(el) {
+            el.addEventListener('click', function() {
+                new bootstrap.Modal(document.getElementById('contratoLockModal')).show();
+            });
+        });
+
+        // ── Campos requeridos (bloquean el guardado) ──────────────────────────
+        const REQUIRED_FIELDS = [
+            { id: 'EnvironmentalRegistrationNumber', label: 'Núm. de registro ambiental' },
+            { id: 'SocialReason',                    label: 'Razón social (Generador)' },
+            { id: 'PhoneNumber',                     label: 'Teléfono (Generador)' },
+        ];
+
+        // ── Campos opcionales (naranja al guardar vacíos) ─────────────────────
+        const PENDING_FIELDS = [
+            { id: 'PostalCode',                    label: 'Código postal (Generador)' },
+            { id: 'Street',                        label: 'Calle (Generador)' },
+            { id: 'ExteriorNumber',                label: 'Núm. ext. (Generador)' },
+            { id: 'Colony',                        label: 'Colonia (Generador)' },
+            { id: 'Municipality',                  label: 'Municipio (Generador)' },
+            { id: 'State',                         label: 'Estado (Generador)' },
+            { id: 'Email',                         label: 'Correo electrónico (Generador)' },
+            { id: 'SafeHandlingInstructions',      label: 'Instrucciones de manejo seguro' },
+            { id: 'GeneratorResponsibleName',      label: 'Nombre del responsable (Generador)' },
+            { id: 'TransporterSocialReason',       label: 'Razón social (Transportista)' },
+            { id: 'TransporterAuthorizationNumber',label: 'Núm. autorización SEMARNAT (Transportista)' },
+            { id: 'TransporterSCTPermit',          label: 'Núm. permiso S.C.T.' },
+            { id: 'TransporterPostalCode',         label: 'Código postal (Transportista)' },
+            { id: 'TransporterStreet',             label: 'Calle (Transportista)' },
+            { id: 'TransporterColony',             label: 'Colonia (Transportista)' },
+            { id: 'TransporterMunicipality',       label: 'Municipio (Transportista)' },
+            { id: 'TransporterState',              label: 'Estado (Transportista)' },
+            { id: 'TransporterPhone',              label: 'Teléfono (Transportista)' },
+            { id: 'VehicleType',                   label: 'Tipo de vehículo' },
+            { id: 'VehiclePlate',                  label: 'Núm. de placa' },
+            { id: 'DriverName',                    label: 'Nombre del conductor' },
+            { id: 'DriverLicense',                 label: 'No. de licencia' },
+            { id: 'TransportRoute',                label: 'Ruta de transporte' },
+            { id: 'TransporterResponsibleName',    label: 'Nombre del responsable (Transportista)' },
+            { id: 'ReceiverSocialReason',          label: 'Razón social (Destinatario)' },
+            { id: 'ReceiverAuthorizationNumber',   label: 'Núm. autorización SEMARNAT (Destinatario)' },
+            { id: 'ReceiverPostalCode',            label: 'Código postal (Destinatario)' },
+            { id: 'ReceiverStreet',                label: 'Calle (Destinatario)' },
+            { id: 'ReceiverColony',                label: 'Colonia (Destinatario)' },
+            { id: 'ReceiverMunicipality',          label: 'Municipio (Destinatario)' },
+            { id: 'ReceiverState',                 label: 'Estado (Destinatario)' },
+            { id: 'ReceiverPhone',                 label: 'Teléfono (Destinatario)' },
+            { id: 'ReceiverPersonName',            label: 'Nombre de quien recibe' },
+            { id: 'ReceiverResponsibleName',       label: 'Nombre del responsable (Destinatario)' },
+        ];
+
+        // ── Utilidades ────────────────────────────────────────────────────────
+        function clearFieldFeedback(el) {
+            el.classList.remove('is-invalid', 'is-pending');
+            el.parentElement.querySelectorAll('.dynamic-feedback').forEach(n => n.remove());
+        }
+
+        function setFieldError(el) {
+            el.classList.add('is-invalid');
+            const msg = document.createElement('small');
+            msg.className = 'dynamic-feedback field-feedback error';
+            msg.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Este campo es obligatorio.';
+            el.parentElement.appendChild(msg);
+        }
+
+        function setFieldPending(el) {
+            el.classList.add('is-pending');
+            const msg = document.createElement('small');
+            msg.className = 'dynamic-feedback field-feedback pending';
+            msg.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Campo pendiente.';
+            el.parentElement.appendChild(msg);
+        }
+
+        // Limpia el estado al escribir
+        document.getElementById('manifestForm').addEventListener('input', function (e) {
+            const el = e.target;
+            if (el.classList.contains('is-invalid') || el.classList.contains('is-pending')) {
+                clearFieldFeedback(el);
+            }
+        }, true);
+
+        // ── Validación principal ──────────────────────────────────────────────
+        function validateAndOpen() {
+            const errors   = [];
+            const warnings = [];
+
+            [...REQUIRED_FIELDS, ...PENDING_FIELDS].forEach(f => {
+                const el = document.getElementById(f.id);
+                if (el) clearFieldFeedback(el);
+            });
+            document.querySelectorAll('.dynamic-feedback').forEach(n => n.remove());
+
+            for (const f of REQUIRED_FIELDS) {
+                const el = document.getElementById(f.id);
+                if (!el) continue;
+                if (!el.value.trim()) {
+                    setFieldError(el);
+                    errors.push(f.label);
+                }
+            }
+
+            for (const f of PENDING_FIELDS) {
+                const el = document.getElementById(f.id);
+                if (!el) continue;
+                if (!el.value.trim()) {
+                    setFieldPending(el);
+                    warnings.push(f.label);
+                }
+            }
+
+            // Validar licencia chofer vs vehículo
+            const vehiculoSel = document.getElementById('vehiculoSelector');
+            const choferSel   = document.getElementById('choferSelect');
+            if (vehiculoSel?.value && choferSel?.value) {
+                const licRequerida   = vehiculoSel.selectedOptions[0]?.dataset.licencia     || '';
+                const licTipoChofer  = choferSel.selectedOptions[0]?.dataset.licenciaTipo   || '';
+                if (licRequerida && licTipoChofer && licRequerida !== licTipoChofer) {
+                    const driverInput = document.getElementById('driverLicenseInput');
+                    if (driverInput) {
+                        driverInput.classList.add('is-invalid');
+                        const msg = document.createElement('small');
+                        msg.className = 'dynamic-feedback field-feedback error';
+                        msg.innerHTML = `<i class="bi bi-exclamation-circle-fill"></i> El conductor tiene licencia tipo <strong>${licTipoChofer}</strong>, pero el vehículo requiere tipo <strong>${licRequerida}</strong>.`;
+                        driverInput.parentElement.appendChild(msg);
+                    }
+                    errors.push(`Licencia del conductor (tipo ${licTipoChofer}) no corresponde al vehículo (requiere tipo ${licRequerida})`);
+                }
+            }
+
+            const panel       = document.getElementById('validationPanel');
+            const errSection  = document.getElementById('errorSection');
+            const warnSection = document.getElementById('warningSection');
+            const errList     = document.getElementById('errorList');
+            const warnList    = document.getElementById('warningList');
+
+            errList.innerHTML  = errors.map(e   => `<li>${e}</li>`).join('');
+            warnList.innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
+
+            errSection.style.display  = errors.length   ? 'block' : 'none';
+            warnSection.style.display = warnings.length ? 'block' : 'none';
+
+            if (errors.length || warnings.length) {
+                panel.style.display = 'block';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                panel.style.display = 'none';
+            }
+
+            if (errors.length === 0) {
+                new bootstrap.Modal(document.getElementById('confirmModal')).show();
+            }
+        }
+
+        // ── Selectores de catálogo ────────────────────────────────────────────
+        function aplicarChofer(sel) {
+            const opt = sel.selectedOptions[0];
+            const nombre   = opt?.dataset.nombre   || '';
+            const licencia = opt?.dataset.licencia || '';
+            const fNombre   = document.getElementById('driverNameInput');
+            const fLicencia = document.getElementById('driverLicenseInput');
+            if (fNombre)   fNombre.value   = nombre;
+            if (fLicencia) fLicencia.value = licencia;
+
+            const vehiculoSel = document.getElementById('vehiculoSelector');
+            if (vehiculoSel?.value) {
+                const licRequerida  = vehiculoSel.selectedOptions[0]?.dataset.licencia   || '';
+                const licTipoChofer = opt?.dataset.licenciaTipo || '';
+                const hint = document.getElementById('licenciaHint');
+                if (licRequerida && licTipoChofer && licRequerida !== licTipoChofer && hint) {
+                    hint.innerHTML = `<div class="alert alert-warning py-1 mb-0 small">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Atención: el conductor tiene licencia tipo <strong>${licTipoChofer}</strong> pero el vehículo requiere tipo <strong>${licRequerida}</strong>.
+                    </div>`;
+                    hint.classList.remove('d-none');
+                }
+            }
+        }
+
         function onVehiculoChange(sel) {
             const opt = sel.selectedOptions[0];
             if (!opt || !opt.value) {
@@ -543,7 +828,10 @@
             const hint = document.getElementById('licenciaHint');
             if (hint) {
                 if (licencia) {
-                    document.getElementById('licenciaTipo').textContent = licencia;
+                    hint.innerHTML = `<div class="alert alert-info py-1 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Este vehículo requiere licencia tipo <strong>${licencia}</strong>.
+                    </div>`;
                     hint.classList.remove('d-none');
                 } else {
                     hint.classList.add('d-none');
@@ -551,81 +839,46 @@
             }
         }
 
-        $.validator.messages.required = "Este campo es obligatorio.";
-        $.validator.messages.email = "Por favor ingrese un correo electrónico válido.";
-        $.validator.messages.number = "Por favor ingrese un número válido.";
-        $.validator.messages.range = $.validator.format("Por favor ingrese un valor entre {0} y {1}.");
-        $.validator.messages.min = $.validator.format("El valor mínimo es {0}.");
-        $.validator.messages.max = $.validator.format("El valor máximo es {0}.");
-
-        document.getElementById('btnOpenConfirm').addEventListener('click', function () {
-            const form = document.querySelector('form');
-            if ($(form).valid()) {
-                new bootstrap.Modal(document.getElementById('confirmModal')).show();
-            }
-        });
+        // ── Botones ───────────────────────────────────────────────────────────
+        document.getElementById('btnOpenConfirm').addEventListener('click', validateAndOpen);
 
         document.getElementById('btnConfirm').addEventListener('click', function () {
-            document.querySelector('form').submit();
+            document.getElementById('manifestForm').submit();
         });
 
+        // ── Tabla de residuos ─────────────────────────────────────────────────
         let hazardousIndex = @Model.Residues.Count;
 
         function deleteRow(btn) {
             const tbody = btn.closest('tbody');
-            if (tbody.rows.length > 1) {
-                btn.closest('tr').remove();
-            }
+            if (tbody.rows.length > 1) btn.closest('tr').remove();
         }
 
         function addHazardousResidueRow() {
             const tbody = document.getElementById('hazardous-residues-body');
             const i = hazardousIndex++;
-
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="text-start">
-                    <input name="Residues[${i}].ResidueName"
-                           class="form-control form-control-sm"
-                           placeholder="Ej. Objetos punzocortantes (B)" />
+                    <input name="Residues[${i}].ResidueName" class="form-control form-control-sm" placeholder="Ej. Objetos punzocortantes (B)" />
                 </td>
-                <td><input type="checkbox" name="Residues[${i}].IsCorrosive" value="true" class="cretibm-check" /></td>
-                <td><input type="checkbox" name="Residues[${i}].IsReactive" value="true" class="cretibm-check" /></td>
-                <td><input type="checkbox" name="Residues[${i}].IsExplosive" value="true" class="cretibm-check" /></td>
-                <td><input type="checkbox" name="Residues[${i}].IsToxic" value="true" class="cretibm-check" /></td>
-                <td><input type="checkbox" name="Residues[${i}].IsFlammable" value="true" class="cretibm-check" /></td>
-                <td><input type="checkbox" name="Residues[${i}].IsBiological" value="true" class="cretibm-check" /></td>
-                <td><input type="checkbox" name="Residues[${i}].IsMutagenic" value="true" class="cretibm-check" /></td>
-                <td>
-                    <input name="Residues[${i}].ContainerType"
-                           class="form-control form-control-sm"
-                           placeholder="Ej. C/P" />
-                </td>
-                <td>
-                    <input name="Residues[${i}].ContainerCapacity"
-                           class="form-control form-control-sm"
-                           placeholder="Ej. 1" />
-                </td>
-                <td>
-                    <input name="Residues[${i}].AmountKg"
-                           type="number"
-                           step="0.01"
-                           class="form-control form-control-sm"
-                           placeholder="Ej. 250" />
-                </td>
-                <td>
-                    <input type="radio" name="Residues[${i}].HasLabel" value="true" class="cretibm-check" />
-                </td>
-                <td>
-                    <input type="radio" name="Residues[${i}].HasLabel" value="false" class="cretibm-check" />
-                </td>
+                <td><input type="checkbox" name="Residues[${i}].IsCorrosive" value="true" class="cretibm-check" title="Corrosividad" /></td>
+                <td><input type="checkbox" name="Residues[${i}].IsReactive" value="true" class="cretibm-check" title="Reactividad" /></td>
+                <td><input type="checkbox" name="Residues[${i}].IsExplosive" value="true" class="cretibm-check" title="Explosividad" /></td>
+                <td><input type="checkbox" name="Residues[${i}].IsToxic" value="true" class="cretibm-check" title="Toxicidad" /></td>
+                <td><input type="checkbox" name="Residues[${i}].IsFlammable" value="true" class="cretibm-check" title="Inflamabilidad" /></td>
+                <td><input type="checkbox" name="Residues[${i}].IsBiological" value="true" class="cretibm-check" title="Biológico-infeccioso" /></td>
+                <td><input type="checkbox" name="Residues[${i}].IsMutagenic" value="true" class="cretibm-check" title="Mutagénico / Teratogénico" /></td>
+                <td><input name="Residues[${i}].ContainerType" class="form-control form-control-sm" placeholder="Ej. C/P" /></td>
+                <td><input name="Residues[${i}].ContainerCapacity" class="form-control form-control-sm" placeholder="Ej. 1" /></td>
+                <td><input name="Residues[${i}].AmountKg" type="number" step="0.01" class="form-control form-control-sm" placeholder="Ej. 250" /></td>
+                <td><input type="radio" name="Residues[${i}].HasLabel" value="true" class="cretibm-check" /></td>
+                <td><input type="radio" name="Residues[${i}].HasLabel" value="false" class="cretibm-check" /></td>
                 <td class="text-center">
                     <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Eliminar fila">
                         <i class="bi bi-x-lg"></i>
                     </button>
-                </td>
-            `;
-
+                </td>`;
             tbody.appendChild(row);
         }
     </script>

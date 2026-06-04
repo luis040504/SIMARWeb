@@ -75,6 +75,42 @@
         max-height: 70vh;
         overflow-y: auto;
     }
+
+    .table-row-canceled td {
+        border-top: 2px solid #dc3545 !important;
+        border-bottom: 2px solid #dc3545 !important;
+        background-color: rgba(220, 53, 69, 0.03) !important;
+    }
+    .table-row-canceled td:first-child {
+        border-left: 2px solid #dc3545 !important;
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    .table-row-canceled td:last-child {
+        border-right: 2px solid #dc3545 !important;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .document-preview.cancelled-contract {
+        position: relative;
+    }
+    .document-preview.cancelled-contract::after {
+        content: "CANCELADO";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 6rem;
+        font-weight: 900;
+        color: rgba(220, 53, 69, 0.15);
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 10;
+        font-family: Arial, Helvetica, sans-serif;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+    }
 </style>
 
 <div class="container-fluid-simar">
@@ -121,11 +157,12 @@
 
             <div class="col-md-3">
                 <label class="form-label-simar">Filtrar por Estatus</label>
-                <select name="Status" class="form-select-simar w-100" onchange="this.form.submit()" @(string.IsNullOrEmpty(Model.Search) ? "disabled" : "")>
+                <select name="Status" class="form-select-simar w-100" onchange="this.form.submit()">
                     <option value="">Todos los estados</option>
                     <option value="Activo" selected="@(Model.Status == "Activo")">Activo</option>
                     <option value="Vencido" selected="@(Model.Status == "Vencido")">Vencido</option>
                     <option value="Pendiente de firma" selected="@(Model.Status == "Pendiente de firma")">Pendiente</option>
+                    <option value="Cancelado" selected="@(Model.Status == "Cancelado")">Cancelado</option>
                 </select>
             </div>
 
@@ -133,8 +170,7 @@
                 <label class="form-label-simar">Vigentes en la fecha:</label>
                 <input type="date" name="DateFilter" class="form-control-simar w-100" 
                     value="@(Model.DateFilter?.ToString("yyyy-MM-dd"))" 
-                    onchange="this.form.submit()" 
-                    @(string.IsNullOrEmpty(Model.Search) ? "disabled" : "") />
+                    onchange="this.form.submit()" />
             </div>
 
             <div class="col-md-1">
@@ -165,7 +201,7 @@
                 <tbody>
                     @foreach (var contract in Model.Contracts)
                     {
-                        <tr>
+                        <tr class="@(contract.Status == "Cancelado" ? "table-row-canceled" : "")">
                             <td class="fw-bold text-simar-green">#@contract.Id</td>
                             <td>@contract.Client</td>
                             <td>@contract.StartDate.ToShortDateString()</td>
@@ -173,13 +209,19 @@
                             <td>
                                 <span class="badge-simar 
                                     @(contract.Status == "Activo" ? "badge-simar-completada" :
-                                      contract.Status == "Vencido" ? "badge-simar-cancelada" : "badge-simar-programada")">
+                                      contract.Status == "Vencido" || contract.Status == "Cancelado" ? "badge-simar-cancelada" : "badge-simar-programada")">
                                     @contract.Status
                                 </span>
+                                @if (contract.Status == "Cancelado" && !string.IsNullOrEmpty(contract.CancellationReason))
+                                {
+                                    <div class="text-danger mt-1 fw-bold" style="font-size: 0.78rem;" title="@contract.CancellationReason">
+                                        <i class="bi bi-info-circle-fill"></i> Motivo: @contract.CancellationReason
+                                    </div>
+                                }
                             </td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
-                                    @if (contract.Status == "Pendiente de firma")
+                                    @if (contract.Status == "Pendiente de firma" || contract.Status == "Activo")
                                     {
                                         <button type="button" class="btn-simar-icon" 
                                                 onclick="openUpdateModal(@contract.DbId, '@contract.Id', '@contract.Client', '@contract.StartDate.ToString("yyyy-MM-dd")', '@(contract.EndDate.ToString("yyyy-MM-dd"))', '@contract.Status')"
@@ -226,10 +268,16 @@
                 <div class="modal-body">
                     <div id="modalUpdateError" class="alert alert-danger d-none mb-3" role="alert">
                     </div>
+                    <div id="signedContractWarningBanner" class="alert alert-warning d-none mb-3" role="alert" style="border-radius: 12px; border-left: 5px solid #ffc107;">
+                        <h6 class="text-warning fw-bold mb-1"><i class="bi bi-info-circle-fill"></i> Contrato Activo (Firmado)</h6>
+                        <p class="mb-0 text-muted small" style="font-size: 0.9rem;">Este contrato ya se encuentra firmado de manera formal. Por integridad legal, no se permite modificar sus términos, servicios ni pagos. Únicamente está disponible la opción de cancelación.</p>
+                    </div>
                     <input type="hidden" asp-for="UpdateDbId" id="updateDbId" />
                     <input type="hidden" asp-for="ServicesJson" id="updateServicesJson" />
                     <input type="hidden" asp-for="PaymentsJson" id="updatePaymentsJson" />
                     <input type="hidden" asp-for="ExtrasJson" id="updateExtrasJson" />
+                    <input type="hidden" asp-for="IsCancellation" id="isCancellation" value="false" />
+                    <input type="hidden" asp-for="CancellationReason" id="cancellationReasonInput" />
 
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -249,9 +297,44 @@
                             <label class="form-label-simar">Nueva Fecha de Término</label>
                             <input type="date" asp-for="UpdateEndDate" class="form-control-simar" id="updateEndDate" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="pdfUploadContainer">
                             <label class="form-label-simar">Adjuntar nueva versión firmada (PDF)</label>
                             <input type="file" asp-for="PdfFile" accept=".pdf" class="form-control-simar" id="updatePdfFile">
+                        </div>
+
+                        <div class="col-12 d-none" id="pdfPreviewContainer" style="margin-top: 15px;">
+                            <label class="form-label-simar text-simar-green fw-bold"><i class="bi bi-file-earmark-pdf"></i> Vista previa del PDF seleccionado</label>
+                            <iframe id="pdfPreviewFrame" style="width: 100%; height: 450px; border: 1px solid var(--simar-border); border-radius: 12px; background: white;"></iframe>
+                        </div>
+
+                        <div class="col-12 d-none" id="cancellationSection" style="margin-top: 15px;">
+                            <div class="p-3 border border-danger bg-light rounded" style="border-radius: 12px;">
+                                <h6 class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Cancelación del Contrato</h6>
+                                <p class="text-muted small">Al cancelar este contrato, su estado pasará a "Cancelado" y no se podrán realizar más operaciones operativas ni administrativas sobre él.</p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label-simar text-danger fw-bold">Seleccione el motivo de la cancelación *</label>
+                                    <select id="cancellationReasonSelect" class="form-select-simar" onchange="onCancellationReasonSelectChange()">
+                                        <option value="">-- Seleccione un motivo --</option>
+                                        <option value="Falta de presupuesto">Falta de presupuesto</option>
+                                        <option value="Mal servicio">Mal servicio</option>
+                                        <option value="Quebró la empresa">Quebró la empresa</option>
+                                        <option value="Otro">Otro (Especificar motivo)</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3 d-none" id="customReasonContainer">
+                                    <label class="form-label-simar text-danger fw-bold">Escriba el motivo detallado *</label>
+                                    <textarea id="cancellationReasonText" class="form-control-simar" rows="3" placeholder="Ej. El cliente decidió rescindir el contrato debido a reestructuración interna..."></textarea>
+                                </div>
+
+                                <div class="text-end">
+                                    <button type="button" class="btn-simar-outline-gray me-2" onclick="toggleCancellation(false)">Atrás / Volver</button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmCancelContractAction()" style="border-radius: 10px; padding: 0.5rem 1.2rem; font-weight: 500;">
+                                        <i class="bi bi-check-lg"></i> Confirmar Cancelación
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-12 mt-4">
@@ -325,11 +408,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn-simar-primary" onclick="submitUpdateForm()">
-                        <i class="bi bi-check-lg"></i> Guardar Cambios
-                    </button>
+                <div class="modal-footer d-flex justify-content-between">
+                    <div>
+                        <button type="button" class="btn-simar-danger" id="btnCancelContract" onclick="toggleCancellation(true)">
+                            <i class="bi bi-x-circle"></i> Cancelar Contrato
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-simar-outline-gray" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn-simar-primary" onclick="submitUpdateForm()">
+                            <i class="bi bi-check-lg"></i> Guardar Cambios
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -361,6 +451,26 @@
     <script>
         var currentModalDbId = null;
         var API_BASE = '@Model.ApiBaseUrl';
+        var currentUpdateStatus = '';
+        const registeredWastes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegisteredWastes));
+
+        function onConsultWasteChange(selectEl, index) {
+            let selectedOption = selectEl.options[selectEl.selectedIndex];
+            let unitsStr = selectedOption.getAttribute('data-units') || 'kg';
+            let unitsArr = unitsStr.split(',').map(x => x.trim());
+            
+            let tr = selectEl.closest('tr');
+            let unitSelect = tr.querySelector('.select-unit');
+            
+            let unitOptions = '';
+            unitsArr.forEach(unit => {
+                unitOptions += `<option value="${esc(unit)}">${esc(unit)}</option>`;
+            });
+            unitSelect.innerHTML = unitOptions;
+
+            updateDataValue('services', index, 'wasteType', selectEl.value);
+            updateDataValue('services', index, 'wasteUnit', unitSelect.value);
+        }
 
         var currentUpdateData = { services: [], payments: [], extras: [] };
 
@@ -372,6 +482,67 @@
             document.getElementById('updateStartDate').value = startDate;
             document.getElementById('updateEndDate').value = endDate;
             
+            currentUpdateStatus = status;
+            document.getElementById('isCancellation').value = 'false';
+            document.getElementById('cancellationReasonInput').value = '';
+            document.getElementById('cancellationReasonSelect').value = '';
+            document.getElementById('customReasonContainer').classList.add('d-none');
+            document.getElementById('cancellationReasonText').value = '';
+            document.getElementById('cancellationSection').classList.add('d-none');
+            
+            document.getElementById('updatePdfFile').value = '';
+            document.getElementById('pdfPreviewFrame').src = '';
+            document.getElementById('pdfPreviewContainer').classList.add('d-none');
+
+            if (status === 'Cancelado') {
+                document.getElementById('btnCancelContract').classList.add('d-none');
+            } else {
+                document.getElementById('btnCancelContract').classList.remove('d-none');
+            }
+            
+            const isSigned = (status === 'Activo');
+            document.getElementById('updateEndDate').disabled = isSigned;
+            document.getElementById('updateEndDate').required = !isSigned;
+            document.getElementById('updatePdfFile').disabled = isSigned;
+
+            const pdfUploadContainer = document.getElementById('pdfUploadContainer');
+            if (pdfUploadContainer) {
+                if (isSigned) pdfUploadContainer.classList.add('d-none');
+                else pdfUploadContainer.classList.remove('d-none');
+            }
+
+            const previewContainer = document.getElementById('pdfPreviewContainer');
+            const previewFrame = document.getElementById('pdfPreviewFrame');
+            const previewLabel = document.querySelector('#pdfPreviewContainer label');
+
+            if (isSigned) {
+                previewLabel.innerHTML = '<i class="bi bi-file-earmark-pdf-fill text-danger"></i> Contrato Firmado Vigente';
+                previewFrame.src = API_BASE + '/api/contracts/' + dbId + '/download?inline=true';
+                previewContainer.classList.remove('d-none');
+            } else {
+                previewLabel.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> Vista previa del PDF seleccionado';
+                previewFrame.src = '';
+                previewContainer.classList.add('d-none');
+            }
+
+            const saveBtn = document.querySelector('.modal-footer button.btn-simar-primary');
+            if (saveBtn) {
+                if (isSigned) saveBtn.classList.add('d-none');
+                else saveBtn.classList.remove('d-none');
+            }
+
+            const tabsContainer = document.querySelector('#updateTabs').closest('.col-12');
+            if (tabsContainer) {
+                if (isSigned) tabsContainer.classList.add('d-none');
+                else tabsContainer.classList.remove('d-none');
+            }
+
+            const alertBanner = document.getElementById('signedContractWarningBanner');
+            if (alertBanner) {
+                if (isSigned) alertBanner.classList.remove('d-none');
+                else alertBanner.classList.add('d-none');
+            }
+
             var startDateObj = new Date(startDate);
             startDateObj.setDate(startDateObj.getDate() + 1); 
             var minIso = startDateObj.toISOString().split('T')[0];
@@ -392,19 +563,116 @@
             updateModal.show();
         }
 
+        function toggleCancellation(show) {
+            const cancelSection = document.getElementById('cancellationSection');
+            const cancelBtn = document.getElementById('btnCancelContract');
+
+            if (show) {
+                cancelSection.classList.remove('d-none');
+                cancelSection.scrollIntoView({ behavior: 'smooth' });
+                cancelBtn.classList.add('d-none');
+            } else {
+                cancelSection.classList.add('d-none');
+                if (currentUpdateStatus !== 'Cancelado') {
+                    cancelBtn.classList.remove('d-none');
+                }
+            }
+        }
+
+        function onCancellationReasonSelectChange() {
+            const select = document.getElementById('cancellationReasonSelect');
+            const customContainer = document.getElementById('customReasonContainer');
+            if (select.value === 'Otro') {
+                customContainer.classList.remove('d-none');
+            } else {
+                customContainer.classList.add('d-none');
+            }
+        }
+
+        function confirmCancelContractAction() {
+            const select = document.getElementById('cancellationReasonSelect');
+            if (select.value === '') {
+                alert("Por favor, seleccione un motivo de cancelación.");
+                return;
+            }
+            
+            let reason = select.value;
+            if (select.value === 'Otro') {
+                const customReason = document.getElementById('cancellationReasonText').value.trim();
+                if (customReason === '') {
+                    alert("Por favor, escriba el motivo detallado de la cancelación.");
+                    return;
+                }
+                reason = customReason;
+            }
+            
+            document.getElementById('isCancellation').value = 'true';
+            document.getElementById('cancellationReasonInput').value = reason;
+            document.getElementById('formUpdate').submit();
+        }
+
+        document.getElementById('updatePdfFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const previewContainer = document.getElementById('pdfPreviewContainer');
+            const previewFrame = document.getElementById('pdfPreviewFrame');
+            
+            if (file && file.type === 'application/pdf') {
+                const objectUrl = URL.createObjectURL(file);
+                previewFrame.src = objectUrl;
+                previewContainer.classList.remove('d-none');
+            } else {
+                previewFrame.src = '';
+                previewContainer.classList.add('d-none');
+            }
+        });
+
         function renderUpdateTables() {
             const sBody = document.querySelector('#tableUpdateServices tbody');
-            sBody.innerHTML = currentUpdateData.services.map((s, i) => `
+            sBody.innerHTML = currentUpdateData.services.map((s, i) => {
+                let options = '<option value="">-- Seleccione un residuo --</option>';
+                registeredWastes.forEach(rw => {
+                    let selected = (rw.name === s.wasteType || rw.code === s.wasteType) ? 'selected' : '';
+                    options += `<option value="${esc(rw.name)}" data-units="${esc(rw.validUnits)}" ${selected}>[${esc(rw.code)}] ${esc(rw.name)}</option>`;
+                });
+                let found = registeredWastes.some(rw => rw.name === s.wasteType || rw.code === s.wasteType);
+                if (!found && s.wasteType && s.wasteType.trim() !== '') {
+                    options += `<option value="${esc(s.wasteType)}" selected>${esc(s.wasteType)} (No registrado)</option>`;
+                }
+
+                let wasteObj = registeredWastes.find(rw => rw.name === s.wasteType || rw.code === s.wasteType);
+                let validUnitsArr = ['kg'];
+                if (wasteObj && wasteObj.validUnits) {
+                    validUnitsArr = wasteObj.validUnits.split(',').map(x => x.trim());
+                } else if (s.wasteUnit) {
+                    validUnitsArr = [s.wasteUnit];
+                }
+                
+                let unitOptions = '';
+                validUnitsArr.forEach(unit => {
+                    let selected = (unit === s.wasteUnit) ? 'selected' : '';
+                    unitOptions += `<option value="${esc(unit)}" ${selected}>${esc(unit)}</option>`;
+                });
+
+                return `
                 <tr>
-                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.wasteType)}" onchange="updateDataValue('services', ${i}, 'wasteType', this.value)"></td>
-                    <td><input type="text" class="form-control form-control-sm" value="${esc(s.wasteUnit)}" onchange="updateDataValue('services', ${i}, 'wasteUnit', this.value)"></td>
+                    <td>
+                        <select class="form-select form-select-sm select-waste" onchange="onConsultWasteChange(this, ${i})">
+                            ${options}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm select-unit" onchange="updateDataValue('services', ${i}, 'wasteUnit', this.value)">
+                            ${unitOptions}
+                        </select>
+                    </td>
                     <td><input type="text" class="form-control form-control-sm" value="${esc(s.frequency)}" onchange="updateDataValue('services', ${i}, 'frequency', this.value)"></td>
                     <td><input type="number" class="form-control form-control-sm" value="${s.vehicles}" onchange="updateDataValue('services', ${i}, 'vehicles', this.value)"></td>
                     <td><input type="number" class="form-control form-control-sm" value="${s.technicians}" onchange="updateDataValue('services', ${i}, 'technicians', this.value)"></td>
                     <td><input type="text" class="form-control form-control-sm" value="${esc(s.serviceAddress)}" onchange="updateDataValue('services', ${i}, 'serviceAddress', this.value)"></td>
                     <td><input type="number" step="0.01" class="form-control form-control-sm" value="${s.subtotal}" onchange="updateDataValue('services', ${i}, 'subtotal', this.value)"></td>
                     <td class="text-center"><button type="button" class="btn btn-sm text-danger" onclick="removeUpdateItem('services', ${i})"><i class="bi bi-trash"></i></button></td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
             
             const pBody = document.querySelector('#tableUpdatePayments tbody');
             pBody.innerHTML = currentUpdateData.payments.map((p, i) => `
@@ -452,14 +720,129 @@
         }
 
         function submitUpdateForm() {
+            const errorDiv = document.getElementById('modalUpdateError');
+            errorDiv.classList.add('d-none');
+            errorDiv.textContent = "";
+
             const startDateStr = document.getElementById('updateStartDate').value;
             const endDateStr = document.getElementById('updateEndDate').value;
 
-            if (startDateStr && endDateStr && endDateStr <= startDateStr) {
-                const errorDiv = document.getElementById('modalUpdateError');
-                errorDiv.textContent = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
-                errorDiv.classList.remove('d-none');
-                return; 
+            // 1. Validar fechas del contrato
+            if (currentUpdateStatus !== 'Activo') {
+                if (!endDateStr) {
+                    errorDiv.textContent = "La nueva fecha de término es requerida.";
+                    errorDiv.classList.remove('d-none');
+                    document.querySelector('.modal-body').scrollTop = 0;
+                    return;
+                }
+
+                if (startDateStr && endDateStr && endDateStr <= startDateStr) {
+                    errorDiv.textContent = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
+                    errorDiv.classList.remove('d-none');
+                    document.querySelector('.modal-body').scrollTop = 0;
+                    return; 
+                }
+            }
+
+            // 2. Validar tabla de Servicios
+            if (currentUpdateStatus !== 'Activo') {
+                for (let i = 0; i < currentUpdateData.services.length; i++) {
+                    const s = currentUpdateData.services[i];
+                    const numRow = i + 1;
+                    
+                    if (!s.wasteType || s.wasteType.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: El tipo de residuo es requerido.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!s.wasteUnit || s.wasteUnit.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: La unidad de medida es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!s.frequency || s.frequency.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: La frecuencia del servicio es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!s.serviceAddress || s.serviceAddress.trim() === "") {
+                        errorDiv.textContent = `Servicio #${numRow}: La dirección de servicio es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (s.vehicles === undefined || isNaN(s.vehicles) || s.vehicles <= 0) {
+                        errorDiv.textContent = `Servicio #${numRow}: La cantidad de vehículos debe ser un número entero mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (s.technicians === undefined || isNaN(s.technicians) || s.technicians <= 0) {
+                        errorDiv.textContent = `Servicio #${numRow}: La cantidad de técnicos debe ser un número entero mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (s.subtotal === undefined || isNaN(s.subtotal) || s.subtotal < 0) {
+                        errorDiv.textContent = `Servicio #${numRow}: El subtotal debe ser un número mayor o igual a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                }
+
+                // 3. Validar tabla de Pagos
+                for (let i = 0; i < currentUpdateData.payments.length; i++) {
+                    const p = currentUpdateData.payments[i];
+                    const numRow = i + 1;
+
+                    if (!p.description || p.description.trim() === "") {
+                        errorDiv.textContent = `Pago #${numRow}: El concepto del pago es requerido.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (p.amount === undefined || isNaN(p.amount) || p.amount <= 0) {
+                        errorDiv.textContent = `Pago #${numRow}: El monto del pago debe ser un número mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (!p.paymentDate || p.paymentDate.trim() === "") {
+                        errorDiv.textContent = `Pago #${numRow}: La fecha del pago es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                }
+
+                // 4. Validar tabla de Extras
+                for (let i = 0; i < currentUpdateData.extras.length; i++) {
+                    const x = currentUpdateData.extras[i];
+                    const numRow = i + 1;
+
+                    if (!x.description || x.description.trim() === "") {
+                        errorDiv.textContent = `Extra #${numRow}: La descripción es requerida.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (x.unitCost === undefined || isNaN(x.unitCost) || x.unitCost <= 0) {
+                        errorDiv.textContent = `Extra #${numRow}: El costo unitario debe ser un número mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                    if (x.quantity === undefined || isNaN(x.quantity) || x.quantity <= 0) {
+                        errorDiv.textContent = `Extra #${numRow}: La cantidad debe ser un número entero mayor a cero.`;
+                        errorDiv.classList.remove('d-none');
+                        document.querySelector('.modal-body').scrollTop = 0;
+                        return;
+                    }
+                }
             }
 
             document.getElementById('updateServicesJson').value = JSON.stringify(currentUpdateData.services);
@@ -471,7 +854,7 @@
 
         async function openDetailModal(id, signedPath) {
             if (signedPath && signedPath !== '') {
-                window.open('@Model.ApiBaseUrl/api/contracts/' + id + '/download', '_blank');
+                window.open('@Model.ApiBaseUrl/api/contracts/' + id + '/download?inline=true', '_blank');
                 return;
             }
 
@@ -533,6 +916,16 @@
                         extrasRows += '<tr><td>' + esc(x.description) + '</td><td class="text-center">$' + x.unitCost.toFixed(2) + '</td><td class="text-center">' + x.quantity + '</td><td class="text-center">$' + sub.toFixed(2) + '</td></tr>';
                     });
                     extrasHtml = '<div style="page-break-before:always; margin-top:30px;"><div style="background:#000;color:#fff;padding:7px;text-align:center;font-weight:bold;">ANEXO ÚNICO: CATÁLOGO DE SERVICIOS EXTRAORDINARIOS</div><p style="margin-top:10px;">De conformidad con la Cláusula Cuarta, en caso de requerir servicios adicionales a los descritos en las cláusulas operativas, se aplicarán los siguientes costos autorizados:</p><table class="table table-bordered" style="font-size:10pt;"><thead style="background:#e6e6e6;"><tr><th>Descripción</th><th>Costo Unit.</th><th>Cant.</th><th>Subtotal</th></tr></thead><tbody>' + extrasRows + '</tbody><tfoot><tr style="background:#e6e6e6;"><td colspan="3" class="text-end fw-bold">TOTAL:</td><td class="text-center fw-bold">$' + totalExtras.toFixed(2) + '</td></tr></tfoot></table></div>';
+                }
+
+                var cancellationBanner = '';
+                if (c.status === 'Cancelado') {
+                    cancellationBanner = `
+                        <div class="alert alert-danger mb-4 p-3" style="border-radius: 12px; border-left: 5px solid #dc3545; background-color: rgba(220, 53, 69, 0.03); font-family: sans-serif;">
+                            <h6 class="text-danger fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i> Contrato Cancelado</h6>
+                            <p class="mb-0 text-muted small" style="font-size: 0.9rem;"><strong>Motivo de la cancelación:</strong> ${esc(c.cancellationReason || 'No especificado')}</p>
+                        </div>
+                    `;
                 }
 
                 var html = `
@@ -612,7 +1005,14 @@
                     ${extrasHtml}
                 `;
 
-                contentDiv.innerHTML = html;
+                contentDiv.innerHTML = cancellationBanner + html;
+
+                // Agregar/quitar clase de marca de agua para contratos cancelados
+                if (c.status === 'Cancelado') {
+                    contentDiv.classList.add('cancelled-contract');
+                } else {
+                    contentDiv.classList.remove('cancelled-contract');
+                }
             } catch (err) {
                 contentDiv.innerHTML = '<div class="text-center p-5 text-danger"><i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i><p class="mt-3">' + err.message + '</p></div>';
             }

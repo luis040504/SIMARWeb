@@ -30,8 +30,7 @@ namespace ContractsService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ClientAddress")
-                        .IsRequired()
+                    b.Property<string>("CancellationReason")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ClientDeclaraciones")
@@ -41,15 +40,7 @@ namespace ContractsService.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ClientName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ClientObjetoSocial")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ClientRfc")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -69,6 +60,9 @@ namespace ContractsService.Migrations
                     b.Property<string>("Folio")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuotationId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Representative")
                         .IsRequired()

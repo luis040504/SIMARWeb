@@ -54,6 +54,8 @@ const manifestController = {
             const manifest = await Manifest.create(body);
             res.status(201).json({ success: true, data: manifest });
         } catch (err) {
+            fs.appendFileSync('error.log', `[${new Date().toISOString()}] POST /api/manifiestos ERROR: ${err.stack}\n`);
+            console.error('[POST /api/manifiestos] ERROR:', err);
             res.status(500).json({ success: false, message: 'Error interno del servidor' });
         }
     },
@@ -77,7 +79,7 @@ const manifestController = {
     async updateStatus(req, res) {
         try {
             const { estado, fecha_firma } = req.body;
-            const estadosValidos = ['borrador', 'en_transito', 'completado'];
+            const estadosValidos = ['borrador', 'en_transito', 'completado', 'cancelado'];
 
             if (!estadosValidos.includes(estado)) {
                 return res.status(400).json({ success: false, message: 'Estado inválido' });

@@ -9,83 +9,111 @@ public class EmpleadosApiService
 
     public EmpleadosApiService(HttpClient http) => _http = http;
 
-    // Obtener empleados por rol (chofer, tecnico, etc.)
-    public async Task<List<EmpleadoItemDto>> GetByRoleAsync(string role)
+    public async Task<List<EmpleadoSimpleDto>> GetAllAsync()
     {
         try
         {
-            var response = await _http.GetFromJsonAsync<List<EmpleadoDto>>($"api/employees?role={role}");
-            return response?.Select(e => new EmpleadoItemDto
+            var list = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees");
+            return list?.Select(e => new EmpleadoSimpleDto
             {
-                UserId = e.UserId,
-                FullName = e.FullName,
-                RoleName = e.Role?.RoleName ?? role,
-                ProfessionalId = e.ProfessionalId
-            }).ToList() ?? new List<EmpleadoItemDto>();
+                Id = e.UserId.GetHashCode(), // Hack if ID is needed as int
+                Nombre = e.FullName,
+                Puesto = e.ProfessionalId
+            }).ToList() ?? [];
         }
         catch
         {
-            // Fallback para desarrollo
-            return role switch
-            {
-                "chofer" => new List<EmpleadoItemDto>
-                {
-                    new() { UserId = Guid.NewGuid(), FullName = "Carlos Hernández", RoleName = "chofer" },
-                    new() { UserId = Guid.NewGuid(), FullName = "Miguel Rodríguez", RoleName = "chofer" },
-                    new() { UserId = Guid.NewGuid(), FullName = "Jorge Martínez", RoleName = "chofer" }
-                },
-                "tecnico" => new List<EmpleadoItemDto>
-                {
-                    new() { UserId = Guid.NewGuid(), FullName = "Ana García", RoleName = "tecnico" },
-                    new() { UserId = Guid.NewGuid(), FullName = "Luis Pérez", RoleName = "tecnico" },
-                    new() { UserId = Guid.NewGuid(), FullName = "Roberto Gómez", RoleName = "tecnico" }
-                },
-                _ => new List<EmpleadoItemDto>()
-            };
+            return [];
         }
     }
 
-    // Obtener todos los choferes
-    public async Task<List<EmpleadoItemDto>> GetChoferesAsync() => await GetByRoleAsync("chofer");
+    public async Task<List<ChoferDto>> GetChoferesAsync()
+    {
+        try
+        {
+            var empleados = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees?role=chofer");
+            if (empleados is null || empleados.Count == 0) return [];
 
-    // Obtener todos los técnicos
-    public async Task<List<EmpleadoItemDto>> GetTecnicosAsync() => await GetByRoleAsync("tecnico");
+            var tasks = empleados.Select(async e =>
+            {
+                try
+                {
+                    var detail = await _http.GetFromJsonAsync<EmpleadoDetailApiDto>($"api/employees/{e.UserId}");
+                    return new ChoferDto
+                    {
+                        UserId        = e.UserId,
+                        FullName      = e.FullName,
+                        LicenseNumber = detail?.DriverInfo?.LicenseNumber ?? "",
+                        LicenseType   = detail?.DriverInfo?.LicenseType  ?? ""
+                    };
+                }
+                catch
+                {
+                    return new ChoferDto { UserId = e.UserId, FullName = e.FullName };
+                }
+            });
 
-    // Clases internas para deserializar
-    // Clases internas para deserializar
-private class EmpleadoDto
-{
-    [JsonPropertyName("userId")]        
-    public Guid UserId { get; set; }
-    
-    [JsonPropertyName("fullName")]      
-    public string FullName { get; set; } = "";
-    
-    [JsonPropertyName("professionalId")] 
-    public string? ProfessionalId { get; set; }
-    
-    [JsonPropertyName("idRole")]        
-    public Guid? IdRole { get; set; }
-    
-    public RoleDto? Role { get; set; }
+            return [.. await Task.WhenAll(tasks)];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    // ─── DTOs internos ────────────────────────────────────────────────────────
+
+    private class EmpleadoApiDto
+    {
+        [JsonPropertyName("userId")]        public Guid   UserId   { get; set; }
+        [JsonPropertyName("fullName")]      public string FullName { get; set; } = "";
+        [JsonPropertyName("professionalId")] public string ProfessionalId { get; set; } = "";
+    }
+
+    private class EmpleadoDetailApiDto
+    {
+        [JsonPropertyName("driverInfo")] public DriverInfoDto? DriverInfo { get; set; }
+    }
+
+    private class DriverInfoDto
+    {
+        [JsonPropertyName("licenseNumber")] public string LicenseNumber { get; set; } = "";
+        [JsonPropertyName("licenseType")]   public string LicenseType   { get; set; } = "";
+    }
+
+    public async Task<List<EmpleadoItemDto>> GetTecnicosAsync()
+    {
+        try
+        {
+            var empleados = await _http.GetFromJsonAsync<List<EmpleadoApiDto>>("api/employees?role=tecnico");
+            return empleados?.Select(e => new EmpleadoItemDto
+            {
+                UserId = e.UserId,
+                FullName = e.FullName
+            }).ToList() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
 }
 
-private class RoleDto
+public class EmpleadoSimpleDto
 {
-    [JsonPropertyName("idRole")]       
-    public Guid IdRole { get; set; }
-    
-    [JsonPropertyName("roleName")]      
-    public string RoleName { get; set; } = "";
-}
+    public int Id { get; set; }
+    public string Nombre { get; set; } = "";
+    public string Puesto { get; set; } = "";
 }
 
 public class EmpleadoItemDto
 {
-    public Guid UserId { get; set; }
+    public Guid   UserId   { get; set; }
     public string FullName { get; set; } = "";
-    public string RoleName { get; set; } = "";
-    public string? ProfessionalId { get; set; }
-    
-    public string DisplayName => $"{FullName} ({RoleName})";
+}
+
+public class ChoferDto : EmpleadoItemDto
+{
+    public string LicenseNumber { get; set; } = "";
+    public string LicenseType   { get; set; } = "";
 }

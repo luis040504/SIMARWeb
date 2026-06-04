@@ -22,6 +22,20 @@ public class ClientesApiService
         }
     }
 
+    public async Task<List<ClienteDto>> SearchByBusinessNameAsync(string term)
+    {
+        try
+        {
+            var encoded = Uri.EscapeDataString(term);
+            var list = await _http.GetFromJsonAsync<List<ClienteDto>>($"client/businessname/{encoded}");
+            return list ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
     public async Task<ClienteDto?> GetByIdAsync(int id)
     {
         try
@@ -39,9 +53,12 @@ public class ClienteDto
 {
     [JsonPropertyName("id")]               public int Id { get; set; }
     [JsonPropertyName("name")]             public string Name { get; set; } = "";
+    [JsonPropertyName("businessName")]     public string BusinessName { get; set; } = "";
     [JsonPropertyName("phone")]            public string? Phone { get; set; }
     [JsonPropertyName("address")]          public string? Address { get; set; }
+    [JsonPropertyName("contactEmail")]     public string? ContactEmail { get; set; }
     [JsonPropertyName("rfc")]              public string? Rfc { get; set; }
     [JsonPropertyName("semarnatNum")]      public string? SemarnatNum { get; set; }
+    [JsonPropertyName("sedemaNum")]        public string? SedemaNum { get; set; }
     [JsonPropertyName("status")]           public string Status { get; set; } = "";
 }

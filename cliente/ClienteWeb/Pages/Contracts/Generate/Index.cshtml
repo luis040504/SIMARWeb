@@ -39,6 +39,8 @@
     <input type="hidden" asp-for="RFC" />
     <input type="hidden" asp-for="Address" />
     <input type="hidden" asp-for="Representative" />
+    <input type="hidden" asp-for="ContactEmail" />
+    <input type="hidden" asp-for="ContactPhone" />
     <input type="hidden" id="hidServicesJson" name="ServicesJsonHidden" value="@Model.ServicesJsonHidden" />
     <input type="hidden" id="hidPaymentsJson" name="PaymentsJsonHidden" value="@Model.PaymentsJsonHidden" />
     <input type="hidden" id="hidExtrasJson" name="ExtrasJsonHidden" value="@Model.ExtrasJsonHidden" />
@@ -104,11 +106,12 @@
                         
                         <button type="button" class="btn-simar-outline-gray w-100 fw-bold" onclick="openConfigModal()"><i class="bi bi-sliders me-1"></i> Configurar</button>
                         
-                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-outline-gray w-100" onclick="prepareDownload()">
+                        <button type="submit" id="btnSaveOnly" asp-page-handler="SaveOnly" class="btn-simar-outline-gray w-100" onclick="prepareDownload()" style="display:none"></button>
+                        <button type="button" class="btn-simar-outline-gray w-100" onclick="checkClientAndSave()">
                             <i class="bi bi-save me-1"></i> Solo Guardar
                         </button>
 
-                        <button type="button" id="btnDownloadPdf" class="btn-simar-primary w-100" onclick="saveAndDownloadPdf()">
+                        <button type="button" id="btnDownloadPdf" class="btn-simar-primary w-100" onclick="checkClientAndDownload()">
                             <i class="bi bi-file-earmark-pdf me-1"></i> Guardar y Descargar
                         </button>
                     </div>
@@ -297,6 +300,51 @@
     </div>
 </form>
 
+<!-- Modal: aviso de cliente nuevo -->
+<div class="modal fade" id="modalClienteNuevo" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.12);">
+
+            <!-- Franja superior de color SIMAR -->
+            <div style="height: 5px; background: var(--simar-green);"></div>
+
+            <div class="modal-body p-4 text-center">
+                <!-- Ícono -->
+                <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3"
+                     style="width: 64px; height: 64px; background: var(--simar-green-light);">
+                    <i class="bi bi-person-plus-fill" style="font-size: 1.8rem; color: var(--simar-green);"></i>
+                </div>
+
+                <!-- Título -->
+                <h5 class="fw-bold mb-1" style="color: var(--simar-dark);">Nuevo cliente detectado</h5>
+                <p class="text-muted small mb-3">Este RFC no está registrado en el sistema.</p>
+
+                <!-- Datos -->
+                <div class="rounded-3 p-3 mb-3 text-start" style="background: var(--simar-gray-light); border: 1px solid var(--simar-border);">
+                    <div class="small text-muted mb-1">RFC</div>
+                    <div class="fw-bold" id="modalClienteRfc" style="color: var(--simar-green); letter-spacing: 1px; font-size: 0.95rem;"></div>
+                    <div class="small text-muted mt-2 mb-1">Razón social</div>
+                    <div class="fw-semibold" id="modalClienteNombre" style="color: var(--simar-dark); font-size: 0.9rem;"></div>
+                </div>
+
+                <p class="small text-muted mb-0">
+                    Al continuar, este cliente será <strong style="color: var(--simar-dark);">registrado automáticamente</strong> antes de guardar el contrato.
+                </p>
+            </div>
+
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                <button type="button" class="btn-simar-outline-gray flex-fill" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>Cancelar
+                </button>
+                <button type="button" id="btnConfirmarCliente" class="btn-simar-primary flex-fill" onclick="confirmarRegistroCliente()">
+                    <i class="bi bi-check2 me-1"></i>Aceptar y continuar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <script>
     function filterQuotations() {
         let input = document.getElementById("tableSearchInput").value.toLowerCase();
@@ -316,6 +364,29 @@
     let services = @Html.Raw(Model.ServicesJsonHidden ?? "[]");
     let payments = @Html.Raw(Model.PaymentsJsonHidden ?? "[]");
     let extras = @Html.Raw(Model.ExtrasJsonHidden ?? "[]");
+    const registeredWastes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegisteredWastes));
+
+    function esc(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function onWasteChange(selectEl) {
+        let selectedOption = selectEl.options[selectEl.selectedIndex];
+        let unitsStr = selectedOption.getAttribute('data-units') || 'kg';
+        let unitsArr = unitsStr.split(',').map(x => x.trim());
+        
+        let tr = selectEl.closest('tr');
+        let unitSelect = tr.querySelector('.select-unit');
+        
+        let unitOptions = '';
+        unitsArr.forEach(unit => {
+            unitOptions += `<option value="${esc(unit)}">${esc(unit)}</option>`;
+        });
+        unitSelect.innerHTML = unitOptions;
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
         if (@(Model.ShowPreview ? "true" : "false")) {
@@ -340,7 +411,51 @@
     }
 
     function appendServiceRow(w, u, f, v, t, sa, wa, sub) {
-        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `<tr><td><input type="text" class="form-control form-control-sm" value="${w}"></td><td><input type="text" class="form-control form-control-sm" value="${u}"></td><td><input type="text" class="form-control form-control-sm" value="${f}"></td><td><input type="number" class="form-control form-control-sm" value="${v}"></td><td><input type="number" class="form-control form-control-sm" value="${t}"></td><td><input type="text" class="form-control form-control-sm" value="${sa}"></td><td><input type="text" class="form-control form-control-sm" value="${wa}"></td><td><input type="number" step="0.01" class="form-control form-control-sm" value="${sub || 0}"></td><td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`);
+        let options = '<option value="">-- Seleccione un residuo --</option>';
+        registeredWastes.forEach(rw => {
+            let selected = (rw.name === w || rw.code === w) ? 'selected' : '';
+            options += `<option value="${esc(rw.name)}" data-units="${esc(rw.validUnits)}" ${selected}>[${esc(rw.code)}] ${esc(rw.name)}</option>`;
+        });
+        let found = registeredWastes.some(rw => rw.name === w || rw.code === w);
+        if (!found && w && w.trim() !== '') {
+            options += `<option value="${esc(w)}" selected>${esc(w)} (No registrado)</option>`;
+        }
+
+        let wasteObj = registeredWastes.find(rw => rw.name === w || rw.code === w);
+        let validUnitsArr = ['kg'];
+        if (wasteObj && wasteObj.validUnits) {
+            validUnitsArr = wasteObj.validUnits.split(',').map(x => x.trim());
+        } else if (u) {
+            validUnitsArr = [u];
+        }
+        
+        let unitOptions = '';
+        validUnitsArr.forEach(unit => {
+            let selected = (unit === u) ? 'selected' : '';
+            unitOptions += `<option value="${esc(unit)}" ${selected}>${esc(unit)}</option>`;
+        });
+
+        document.getElementById('modServicesBody').insertAdjacentHTML('beforeend', `
+            <tr>
+                <td>
+                    <select class="form-select form-select-sm select-waste" onchange="onWasteChange(this)">
+                        ${options}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm select-unit">
+                        ${unitOptions}
+                    </select>
+                </td>
+                <td><input type="text" class="form-control form-control-sm input-frequency" value="${esc(f)}"></td>
+                <td><input type="number" class="form-control form-control-sm input-vehicles" value="${v}"></td>
+                <td><input type="number" class="form-control form-control-sm input-technicians" value="${t}"></td>
+                <td><input type="text" class="form-control form-control-sm input-serviceaddress" value="${esc(sa)}"></td>
+                <td><input type="text" class="form-control form-control-sm input-warehouseaddress" value="${esc(wa)}"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm input-subtotal" value="${sub || 0}"></td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>
+            </tr>
+        `);
     }
 
     function appendPaymentRow(d, a, pd) {
@@ -382,6 +497,12 @@
         } else {
             let tableHasErrors = false;
             sRows.forEach(tr => {
+                tr.querySelectorAll('select').forEach(sel => {
+                    if (!sel.value.trim()) {
+                        sel.classList.add('is-invalid');
+                        tableHasErrors = true;
+                    }
+                });
                 tr.querySelectorAll('input').forEach(inp => {
                     if (!inp.value.trim()) {
                         inp.classList.add('is-invalid');
@@ -446,7 +567,30 @@
         let tp = parseFloat(price);
         document.getElementById('lblTotalPrice').innerText = tp.toLocaleString('es-MX', {style: 'currency', currency: 'MXN'});
 
-        services = []; document.querySelectorAll('#modServicesBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value, Subtotal: parseFloat(i[7].value || 0) }); });
+        services = []; 
+        document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
+            let wasteSelect = tr.querySelector('.select-waste');
+            let unitSelect = tr.querySelector('.select-unit');
+            let freqInput = tr.querySelector('.input-frequency');
+            let vehInput = tr.querySelector('.input-vehicles');
+            let techInput = tr.querySelector('.input-technicians');
+            let saInput = tr.querySelector('.input-serviceaddress');
+            let waInput = tr.querySelector('.input-warehouseaddress');
+            let subInput = tr.querySelector('.input-subtotal');
+            
+            if (wasteSelect && unitSelect && freqInput) {
+                services.push({ 
+                    WasteType: wasteSelect.value, 
+                    WasteUnit: unitSelect.value, 
+                    Frequency: freqInput.value, 
+                    Vehicles: parseInt(vehInput.value) || 0, 
+                    Technicians: parseInt(techInput.value) || 0, 
+                    ServiceAddress: saInput.value, 
+                    WarehouseAddress: waInput.value, 
+                    Subtotal: parseFloat(subInput.value || 0) 
+                }); 
+            }
+        });
         document.getElementById('hidServicesJson').value = JSON.stringify(services);
 
         payments = []; document.querySelectorAll('#modPaymentsBody tr').forEach(tr => { let i = tr.querySelectorAll('input'); payments.push({ Description: i[0].value, Amount: parseFloat(i[1].value), PaymentDate: i[2].value }); });
@@ -497,9 +641,26 @@
     function prepareDownload() {
         services = []; 
         document.querySelectorAll('#modServicesBody tr').forEach(tr => { 
-            let i = tr.querySelectorAll('input'); 
-            if (i.length >= 8) {
-                services.push({ WasteType: i[0].value, WasteUnit: i[1].value, Frequency: i[2].value, Vehicles: parseInt(i[3].value), Technicians: parseInt(i[4].value), ServiceAddress: i[5].value, WarehouseAddress: i[6].value, Subtotal: parseFloat(i[7].value || 0) }); 
+            let wasteSelect = tr.querySelector('.select-waste');
+            let unitSelect = tr.querySelector('.select-unit');
+            let freqInput = tr.querySelector('.input-frequency');
+            let vehInput = tr.querySelector('.input-vehicles');
+            let techInput = tr.querySelector('.input-technicians');
+            let saInput = tr.querySelector('.input-serviceaddress');
+            let waInput = tr.querySelector('.input-warehouseaddress');
+            let subInput = tr.querySelector('.input-subtotal');
+            
+            if (wasteSelect && unitSelect && freqInput) {
+                services.push({ 
+                    WasteType: wasteSelect.value, 
+                    WasteUnit: unitSelect.value, 
+                    Frequency: freqInput.value, 
+                    Vehicles: parseInt(vehInput.value) || 0, 
+                    Technicians: parseInt(techInput.value) || 0, 
+                    ServiceAddress: saInput.value, 
+                    WarehouseAddress: waInput.value, 
+                    Subtotal: parseFloat(subInput.value || 0) 
+                }); 
             }
         });
         if (services.length > 0) document.getElementById('hidServicesJson').value = JSON.stringify(services);
@@ -524,6 +685,76 @@
     }
 
     var API_BASE = '@Model.ApiBaseUrl';
+    var _pendingAction = null;
+    
+    var USER_TOKEN = '@Model.Token';
+    if (!USER_TOKEN) {
+        var match = document.cookie.match(new RegExp('(^| )Authorization=([^;]+)'));
+        if (match) USER_TOKEN = decodeURIComponent(match[2]).replace('Bearer ', '').trim();
+    }
+
+    async function checkClientAndSave() {
+        _pendingAction = 'saveOnly';
+        await checkClientThenProceed();
+    }
+
+    async function checkClientAndDownload() {
+        _pendingAction = 'downloadPdf';
+        await checkClientThenProceed();
+    }
+
+    async function checkClientThenProceed() {
+        var rfc = (document.querySelector('input[name="RFC"]')?.value ?? '').trim();
+
+        if (!rfc) {
+            // Sin RFC: no hay nada que validar, continúa directo
+            executePendingAction();
+            return;
+        }
+
+        try {
+            // 🔒 Añadimos el token al check de cliente por si este endpoint también requiere auth
+            var headers = {};
+            if (USER_TOKEN) {
+                headers['Authorization'] = 'Bearer ' + USER_TOKEN;
+            }
+
+            var resp = await fetch(API_BASE + '/api/contracts/check-client?rfc=' + encodeURIComponent(rfc), {
+                headers: headers
+            });
+            if (!resp.ok) { executePendingAction(); return; }
+
+            var data = await resp.json();
+
+            if (data.exists) {
+                // Cliente ya registrado → continúa sin aviso
+                executePendingAction();
+            } else {
+                // Cliente nuevo → mostrar modal de aviso
+                var clientName = document.querySelector('input[name="BusinessName"]')?.value ?? '';
+                document.getElementById('modalClienteRfc').textContent = rfc;
+                document.getElementById('modalClienteNombre').textContent = clientName ? '"' + clientName + '" ' : '';
+                new bootstrap.Modal(document.getElementById('modalClienteNuevo')).show();
+            }
+        } catch (e) {
+            // Si el check falla por red, continúa de todas formas
+            executePendingAction();
+        }
+    }
+
+    function confirmarRegistroCliente() {
+        bootstrap.Modal.getInstance(document.getElementById('modalClienteNuevo')).hide();
+        executePendingAction();
+    }
+
+    function executePendingAction() {
+        if (_pendingAction === 'saveOnly') {
+            prepareDownload();
+            document.getElementById('btnSaveOnly').click();
+        } else if (_pendingAction === 'downloadPdf') {
+            saveAndDownloadPdf();
+        }
+    }
 
     async function saveAndDownloadPdf() {
         prepareDownload();
@@ -557,7 +788,18 @@
 
             var pdfController = new AbortController();
             var pdfTimeout = setTimeout(function() { pdfController.abort(); }, 30000);
-            var pdfResponse = await fetch(API_BASE + '/api/contracts/' + result.contractId + '/download', { signal: pdfController.signal });
+            
+            // 🛠️ Inyectamos las cabeceras con el JWT antes de consultar al microservicio la descarga
+            var pdfHeaders = {};
+            if (USER_TOKEN) {
+                pdfHeaders['Authorization'] = 'Bearer ' + USER_TOKEN;
+            }
+
+            var pdfResponse = await fetch(API_BASE + '/api/contracts/' + result.contractId + '/download', { 
+                signal: pdfController.signal,
+                headers: pdfHeaders
+            });
+            
             clearTimeout(pdfTimeout);
             if (pdfResponse.ok) {
                 var blob = await pdfResponse.blob();

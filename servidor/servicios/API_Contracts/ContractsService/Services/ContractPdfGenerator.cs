@@ -11,12 +11,9 @@ public static class ContractPdfGenerator
     private static readonly string Black = "#000000";
     private static readonly string White = "#FFFFFF";
 
-    public static byte[] Generate(Contract contract)
+    public static byte[] Generate(Contract contract, string clientName, string clientRfc, string clientAddress)
     {
-        string clientName = contract.ClientName;
-        string clientRfc = contract.ClientRfc;
-        string representative = contract.Representative;
-        string clientAddress = contract.ClientAddress;
+        bool isCancelled = string.Equals(contract.Status, "Cancelado", StringComparison.OrdinalIgnoreCase);
 
         var document = Document.Create(container =>
         {
@@ -26,6 +23,9 @@ public static class ContractPdfGenerator
                 page.MarginVertical(1.8f, Unit.Centimetre);
                 page.MarginHorizontal(2.2f, Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(9));
+
+                if (isCancelled)
+                    ApplyCancelledWatermark(page);
 
                 page.Content().Column(col =>
                 {
@@ -38,7 +38,7 @@ public static class ContractPdfGenerator
                     });
                     col.Item().PaddingTop(8);
 
-                    BuildHeaderTable(col, contract, clientName, clientRfc, representative);
+                    BuildHeaderTable(col, contract, clientName, clientRfc, contract.Representative, clientAddress);
 
                     col.Item().PaddingTop(15).Background(Color.FromHex(Black))
                         .Padding(7).AlignCenter()
@@ -49,7 +49,7 @@ public static class ContractPdfGenerator
                         });
 
                     col.Item().PaddingTop(10);
-                    BuildClauses(col, contract, representative);
+                    BuildClauses(col, contract, contract.Representative);
                 });
             });
 
@@ -61,6 +61,9 @@ public static class ContractPdfGenerator
                     page.MarginVertical(1.8f, Unit.Centimetre);
                     page.MarginHorizontal(2.2f, Unit.Centimetre);
                     page.DefaultTextStyle(x => x.FontSize(9));
+
+                    if (isCancelled)
+                        ApplyCancelledWatermark(page);
 
                     page.Content().Column(col =>
                     {
@@ -80,7 +83,7 @@ public static class ContractPdfGenerator
                         BuildExtrasTable(col, contract);
 
                         col.Item().PaddingTop(60);
-                        BuildSignatureBlock(col, representative);
+                        BuildSignatureBlock(col, contract.Representative);
                     });
                 });
             }
@@ -89,7 +92,30 @@ public static class ContractPdfGenerator
         return document.GeneratePdf();
     }
 
-    private static void BuildHeaderTable(ColumnDescriptor col, Contract contract, string clientName, string clientRfc, string representative)
+    /// <summary>
+    /// Aplica una marca de agua diagonal "CANCELADO" en rojo semitransparente
+    /// sobre la página usando la API de QuestPDF.
+    /// </summary>
+    private static void ApplyCancelledWatermark(PageDescriptor page)
+    {
+        page.Foreground()
+            .AlignCenter()
+            .AlignMiddle()
+            .Rotate(-45)
+            .Text(t =>
+            {
+                t.DefaultTextStyle(s => s
+                    .Bold()
+                    .FontSize(72)
+                    .FontColor(Color.FromHex("#DC3545").WithAlpha(45))
+                    .LetterSpacing(0.3f));
+                t.Span("CANCELADO");
+            });
+    }
+
+
+
+    private static void BuildHeaderTable(ColumnDescriptor col, Contract contract, string clientName, string clientRfc, string representative, string clientAddress)
     {
         col.Item().Border(1).Table(table =>
         {
@@ -169,7 +195,7 @@ public static class ContractPdfGenerator
             CellText(table.Cell().ColumnSpan(7).Element(DataCell), contract.ClientObjetoSocial ?? "", 8f);
 
             CellText(table.Cell().Element(GrayLeftCell), "DOMICILIO", 8.5f, bold: true);
-            CellText(table.Cell().ColumnSpan(5).Element(DataCell), string.IsNullOrEmpty(contract.ClientAddress) ? "Pendiente de captura" : contract.ClientAddress, 8f);
+            CellText(table.Cell().ColumnSpan(5).Element(DataCell), string.IsNullOrEmpty(clientAddress) ? "Pendiente de captura" : clientAddress, 8f);
             CellText(table.Cell().Element(GrayCell), "R.F.C.", 8.5f, bold: true);
             CellText(table.Cell().Element(CenterCell), clientRfc, 8.5f, bold: true);
 

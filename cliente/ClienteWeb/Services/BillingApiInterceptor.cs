@@ -30,13 +30,41 @@ namespace ClienteWeb.Services
                     if (!string.IsNullOrWhiteSpace(content))
                     {
                         using var document = JsonDocument.Parse(content);
-                        if (document.RootElement.TryGetProperty("detail", out var detailElement))
+                        JsonElement errorElement;
+                        
+                        if (document.RootElement.TryGetProperty("detail", out errorElement) || 
+                            document.RootElement.TryGetProperty("details", out errorElement))
                         {
-                            friendlyMessage = detailElement.GetString() ?? friendlyMessage;
+                            if (errorElement.ValueKind == JsonValueKind.Array)
+                            {
+                                var errors = new List<string>();
+                                foreach (var err in errorElement.EnumerateArray())
+                                {
+                                    if (err.TryGetProperty("msg", out var msgElement))
+                                    {
+                                        var loc = err.TryGetProperty("loc", out var locElement) ? string.Join(".", locElement.EnumerateArray()) : "unknown";
+                                        errors.Add($"{loc}: {msgElement.GetString()}");
+                                    }
+                                    else
+                                    {
+                                        errors.Add(err.ToString());
+                                    }
+                                }
+                                friendlyMessage = string.Join(" | ", errors);
+                            }
+                            else
+                            {
+                                friendlyMessage = errorElement.GetString() ?? friendlyMessage;
+                            }
                         }
-                        else if (document.RootElement.TryGetProperty("message", out var messageElement))
+                        
+                        if (document.RootElement.TryGetProperty("message", out var messageElement))
                         {
-                            friendlyMessage = messageElement.GetString() ?? friendlyMessage;
+                            var msg = messageElement.GetString();
+                            if (!string.IsNullOrEmpty(msg) && msg != "Error de validación en los datos de entrada")
+                            {
+                                friendlyMessage = msg;
+                            }
                         }
                     }
                 }

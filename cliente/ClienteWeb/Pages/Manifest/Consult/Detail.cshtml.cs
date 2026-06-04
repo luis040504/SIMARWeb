@@ -144,6 +144,8 @@ public enum ManifestStatus
 public class ManifestDetailViewModel
 {
     public string Id { get; set; } = string.Empty;
+    public int IdCliente { get; set; }
+    public int? ContratoId { get; set; }
     public string Type { get; set; } = "especial";
     public ManifestStatus Status { get; set; } = ManifestStatus.Borrador;
 
@@ -265,7 +267,7 @@ public class SpecialResidueItem
 
 public class HazardousResidueItem
 {
-    public string ResidueName { get; set; } = string.Empty;
+    public string? ResidueName      { get; set; }
     public bool IsCorrosive { get; set; }
     public bool IsReactive { get; set; }
     public bool IsExplosive { get; set; }
@@ -273,8 +275,8 @@ public class HazardousResidueItem
     public bool IsFlammable { get; set; }
     public bool IsBiological { get; set; }
     public bool IsMutagenic { get; set; }
-    public string ContainerType { get; set; } = string.Empty;
-    public string ContainerCapacity { get; set; } = string.Empty;
+    public string? ContainerType    { get; set; }
+    public string? ContainerCapacity { get; set; }
     public decimal AmountKg { get; set; }
     public bool? HasLabel { get; set; }
 }

@@ -1,18 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
+using ClienteWeb.Services;
 
 namespace ClienteWeb.Pages.Contracts.Consult
 {
     public class ConsultModel : PageModel
     {
         private readonly HttpClient _httpClient;
+        private readonly WasteCatalogApiService _wasteCatalogService;
 
         public string ApiBaseUrl { get; private set; } = "";
+        public List<WasteCatalogItemDto> RegisteredWastes { get; set; } = new();
 
-        public ConsultModel(IHttpClientFactory httpClientFactory)
+        public ConsultModel(IHttpClientFactory httpClientFactory, WasteCatalogApiService wasteCatalogService)
         {
             _httpClient = httpClientFactory.CreateClient("ContractsApi");
+            _wasteCatalogService = wasteCatalogService;
             ApiBaseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? "";
         }
 
@@ -37,6 +41,8 @@ namespace ClienteWeb.Pages.Contracts.Consult
         [BindProperty] public string ServicesJson { get; set; } = "[]";
         [BindProperty] public string PaymentsJson { get; set; } = "[]";
         [BindProperty] public string ExtrasJson { get; set; } = "[]";
+        [BindProperty] public bool IsCancellation { get; set; } = false;
+        [BindProperty] public string? CancellationReason { get; set; }
 
         public bool ShowSuccessMessage { get; set; }
         public string ErrorMessage { get; set; } = "";
@@ -45,6 +51,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public async Task OnGetAsync()
         {
             await LoadContractsAsync();
+            await LoadWastesAsync();
         }
 
         private async Task LoadContractsAsync()
@@ -74,7 +81,8 @@ namespace ClienteWeb.Pages.Contracts.Consult
                         StartDate = c.CreatedAt,
                         EndDate = c.ExpirationDate,
                         Status = c.Status,
-                        SignedContractPath = c.SignedContractPath
+                        SignedContractPath = c.SignedContractPath,
+                        CancellationReason = c.CancellationReason
                     }).ToList();
                 }
             }
@@ -91,6 +99,39 @@ namespace ClienteWeb.Pages.Contracts.Consult
         {
             try
             {
+                if (IsCancellation)
+                {
+                    if (string.IsNullOrWhiteSpace(CancellationReason))
+                    {
+                        ErrorMessage = "Debe proporcionar una razón para la cancelación del contrato.";
+                        await LoadContractsAsync();
+                        return Page();
+                    }
+
+                    var cancelRequest = new { CancellationReason = CancellationReason };
+                    var cancelResponse = await _httpClient.PatchAsJsonAsync($"/api/contracts/{UpdateDbId}/cancel", cancelRequest);
+                    
+                    if (!cancelResponse.IsSuccessStatusCode) 
+                    {
+                        var errorContent = await cancelResponse.Content.ReadAsStringAsync();
+                        throw new Exception($"Error del servidor al cancelar contrato: {cancelResponse.StatusCode} - {errorContent}");
+                    }
+
+                    var cancelResult = await cancelResponse.Content.ReadFromJsonAsync<JsonElement>();
+                    int cancelledManifests = cancelResult.TryGetProperty("cancelledManifests", out var cmVal) ? cmVal.GetInt32() : 0;
+
+                    ShowSuccessMessage = true;
+                    AuditTrail.Add($"Usuario: Administrador | Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                    AuditTrail.Add($"Contrato cancelado exitosamente. Motivo: {CancellationReason}");
+                    if (cancelledManifests > 0)
+                    {
+                        AuditTrail.Add($"Se cancelaron automáticamente {cancelledManifests} manifiesto(s) asociado(s).");
+                    }
+
+                    await LoadContractsAsync();
+                    return Page();
+                }
+
                 if (UpdateEndDate.HasValue && UpdateEndDate.Value <= UpdateStartDate)
                 {
                     ErrorMessage = "La nueva fecha de término debe ser posterior a la fecha de inicio.";
@@ -104,6 +145,12 @@ namespace ClienteWeb.Pages.Contracts.Consult
                 var services = JsonSerializer.Deserialize<List<object>>(ServicesJson) ?? new();
                 var payments = JsonSerializer.Deserialize<List<object>>(PaymentsJson) ?? new();
                 var extras = JsonSerializer.Deserialize<List<object>>(ExtrasJson) ?? new();
+
+                var newStatus = current.GetProperty("status").GetString();
+                if (PdfFile != null && PdfFile.Length > 0)
+                {
+                    newStatus = "Activo";
+                }
 
                 var updateData = new {
                     id = UpdateDbId,
@@ -119,7 +166,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
                     contractDuration = current.GetProperty("contractDuration").GetString(),
                     firstServiceDate = UpdateStartDate,
                     endDate = UpdateEndDate,
-                    status = current.GetProperty("status").GetString(),
+                    status = newStatus,
                     services = services,
                     payments = payments,
                     extras = extras
@@ -159,7 +206,35 @@ namespace ClienteWeb.Pages.Contracts.Consult
             }
 
             await LoadContractsAsync();
+            await LoadWastesAsync();
             return Page();
+        }
+
+        private async Task LoadWastesAsync()
+        {
+            try
+            {
+                var allItems = new List<WasteCatalogItemDto>();
+                int page = 1;
+                int size = 100;
+                while (true)
+                {
+                    var result = await _wasteCatalogService.GetAllAsync(page: page, size: size);
+                    if (result?.Items == null || !result.Items.Any())
+                        break;
+
+                    allItems.AddRange(result.Items);
+                    if (allItems.Count >= result.TotalCount)
+                        break;
+
+                    page++;
+                }
+                RegisteredWastes = allItems;
+            }
+            catch
+            {
+                RegisteredWastes = new List<WasteCatalogItemDto>();
+            }
         }
     }
 
@@ -173,6 +248,7 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public DateTime EndDate { get; set; }
         public string Status { get; set; } = "";
         public string? SignedContractPath { get; set; }
+        public string? CancellationReason { get; set; }
     }
 
     public class ApiContractDto
@@ -187,5 +263,6 @@ namespace ClienteWeb.Pages.Contracts.Consult
         public DateTime CreatedAt { get; set; }
         public DateTime ExpirationDate { get; set; }
         public string? SignedContractPath { get; set; }
+        public string? CancellationReason { get; set; }
     }
 }

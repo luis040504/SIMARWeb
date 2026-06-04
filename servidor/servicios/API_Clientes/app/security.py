@@ -7,7 +7,7 @@ from uuid import UUID
 security = HTTPBearer()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY is not set")

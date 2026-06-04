@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContractsService.Migrations
 {
     [DbContext(typeof(ContractsDbContext))]
-    [Migration("20260511011031_UpdateContractFields")]
-    partial class UpdateContractFields
+    [Migration("20260601192458_AddContractCancellationReasonProperty")]
+    partial class AddContractCancellationReasonProperty
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,8 +33,7 @@ namespace ContractsService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ClientAddress")
-                        .IsRequired()
+                    b.Property<string>("CancellationReason")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ClientDeclaraciones")
@@ -44,15 +43,7 @@ namespace ContractsService.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ClientName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ClientObjetoSocial")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ClientRfc")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -72,6 +63,9 @@ namespace ContractsService.Migrations
                     b.Property<string>("Folio")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuotationId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Representative")
                         .IsRequired()

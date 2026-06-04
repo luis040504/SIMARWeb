@@ -3,6 +3,7 @@ from datetime import timedelta
 from uuid import UUID
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 
 from app import schemas, security
@@ -19,7 +20,20 @@ class AuthService:
             if not user:
                 user = auth_repository.get_user_by_username(self.db, identifier)
 
-            if not user or not security.verify_password(password, user.password_hash):
+            import sys
+            print(f"DEBUG: Login attempt for {identifier}. Found user: {user.username if user else 'None'}", flush=True)
+
+            if not user:
+                raise ValueError("Incorrect credentials")
+
+            try:
+                is_valid = security.verify_password(password, user.password_hash)
+                print(f"DEBUG: Password verification for {user.username} resulted in: {is_valid}", flush=True)
+            except Exception as ve:
+                print(f"DEBUG: EXCEPTION during verify_password: {ve}", flush=True)
+                raise ve
+
+            if not is_valid:
                 raise ValueError("Incorrect credentials")
             
             if not user.is_active:

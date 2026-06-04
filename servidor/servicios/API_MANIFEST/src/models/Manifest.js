@@ -73,8 +73,13 @@ class Manifest {
     // ─── CREAR ────────────────────────────────────────────────────────────────
 
     static async create(data) {
-        if (!data.tipo) throw new Error('tipo es requerido para generar el folio.');
-        // id_cliente = 0 representa clientes externos/no registrados en el sistema
+        console.log("DEBUG CREATE MANIFEST DATA:", JSON.stringify(data, null, 2));
+        
+        // Sanitización de datos críticos para evitar rechazos de DB
+        data.tipo = data.tipo || 'especial';
+        data.razon_social = data.razon_social || 'CLIENTE NO REGISTRADO';
+        data.id_cliente = data.id_cliente || 0;
+        data.estado = data.estado || 'borrador';
 
         const conn = await db.getConnection();
         try {

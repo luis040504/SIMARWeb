@@ -16,12 +16,18 @@ namespace ClienteWeb.Pages.Billing
         private readonly IBillingService _billingService;
         private readonly IInvoiceGeneratorService _pdfService;
         private readonly HttpClient _clientesApi;
+        private readonly ContratosApiService _contratosApi;
+        private readonly ManifestApiService _manifestApi;
+        private readonly IHttpClientFactory _factory;
 
-        public IndexModel(IBillingService billingService, IInvoiceGeneratorService pdfService, IHttpClientFactory factory)
+        public IndexModel(IBillingService billingService, IInvoiceGeneratorService pdfService, IHttpClientFactory factory, ContratosApiService contratosApi, ManifestApiService manifestApi)
         {
             _billingService = billingService;
             _pdfService = pdfService;
             _clientesApi = factory.CreateClient("ClientesApi");
+            _contratosApi = contratosApi;
+            _manifestApi = manifestApi;
+            _factory = factory;
         }
 
         public string Role { get; set; } = "Admin";
@@ -40,6 +46,8 @@ namespace ClienteWeb.Pages.Billing
 
         public List<BillingRecord> DisplayedRecords { get; set; }
         public bool IsSearchResult { get; set; }
+        public List<ClienteOutput> ActiveClients { get; set; } = new();
+        public BillingResponse FullSelectedInvoice { get; set; }
 
         [BindProperty]
         public string SelectedRecordId { get; set; }
@@ -60,28 +68,40 @@ namespace ClienteWeb.Pages.Billing
         [BindProperty] public string UnitCode { get; set; }
         [BindProperty] public string TaxObject { get; set; }
         [BindProperty] public string ItemsJson { get; set; }
+        [BindProperty] public string ServiceId { get; set; }
 
         [TempData]
         public string StatusMessage { get; set; }
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             DetermineRole();
             SetDefaultTab();
             await LoadDataAsync();
             ActiveModal = "None";
+            return Page();
         }
 
-        public async Task OnPostSearchAsync()
+        public async Task<IActionResult> OnPostSearchAsync()
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             DetermineRole();
             SetDefaultTab();
             await LoadDataAsync();
             ActiveModal = "None";
+            return Page();
         }
 
-        public async Task OnPostPrepareModalAsync(string modalType)
+        public async Task<IActionResult> OnPostPrepareModalAsync(string modalType)
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             ActiveModal = modalType;
             DetermineRole();
             SetDefaultTab();
@@ -90,6 +110,19 @@ namespace ClienteWeb.Pages.Billing
             if (!string.IsNullOrEmpty(SelectedRecordId))
             {
                 SelectedRecord = DisplayedRecords.FirstOrDefault(r => r.Id == SelectedRecordId);
+                
+                if (modalType == "Details")
+                {
+                    try
+                    {
+                        FullSelectedInvoice = await _billingService.GetInvoiceByIdAsync(SelectedRecordId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error fetching full selected invoice: {ex.Message}");
+                    }
+                }
+
                 if (SelectedRecord != null)
                 {
                     TaxId = SelectedRecord.TaxId;
@@ -102,25 +135,44 @@ namespace ClienteWeb.Pages.Billing
                     ProductCode = SelectedRecord.ProductCode ?? "80141600";
                     UnitCode = SelectedRecord.UnitCode ?? "E48";
                     TaxObject = SelectedRecord.TaxObject ?? "02";
+                    ServiceId = SelectedRecord.ServiceId;
                     
-                    var initialItems = new List<InvoiceItemDto>
+                    if (SelectedRecord.RecordType == "Service" && !string.IsNullOrEmpty(SelectedRecord.RawItemsJson))
                     {
-                        new InvoiceItemDto 
+                        var serviceItems = JsonSerializer.Deserialize<List<ResidueDetail>>(SelectedRecord.RawItemsJson);
+                        var invoiceItems = serviceItems.Select(si => new InvoiceItemDto 
                         { 
-                            Concept = SelectedRecord.ServiceType ?? SelectedRecord.Description ?? "Servicio", 
-                            Quantity = 1,
-                            Amount = SelectedRecord.Amount 
-                        }
-                    };
-                    ItemsJson = JsonSerializer.Serialize(initialItems);
+                            Concept = si.Residuo, 
+                            Quantity = si.Cantidad, 
+                            Amount = si.Subtotal 
+                        }).ToList();
+                        ItemsJson = JsonSerializer.Serialize(invoiceItems);
+                    }
+                    else
+                    {
+                        var initialItems = new List<InvoiceItemDto>
+                        {
+                            new InvoiceItemDto 
+                            { 
+                                Concept = SelectedRecord.ServiceType ?? SelectedRecord.Description ?? "Servicio", 
+                                Quantity = 1,
+                                Amount = SelectedRecord.Amount 
+                            }
+                        };
+                        ItemsJson = JsonSerializer.Serialize(initialItems);
+                    }
                 }
             }
+            return Page();
         }
 
 
 
         public async Task<IActionResult> OnPostGenerateAsync()
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             try
             {
                 var items = JsonSerializer.Deserialize<List<InvoiceItemDto>>(ItemsJson);
@@ -148,7 +200,8 @@ namespace ClienteWeb.Pages.Billing
                         Taxes = new List<TaxItem> { new TaxItem { Amount = i.Amount * 0.16m } }
                     }).ToList(),
                     Attachments = new Attachments(),
-                    Status = "Pending"
+                    Status = "Pending",
+                    ServiceId = ServiceId
                 };
 
                 await _billingService.CreateInvoiceAsync(billingCreate);
@@ -164,6 +217,9 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task<IActionResult> OnPostUploadPhysicalInvoiceAsync(IFormFile PhysicalInvoice, string selectedRecordIdUpload)
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             if (PhysicalInvoice != null && PhysicalInvoice.Length > 0 && PhysicalInvoice.ContentType == "application/pdf")
             {
                 try
@@ -185,6 +241,9 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task<IActionResult> OnPostEditAsync()
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             try
             {
                 if (string.IsNullOrEmpty(SelectedRecordId))
@@ -239,6 +298,9 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task<IActionResult> OnPostAcceptAsync(string id)
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             try
             {
                 await _billingService.UpdateStatusAsync(id, "Accepted");
@@ -251,13 +313,33 @@ namespace ClienteWeb.Pages.Billing
             return RedirectToPage(new { ActiveTab = this.ActiveTab });
         }
 
-        public async Task<IActionResult> OnPostRejectAsync(string id, List<string> rejectReasons)
+        public async Task<IActionResult> OnPostRejectAsync(string id, List<string> rejectReasons, string customRejectReason = null)
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             try
             {
+                if (rejectReasons != null)
+                {
+                    if (rejectReasons.Contains("Otros") && !string.IsNullOrWhiteSpace(customRejectReason))
+                    {
+                        rejectReasons.Remove("Otros");
+                        rejectReasons.Add($"Otros: {customRejectReason.Trim()}");
+                    }
+                }
+                else
+                {
+                    rejectReasons = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(customRejectReason))
+                    {
+                        rejectReasons.Add($"Otros: {customRejectReason.Trim()}");
+                    }
+                }
+
                 var reason = string.Join(" / ", rejectReasons);
                 await _billingService.UpdateStatusAsync(id, "Rejected", reason);
-                StatusMessage = $"La factura ha sido rechazada.";
+                StatusMessage = $"La prefactura ha sido rechazada.";
             }
             catch (BillingApiException ex)
             {
@@ -268,6 +350,9 @@ namespace ClienteWeb.Pages.Billing
 
         public async Task<IActionResult> OnPostDownloadAsync(string id)
         {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return RedirectToPage("/Client_SimarUser/Client/Login");
+
             try
             {
                 var invoice = await _billingService.GetInvoiceByIdAsync(id);
@@ -291,6 +376,276 @@ namespace ClienteWeb.Pages.Billing
             {
                 TempData["ErrorMessage"] = $"Error inesperado al generar PDF: {ex.Message}";
                 return RedirectToPage(new { ActiveTab = this.ActiveTab });
+            }
+        }
+
+        public async Task<IActionResult> OnGetGetManifestsForClientAsync(int clientId)
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return new JsonResult(new { error = "Unauthorized" });
+
+            try
+            {
+                var ready = await _billingService.GetReadyToBillAsync();
+                var manifests = ready
+                    .Where(r => r.Cliente.Id == clientId)
+                    .Select(r => new {
+                        manifestId = r.Source == "contract" ? r.NumeroManifiesto : r.ManifestId.ToString(),
+                        numeroManifiesto = r.NumeroManifiesto,
+                        source = r.Source,
+                        date = r.FechaServicio.ToString("dd/MM/yyyy"),
+                        residueType = r.TipoResiduo,
+                        amount = r.TotalEstimado,
+                        contractFolio = r.Contrato?.Folio ?? "N/A",
+                        paymentMethod = r.Contrato?.MetodoPago ?? "PUE",
+                        rfc = r.Cliente.Rfc,
+                        businessName = r.Cliente.RazonSocial,
+                        postalCode = r.Cliente.PostalCode,
+                        details = r.DetallesServicio.Select(d => new {
+                            residuo = d.Residuo,
+                            cantidad = d.Cantidad,
+                            unidad = d.Unidad,
+                            precioUnitario = d.PrecioUnitario,
+                            subtotal = d.Subtotal
+                        }).ToList()
+                    }).ToList();
+
+                return new JsonResult(manifests);
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { error = ex.Message });
+            }
+        }
+
+        public async Task<IActionResult> OnGetGetContractsForClientAsync(int clientId)
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return new JsonResult(new { error = "Unauthorized" });
+
+            try
+            {
+                var allContracts = await _contratosApi.GetAllAsync();
+                var filtered = allContracts
+                    .Where(c => c.ClientId == clientId && c.Status != "Pendiente de firma")
+                    .Select(c => new {
+                        id = c.Id,
+                        folio = c.Folio,
+                        status = c.Status,
+                        clientName = c.ClientName,
+                        clientRfc = c.ClientRfc,
+                        clientAddress = c.ClientAddress
+                    })
+                    .ToList();
+
+                return new JsonResult(filtered);
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { error = ex.Message });
+            }
+        }
+
+        public async Task<IActionResult> OnGetGetManifestsForContractAsync(int clientId, int contractId)
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("JWT")))
+                return new JsonResult(new { error = "Unauthorized" });
+
+            try
+            {
+                // Fetch contract detail dynamically from Contracts API to avoid modifying models
+                var client = _factory.CreateClient("ContractsApi");
+                var resp = await client.GetAsync($"api/contracts/{contractId}/detail");
+                if (!resp.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Error al obtener contrato {contractId}: {resp.StatusCode}");
+                    return new JsonResult(new { error = "Error al obtener detalles del contrato" });
+                }
+
+                var contractJson = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+                // Fetch completed manifests for this contract
+                var manifests = await _manifestApi.GetAllAsync(contratoId: contractId, estado: "completado");
+
+                var manifestList = new List<object>();
+                foreach (var m in manifests)
+                {
+                    var details = await _manifestApi.GetByIdAsync(m.Id);
+                    if (details == null) continue;
+
+                    var mappedDetails = new List<object>();
+                    decimal totalEstimated = 0;
+
+                    if (details.Type == "especial" && details.SpecialResidues != null)
+                    {
+                        foreach (var sr in details.SpecialResidues)
+                        {
+                            decimal unitPrice = 0;
+                            if (contractJson.ValueKind == JsonValueKind.Object && contractJson.TryGetProperty("services", out var servicesProp) && servicesProp.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var s in servicesProp.EnumerateArray())
+                                {
+                                    string? wasteType = null;
+                                    decimal subtotal = 0;
+                                    if (s.ValueKind == JsonValueKind.Object)
+                                    {
+                                        foreach (var prop in s.EnumerateObject())
+                                        {
+                                            if (string.Equals(prop.Name, "wasteType", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                wasteType = prop.Value.GetString();
+                                            }
+                                            else if (string.Equals(prop.Name, "subtotal", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                if (prop.Value.ValueKind == JsonValueKind.Number)
+                                                {
+                                                    subtotal = prop.Value.GetDecimal();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (wasteType != null && sr.ResidueName != null &&
+                                        (wasteType.IndexOf(sr.ResidueName, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         sr.ResidueName.IndexOf(wasteType, StringComparison.OrdinalIgnoreCase) >= 0))
+                                    {
+                                        unitPrice = subtotal;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (unitPrice == 0 && contractJson.ValueKind == JsonValueKind.Object)
+                            {
+                                if (contractJson.TryGetProperty("totalBasePrice", out var basePriceProp) && basePriceProp.ValueKind == JsonValueKind.Number)
+                                {
+                                    unitPrice = basePriceProp.GetDecimal();
+                                }
+                                else if (contractJson.TryGetProperty("TotalBasePrice", out var basePriceProp2) && basePriceProp2.ValueKind == JsonValueKind.Number)
+                                {
+                                    unitPrice = basePriceProp2.GetDecimal();
+                                }
+                            }
+
+                            decimal subtotalVal = sr.Weight * unitPrice;
+                            totalEstimated += subtotalVal;
+
+                            mappedDetails.Add(new {
+                                residuo = sr.ResidueName,
+                                cantidad = sr.Weight,
+                                unidad = sr.Unit,
+                                precioUnitario = unitPrice,
+                                subtotal = subtotalVal
+                            });
+                        }
+                    }
+                    else if (details.Type == "peligroso" && details.HazardousResidues != null)
+                    {
+                        foreach (var hr in details.HazardousResidues)
+                        {
+                            decimal unitPrice = 0;
+                            if (contractJson.ValueKind == JsonValueKind.Object && contractJson.TryGetProperty("services", out var servicesProp) && servicesProp.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var s in servicesProp.EnumerateArray())
+                                {
+                                    string? wasteType = null;
+                                    decimal subtotal = 0;
+                                    if (s.ValueKind == JsonValueKind.Object)
+                                    {
+                                        foreach (var prop in s.EnumerateObject())
+                                        {
+                                            if (string.Equals(prop.Name, "wasteType", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                wasteType = prop.Value.GetString();
+                                            }
+                                            else if (string.Equals(prop.Name, "subtotal", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                if (prop.Value.ValueKind == JsonValueKind.Number)
+                                                {
+                                                    subtotal = prop.Value.GetDecimal();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (wasteType != null && hr.ResidueName != null &&
+                                        (wasteType.IndexOf(hr.ResidueName, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         hr.ResidueName.IndexOf(wasteType, StringComparison.OrdinalIgnoreCase) >= 0))
+                                    {
+                                        unitPrice = subtotal;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (unitPrice == 0 && contractJson.ValueKind == JsonValueKind.Object)
+                            {
+                                if (contractJson.TryGetProperty("totalBasePrice", out var basePriceProp) && basePriceProp.ValueKind == JsonValueKind.Number)
+                                {
+                                    unitPrice = basePriceProp.GetDecimal();
+                                }
+                                else if (contractJson.TryGetProperty("TotalBasePrice", out var basePriceProp2) && basePriceProp2.ValueKind == JsonValueKind.Number)
+                                {
+                                    unitPrice = basePriceProp2.GetDecimal();
+                                }
+                            }
+
+                            decimal subtotalVal = hr.AmountKg * unitPrice;
+                            totalEstimated += subtotalVal;
+
+                            mappedDetails.Add(new {
+                                residuo = hr.ResidueName,
+                                cantidad = hr.AmountKg,
+                                unidad = hr.ContainerType ?? "kg",
+                                precioUnitario = unitPrice,
+                                subtotal = subtotalVal
+                            });
+                        }
+                    }
+
+                    string folio = "N/A";
+                    string rfc = "";
+                    string businessName = "";
+
+                    if (contractJson.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var prop in contractJson.EnumerateObject())
+                        {
+                            if (string.Equals(prop.Name, "folio", StringComparison.OrdinalIgnoreCase))
+                            {
+                                folio = prop.Value.GetString() ?? "N/A";
+                            }
+                            else if (string.Equals(prop.Name, "clientRfc", StringComparison.OrdinalIgnoreCase))
+                            {
+                                rfc = prop.Value.GetString() ?? "";
+                            }
+                            else if (string.Equals(prop.Name, "clientName", StringComparison.OrdinalIgnoreCase))
+                            {
+                                businessName = prop.Value.GetString() ?? "";
+                            }
+                        }
+                    }
+
+                    manifestList.Add(new {
+                        manifestId = m.Id,
+                        numeroManifiesto = m.ManifestNumber,
+                        source = "manifest",
+                        date = m.ManifestDate.HasValue ? m.ManifestDate.Value.ToString("dd/MM/yyyy") : "—",
+                        residueType = m.ResidueSummary ?? (details.Type == "especial" ? "Residuos de Manejo Especial" : "Residuos Peligrosos"),
+                        amount = totalEstimated,
+                        contractFolio = folio,
+                        paymentMethod = "PPD",
+                        rfc = rfc,
+                        businessName = businessName,
+                        postalCode = details.PostalCode,
+                        details = mappedDetails
+                    });
+                }
+
+                return new JsonResult(manifestList);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"EXCEPCION EN OnGetGetManifestsForContractAsync: {ex}");
+                return new JsonResult(new { error = ex.Message });
             }
         }
 
@@ -388,32 +743,96 @@ namespace ClienteWeb.Pages.Billing
                     searchQuery: SearchQuery
                 );
 
-                var mappedInvoices = allInvoices.Select(i => new BillingRecord
+                List<ReadyToBill> readyToBillList = new();
+                try
                 {
-                    Id = i.Id,
-                    RecordType = "Invoice",
-                    ClientName = i.Receiver.Name,
-                    TaxId = i.Receiver.TaxId,
-                    Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
-                    Date = i.FiscalData.IssueDate,
-                    Amount = i.Financials.Total,
-                    InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
-                    Status = i.Status,
-                    Reason = i.Reason,
-                    PostalCode = i.Receiver.PostalCode,
-                    FiscalRegime = i.Receiver.FiscalRegime,
-                    CfdiUsage = i.Receiver.TaxUsage,
-                    PaymentForm = i.Financials.PaymentForm,
-                    PaymentMethod = i.Financials.PaymentMethod,
-                    ProductCode = i.Items.FirstOrDefault()?.ProductCode,
-                    UnitCode = i.Items.FirstOrDefault()?.UnitCode,
-                    TaxObject = i.Items.FirstOrDefault()?.TaxObject
-                });
+                    readyToBillList = await _billingService.GetReadyToBillAsync(includeBilled: true) ?? new List<ReadyToBill>();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error retrieving ready-to-bill items for comparison: {ex.Message}");
+                }
+
+                var mappedInvoices = allInvoices.Select(i => {
+                    var readyMatch = readyToBillList.FirstOrDefault(r => 
+                        (r.Source == "contract" && r.NumeroManifiesto == i.ServiceId) ||
+                        (r.Source == "manifest" && r.ManifestId.ToString() == i.ServiceId)
+                    );
+
+                    bool isModified = false;
+                    decimal originalAmount = 0m;
+                    if (readyMatch != null)
+                    {
+                        originalAmount = readyMatch.TotalEstimado;
+                        // Compare subtotal directly
+                        isModified = Math.Abs(i.Financials.Subtotal - readyMatch.TotalEstimado) > 0.01m;
+
+                        // Compare items count or items details
+                        if (!isModified && i.Items != null && readyMatch.DetallesServicio != null)
+                        {
+                            if (i.Items.Count != readyMatch.DetallesServicio.Count)
+                            {
+                                isModified = true;
+                            }
+                            else
+                            {
+                                for (int idx = 0; idx < i.Items.Count; idx++)
+                                {
+                                    var invItem = i.Items[idx];
+                                    var baseItem = readyMatch.DetallesServicio[idx];
+                                    if (Math.Abs((decimal)invItem.Quantity - (decimal)baseItem.Cantidad) > 0.001m ||
+                                        Math.Abs(invItem.UnitPrice - baseItem.PrecioUnitario) > 0.01m)
+                                    {
+                                        isModified = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return new BillingRecord
+                    {
+                        Id = i.Id,
+                        RecordType = "Invoice",
+                        ClientName = i.Receiver.Name,
+                        TaxId = i.Receiver.TaxId,
+                        Description = i.Items.FirstOrDefault()?.Description ?? "Factura",
+                        Date = i.FiscalData.IssueDate,
+                        Amount = i.Financials.Total,
+                        InvoiceNumber = i.FiscalData.InvoiceFolio ?? "PENDIENTE",
+                        Status = i.Status,
+                        Reason = i.Reason,
+                        PostalCode = i.Receiver.PostalCode,
+                        FiscalRegime = i.Receiver.FiscalRegime,
+                        CfdiUsage = i.Receiver.TaxUsage,
+                        PaymentForm = i.Financials.PaymentForm,
+                        PaymentMethod = i.Financials.PaymentMethod,
+                        ProductCode = i.Items.FirstOrDefault()?.ProductCode,
+                        UnitCode = i.Items.FirstOrDefault()?.UnitCode,
+                        TaxObject = i.Items.FirstOrDefault()?.TaxObject,
+                        ServiceId = i.ServiceId,
+                        IsModifiedFromContract = isModified,
+                        OriginalAmount = originalAmount,
+                        Source = readyMatch?.Source ?? "manifest"
+                    };
+                }).ToList();
 
                 var displayed = new List<BillingRecord>();
 
                 if (Role == "Admin")
                 {
+                    try
+                    {
+                        var clientsList = await _clientesApi.GetFromJsonAsync<List<ClienteOutput>>("client/all");
+                        ActiveClients = clientsList ?? new List<ClienteOutput>();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error fetching active clients: {ex.Message}");
+                        ActiveClients = new List<ClienteOutput>();
+                    }
+
                     if (ActiveTab == "RecentServices")
                     {
                         var ready = await _billingService.GetReadyToBillAsync();
@@ -427,7 +846,9 @@ namespace ClienteWeb.Pages.Billing
                             Date = r.FechaServicio,
                             Amount = r.TotalEstimado,
                             PostalCode = r.Cliente.PostalCode, // Usando el campo directo
-                            Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto"
+                            Description = r.Source == "contract" ? "Servicio por Contrato" : "Servicio por Manifiesto",
+                            ServiceId = r.Source == "contract" ? r.NumeroManifiesto : r.ManifestId.ToString(),
+                            RawItemsJson = JsonSerializer.Serialize(r.DetallesServicio)
                         }));
                     }
                     else if (ActiveTab == "RejectedInvoices")
@@ -494,12 +915,16 @@ namespace ClienteWeb.Pages.Billing
         public string UnitCode { get; set; }
         public string TaxObject { get; set; }
         public string Source { get; set; }
+        public string ServiceId { get; set; }
+        public string RawItemsJson { get; set; }
+        public bool IsModifiedFromContract { get; set; }
+        public decimal OriginalAmount { get; set; }
     }
 
     public class InvoiceItemDto
     {
         public string Concept { get; set; }
-        public int Quantity { get; set; }
+        public double Quantity { get; set; }
         public decimal Amount { get; set; }
     }
 }

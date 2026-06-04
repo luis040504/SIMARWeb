@@ -11,6 +11,7 @@ public class Contract
     
     [Range(1, int.MaxValue, ErrorMessage = "El ID del cliente es requerido.")]
     public int ClientId { get; set; }
+    public int QuotationId { get; set; }
 
     [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "El monto debe ser mayor a 0.")]
     public decimal TotalBasePrice { get; set; } 
@@ -18,16 +19,14 @@ public class Contract
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Status { get; set; } = "Pendiente de firma";
 
-    public string ClientName { get; set; } = "";
-    public string ClientRfc { get; set; } = "";
     public string Representative { get; set; } = "";
-    public string ClientAddress { get; set; } = "";
     public string ClientObjetoSocial { get; set; } = "";
     public string ClientDeclaraciones { get; set; } = "";
     public string ContractDuration { get; set; } = "";
     public DateTime? FirstServiceDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string? SignedContractPath { get; set; }
+    public string? CancellationReason { get; set; }
 
     public List<ContractServiceItem> Services { get; set; } = new();
     public List<ContractPaymentItem> Payments { get; set; } = new();

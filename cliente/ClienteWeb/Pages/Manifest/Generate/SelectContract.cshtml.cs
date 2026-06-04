@@ -59,4 +59,7 @@ public class ContratoConClienteVm
     public DateTime? ExpirationDate { get; set; }
     public int ClienteId { get; set; }
     public string ClienteNombre { get; set; } = "";
+    // null = backend aún no entrega info de residuos; true/false = conocido
+    public bool? TieneRp { get; set; }
+    public bool? TieneRme { get; set; }
 }

@@ -197,6 +197,60 @@ namespace ClienteWeb.Services
                         c.Item().Text("Debe ser aprobada por la administración de SIMAR para generar el CFDI correspondiente.").FontSize(8).AlignCenter();
                     });
                 }
+                else
+                {
+                    column.Item().Element(c => ComposeFiscalComplement(c, invoice));
+                }
+            });
+        }
+
+        private void ComposeFiscalComplement(IContainer container, BillingResponse invoice)
+        {
+            container.PaddingTop(30).Column(column =>
+            {
+                column.Spacing(10);
+                column.Item().Row(row =>
+                {
+                    // QR Code placeholder / simulation
+                    row.ConstantItem(100).Column(c => {
+                        c.Item().Height(100).Width(100).Background(Colors.Grey.Lighten3).AlignCenter().AlignMiddle().Text("QR CFDI").FontSize(8);
+                        // In a real scenario, we would use an image here:
+                        // row.ConstantItem(100).Image(qrBytes);
+                    });
+
+                    row.ConstantItem(20);
+
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Text("Sello Digital del Emisor").SemiBold().FontSize(8);
+                        c.Item().Text(invoice.FiscalData?.DigitalSealIssuer ?? "N/A").FontSize(7).FontColor(Colors.Grey.Darken1);
+                        
+                        c.Item().PaddingTop(5).Text("Sello Digital del SAT").SemiBold().FontSize(8);
+                        c.Item().Text(invoice.FiscalData?.DigitalSealSat ?? "N/A").FontSize(7).FontColor(Colors.Grey.Darken1);
+                    });
+                });
+
+                column.Item().Column(c =>
+                {
+                    c.Item().Text("Cadena Original del Complemento de Certificación Digital del SAT").SemiBold().FontSize(8);
+                    c.Item().Text(invoice.FiscalData?.OriginalChain ?? "N/A").FontSize(7).FontColor(Colors.Grey.Darken1);
+                });
+
+                column.Item().Row(row =>
+                {
+                    row.RelativeItem().Text(t =>
+                    {
+                        t.Span("No. de Serie del Certificado SAT: ").SemiBold().FontSize(8);
+                        t.Span(invoice.FiscalData?.SatCertificateNumber ?? "N/A").FontSize(8);
+                    });
+                    row.RelativeItem().AlignRight().Text(t =>
+                    {
+                        t.Span("RFC del PAC: ").SemiBold().FontSize(8);
+                        t.Span(invoice.FiscalData?.PacRfc ?? "SAT970701NN3").FontSize(8);
+                    });
+                });
+
+                column.Item().AlignCenter().Text("ESTE DOCUMENTO ES UNA REPRESENTACIÓN IMPRESA DE UN CFDI 4.0").FontSize(8).SemiBold().FontColor(SimarGreen);
             });
         }
 

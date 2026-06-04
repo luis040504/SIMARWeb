@@ -1,10 +1,11 @@
 using ClienteWeb.Services;
 
 using QuestPDF.Infrastructure;
-using ClienteWeb.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(o =>
+    o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
 // Billing API Configuration
 builder.Services.AddTransient<ClienteWeb.Services.BillingApiInterceptor>();
@@ -50,6 +51,7 @@ builder.Services.AddHttpClient<VehiculosApiService>(client =>
 builder.Services.AddHttpClient<WasteCatalogApiService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["WasteCatalogApiBaseUrl"] ?? "http://localhost/api/catalog/");
+    client.DefaultRequestHeaders.Add("X-Api-Key", builder.Configuration["WasteCatalogApiKey"] ?? "dev-catalog-key-local");
 });
 
 builder.Services.AddHttpClient("ClientesApi", client =>
@@ -87,6 +89,11 @@ builder.Services.AddHttpClient<EmpleadosApiService>(client =>
 });
 
 builder.Services.AddHttpClient("EmpleadoApi", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8008");
+});
+
+builder.Services.AddHttpClient<EmpleadosApiService>(client =>
 {
     client.BaseAddress = new Uri("http://localhost:8008");
 });

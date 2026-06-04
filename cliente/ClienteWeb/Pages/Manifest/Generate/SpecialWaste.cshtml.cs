@@ -11,16 +11,19 @@ public class SpecialWasteModel : PageModel
     private readonly ClientesApiService _clientes;
     private readonly VehiculosApiService _vehiculos;
     private readonly ContratosApiService _contratos;
+    private readonly EmpleadosApiService _empleados;
 
-    public SpecialWasteModel(ManifestApiService api, ClientesApiService clientes, VehiculosApiService vehiculos, ContratosApiService contratos)
+    public SpecialWasteModel(ManifestApiService api, ClientesApiService clientes, VehiculosApiService vehiculos, ContratosApiService contratos, EmpleadosApiService empleados)
     {
         _api = api;
         _clientes = clientes;
         _vehiculos = vehiculos;
         _contratos = contratos;
+        _empleados = empleados;
     }
 
-    public List<ClienteWeb.Services.VehiculoDto> Vehiculos { get; private set; } = [];
+    public List<VehiculoDto> Vehiculos { get; private set; } = [];
+    public List<ChoferDto>   Choferes  { get; private set; } = [];
 
     // ── Vinculación con contrato / cliente ────────────────────────────────────
     [BindProperty] public int IdCliente  { get; set; }
@@ -29,6 +32,7 @@ public class SpecialWasteModel : PageModel
     // Nombre del cliente y folio del contrato, solo para mostrar en el encabezado
     public string ClienteNombre  { get; private set; } = string.Empty;
     public string ContratoFolio  { get; private set; } = string.Empty;
+    public List<string> CamposPendientes { get; private set; } = [];
 
     // ===================== GENERADOR =====================
     [BindProperty]
@@ -44,64 +48,63 @@ public class SpecialWasteModel : PageModel
     public string Address { get; set; } = string.Empty;
 
     [BindProperty]
-    public string PostalCode { get; set; } = string.Empty;
+    public string? PostalCode { get; set; }
 
     [BindProperty]
-    public string Municipality { get; set; } = string.Empty;
+    public string? Municipality { get; set; }
 
     [BindProperty]
     [Required(ErrorMessage = "El teléfono es obligatorio.")]
     public string PhoneNumber { get; set; } = string.Empty;
 
     [BindProperty]
-    [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
     [EmailAddress(ErrorMessage = "Correo electrónico inválido.")]
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
-    [BindProperty]
+    [BindProperty][DataType(DataType.Date)]
     public DateOnly ManifestDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    [BindProperty]
+    [BindProperty][DataType(DataType.Time)]
     public TimeOnly ManifestTime { get; set; } = TimeOnly.FromDateTime(DateTime.Now);
 
     [BindProperty]
-    public string GeneratorObservations { get; set; } = string.Empty;
+    public string? GeneratorObservations { get; set; }
 
     [BindProperty]
-    public string GeneratorResponsibleName { get; set; } = string.Empty;
+    public string? GeneratorResponsibleName { get; set; }
 
     [BindProperty]
     public List<ResidueItem> Residues { get; set; } = new() { new ResidueItem() };
 
     // ===================== TRANSPORTISTA =====================
-    [BindProperty] public string TransporterAuthorizationNumber { get; set; } = string.Empty;
-    [BindProperty] public string TransporterSocialReason        { get; set; } = string.Empty;
-    [BindProperty] public string TransporterAddress             { get; set; } = string.Empty;
-    [BindProperty] public string TransporterPostalCode          { get; set; } = string.Empty;
-    [BindProperty] public string TransporterMunicipality        { get; set; } = string.Empty;
-    [BindProperty] public string TransporterPhone               { get; set; } = string.Empty;
-    [BindProperty] public DateOnly? TransporterDate             { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-    [BindProperty] public TimeOnly? TransporterTime             { get; set; }
-    [BindProperty] public string VehicleType                    { get; set; } = string.Empty;
-    [BindProperty] public string VehiclePlate                   { get; set; } = string.Empty;
-    [BindProperty] public string DriverName                     { get; set; } = string.Empty;
-    [BindProperty] public string DriverLicense                  { get; set; } = string.Empty;
-    [BindProperty] public string TransportRoute                 { get; set; } = string.Empty;
-    [BindProperty] public string TransporterObservations        { get; set; } = string.Empty;
-    [BindProperty] public string TransporterResponsibleName     { get; set; } = string.Empty;
+    [BindProperty] public string? TransporterAuthorizationNumber { get; set; }
+    [BindProperty] public string? TransporterSocialReason        { get; set; }
+    [BindProperty] public string? TransporterAddress             { get; set; }
+    [BindProperty] public string? TransporterPostalCode          { get; set; }
+    [BindProperty] public string? TransporterMunicipality        { get; set; }
+    [BindProperty] public string? TransporterPhone               { get; set; }
+    [BindProperty][DataType(DataType.Date)] public DateOnly? TransporterDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Time)] public TimeOnly? TransporterTime { get; set; }
+    [BindProperty] public string? VehicleType                    { get; set; }
+    [BindProperty] public string? VehiclePlate                   { get; set; }
+    [BindProperty] public string? DriverName                     { get; set; }
+    [BindProperty] public string? DriverLicense                  { get; set; }
+    [BindProperty] public string? TransportRoute                 { get; set; }
+    [BindProperty] public string? TransporterObservations        { get; set; }
+    [BindProperty] public string? TransporterResponsibleName     { get; set; }
 
     // ===================== DESTINATARIO =====================
-    [BindProperty] public string ReceiverAuthorizationNumber    { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverSocialReason           { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverAddress                { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverPostalCode             { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverMunicipality           { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverPhone                  { get; set; } = string.Empty;
-    [BindProperty] public DateOnly? ReceiverDate                { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-    [BindProperty] public TimeOnly? ReceiverTime                { get; set; }
-    [BindProperty] public string DisposalType                   { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverObservations           { get; set; } = string.Empty;
-    [BindProperty] public string ReceiverResponsibleName        { get; set; } = string.Empty;
+    [BindProperty] public string? ReceiverAuthorizationNumber    { get; set; }
+    [BindProperty] public string? ReceiverSocialReason           { get; set; }
+    [BindProperty] public string? ReceiverAddress                { get; set; }
+    [BindProperty] public string? ReceiverPostalCode             { get; set; }
+    [BindProperty] public string? ReceiverMunicipality           { get; set; }
+    [BindProperty] public string? ReceiverPhone                  { get; set; }
+    [BindProperty][DataType(DataType.Date)] public DateOnly? ReceiverDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    [BindProperty][DataType(DataType.Time)] public TimeOnly? ReceiverTime { get; set; }
+    [BindProperty] public string? DisposalType                   { get; set; }
+    [BindProperty] public string? ReceiverObservations           { get; set; }
+    [BindProperty] public string? ReceiverResponsibleName        { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int clienteId = 0, int contratoId = 0)
     {
@@ -111,13 +114,14 @@ public class SpecialWasteModel : PageModel
         IdCliente  = clienteId;
         ContratoId = contratoId;
 
-        var clienteTask   = clienteId > 0 ? _clientes.GetByIdAsync(clienteId) : Task.FromResult<ClienteDto?>(null);
-        var vehiculosTask = _vehiculos.GetAllAsync();
-        var contratoTask  = contratoId > 0 ? _contratos.GetDetailAsync(contratoId) : Task.FromResult<ContratoDetailDto?>(null);
-        await Task.WhenAll(clienteTask, vehiculosTask, contratoTask);
+        var clienteTask      = clienteId > 0  ? _clientes.GetByIdAsync(clienteId)           : Task.FromResult<ClienteDto?>(null);
+        var vehiculosTask    = _vehiculos.GetAllAsync();
+        var manifestDataTask = contratoId > 0 ? _contratos.GetManifestDataAsync(contratoId) : Task.FromResult<ContratoManifestDataDto?>(null);
+        var choferesTask     = _empleados.GetChoferesAsync();
+        await Task.WhenAll(clienteTask, vehiculosTask, manifestDataTask, choferesTask);
 
-        var cliente  = clienteTask.Result;
-        var contrato = contratoTask.Result;
+        var cliente      = clienteTask.Result;
+        var manifestData = manifestDataTask.Result;
 
         if (cliente is not null)
         {
@@ -125,23 +129,86 @@ public class SpecialWasteModel : PageModel
             SocialReason                    = cliente.Name;
             Address                         = cliente.Address ?? string.Empty;
             PhoneNumber                     = cliente.Phone ?? string.Empty;
-            EnvironmentalRegistrationNumber = cliente.SemarnatNum ?? string.Empty;
+            Email                           = cliente.ContactEmail;
+            EnvironmentalRegistrationNumber = cliente.SedemaNum ?? cliente.SemarnatNum ?? string.Empty;
         }
 
-        if (contrato?.Services is { Count: > 0 })
+        if (manifestData is not null)
         {
-            ContratoFolio = contrato.Folio;
-            Residues = contrato.Services
-                .Select(s => new ResidueItem
-                {
-                    ResidueName = s.WasteType,
-                    Unit        = string.IsNullOrWhiteSpace(s.WasteUnit) ? "kg" : s.WasteUnit
-                })
+            ContratoFolio = manifestData.Folio;
+
+            var residuosEspeciales = manifestData.Wastes
+                .Where(w => w.Type.Equals("especial", StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            if (residuosEspeciales.Count > 0)
+                Residues = residuosEspeciales
+                    .Select(w => new ResidueItem
+                    {
+                        ResidueKey  = w.Code,
+                        ResidueName = w.Name,
+                        Unit        = string.IsNullOrWhiteSpace(w.Unit) ? "kg" : w.Unit
+                    })
+                    .ToList();
+
+            // Ubicación del generador desde servicio de recolección
+            var collection = manifestData.Services
+                .FirstOrDefault(s => s.Activity.Equals("collection", StringComparison.OrdinalIgnoreCase));
+            if (collection?.Location is { } loc)
+            {
+                Address      = loc.Street ?? Address;
+                PostalCode   = loc.Cp;
+                Municipality = loc.Municipality;
+            }
+
+            // Ubicación del destinatario desde servicio de disposición final
+            var disposal = manifestData.Services
+                .FirstOrDefault(s => s.Activity.Equals("final_disposal", StringComparison.OrdinalIgnoreCase));
+            if (disposal?.Location is { } dLoc)
+            {
+                ReceiverAddress      = dLoc.Street;
+                ReceiverPostalCode   = dLoc.Cp;
+                ReceiverMunicipality = dLoc.Municipality;
+            }
         }
 
         Vehiculos = vehiculosTask.Result;
+        Choferes  = choferesTask.Result;
+
+        if (contratoId > 0)
+            BuildCamposPendientes();
+
         return Page();
+    }
+
+    private void BuildCamposPendientes()
+    {
+        void Check(string? value, string label)
+        {
+            if (string.IsNullOrWhiteSpace(value)) CamposPendientes.Add(label);
+        }
+
+        // Generador
+        Check(GeneratorResponsibleName, "Nombre del responsable (Generador)");
+
+        // Transportista
+        Check(TransporterAuthorizationNumber, "No. de Autorización SEDEMA (Transportista)");
+        Check(TransporterSocialReason,        "Razón social (Transportista)");
+        Check(TransporterAddress,             "Domicilio (Transportista)");
+        Check(TransporterPostalCode,          "C.P. (Transportista)");
+        Check(TransporterMunicipality,        "Municipio (Transportista)");
+        Check(TransporterPhone,               "Teléfono (Transportista)");
+        Check(VehicleType,                    "Tipo de vehículo");
+        Check(VehiclePlate,                   "No. de placa");
+        Check(TransportRoute,                 "Ruta de transporte");
+        Check(TransporterResponsibleName,     "Nombre del responsable (Transportista)");
+
+        // Destinatario
+        Check(ReceiverAuthorizationNumber, "No. de autorización SEDEMA (Destinatario)");
+        Check(ReceiverSocialReason,        "Razón social (Destinatario)");
+        Check(ReceiverPhone,               "Teléfono (Destinatario)");
+        Check(DisposalType,                "Tipo de disposición");
+        Check(ReceiverResponsibleName,     "Nombre del responsable (Destinatario)");
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -154,8 +221,8 @@ public class SpecialWasteModel : PageModel
 
         try
         {
-            var numeroManifiesto = await _api.CreateSpecialAsync(this);
-            TempData["SuccessMessage"] = $"Manifiesto {numeroManifiesto} guardado como borrador. Puede editarlo y enviarlo a tránsito desde el listado.";
+            var id = await _api.CreateSpecialAsync(this);
+            TempData["SuccessMessage"] = "Manifiesto guardado exitosamente como borrador.";
             return RedirectToPage("/Manifest/Consult/Index");
         }
         catch (BillingApiException ex)
@@ -173,10 +240,10 @@ public class SpecialWasteModel : PageModel
 
 public class ResidueItem
 {
-    public string ResidueKey      { get; set; } = string.Empty;
-    public string ResidueName     { get; set; } = string.Empty;
-    public string ContainerType   { get; set; } = string.Empty;
-    public string ContainerCapacity { get; set; } = string.Empty;
-    public decimal Weight         { get; set; }
-    public string Unit            { get; set; } = "kg";
+    public string? ResidueKey       { get; set; }
+    public string? ResidueName      { get; set; }
+    public string? ContainerType    { get; set; }
+    public string? ContainerCapacity { get; set; }
+    public decimal Weight           { get; set; }
+    public string Unit              { get; set; } = "kg";
 }

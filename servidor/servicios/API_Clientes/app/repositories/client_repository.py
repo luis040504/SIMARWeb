@@ -17,12 +17,14 @@ def create_client(db: Session, client: schemas.ClientCreate):
     db_client = models.Clientes(
         name=client.name,
         businessName = client.businessName,
+        alias = client.alias,
         contactEmail = client.contactEmail,
         phone=client.phone,
         address=client.address,
         rfc=client.rfc,
         urlSatCertificate= None,
         semarnatNum =client.semarnatNum, 
+        sedemaNum = client.sedemaNum,
         idUser=client.idUser
     )
     db.add(db_client)
@@ -43,6 +45,9 @@ def update_client(db: Session, client_id: int, client_update: schemas.ClientUpda
     if client_update.businessName is not None:
         db_client.businessName = client_update.businessName
 
+    if client_update.alias is not None:
+        db_client.alias = client_update.alias
+
     if client_update.contactEmail is not None:
         db_client.contactEmail = client_update.contactEmail
 
@@ -60,6 +65,13 @@ def update_client(db: Session, client_id: int, client_update: schemas.ClientUpda
 
     if client_update.semarnatNum is not None:
         db_client.semarnatNum = client_update.semarnatNum
+
+    if client_update.sedemaNum is not None:
+        db_client.sedemaNum = client_update.sedemaNum
+
+    if client_update.idUser is not None:
+        db_client.idUser = client_update.idUser
+
 
     db.commit()
     db.refresh(db_client)
@@ -155,11 +167,13 @@ def search_clients(db: Session, query: str):
     filters = [
         models.Clientes.name.ilike(f"%{query}%"),
         models.Clientes.businessName.ilike(f"%{query}%"),
+        models.Clientes.alias.ilike(f"%{query}%"),
         models.Clientes.contactEmail.ilike(f"%{query}%"),
         models.Clientes.phone.ilike(f"%{query}%"),
         models.Clientes.address.ilike(f"%{query}%"),
         models.Clientes.rfc.ilike(f"%{query}%"),
         models.Clientes.semarnatNum.ilike(f"%{query}%"),
+        models.Clientes.sedemaNum.ilike(f"%{query}%"),
     ]
 
     q = db.query(models.Clientes).filter(or_(*filters))

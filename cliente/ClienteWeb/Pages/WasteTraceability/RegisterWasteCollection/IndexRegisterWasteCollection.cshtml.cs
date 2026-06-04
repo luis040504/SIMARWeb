@@ -2,9 +2,32 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ClienteWeb.Services;
+
+using System.Net.Http;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Http;
+using ClienteWeb.Models;
 
 namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 {
+    public class ContratoSeguimiento
+    {
+        public int Id { get; set; }
+        public string Folio { get; set; } = string.Empty;
+        public string Cliente { get; set; } = string.Empty;
+        public string EstadoContrato { get; set; } = string.Empty;
+        public DateTime? FechaExpiracion { get; set; }
+        
+        // Último servicio en curso
+        public ManifestSummary? UltimoServicio { get; set; }
+        
+        // Historial completo
+        public List<ManifestSummary> HistorialServicios { get; set; } = new();
+    }
+
     public class ServicioRecoleccion
     {
         public int Id { get; set; }
@@ -25,113 +48,152 @@ namespace ClienteWeb.Pages.WasteTraceability.RegisterWasteCollection
 
     public class IndexModel : PageModel
     {
-        public List<ServicioRecoleccion> Servicios { get; set; }
+        private readonly ContratosApiService _contratosService;
+        private readonly ManifestApiService _manifestService;
+        private readonly HttpClient _clientesApi;
+
+        public IndexModel(ContratosApiService contratosService, ManifestApiService manifestService, IHttpClientFactory factory)
+        {
+            _contratosService = contratosService;
+            _manifestService = manifestService;
+            _clientesApi = factory.CreateClient("ClientesApi");
+        }
+
+        public List<ContratoSeguimiento> Contratos { get; set; } = new();
         public string Rol { get; set; } = "empresa";
 
-        public void OnGet(string rol = "empresa")
+        public async Task OnGetAsync(string rol = "empresa")
         {
-            Rol = rol;
-            ViewData["Rol"] = rol;
+            var sessionRole = HttpContext.Session.GetString("Rol");
+            Rol = !string.IsNullOrEmpty(sessionRole) ? sessionRole : rol;
+            ViewData["Rol"] = Rol;
             
-            Servicios = new List<ServicioRecoleccion>
+            try
             {
-                new ServicioRecoleccion
+                int? filterClientId = null;
+                if (Rol.ToLower() == "cliente")
                 {
-                    Id = 1001,
-                    Cliente = "Industrias ABC",
-                    Direccion = "Av. Industrial 123, Parque Industrial",
-                    Contrato = "CON-2024-001",
-                    Conductor = "Juan Pérez",
-                    Vehiculo = "Camión ABC-123",
-                    Tecnico = "Carlos López",
-                    OperadorAsignado = "Pedro Ramírez",
-                    FechaServicio = DateTime.Today,
-                    Estado = "En curso",
-                    Observaciones = "Residuos industriales no peligrosos",
-                    TipoResiduo = "Plásticos",
-                    CantidadEstimada = 500.5,
-                    Manifiesto = "MAN-2024-001"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1002,
-                    Cliente = "Comercial XYZ",
-                    Direccion = "Calle Comercio 456, Centro",
-                    Contrato = "CON-2024-045",
-                    Conductor = "María García",
-                    Vehiculo = "Camión DEF-456",
-                    Tecnico = "Roberto Sánchez",
-                    OperadorAsignado = "Ana Torres",
-                    FechaServicio = DateTime.Today,
-                    Estado = "En curso",
-                    Observaciones = "Recolección semanal de residuos orgánicos",
-                    TipoResiduo = "Orgánicos",
-                    CantidadEstimada = 300.0,
-                    Manifiesto = "MAN-2024-045"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1003,
-                    Cliente = "Hospital del Sur",
-                    Direccion = "Av. Salud 789, Colonia Médica",
-                    Contrato = "CON-2024-089",
-                    Conductor = "Ana Martínez",
-                    Vehiculo = "Camión GHI-789",
-                    Tecnico = "José Ramírez",
-                    OperadorAsignado = "Laura Méndez",
-                    FechaServicio = DateTime.Today.AddDays(1),
-                    Estado = "En curso",
-                    Observaciones = "Residuos biológicos - Manejo especial",
-                    TipoResiduo = "Biológicos",
-                    CantidadEstimada = 150.75,
-                    Manifiesto = "MAN-2024-089"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1004,
-                    Cliente = "Restaurante El Sabor",
-                    Direccion = "Calle Principal 321, Zona Centro",
-                    Contrato = "CON-2024-112",
-                    Conductor = "Pedro González",
-                    Vehiculo = "Camión JKL-012",
-                    Tecnico = "Miguel Ángel",
-                    OperadorAsignado = "Carlos Ruiz",
-                    FechaServicio = DateTime.Today,
-                    Estado = "Concluido",
-                    Observaciones = "Aceites y grasas",
-                    TipoResiduo = "Aceites",
-                    CantidadEstimada = 50.0,
-                    Manifiesto = "MAN-2024-112"
-                },
-                new ServicioRecoleccion
-                {
-                    Id = 1005,
-                    Cliente = "Constructora Moderna",
-                    Direccion = "Blvd. Construcción 567, Zona Industrial",
-                    Contrato = "CON-2024-078",
-                    Conductor = "Luis Hernández",
-                    Vehiculo = "Camión MNO-345",
-                    Tecnico = "Fernando Díaz",
-                    OperadorAsignado = "Roberto Méndez",
-                    FechaServicio = DateTime.Today,
-                    Estado = "Concluido",
-                    Observaciones = "Escombros y materiales de construcción",
-                    TipoResiduo = "Escombros",
-                    CantidadEstimada = 1000.0,
-                    Manifiesto = "MAN-2024-078"
+                    var userId = HttpContext.Session.GetString("UserId");
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        try
+                        {
+                            var clientInfo = await _clientesApi.GetFromJsonAsync<ClienteOutput>($"client/user/{userId}");
+                            if (clientInfo != null)
+                            {
+                                filterClientId = clientInfo.Id;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error fetching client ID for traceability: {ex.Message}");
+                        }
+                    }
                 }
-            };
+
+                var contratosApi = await _contratosService.GetAllAsync();
+                
+                foreach (var c in contratosApi)
+                {
+                    if (filterClientId.HasValue && c.ClientId != filterClientId.Value)
+                    {
+                        continue;
+                    }
+
+                    List<ManifestSummary> manifests = new();
+                    try
+                    {
+                        manifests = await _manifestService.GetAllAsync(contratoId: c.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error fetching manifests for contract {c.Id}: {ex.Message}");
+                    }
+                    
+                    var cs = new ContratoSeguimiento
+                    {
+                        Id = c.Id,
+                        Folio = c.Folio,
+                        Cliente = c.ClientName,
+                        EstadoContrato = c.Status,
+                        FechaExpiracion = c.ExpirationDate,
+                        HistorialServicios = manifests.OrderByDescending(m => m.ManifestDate).ToList()
+                    };
+                    
+                    // El "último servicio en curso" (o el más reciente que no esté completado/cancelado)
+                    cs.UltimoServicio = cs.HistorialServicios
+                        .FirstOrDefault(m => m.Status == "borrador" || m.Status == "en_transito") 
+                        ?? cs.HistorialServicios.FirstOrDefault();
+                    
+                    Contratos.Add(cs);
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewData["MensajeError"] = $"Error al cargar la trazabilidad de residuos: {ex.Message}";
+                ViewData["TipoError"] = "danger";
+                Console.WriteLine($"Error general en OnGetAsync de RegisterWasteCollection: {ex}");
+            }
 
             if (TempData["MensajeExito"] != null)
             {
                 ViewData["MensajeExito"] = TempData["MensajeExito"];
             }
 
-            if (TempData["MensajeError"] != null)
+            if (TempData["MensajeError"] != null && ViewData["MensajeError"] == null)
             {
                 ViewData["MensajeError"] = TempData["MensajeError"];
                 ViewData["TipoError"] = TempData["TipoError"];
             }
+        }
+
+        // Mapeo de estados para mostrar al usuario
+        public static string MapStatus(string status)
+        {
+            return status switch
+            {
+                "borrador" => "Programado",
+                "en_transito" => "En ruta",
+                "completado" => "Concluido",
+                "cancelado" => "Cancelado",
+                _ => status
+            };
+        }
+
+        public static string GetStatusClass(string status)
+        {
+            return status switch
+            {
+                "borrador" => "badge-simar badge-simar-programada",
+                "en_transito" => "badge-simar badge-simar-enruta",
+                "completado" => "badge-simar badge-simar-completada",
+                "cancelado" => "badge-simar badge-simar-cancelada",
+                _ => "badge-simar badge-simar-sin"
+            };
+        }
+
+        public async Task<IActionResult> OnPostUpdateStatusAsync(string manifestId, string nuevoEstado)
+        {
+            var sessionRole = HttpContext.Session.GetString("Rol");
+            if (string.Equals(sessionRole, "cliente", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["MensajeError"] = "No tienes permisos para realizar esta acción.";
+                TempData["TipoError"] = "danger";
+                return RedirectToPage();
+            }
+
+            try
+            {
+                await _manifestService.UpdateStatusAsync(manifestId, nuevoEstado);
+                TempData["MensajeExito"] = "Estado del servicio actualizado correctamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = $"Error al actualizar el estado: {ex.Message}";
+                TempData["TipoError"] = "danger";
+            }
+
+            return RedirectToPage();
         }
     }
 }
