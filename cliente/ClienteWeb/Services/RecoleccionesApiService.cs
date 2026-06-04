@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using ClienteWeb.Models;
 
 namespace ClienteWeb.Services;
 
@@ -193,62 +194,7 @@ public class RecoleccionesApiService
 }
 }
 
-// ============================================
-// DTOs
-// ============================================
 
-public class RecoleccionFilter
-{
-    public int? IdContrato { get; set; }
-    public string? Cliente { get; set; }
-    public DateTime? FechaInicio { get; set; }
-    public DateTime? FechaFin { get; set; }
-    public string? Vehiculo { get; set; }
-    public string? Chofer { get; set; }
-    public string? Tecnico { get; set; }
-    public string? Estado { get; set; }
-}
-
-public class VehiculoAsignadoDto
-{
-    [JsonPropertyName("vehiculo")] public string Vehiculo { get; set; } = "";
-    [JsonPropertyName("chofer")] public string Chofer { get; set; } = "";
-    [JsonPropertyName("tecnicos")] public List<string> Tecnicos { get; set; } = new();
-}
-
-public class RecoleccionDto
-{
-    [JsonPropertyName("_id")] public string Id { get; set; } = "";
-    [JsonPropertyName("idContrato")] public int? IdContrato { get; set; }
-    [JsonPropertyName("cliente")] public string Cliente { get; set; } = "";
-    [JsonPropertyName("fecha")] public DateTime Fecha { get; set; }
-    [JsonPropertyName("direccion")] public string Direccion { get; set; } = "";
-    [JsonPropertyName("vehiculos")] public List<VehiculoAsignadoDto> Vehiculos { get; set; } = new();
-    [JsonPropertyName("estado")] public string Estado { get; set; } = "Programada";
-    [JsonPropertyName("tipoResiduo")] public string? TipoResiduo { get; set; }
-    [JsonPropertyName("cantidadEstimada")] public double? CantidadEstimada { get; set; }
-    [JsonPropertyName("observaciones")] public string? Observaciones { get; set; }
-    [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; }
-    [JsonPropertyName("updatedAt")] public DateTime UpdatedAt { get; set; }
-
-    // Propiedades de ayuda para la vista
-    public string VehiculoPrincipal => Vehiculos.FirstOrDefault()?.Vehiculo ?? "Sin asignar";
-    public string ChoferPrincipal => Vehiculos.FirstOrDefault()?.Chofer ?? "Sin asignar";
-    public string TecnicosList => string.Join(", ", Vehiculos.FirstOrDefault()?.Tecnicos ?? new List<string>());
-}
-
-public class RecoleccionCreateDto
-{
-    [JsonPropertyName("idContrato")] public int IdContrato { get; set; }
-    [JsonPropertyName("cliente")] public string Cliente { get; set; } = "";
-    [JsonPropertyName("fecha")] public DateTime Fecha { get; set; }
-    [JsonPropertyName("direccion")] public string Direccion { get; set; } = "";
-    [JsonPropertyName("vehiculos")] public List<VehiculoAsignadoDto> Vehiculos { get; set; } = new();
-    [JsonPropertyName("estado")] public string Estado { get; set; } = "Programada";
-    [JsonPropertyName("tipoResiduo")] public string? TipoResiduo { get; set; }
-    [JsonPropertyName("cantidadEstimada")] public double? CantidadEstimada { get; set; }
-    [JsonPropertyName("observaciones")] public string? Observaciones { get; set; }
-}
 
 public class RecoleccionUpdateDto
 {

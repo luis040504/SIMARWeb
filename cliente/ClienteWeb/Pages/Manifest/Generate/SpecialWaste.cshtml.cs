@@ -20,7 +20,7 @@ public class SpecialWasteModel : PageModel
         _contratos = contratos;
     }
 
-    public List<VehiculoDto> Vehiculos { get; private set; } = [];
+    public List<ClienteWeb.Services.VehiculoDto> Vehiculos { get; private set; } = [];
 
     // ── Vinculación con contrato / cliente ────────────────────────────────────
     [BindProperty] public int IdCliente  { get; set; }

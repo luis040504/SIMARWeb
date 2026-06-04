@@ -1,10 +1,11 @@
 from fastapi import HTTPException, status
 from datetime import datetime
 from bson import ObjectId
-from typing import List
+from typing import List, Optional
 from ..config.database import recolecciones_collection
 from ..models.recoleccion import Recoleccion
 from ..schemas.recoleccion_schema import RecoleccionCreate, RecoleccionUpdate, RecoleccionFilter
+from pydantic import ValidationError
 
 class RecoleccionController:
     
@@ -14,7 +15,7 @@ class RecoleccionController:
         query = {"activo": True}
         
         if filtro:
-            if filtro.idContrato is not None:  # NUEVO: Filtro por contrato
+            if filtro.idContrato is not None:
                 query["idContrato"] = filtro.idContrato
             if filtro.cliente:
                 query["cliente"] = {"$regex": filtro.cliente, "$options": "i"}
@@ -32,11 +33,12 @@ class RecoleccionController:
                 query["vehiculos.chofer"] = {"$regex": filtro.chofer, "$options": "i"}
             if filtro.tecnico:
                 query["vehiculos.tecnicos"] = {"$elemMatch": {"$regex": filtro.tecnico, "$options": "i"}}
+            if filtro.wasteTypeId is not None:
+                query["tiposResiduo.wasteTypeId"] = filtro.wasteTypeId
         
         cursor = recolecciones_collection.find(query).sort("fecha", -1)
         recolecciones = await cursor.to_list(length=None)
         
-        # Convertir ObjectId a string antes de crear el modelo
         for rec in recolecciones:
             rec['_id'] = str(rec['_id'])
         
@@ -53,14 +55,13 @@ class RecoleccionController:
         if not recoleccion:
             raise HTTPException(status_code=404, detail="Recolección no encontrada")
         
-        # Convertir ObjectId a string
         recoleccion['_id'] = str(recoleccion['_id'])
         
         return Recoleccion(**recoleccion)
     
     @staticmethod
     async def get_by_contrato(idContrato: int):
-        """NUEVO: Obtener recolecciones por ID de contrato"""
+        """Obtener recolecciones por ID de contrato"""
         if idContrato <= 0:
             raise HTTPException(status_code=400, detail="ID de contrato inválido")
         
@@ -73,35 +74,60 @@ class RecoleccionController:
         for rec in recolecciones:
             rec['_id'] = str(rec['_id'])
         
-        if not recolecciones:
-            return []  # Retornar lista vacía si no hay recolecciones
-        
         return [Recoleccion(**rec) for rec in recolecciones]
     
     @staticmethod
     async def create(recoleccion_data: RecoleccionCreate):
         """Crear nueva recolección"""
-        # Validar técnicos por vehículo
-        for vehiculo in recoleccion_data.vehiculos:
-            if len(vehiculo.tecnicos) > 3:
+        try:
+            print("=== CONTROLLER CREATE ===")
+            print(f"Datos recibidos: {recoleccion_data}")
+            
+            # Validar técnicos por vehículo
+            for vehiculo in recoleccion_data.vehiculos:
+                if len(vehiculo.tecnicos) > 3:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Máximo 3 técnicos por vehículo. Vehículo {vehiculo.vehiculo} tiene {len(vehiculo.tecnicos)} técnicos"
+                    )
+            
+            # Validar tipos de residuo
+            if not recoleccion_data.tiposResiduo or len(recoleccion_data.tiposResiduo) == 0:
                 raise HTTPException(
                     status_code=422,
-                    detail=f"Máximo 3 técnicos por vehículo. Vehículo {vehiculo.vehiculo} tiene {len(vehiculo.tecnicos)} técnicos"
+                    detail="Debe especificar al menos un tipo de residuo"
                 )
-        
-        recoleccion_dict = recoleccion_data.model_dump()
-        recoleccion_dict["createdAt"] = datetime.now()
-        recoleccion_dict["updatedAt"] = datetime.now()
-        recoleccion_dict["activo"] = True
-        
-        result = await recolecciones_collection.insert_one(recoleccion_dict)
-        
-        new_recoleccion = await recolecciones_collection.find_one({"_id": result.inserted_id})
-        
-        # Convertir ObjectId a string
-        new_recoleccion['_id'] = str(new_recoleccion['_id'])
-        
-        return Recoleccion(**new_recoleccion)
+            
+            # Validar cantidades
+            for residuo in recoleccion_data.tiposResiduo:
+                if residuo.cantidadEstimada <= 0:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"La cantidad para {residuo.wasteTypeName} debe ser mayor a 0"
+                    )
+            
+            recoleccion_dict = recoleccion_data.model_dump()
+            recoleccion_dict["createdAt"] = datetime.now()
+            recoleccion_dict["updatedAt"] = datetime.now()
+            recoleccion_dict["activo"] = True
+            
+            print(f"Documento a insertar: {recoleccion_dict}")
+            
+            result = await recolecciones_collection.insert_one(recoleccion_dict)
+            
+            new_recoleccion = await recolecciones_collection.find_one({"_id": result.inserted_id})
+            new_recoleccion['_id'] = str(new_recoleccion['_id'])
+            
+            print(f"Recolección creada con ID: {result.inserted_id}")
+            
+            return Recoleccion(**new_recoleccion)
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error en create: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
     
     @staticmethod
     async def update(recoleccion_id: str, recoleccion_data: RecoleccionUpdate):
@@ -131,8 +157,6 @@ class RecoleccionController:
             )
         
         updated = await recolecciones_collection.find_one({"_id": ObjectId(recoleccion_id)})
-        
-        # Convertir ObjectId a string
         updated['_id'] = str(updated['_id'])
         
         return Recoleccion(**updated)

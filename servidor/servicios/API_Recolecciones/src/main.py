@@ -1,16 +1,37 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from .routes import recoleccion_routes
 from .middlewares.error_handler import validation_exception_handler, generic_exception_handler
-from fastapi.exceptions import RequestValidationError
 from .config.database import test_connection
 import os
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="SIMAR - Recolecciones API",
     description="Microservicio para gestión de recolecciones de residuos con múltiples vehículos",
     version="2.0.0"
 )
+
+# Middleware para loggear todas las requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"=== REQUEST RECIBIDA ===")
+    logger.info(f"Método: {request.method}")
+    logger.info(f"URL: {request.url}")
+    
+    # Leer el body
+    body = await request.body()
+    if body:
+        logger.info(f"Body: {body.decode('utf-8')}")
+    
+    response = await call_next(request)
+    logger.info(f"Response status: {response.status_code}")
+    return response
 
 # CORS
 app.add_middleware(

@@ -49,6 +49,18 @@
         font-weight: 500;
     }
     
+    /* Badges para tipos de residuo */
+    .badge-waste-type {
+        background: rgba(90, 173, 49, 0.15);
+        color: var(--simar-dark);
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-block;
+        margin: 0.15rem;
+    }
+    
     /* Botones mejorados */
     .btn-simar-outline {
         background: transparent;
@@ -180,12 +192,94 @@
         box-shadow: 0 0 0 2px rgba(90, 173, 49, 0.2);
     }
     
+    /* Checkbox group para tipos de residuo */
+    .waste-types-group {
+        background: var(--simar-gray-light);
+        border-radius: 12px;
+        padding: 1rem;
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid var(--simar-border);
+    }
+    
+    .waste-types-group::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .waste-types-group::-webkit-scrollbar-track {
+        background: var(--simar-border);
+        border-radius: 4px;
+    }
+    
+    .waste-types-group::-webkit-scrollbar-thumb {
+        background: var(--simar-green);
+        border-radius: 4px;
+    }
+    
+    .waste-checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.25rem;
+        background: white;
+        border-radius: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .waste-checkbox-item:hover {
+        background: rgba(90, 173, 49, 0.05);
+    }
+    
+    .waste-checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-right: 12px;
+        cursor: pointer;
+        accent-color: var(--simar-green);
+    }
+    
+    .waste-checkbox-item label {
+        margin: 0;
+        cursor: pointer;
+        font-size: 0.85rem;
+        flex: 1;
+    }
+    
+    .waste-checkbox-item .waste-code {
+        font-size: 0.7rem;
+        color: var(--simar-green);
+        font-weight: 600;
+        background: rgba(90, 173, 49, 0.1);
+        padding: 0.15rem 0.4rem;
+        border-radius: 20px;
+        margin-left: 0.5rem;
+    }
+    
+    .waste-checkbox-item .waste-type-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 20px;
+        margin-left: 0.5rem;
+    }
+    
+    .waste-type-peligroso {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+    
+    .waste-type-especial {
+        background: rgba(90, 173, 49, 0.15);
+        color: var(--simar-green);
+    }
+    
     /* Imagen preview */
     .img-preview {
-        max-height: 120px;
+        max-height: 150px;
         border-radius: 10px;
         border: 2px solid var(--simar-border);
         padding: 5px;
+        object-fit: contain;
     }
     
     /* Scroll del modal */
@@ -252,6 +346,20 @@
         padding-right: 1rem;
         padding-left: 1rem;
     }
+    
+    /* Selectores de grupo */
+    .group-selector {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .group-selector button {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+    }
 </style>
 
 <div class="container-fluid-custom">
@@ -275,7 +383,7 @@
         <form method="get" class="d-flex flex-column flex-sm-row gap-2">
             <div class="search-box flex-grow-1">
                 <div class="d-flex">
-                    <input type="text" name="Search" class="form-control" placeholder="Buscar por marca, modelo, placas, tipo de desecho..." value="@Model.Search">
+                    <input type="text" name="Search" class="form-control" placeholder="Buscar por marca, modelo, placas, tipo de residuo..." value="@Model.Search">
                     <button type="submit">
                         <i class="bi bi-search"></i>
                     </button>
@@ -311,7 +419,7 @@
                     <div class="vehiculo-card h-100">
                         <div class="position-relative">
                             <!-- Imagen -->
-                            <img src="@(item.FotoUrl ?? "/images/vehiculos/default-truck.jpg")"
+                            <img src="@(item.FotoBase64 != null ? $"data:image/jpeg;base64,{item.FotoBase64}" : "/images/vehiculos/default-truck.jpg")"
                                  alt="@item.Marca @item.Modelo"
                                  class="card-img-top"
                                  onerror="this.onerror=null; this.src='https://placehold.co/300x180/e9ecef/5aad31?text=SIN+IMAGEN'; this.style.backgroundColor='#f8f9fa';" 
@@ -339,14 +447,13 @@
                                                     data-modelo="@item.Modelo"
                                                     data-peso="@item.PesoToneladas"
                                                     data-licencia="@item.LicenciaRequerida"
-                                                    data-tipodesecho="@item.TipoDesecho"
+                                                    data-tiposresiduo='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.TiposResiduo))'
                                                     data-tipogasolina="@item.TipoGasolina"
                                                     data-placas="@item.Placas"
                                                     data-numeroeconomico="@item.NumeroEconomico"
-                                                    data-año="@item.Anio"
+                                                    data-anio="@item.Anio"
                                                     data-color="@item.Color"
-                                                    data-descripcion="@item.Descripcion"
-                                                    data-fotourl="@item.FotoUrl">
+                                                    data-descripcion="@item.Descripcion">
                                                 <i class="bi bi-pencil me-2"></i> Editar
                                             </button>
                                         </li>
@@ -357,14 +464,14 @@
                                                     data-modelo="@item.Modelo"
                                                     data-peso="@item.PesoToneladas"
                                                     data-licencia="@item.LicenciaRequerida"
-                                                    data-tipodesecho="@item.TipoDesecho"
+                                                    data-tiposresiduo='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.TiposResiduo))'
                                                     data-tipogasolina="@item.TipoGasolina"
                                                     data-placas="@item.Placas"
                                                     data-numeroeconomico="@item.NumeroEconomico"
-                                                    data-año="@item.Anio"
+                                                    data-anio="@item.Anio"
                                                     data-color="@item.Color"
                                                     data-descripcion="@item.Descripcion"
-                                                    data-fotourl="@item.FotoUrl">
+                                                    data-foto='@item.FotoBase64'>
                                                 <i class="bi bi-eye me-2"></i> Ver detalles
                                             </button>
                                         </li>
@@ -390,7 +497,7 @@
                             </h5>
                             
                             <div class="mb-2">
-                                @if (!string.IsNullOrEmpty(item.Anio.ToString()))
+                                @if (item.Anio.HasValue)
                                 {
                                     <div class="small mb-1">
                                         <i class="bi bi-calendar text-muted me-2"></i>
@@ -401,13 +508,30 @@
                                     <i class="bi bi-speedometer2 text-muted me-2"></i>
                                     <strong>Peso:</strong> @(item.PesoToneladas?.ToString("N1") ?? "N/A") ton
                                 </div>
-                                <div class="small mb-1">
-                                    <i class="bi bi-file-earmark-text text-muted me-2"></i>
-                                    <strong>Desecho:</strong> @(item.TipoDesecho.Length > 25 ? item.TipoDesecho.Substring(0, 25) + "..." : item.TipoDesecho)
-                                </div>
-                                <div class="small">
+                                <div class="small mb-2">
                                     <i class="bi bi-upc-scan text-muted me-2"></i>
                                     <strong>Placas:</strong> @item.Placas
+                                </div>
+                                <div class="mt-2">
+                                    <strong class="small text-muted">Tipos de residuo:</strong>
+                                    <div class="mt-1">
+                                        @if (item.TiposResiduo != null && item.TiposResiduo.Any())
+                                        {
+                                            var tiposList = item.TiposResiduo.ToList();
+                                            foreach (var residuo in tiposList.Take(2))
+                                            {
+                                                <span class="badge-waste-type">@residuo.Nombre</span>
+                                            }
+                                            if (tiposList.Count > 2)
+                                            {
+                                                <span class="badge-waste-type">+@(tiposList.Count - 2) más</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-waste-type text-muted">No especificado</span>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -419,14 +543,14 @@
                                     data-modelo="@item.Modelo"
                                     data-peso="@item.PesoToneladas"
                                     data-licencia="@item.LicenciaRequerida"
-                                    data-tipodesecho="@item.TipoDesecho"
+                                    data-tiposresiduo='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.TiposResiduo))'
                                     data-tipogasolina="@item.TipoGasolina"
                                     data-placas="@item.Placas"
                                     data-numeroeconomico="@item.NumeroEconomico"
-                                    data-año="@item.Anio"
+                                    data-anio="@item.Anio"
                                     data-color="@item.Color"
                                     data-descripcion="@item.Descripcion"
-                                    data-fotourl="@item.FotoUrl">
+                                    data-foto='@item.FotoBase64'>
                                 <i class="bi bi-arrow-right me-1"></i> Ver detalles
                             </button>
                         </div>
@@ -437,10 +561,7 @@
     }
 </div>
 
-<!-- ==================== MODALES ==================== -->
-<!-- (Los modales se mantienen igual, solo se mejora la clase de los botones) -->
-
-<!-- Modal Create -->
+<!-- ==================== MODAL CREATE ==================== -->
 <div class="modal fade" id="modalCreate" tabindex="-1" aria-labelledby="modalCreateLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -460,7 +581,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-calendar me-1"></i> Año</label>
-                            <input type="number" name="Año" class="form-control" placeholder="Ej: 2020" min="1990" max="2025">
+                            <input type="number" name="Anio" class="form-control" placeholder="Ej: 2020" min="1990" max="@DateTime.Now.Year">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-tag me-1"></i> Marca *</label>
@@ -494,31 +615,38 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-    <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de gasolina *</label>
-    <select name="TipoGasolina" class="form-select" required>
-        <option value="">Seleccionar tipo</option>
-        <option value="Diesel">Diesel</option>
-        <option value="Gasolina Magna">Gasolina Magna</option>
-        <option value="Gasolina Premium">Gasolina Premium</option>
-        <option value="Gas Natural">Gas Natural</option>
-        <option value="Eléctrico">Eléctrico</option>
-        <option value="Híbrido">Híbrido</option>
-    </select>
-</div>
+                            <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de combustible *</label>
+                            <select name="TipoGasolina" class="form-select" required>
+                                <option value="">Seleccionar tipo</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="Gasolina Magna">Gasolina Magna</option>
+                                <option value="Gasolina Premium">Gasolina Premium</option>
+                                <option value="Gas Natural">Gas Natural</option>
+                                <option value="Electrico">Eléctrico</option>
+                                <option value="Hibrido">Híbrido</option>
+                            </select>
+                        </div>
                         <div class="col-12">
-    <label class="form-label"><i class="bi bi-trash me-1"></i> Tipo de desecho que puede transportar *</label>
-    <select name="TipoDesecho" class="form-select" required>
-        <option value="">Seleccionar tipo de desecho</option>
-        <option value="Residuos Peligrosos">Residuos Peligrosos</option>
-        <option value="Residuos Biológicos">Residuos Biológicos</option>
-        <option value="Residuos Reciclables">Residuos Reciclables</option>
-        <option value="Residuos Orgánicos">Residuos Orgánicos</option>
-        <option value="Residuos de Construcción">Residuos de Construcción</option>
-        <option value="Residuos Electrónicos">Residuos Electrónicos</option>
-        <option value="Residuos Industriales">Residuos Industriales</option>
-        <option value="Residuos Varios">Residuos Varios</option>
-    </select>
-</div>
+                            <label class="form-label"><i class="bi bi-trash me-1"></i> Tipos de residuo que puede transportar</label>
+                            <div class="group-selector">
+                                <button type="button" class="btn-simar-outline btn-sm" id="selectAllWastes">✓ Seleccionar todos</button>
+                                <button type="button" class="btn-simar-outline btn-sm" id="deselectAllWastes">✗ Deseleccionar todos</button>
+                            </div>
+                            <div class="waste-types-group" id="wasteTypesContainer">
+                                @foreach (var tipo in Model.TiposResiduoDisponibles)
+                                {
+                                    <div class="waste-checkbox-item">
+                                        <input type="checkbox" name="TiposResiduoIds" value="@tipo.Id" id="waste_@tipo.Id">
+                                        <label for="waste_@tipo.Id">
+                                            @tipo.Nombre
+                                            <span class="waste-code">@tipo.CodigoCatalogo</span>
+                                            <span class="waste-type-badge waste-type-@tipo.TipoResiduo.ToLower()">@tipo.TipoResiduo</span>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                            <small class="text-muted">Selecciona uno o más tipos de residuo que este vehículo puede transportar</small>
+                        </div>
                         <div class="col-12">
                             <label class="form-label"><i class="bi bi-chat-text me-1"></i> Descripción</label>
                             <textarea name="Descripcion" class="form-control" rows="2" placeholder="Características adicionales del vehículo..."></textarea>
@@ -529,7 +657,7 @@
                             <div class="mt-3 text-center">
                                 <img id="createFotoPreview" src="#" alt="Vista previa" class="img-preview d-none">
                             </div>
-                            <small class="text-muted">Formatos: JPG, PNG. Tamaño máximo: 5MB</small>
+                            <small class="text-muted">Formatos: JPG, PNG. Tamaño máximo: 20MB</small>
                         </div>
                     </div>
                 </div>
@@ -544,7 +672,7 @@
     </div>
 </div>
 
-<!-- Modal Edit -->
+<!-- ==================== MODAL EDIT ==================== -->
 <div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="modalEditLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -555,13 +683,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formEdit" method="post" asp-page-handler="Update" enctype="multipart/form-data">
-    <input type="hidden" name="id" id="editId">orm-data">
                 <input type="hidden" name="Id" id="editId">
                 @Html.AntiForgeryToken()
                 <div class="modal-body modal-scrollable">
                     <div class="text-center mb-3">
                         <p class="mb-1">Foto actual:</p>
-                        <img id="editFotoActual" src="#" alt="Foto actual" class="img-preview" style="max-height: 120px;">
+                        <img id="editFotoActual" src="#" alt="Foto actual" class="img-preview" style="max-height: 150px;">
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -570,7 +697,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-calendar me-1"></i> Año</label>
-                            <input type="number" name="Año" class="form-control" id="editAño" min="1990" max="2025">
+                            <input type="number" name="Anio" class="form-control" id="editAnio" min="1990" max="@DateTime.Now.Year">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-tag me-1"></i> Marca *</label>
@@ -604,31 +731,38 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-    <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de gasolina *</label>
-    <select name="TipoGasolina" class="form-select" id="editTipoGasolina" required>
-        <option value="">Seleccionar tipo</option>
-        <option value="Diesel">Diesel</option>
-        <option value="Gasolina Magna">Gasolina Magna</option>
-        <option value="Gasolina Premium">Gasolina Premium</option>
-        <option value="Gas Natural">Gas Natural</option>
-        <option value="Eléctrico">Eléctrico</option>
-        <option value="Híbrido">Híbrido</option>
-    </select>
-</div>
+                            <label class="form-label"><i class="bi bi-fuel-pump me-1"></i> Tipo de combustible *</label>
+                            <select name="TipoGasolina" class="form-select" id="editTipoGasolina" required>
+                                <option value="">Seleccionar tipo</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="Gasolina Magna">Gasolina Magna</option>
+                                <option value="Gasolina Premium">Gasolina Premium</option>
+                                <option value="Gas Natural">Gas Natural</option>
+                                <option value="Electrico">Eléctrico</option>
+                                <option value="Hibrido">Híbrido</option>
+                            </select>
+                        </div>
                         <div class="col-12">
-    <label class="form-label"><i class="bi bi-trash me-1"></i> Tipo de desecho que puede transportar *</label>
-    <select name="TipoDesecho" class="form-select" id="editTipoDesecho" required>
-        <option value="">Seleccionar tipo de desecho</option>
-        <option value="Residuos Peligrosos">Residuos Peligrosos</option>
-        <option value="Residuos Biológicos">Residuos Biológicos</option>
-        <option value="Residuos Reciclables">Residuos Reciclables</option>
-        <option value="Residuos Orgánicos">Residuos Orgánicos</option>
-        <option value="Residuos de Construcción">Residuos de Construcción</option>
-        <option value="Residuos Electrónicos">Residuos Electrónicos</option>
-        <option value="Residuos Industriales">Residuos Industriales</option>
-        <option value="Residuos Varios">Residuos Varios</option>
-    </select>
-</div>
+                            <label class="form-label"><i class="bi bi-trash me-1"></i> Tipos de residuo que puede transportar</label>
+                            <div class="group-selector">
+                                <button type="button" class="btn-simar-outline btn-sm" id="editSelectAllWastes">✓ Seleccionar todos</button>
+                                <button type="button" class="btn-simar-outline btn-sm" id="editDeselectAllWastes">✗ Deseleccionar todos</button>
+                            </div>
+                            <div class="waste-types-group" id="editWasteTypesContainer">
+                                @foreach (var tipo in Model.TiposResiduoDisponibles)
+                                {
+                                    <div class="waste-checkbox-item">
+                                        <input type="checkbox" name="TiposResiduoIds" value="@tipo.Id" id="edit_waste_@tipo.Id">
+                                        <label for="edit_waste_@tipo.Id">
+                                            @tipo.Nombre
+                                            <span class="waste-code">@tipo.CodigoCatalogo</span>
+                                            <span class="waste-type-badge waste-type-@tipo.TipoResiduo.ToLower()">@tipo.TipoResiduo</span>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                            <small class="text-muted">Selecciona uno o más tipos de residuo que este vehículo puede transportar</small>
+                        </div>
                         <div class="col-12">
                             <label class="form-label"><i class="bi bi-chat-text me-1"></i> Descripción</label>
                             <textarea name="Descripcion" class="form-control" id="editDescripcion" rows="2"></textarea>
@@ -639,7 +773,7 @@
                             <div class="mt-3 text-center">
                                 <img id="editFotoPreview" src="#" alt="Vista previa" class="img-preview d-none">
                             </div>
-                            <small class="text-muted">Dejar vacío para mantener la foto actual</small>
+                            <small class="text-muted">Dejar vacío para mantener la foto actual. Tamaño máximo: 20MB</small>
                         </div>
                     </div>
                 </div>
@@ -654,7 +788,7 @@
     </div>
 </div>
 
-<!-- Modal Details -->
+<!-- ==================== MODAL DETAILS ==================== -->
 <div class="modal fade" id="modalDetails" tabindex="-1" aria-labelledby="modalDetailsLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -676,7 +810,7 @@
                                 <strong><i class="bi bi-123 me-2"></i>No. Económico:</strong> <span id="detailsNumeroEconomico"></span>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <strong><i class="bi bi-calendar me-2"></i>Año:</strong> <span id="detailsAño"></span>
+                                <strong><i class="bi bi-calendar me-2"></i>Año:</strong> <span id="detailsAnio"></span>
                             </div>
                             <div class="col-md-6 mb-2">
                                 <strong><i class="bi bi-tag me-2"></i>Marca:</strong> <span id="detailsMarca"></span>
@@ -697,10 +831,11 @@
                                 <strong><i class="bi bi-card-text me-2"></i>Licencia:</strong> <span id="detailsLicencia"></span>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <strong><i class="bi bi-fuel-pump me-2"></i>Gasolina:</strong> <span id="detailsGasolina"></span>
+                                <strong><i class="bi bi-fuel-pump me-2"></i>Combustible:</strong> <span id="detailsGasolina"></span>
                             </div>
                             <div class="col-12 mb-2">
-                                <strong><i class="bi bi-trash me-2"></i>Tipo de desecho:</strong> <span id="detailsTipoDesecho"></span>
+                                <strong><i class="bi bi-trash me-2"></i>Tipos de residuo:</strong>
+                                <div id="detailsTiposResiduo" class="mt-1"></div>
                             </div>
                             <div class="col-12 mb-2">
                                 <strong><i class="bi bi-chat-text me-2"></i>Descripción:</strong> 
@@ -723,7 +858,7 @@
     </div>
 </div>
 
-<!-- Modal Delete -->
+<!-- ==================== MODAL DELETE ==================== -->
 <div class="modal fade" id="modalDelete" tabindex="-1" aria-labelledby="modalDeleteLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -759,10 +894,9 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script>
-        let recoleccionAEliminar = null;
+        let vehiculoAEliminar = null;
 
         // Mostrar mensajes toast
         @if (Model.SuccessMessage != null)
@@ -788,19 +922,91 @@
             setTimeout(() => { toast.remove(); }, 3000);
         }
 
+        // Preview de foto
+        function setupImagePreview(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            if (input && preview) {
+                input.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        if (file.size > 20 * 1024 * 1024) {
+                            showToast('La foto no puede superar los 20MB', 'error');
+                            this.value = '';
+                            preview.classList.add('d-none');
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.src = e.target.result;
+                            preview.classList.remove('d-none');
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        preview.src = '#';
+                        preview.classList.add('d-none');
+                    }
+                });
+            }
+        }
+
+        setupImagePreview('createFotoInput', 'createFotoPreview');
+        setupImagePreview('editFotoInput', 'editFotoPreview');
+
+        // Funciones para seleccionar/deseleccionar todos los checkboxes
+        function setupCheckboxControls(selectBtnId, deselectBtnId, containerId) {
+            const selectBtn = document.getElementById(selectBtnId);
+            const deselectBtn = document.getElementById(deselectBtnId);
+            const container = document.getElementById(containerId);
+            
+            if (selectBtn) {
+                selectBtn.addEventListener('click', () => {
+                    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = true);
+                });
+            }
+            
+            if (deselectBtn) {
+                deselectBtn.addEventListener('click', () => {
+                    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = false);
+                });
+            }
+        }
+
+        setupCheckboxControls('selectAllWastes', 'deselectAllWastes', 'wasteTypesContainer');
+        setupCheckboxControls('editSelectAllWastes', 'editDeselectAllWastes', 'editWasteTypesContainer');
+
         // ========== EDITAR ==========
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.getElementById('editId').value = this.dataset.id;
-                document.getElementById('editCliente').value = this.dataset.cliente || '';
-                document.getElementById('editFecha').value = this.dataset.fecha || '';
-                document.getElementById('editDireccion').value = this.dataset.direccion || '';
-                document.getElementById('editVehiculo').value = this.dataset.vehiculo || '';
-                document.getElementById('editTecnico').value = this.dataset.tecnico || '';
-                document.getElementById('editTipoResiduo').value = this.dataset.tiporesiduo || '';
-                document.getElementById('editCantidad').value = this.dataset.cantidad || '';
-                document.getElementById('editObservaciones').value = this.dataset.observaciones || '';
-                document.getElementById('editEstado').value = this.dataset.estado || 'Programada';
+                document.getElementById('editMarca').value = this.dataset.marca || '';
+                document.getElementById('editModelo').value = this.dataset.modelo || '';
+                document.getElementById('editPeso').value = this.dataset.peso || '';
+                document.getElementById('editLicencia').value = this.dataset.licencia || '';
+                document.getElementById('editTipoGasolina').value = this.dataset.tipogasolina || '';
+                document.getElementById('editPlacas').value = this.dataset.placas || '';
+                document.getElementById('editNumeroEconomico').value = this.dataset.numeroeconomico || '';
+                document.getElementById('editAnio').value = this.dataset.anio || '';
+                document.getElementById('editColor').value = this.dataset.color || '';
+                document.getElementById('editDescripcion').value = this.dataset.descripcion || '';
+                
+                // Manejar tipos de residuo (checkboxes)
+                const tiposResiduo = this.dataset.tiposresiduo ? JSON.parse(this.dataset.tiposresiduo) : [];
+                const checkboxes = document.querySelectorAll('#editWasteTypesContainer input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = tiposResiduo.some(t => t.id == cb.value);
+                });
+                
+                // Mostrar foto actual si existe
+                const fotoActual = document.getElementById('editFotoActual');
+                if (this.dataset.foto && this.dataset.foto !== 'null') {
+                    fotoActual.src = `data:image/jpeg;base64,${this.dataset.foto}`;
+                    fotoActual.classList.remove('d-none');
+                } else {
+                    fotoActual.src = 'https://placehold.co/300x200/e9ecef/5aad31?text=SIN+FOTO';
+                }
                 
                 new bootstrap.Modal(document.getElementById('modalEdit')).show();
             });
@@ -809,24 +1015,42 @@
         // ========== DETALLES ==========
         document.querySelectorAll('.btn-details').forEach(btn => {
             btn.addEventListener('click', function () {
-                document.getElementById('detailsId').textContent = this.dataset.id;
-                document.getElementById('detailsCliente').textContent = this.dataset.cliente || 'No especificado';
+                const tiposResiduo = this.dataset.tiposresiduo ? JSON.parse(this.dataset.tiposresiduo) : [];
                 
-                const fechaRaw = this.dataset.fecha;
-                if (fechaRaw) {
-                    const fecha = new Date(fechaRaw);
-                    document.getElementById('detailsFecha').textContent = fecha.toLocaleDateString('es-MX', { 
-                        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                    });
+                document.getElementById('detailsId').textContent = this.dataset.id;
+                document.getElementById('detailsMarca').textContent = this.dataset.marca || 'N/A';
+                document.getElementById('detailsModelo').textContent = this.dataset.modelo || 'N/A';
+                document.getElementById('detailsTitulo').textContent = `${this.dataset.marca || ''} ${this.dataset.modelo || ''}`.trim() || 'Vehículo';
+                document.getElementById('detailsNumeroEconomico').textContent = this.dataset.numeroeconomico || 'No registrado';
+                document.getElementById('detailsAnio').textContent = this.dataset.anio || 'No registrado';
+                document.getElementById('detailsColor').textContent = this.dataset.color || 'No registrado';
+                document.getElementById('detailsPlacas').textContent = this.dataset.placas || 'No registrado';
+                document.getElementById('detailsPeso').textContent = this.dataset.peso ? parseFloat(this.dataset.peso).toFixed(1) : 'N/A';
+                document.getElementById('detailsLicencia').textContent = this.dataset.licencia || 'No registrado';
+                document.getElementById('detailsGasolina').textContent = this.dataset.tipogasolina || 'No registrado';
+                document.getElementById('detailsDescripcion').textContent = this.dataset.descripcion || 'Sin descripción';
+                
+                // Mostrar foto
+                const foto = document.getElementById('detailsFoto');
+                if (this.dataset.foto && this.dataset.foto !== 'null') {
+                    foto.src = `data:image/jpeg;base64,${this.dataset.foto}`;
+                } else {
+                    foto.src = 'https://placehold.co/300x200/e9ecef/5aad31?text=SIN+FOTO';
                 }
                 
-                document.getElementById('detailsDireccion').textContent = this.dataset.direccion || 'No especificada';
-                document.getElementById('detailsVehiculo').textContent = this.dataset.vehiculo || 'No asignado';
-                document.getElementById('detailsTecnico').textContent = this.dataset.tecnico || 'No asignado';
-                document.getElementById('detailsTipoResiduo').textContent = this.dataset.tiporesiduo || 'No especificado';
-                document.getElementById('detailsCantidad').textContent = this.dataset.cantidad ? `${parseFloat(this.dataset.cantidad).toFixed(1)} ton` : 'No especificada';
-                document.getElementById('detailsEstado').textContent = this.dataset.estado || 'Programada';
-                document.getElementById('detailsObservaciones').textContent = this.dataset.observaciones || 'Sin observaciones';
+                // Mostrar tipos de residuo como badges
+                const container = document.getElementById('detailsTiposResiduo');
+                container.innerHTML = '';
+                if (tiposResiduo.length > 0) {
+                    tiposResiduo.forEach(t => {
+                        const badge = document.createElement('span');
+                        badge.className = `badge-waste-type me-1 mb-1`;
+                        badge.innerHTML = `<strong>${t.codigoCatalogo || t.codigo || ''}</strong> - ${t.nombre}`;
+                        container.appendChild(badge);
+                    });
+                } else {
+                    container.innerHTML = '<span class="text-muted">No se han registrado tipos de residuo</span>';
+                }
                 
                 new bootstrap.Modal(document.getElementById('modalDetails')).show();
             });
@@ -835,7 +1059,7 @@
         // Editar desde detalles
         document.getElementById('btnEditFromDetails')?.addEventListener('click', function() {
             const id = document.getElementById('detailsId').textContent;
-            if (id && id !== 'No especificado') {
+            if (id && id !== 'N/A') {
                 const btnEdit = document.querySelector(`.btn-edit[data-id="${id}"]`);
                 if (btnEdit) btnEdit.click();
                 bootstrap.Modal.getInstance(document.getElementById('modalDetails')).hide();
@@ -845,17 +1069,19 @@
         // ========== ELIMINAR ==========
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function () {
-                recoleccionAEliminar = {
+                vehiculoAEliminar = {
                     id: this.dataset.id,
-                    cliente: this.dataset.cliente || 'No especificado',
-                    fecha: this.dataset.fecha || 'No especificada'
+                    numeroEconomico: this.dataset.numeroeconomico || 'No especificado',
+                    marca: this.dataset.marca || '',
+                    modelo: this.dataset.modelo || '',
+                    placas: this.dataset.placas || 'No especificadas'
                 };
                 
-                document.getElementById('deleteId').textContent = recoleccionAEliminar.id;
-                document.getElementById('deleteCliente').textContent = recoleccionAEliminar.cliente;
-                document.getElementById('deleteFecha').textContent = recoleccionAEliminar.fecha;
-                document.getElementById('deleteRecoleccionInfo').textContent = 
-                    `Recolección #${recoleccionAEliminar.id.substring(0, 8)}... - ${recoleccionAEliminar.cliente}`;
+                document.getElementById('deleteId').textContent = vehiculoAEliminar.id;
+                document.getElementById('deleteNumeroEconomico').textContent = vehiculoAEliminar.numeroEconomico;
+                document.getElementById('deletePlacas').textContent = vehiculoAEliminar.placas;
+                document.getElementById('deleteVehiculoNombre').innerHTML = 
+                    `<i class="bi bi-truck me-2"></i> ${vehiculoAEliminar.marca} ${vehiculoAEliminar.modelo}`.trim();
                 
                 new bootstrap.Modal(document.getElementById('modalDelete')).show();
             });
@@ -863,10 +1089,10 @@
 
         // Confirmar eliminación
         document.getElementById('confirmDelete')?.addEventListener('click', function() {
-            if (recoleccionAEliminar) {
+            if (vehiculoAEliminar) {
                 const form = document.createElement('form');
                 form.method = 'post';
-                form.action = `?handler=Delete&id=${recoleccionAEliminar.id}`;
+                form.action = `?handler=Delete&id=${vehiculoAEliminar.id}`;
                 
                 const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]');
                 if (antiForgery) {
@@ -877,14 +1103,5 @@
                 form.submit();
             }
         });
-
-        // Validar fechas en filtros
-        const fechaInicio = document.querySelector('input[name="FiltroFechaInicio"]');
-        const fechaFin = document.querySelector('input[name="FiltroFechaFin"]');
-        if (fechaInicio && fechaFin) {
-            fechaInicio.addEventListener('change', function() {
-                fechaFin.min = this.value;
-            });
-        }
     </script>
 }

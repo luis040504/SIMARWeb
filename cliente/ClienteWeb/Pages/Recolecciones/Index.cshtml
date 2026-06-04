@@ -1,4 +1,5 @@
 @page
+@using ClienteWeb.Models
 @model ClienteWeb.Pages.Recolecciones.IndexModel
 @{
     ViewData["Title"] = "Programación de Recolecciones - SIMAR";
@@ -15,7 +16,6 @@
     
     select, select option, .form-select, .form-select option {
         color: #000000 !important;
-        background-color: #ffffff !important;
     }
     
     .filter-section {
@@ -46,6 +46,25 @@
     .badge-cancelada { background: rgba(220,53,69,0.15); color: #dc3545; }
     .badge-enruta { background: rgba(255,193,7,0.15); color: #e6a700; }
     
+    .badge-waste-type {
+        background: rgba(90, 173, 49, 0.15);
+        color: var(--simar-dark);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-block;
+        margin: 0.1rem;
+    }
+    .badge-waste-peligroso {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+    .badge-waste-especial {
+        background: rgba(90, 173, 49, 0.15);
+        color: var(--simar-green);
+    }
+    
     .btn-simar-outline {
         background: transparent; border: 1px solid var(--simar-green); color: var(--simar-green);
         border-radius: 10px; padding: 0.5rem 1.2rem; transition: all 0.2s; font-weight: 500;
@@ -74,25 +93,73 @@
     .modal-footer { border-top: 1px solid var(--simar-border); padding: 1rem 1.5rem; }
     .modal-scrollable { max-height: 60vh; overflow-y: auto; }
     
+    .residuos-group {
+        background: var(--simar-gray-light);
+        border-radius: 12px;
+        padding: 1rem;
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid var(--simar-border);
+    }
+    .residuo-checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.25rem;
+        background: white;
+        border-radius: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .residuo-checkbox-item:hover {
+        background: rgba(90, 173, 49, 0.05);
+    }
+    .residuo-checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-right: 0px;
+        cursor: pointer;
+        accent-color: var(--simar-green);
+    }
+    .residuo-checkbox-item .residuo-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        margin: 0;
+    }
+    .residuo-checkbox-item .residuo-info span {
+        cursor: pointer;
+    }
+    .residuo-code {
+        font-size: 0.7rem;
+        color: var(--simar-green);
+        font-weight: 600;
+        background: rgba(90, 173, 49, 0.1);
+        padding: 0.15rem 0.4rem;
+        border-radius: 20px;
+    }
+    .cantidad-residuo {
+        width: 100px;
+    }
+    .unidad-residuo {
+        width: 100px;
+    }
+    
     .vehiculo-asignado-card {
         background: var(--simar-gray-light); border-radius: 12px; padding: 1rem;
         margin-bottom: 0.75rem; border: 1px solid var(--simar-border);
-    }
-    .vehiculo-asignado-card select,
-    .vehiculo-asignado-card option {
-        color: #000000 !important;
     }
     .empty-state {
         text-align: center; padding: 4rem 2rem; background: white;
         border-radius: 20px; border: 1px solid var(--simar-border);
     }
     .container-fluid-custom { width: 100%; padding-right: 1rem; padding-left: 1rem; }
-    .table-responsive-custom { 
-        overflow-x: auto; 
-        border-radius: 16px; 
-    }
+    .table-responsive-custom { overflow-x: auto; border-radius: 16px; }
     
-    /* ✅ Checkboxes de técnicos */
     .tecnicos-checkboxes {
         display: flex;
         flex-wrap: wrap;
@@ -115,13 +182,16 @@
         border-color: var(--simar-green);
         background: rgba(90,173,49,0.05);
     }
-    .tecnico-check-label input:checked + span {
-        color: var(--simar-green);
-        font-weight: 600;
-    }
     .tecnico-check-label:has(input:checked) {
         border-color: var(--simar-green);
         background: rgba(90,173,49,0.1);
+    }
+    
+    .group-selector {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
     }
 </style>
 
@@ -198,7 +268,7 @@
                         <th>Fecha</th>
                         <th>Dirección</th>
                         <th>Vehículo(s)</th>
-                        <th>Chofer</th>
+                        <th>Residuos</th>
                         <th>Estado</th>
                         <th style="width:70px;">Acciones</th>
                     </tr>
@@ -207,15 +277,9 @@
                     @foreach (var item in Model.Recolecciones)
                     {
                         <tr>
-                            <td class="text-muted small">@item.Id.Substring(0, 8)...</td>
+                            <td class="text-muted small">@item.Id.Substring(0, Math.Min(8, item.Id.Length))...</td>
                             <td><span class="badge bg-dark">#@item.IdContrato</span></td>
-                            <td>
-                                <strong>@item.Cliente</strong>
-                                @if (!string.IsNullOrEmpty(item.TipoResiduo))
-                                {
-                                    <br><small class="text-muted">@item.TipoResiduo</small>
-                                }
-                            </td>
+                            <td><strong>@item.Cliente</strong></td>
                             <td>
                                 @item.Fecha.ToString("dd/MM/yyyy")
                                 <br><small class="text-muted">@item.Fecha.ToString("HH:mm")</small>
@@ -231,7 +295,25 @@
                                     <span class="badge bg-light text-dark me-1">@v.Vehiculo</span>
                                 }
                             </td>
-                            <td>@item.ChoferPrincipal</td>
+                            <td>
+                                @if (item.TiposResiduo != null && item.TiposResiduo.Count > 0)
+                                {
+                                    foreach (var residuo in item.TiposResiduo.Take(2))
+                                    {
+                                        <span class="badge-waste-type @(residuo.WasteType == "peligroso" ? "badge-waste-peligroso" : "badge-waste-especial")">
+                                            @residuo.WasteTypeName
+                                        </span>
+                                    }
+                                    if (item.TiposResiduo.Count > 2)
+                                    {
+                                        <span class="badge-waste-type">+@(item.TiposResiduo.Count - 2) más</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No especificado</span>
+                                }
+                            </td>
                             <td>
                                 @{
                                     string badgeClass = "badge-estado";
@@ -254,7 +336,7 @@
                                                     data-id="@item.Id" data-idcontrato="@item.IdContrato"
                                                     data-cliente="@item.Cliente" data-fecha="@item.Fecha.ToString("yyyy-MM-ddTHH:mm")"
                                                     data-direccion="@item.Direccion" data-estado="@item.Estado"
-                                                    data-tiporesiduo="@item.TipoResiduo" data-cantidad="@item.CantidadEstimada"
+                                                    data-tiposresiduo='@System.Text.Json.JsonSerializer.Serialize(item.TiposResiduo)'
                                                     data-observaciones="@item.Observaciones">
                                                 <i class="bi bi-eye me-2"></i>Ver detalles
                                             </button>
@@ -311,41 +393,8 @@
                             <input type="datetime-local" name="fecha" class="form-control" id="createFecha" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label"><i class="bi bi-trash me-1"></i>Tipo de residuo</label>
-                            <select name="tipoResiduo" class="form-select" id="createTipoResiduo">
-                                <option value="">Seleccionar</option>
-                                <option value="Residuos Peligrosos">Peligrosos</option>
-                                <option value="Residuos Biológicos">Biológicos</option>
-                                <option value="Residuos Reciclables">Reciclables</option>
-                                <option value="Residuos de Construcción">Construcción</option>
-                                <option value="Residuos Orgánicos">Orgánicos</option>
-                                <option value="Residuos Electrónicos">Electrónicos</option>
-                                <option value="Residuos Industriales">Industriales</option>
-                                <option value="Residuos Varios">Varios</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label"><i class="bi bi-speedometer2 me-1"></i>Cantidad (ton)</label>
-                            <input type="number" step="0.1" name="cantidadEstimada" class="form-control" id="createCantidad" placeholder="Ej: 5.5">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Dirección *</label>
-                        <input type="text" name="direccion" class="form-control" id="createDireccion" placeholder="Calle, número, colonia, ciudad" required>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label fw-bold mb-0"><i class="bi bi-truck-front me-1"></i>Vehículos asignados *</label>
-                            <button type="button" class="btn btn-sm btn-simar-outline" onclick="agregarVehiculoCreate()">
-                                <i class="bi bi-plus"></i> Agregar vehículo
-                            </button>
-                        </div>
-                        <div id="listaVehiculosCreate"></div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label"><i class="bi bi-chat-text me-1"></i>Observaciones</label>
-                            <textarea name="observaciones" class="form-control" id="createObservaciones" rows="2" placeholder="Instrucciones especiales..."></textarea>
+                            <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Dirección *</label>
+                            <input type="text" name="direccion" class="form-control" id="createDireccion" placeholder="Dirección completa" required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label"><i class="bi bi-tag me-1"></i>Estado</label>
@@ -356,10 +405,64 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <!-- Tipos de residuo con checkboxes -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="bi bi-trash me-1"></i>Tipos de residuo a recolectar *</label>
+                        <div class="group-selector">
+                            <button type="button" class="btn-simar-outline btn-sm" id="selectAllResiduos">✓ Seleccionar todos</button>
+                            <button type="button" class="btn-simar-outline btn-sm" id="deselectAllResiduos">✗ Deseleccionar todos</button>
+                        </div>
+                        <div class="residuos-group" id="residuosContainer">
+                            @foreach (var residuo in Model.TiposResiduoDisponibles)
+                            {
+                                <div class="residuo-checkbox-item" data-id="@residuo.Id">
+                                    <input type="checkbox" class="residuo-checkbox" value="@residuo.Id" 
+                                           data-code="@residuo.CodigoCatalogo" 
+                                           data-name="@residuo.Nombre" 
+                                           data-type="@residuo.TipoResiduo">
+                                    <label class="residuo-info">
+                                        <span>@residuo.Nombre</span>
+                                        <span class="residuo-code">@residuo.CodigoCatalogo</span>
+                                        <span class="badge-waste-type @(residuo.TipoResiduo == "peligroso" ? "badge-waste-peligroso" : "badge-waste-especial")">@residuo.TipoResiduo</span>
+                                    </label>
+                                    <input type="number" step="0.1" class="form-control cantidad-residuo" 
+                                           placeholder="Cantidad" style="width:100px;" disabled>
+                                    <select class="form-select unidad-residuo" style="width:100px;" disabled>
+                                        <option value="kg">kg</option>
+                                        <option value="ton">ton</option>
+                                        <option value="lt">lt</option>
+                                        <option value="m3">m³</option>
+                                        <option value="pza">pza</option>
+                                        <option value="contenedores">contenedores</option>
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                        <small class="text-muted">Selecciona los residuos y especifica la cantidad estimada para cada uno</small>
+                    </div>
+                    
+                    <!-- Vehículos asignados -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-bold mb-0"><i class="bi bi-truck-front me-1"></i>Vehículos asignados *</label>
+                            <button type="button" class="btn btn-sm btn-simar-outline" onclick="agregarVehiculoCreate()">
+                                <i class="bi bi-plus"></i> Agregar vehículo
+                            </button>
+                        </div>
+                        <div id="listaVehiculosCreate"></div>
+                        <small class="text-muted">Debe asignar al menos un vehículo</small>
+                    </div>
+                    
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-chat-text me-1"></i>Observaciones</label>
+                        <textarea name="observaciones" class="form-control" id="createObservaciones" rows="2" placeholder="Instrucciones especiales..."></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-simar-outline" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn-simar-primary"><i class="bi bi-check-lg"></i> Programar</button>
+                    <button type="submit" class="btn-simar-primary" id="btnSubmitCreate"><i class="bi bi-check-lg"></i> Programar</button>
                 </div>
             </form>
         </div>
@@ -382,12 +485,21 @@
                         <div class="mb-3"><label class="text-muted small">Cliente</label><p class="fw-semibold" id="detailsCliente"></p></div>
                         <div class="mb-3"><label class="text-muted small">Fecha y hora</label><p id="detailsFecha"></p></div>
                         <div class="mb-3"><label class="text-muted small">Dirección</label><p id="detailsDireccion"></p></div>
+                        <div class="mb-3"><label class="text-muted small">Estado</label><p id="detailsEstado"></p></div>
                     </div>
                     <div class="col-md-6">
-                        <div class="mb-3"><label class="text-muted small">Estado</label><p id="detailsEstado"></p></div>
-                        <div class="mb-3"><label class="text-muted small">Tipo de residuo</label><p id="detailsTipoResiduo"></p></div>
-                        <div class="mb-3"><label class="text-muted small">Cantidad estimada</label><p id="detailsCantidad"></p></div>
-                        <div class="mb-3"><label class="text-muted small">Observaciones</label><p id="detailsObservaciones" class="fst-italic"></p></div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Tipos de residuo</label>
+                            <div id="detailsTiposResiduo" class="mt-1"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Vehículos asignados</label>
+                            <div id="detailsVehiculos" class="mt-1"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Observaciones</label>
+                            <p id="detailsObservaciones" class="fst-italic"></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -445,11 +557,87 @@
         // ============ TOAST ============
         @if (Model.SuccessMessage != null) { <text>showToast('@Model.SuccessMessage', 'success');</text> }
         @if (Model.ErrorMessage != null) { <text>showToast('@Model.ErrorMessage', 'error');</text> }
+        
         function showToast(msg, type) {
             const d = document.createElement('div');
-            d.style.cssText = `position:fixed;top:20px;right:20px;z-index:9999;background:${type==='success'?'#5aad31':'#dc3545'};color:white;padding:15px 20px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.2);`;
-            d.innerHTML = msg; document.body.appendChild(d);
+            d.style.cssText = `position:fixed;top:20px;right:20px;z-index:9999;background:${type==='success'?'#5aad31':'#dc3545'};color:white;padding:15px 20px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.2);z-index:10000;`;
+            d.innerHTML = msg; 
+            document.body.appendChild(d);
             setTimeout(() => d.remove(), 3500);
+        }
+
+        // ============ FUNCIÓN PARA OBTENER TIPOS DE RESIDUO CON FORMATO CORRECTO ============
+        function obtenerTiposResiduo() {
+            const tiposResiduo = [];
+            const checkboxes = document.querySelectorAll('#residuosContainer .residuo-checkbox:checked');
+            
+            checkboxes.forEach(cb => {
+                const container = cb.closest('.residuo-checkbox-item');
+                const cantidadInput = container.querySelector('.cantidad-residuo');
+                const unidadSelect = container.querySelector('.unidad-residuo');
+                const cantidad = parseFloat(cantidadInput.value);
+                
+                if (cantidad > 0) {
+                    tiposResiduo.push({
+                        wasteTypeId: parseInt(cb.value),
+                        wasteTypeCode: cb.getAttribute('data-code'),
+                        wasteTypeName: cb.getAttribute('data-name'),
+                        wasteType: cb.getAttribute('data-type'),
+                        cantidadEstimada: cantidad,
+                        unidad: unidadSelect.value
+                    });
+                }
+            });
+            
+            return tiposResiduo;
+        }
+
+        // ============ MANEJO DE RESIDUOS ============
+        function setupResiduosHandlers() {
+            const checkboxes = document.querySelectorAll('#residuosContainer .residuo-checkbox');
+            
+            // Seleccionar/deseleccionar todos
+            const selectBtn = document.getElementById('selectAllResiduos');
+            const deselectBtn = document.getElementById('deselectAllResiduos');
+            
+            if (selectBtn) {
+                selectBtn.onclick = () => {
+                    checkboxes.forEach(cb => {
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('change'));
+                    });
+                };
+            }
+            
+            if (deselectBtn) {
+                deselectBtn.onclick = () => {
+                    checkboxes.forEach(cb => {
+                        cb.checked = false;
+                        cb.dispatchEvent(new Event('change'));
+                    });
+                };
+            }
+            
+            // Habilitar/deshabilitar campos de cantidad y unidad según selección
+            checkboxes.forEach(cb => {
+                cb.onchange = function() {
+                    const container = this.closest('.residuo-checkbox-item');
+                    const cantidadInput = container.querySelector('.cantidad-residuo');
+                    const unidadSelect = container.querySelector('.unidad-residuo');
+                    
+                    if (this.checked) {
+                        cantidadInput.disabled = false;
+                        unidadSelect.disabled = false;
+                        cantidadInput.required = true;
+                        if (!cantidadInput.value) cantidadInput.value = '1';
+                    } else {
+                        cantidadInput.disabled = true;
+                        unidadSelect.disabled = true;
+                        cantidadInput.required = false;
+                        cantidadInput.value = '';
+                    }
+                };
+            });
         }
 
         // ============ VEHÍCULOS DINÁMICOS ============
@@ -459,6 +647,7 @@
             contadorVehiculosCreate = 0;
             document.getElementById('listaVehiculosCreate').innerHTML = '';
             agregarVehiculoCreate();
+            setupResiduosHandlers();
         }
 
         function agregarVehiculoCreate() {
@@ -467,18 +656,17 @@
             div.className = 'vehiculo-asignado-card';
             
             const vehiculosOptions = vehiculosDisponibles.map(v => 
-                `<option value="${v.valor}">${v.texto}</option>`
+                `<option value="${v.valor.replace(/"/g, '&quot;')}">${v.texto}</option>`
             ).join('');
             
             const choferesOptions = choferesDisponibles.map(c => 
-                `<option value="${c}">${c}</option>`
+                `<option value="${c.replace(/"/g, '&quot;')}">${c}</option>`
             ).join('');
 
-            // ✅ Checkboxes para técnicos
             const tecnicosCheckboxes = tecnicosDisponibles.length > 0 
-                ? tecnicosDisponibles.map((t, i) => `
+                ? tecnicosDisponibles.map(t => `
                     <label class="tecnico-check-label">
-                        <input type="checkbox" name="vehiculos[${idx}].tecnicos" value="${t}" class="form-check-input" style="width:14px;height:14px;margin:0;">
+                        <input type="checkbox" name="vehiculos[${idx}].tecnicos" value="${t.replace(/"/g, '&quot;')}" class="form-check-input" style="width:14px;height:14px;margin:0;">
                         <span>${t}</span>
                     </label>
                 `).join('')
@@ -529,7 +717,7 @@
             document.getElementById('listaVehiculosCreate').appendChild(div);
         }
 
-        // Auto-completar cliente
+        // Auto-completar cliente al seleccionar contrato
         document.getElementById('createIdContrato')?.addEventListener('change', function() {
             const selected = this.options[this.selectedIndex];
             const text = selected.text;
@@ -537,18 +725,145 @@
             document.getElementById('createCliente').value = match ? match[1] : '';
         });
 
+        // ============ ENVÍO DEL FORMULARIO CON FETCH ============
+        const form = document.getElementById('formCreate');
+        const submitBtn = document.getElementById('btnSubmitCreate');
+        
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                console.log('=== INICIO DEL ENVÍO ===');
+                
+                // Obtener tipos de residuo
+                const tiposResiduo = obtenerTiposResiduo();
+                console.log('Tipos de residuo seleccionados:', tiposResiduo);
+                
+                if (tiposResiduo.length === 0) {
+                    showToast('Debe seleccionar al menos un tipo de residuo con cantidad válida', 'error');
+                    return;
+                }
+                
+                // Obtener vehículos
+                const vehiculosSelects = document.querySelectorAll('select[name$=".vehiculo"]');
+                let vehiculosData = [];
+                let tieneVehiculos = false;
+                
+                vehiculosSelects.forEach((select, idx) => {
+                    if (select.value) {
+                        tieneVehiculos = true;
+                        const choferSelect = document.querySelector(`select[name="vehiculos[${idx}].chofer"]`);
+                        const tecnicosChecks = document.querySelectorAll(`input[name="vehiculos[${idx}].tecnicos"]:checked`);
+                        const tecnicos = Array.from(tecnicosChecks).map(cb => cb.value);
+                        
+                        vehiculosData.push({
+                            vehiculo: select.value,
+                            chofer: choferSelect ? choferSelect.value : '',
+                            tecnicos: tecnicos
+                        });
+                    }
+                });
+                
+                console.log('Vehículos seleccionados:', vehiculosData);
+                
+                if (!tieneVehiculos) {
+                    showToast('Debe asignar al menos un vehículo', 'error');
+                    return;
+                }
+                
+                // Obtener otros campos
+                const idContrato = document.getElementById('createIdContrato').value;
+                const cliente = document.getElementById('createCliente').value;
+                const fecha = document.getElementById('createFecha').value;
+                const direccion = document.getElementById('createDireccion').value;
+                const estado = document.getElementById('createEstado').value;
+                const observaciones = document.getElementById('createObservaciones').value;
+                
+                // Crear FormData
+                const formData = new FormData();
+                formData.append('idContrato', idContrato);
+                formData.append('cliente', cliente);
+                formData.append('fecha', fecha);
+                formData.append('direccion', direccion);
+                formData.append('estado', estado);
+                formData.append('observaciones', observaciones || '');
+                formData.append('tiposResiduo', JSON.stringify(tiposResiduo));
+                formData.append('vehiculos', JSON.stringify(vehiculosData));
+                
+                // Mostrar loading
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+                
+                try {
+                    const url = window.location.href;
+                    console.log('Enviando petición a:', url);
+                    
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                    const headers = {
+                        'RequestVerificationToken': token ? token.value : ''
+                    };
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: headers
+                    });
+                    
+                    console.log('Respuesta recibida:', response.status, response.statusText);
+                    
+                    if (response.ok) {
+                        showToast('Recolección creada exitosamente', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        const text = await response.text();
+                        console.error('Error response:', text);
+                        try {
+                            const data = JSON.parse(text);
+                            showToast(data.message || data.error || `Error ${response.status}: ${response.statusText}`, 'error');
+                        } catch (e) {
+                            showToast(`Error ${response.status}: ${response.statusText}`, 'error');
+                        }
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-check-lg"></i> Programar';
+                    }
+                } catch (error) {
+                    console.error('Error de conexión:', error);
+                    showToast('Error de conexión: ' + error.message, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-lg"></i> Programar';
+                }
+            });
+        }
+
         // ============ DETALLES ============
         document.querySelectorAll('.btn-details').forEach(btn => {
             btn.addEventListener('click', function() {
+                const tiposResiduo = this.dataset.tiposresiduo ? JSON.parse(this.dataset.tiposresiduo) : [];
+                
                 document.getElementById('detailsId').textContent = this.dataset.id?.substring(0, 12) + '...';
                 document.getElementById('detailsIdContrato').textContent = this.dataset.idcontrato || 'N/A';
                 document.getElementById('detailsCliente').textContent = this.dataset.cliente || 'No especificado';
                 document.getElementById('detailsFecha').textContent = this.dataset.fecha ? new Date(this.dataset.fecha).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' }) : 'N/A';
                 document.getElementById('detailsDireccion').textContent = this.dataset.direccion || 'No especificada';
                 document.getElementById('detailsEstado').textContent = this.dataset.estado || 'N/A';
-                document.getElementById('detailsTipoResiduo').textContent = this.dataset.tiporesiduo || 'No especificado';
-                document.getElementById('detailsCantidad').textContent = this.dataset.cantidad ? parseFloat(this.dataset.cantidad).toFixed(1) + ' ton' : 'N/A';
                 document.getElementById('detailsObservaciones').textContent = this.dataset.observaciones || 'Sin observaciones';
+                
+                const residuosContainer = document.getElementById('detailsTiposResiduo');
+                residuosContainer.innerHTML = '';
+                if (tiposResiduo.length > 0) {
+                    tiposResiduo.forEach(r => {
+                        const badge = document.createElement('span');
+                        badge.className = `badge-waste-type ${r.wasteType === 'peligroso' ? 'badge-waste-peligroso' : 'badge-waste-especial'} me-2 mb-1`;
+                        badge.style.display = 'inline-block';
+                        badge.innerHTML = `<strong>${r.wasteTypeCode}</strong> - ${r.wasteTypeName}: ${r.cantidadEstimada} ${r.unidad}`;
+                        residuosContainer.appendChild(badge);
+                    });
+                } else {
+                    residuosContainer.innerHTML = '<span class="text-muted">No especificado</span>';
+                }
+                
                 new bootstrap.Modal(document.getElementById('modalDetails')).show();
             });
         });
@@ -563,6 +878,7 @@
                 new bootstrap.Modal(document.getElementById('modalDelete')).show();
             });
         });
+        
         document.getElementById('confirmDelete')?.addEventListener('click', function() {
             if (recoleccionAEliminar) {
                 const form = document.createElement('form');
@@ -575,10 +891,16 @@
             }
         });
 
+        // Limpiar modal al cerrar
         document.getElementById('modalCreate')?.addEventListener('hidden.bs.modal', function() {
             document.getElementById('formCreate').reset();
             document.getElementById('listaVehiculosCreate').innerHTML = '';
             document.getElementById('createCliente').value = '';
+        });
+        
+        // Inicializar handlers de residuos cuando el modal se abre
+        document.getElementById('modalCreate')?.addEventListener('shown.bs.modal', function() {
+            setupResiduosHandlers();
         });
     </script>
 }

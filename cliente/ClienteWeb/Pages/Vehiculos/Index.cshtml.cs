@@ -16,7 +16,9 @@ namespace ClienteWeb.Pages.Vehiculos
         [BindProperty(SupportsGet = true)]
         public string? Search { get; set; }
 
-        public List<VehiculoDto> Vehiculos { get; set; } = new();
+        public List<ClienteWeb.Services.VehiculoDto> Vehiculos { get; set; } = new();
+        
+        public List<ClienteWeb.Services.TipoResiduoCatalogoDto> TiposResiduoDisponibles { get; set; } = new();
         
         [TempData]
         public string? SuccessMessage { get; set; }
@@ -26,17 +28,69 @@ namespace ClienteWeb.Pages.Vehiculos
 
         public async Task OnGetAsync()
         {
+            // Cargar vehículos
             Vehiculos = await _vehiculosService.GetAllAsync(Search);
+            
+            // Cargar tipos de residuo disponibles del catálogo
+            TiposResiduoDisponibles = await _vehiculosService.GetTiposResiduoDisponiblesAsync();
         }
 
-        public async Task<IActionResult> OnPostCreateAsync(VehiculoCreateDto vehiculo)
+        public async Task<IActionResult> OnPostCreateAsync(
+            [FromForm] string? NumeroEconomico,
+            [FromForm] string Marca,
+            [FromForm] string Modelo,
+            [FromForm] int? Anio,
+            [FromForm] string? Color,
+            [FromForm] string Placas,
+            [FromForm] decimal? PesoToneladas,
+            [FromForm] string LicenciaRequerida,
+            [FromForm] string TipoGasolina,
+            [FromForm] string? Descripcion,
+            [FromForm] List<int> TiposResiduoIds,
+            IFormFile? FotoArchivo)
         {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(Marca) || 
+                string.IsNullOrWhiteSpace(Modelo) || 
+                string.IsNullOrWhiteSpace(Placas) || 
+                string.IsNullOrWhiteSpace(LicenciaRequerida) || 
+                string.IsNullOrWhiteSpace(TipoGasolina))
             {
                 ErrorMessage = "Datos inválidos. Verifica los campos requeridos.";
                 await OnGetAsync();
                 return Page();
             }
+
+            byte[]? fotoBytes = null;
+            if (FotoArchivo != null && FotoArchivo.Length > 0)
+            {
+                using var ms = new MemoryStream();
+                await FotoArchivo.CopyToAsync(ms);
+                fotoBytes = ms.ToArray();
+                
+                // Validar tamaño máximo 20MB
+                if (fotoBytes.Length > 20 * 1024 * 1024)
+                {
+                    ErrorMessage = "La foto no puede superar los 20MB";
+                    await OnGetAsync();
+                    return Page();
+                }
+            }
+            
+            var vehiculo = new ClienteWeb.Services.VehiculoCreateDto
+            {
+                NumeroEconomico = NumeroEconomico,
+                Marca = Marca,
+                Modelo = Modelo,
+                Anio = Anio,
+                Color = Color,
+                Placas = Placas,
+                PesoToneladas = PesoToneladas,
+                LicenciaRequerida = LicenciaRequerida,
+                TipoGasolina = TipoGasolina,
+                Descripcion = Descripcion,
+                TiposResiduoIds = TiposResiduoIds ?? new List<int>(),
+                Foto = fotoBytes
+            };
 
             var (success, error) = await _vehiculosService.CreateAsync(vehiculo);
             
@@ -49,14 +103,63 @@ namespace ClienteWeb.Pages.Vehiculos
             return Page();
         }
 
-        public async Task<IActionResult> OnPostUpdateAsync(int id, VehiculoCreateDto vehiculo)
+        public async Task<IActionResult> OnPostUpdateAsync(
+            int id,
+            [FromForm] string? NumeroEconomico,
+            [FromForm] string Marca,
+            [FromForm] string Modelo,
+            [FromForm] int? Anio,
+            [FromForm] string? Color,
+            [FromForm] string Placas,
+            [FromForm] decimal? PesoToneladas,
+            [FromForm] string LicenciaRequerida,
+            [FromForm] string TipoGasolina,
+            [FromForm] string? Descripcion,
+            [FromForm] List<int> TiposResiduoIds,
+            IFormFile? FotoArchivo)
         {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(Marca) || 
+                string.IsNullOrWhiteSpace(Modelo) || 
+                string.IsNullOrWhiteSpace(Placas) || 
+                string.IsNullOrWhiteSpace(LicenciaRequerida) || 
+                string.IsNullOrWhiteSpace(TipoGasolina))
             {
-                ErrorMessage = "Datos inválidos.";
+                ErrorMessage = "Datos inválidos. Verifica los campos requeridos.";
                 await OnGetAsync();
                 return Page();
             }
+
+            byte[]? fotoBytes = null;
+            if (FotoArchivo != null && FotoArchivo.Length > 0)
+            {
+                using var ms = new MemoryStream();
+                await FotoArchivo.CopyToAsync(ms);
+                fotoBytes = ms.ToArray();
+                
+                // Validar tamaño máximo 20MB
+                if (fotoBytes.Length > 20 * 1024 * 1024)
+                {
+                    ErrorMessage = "La foto no puede superar los 20MB";
+                    await OnGetAsync();
+                    return Page();
+                }
+            }
+            
+            var vehiculo = new ClienteWeb.Services.VehiculoCreateDto
+            {
+                NumeroEconomico = NumeroEconomico,
+                Marca = Marca,
+                Modelo = Modelo,
+                Anio = Anio,
+                Color = Color,
+                Placas = Placas,
+                PesoToneladas = PesoToneladas,
+                LicenciaRequerida = LicenciaRequerida,
+                TipoGasolina = TipoGasolina,
+                Descripcion = Descripcion,
+                TiposResiduoIds = TiposResiduoIds ?? new List<int>(),
+                Foto = fotoBytes
+            };
 
             var (success, error) = await _vehiculosService.UpdateAsync(id, vehiculo);
             
@@ -80,18 +183,6 @@ namespace ClienteWeb.Pages.Vehiculos
             
             await OnGetAsync();
             return Page();
-        }
-
-        public async Task<IActionResult> OnGetTiposDesechoAsync()
-        {
-            var tipos = await _vehiculosService.GetTiposDesechoAsync();
-            return new JsonResult(tipos);
-        }
-
-        public async Task<IActionResult> OnGetTiposGasolinaAsync()
-        {
-            var tipos = await _vehiculosService.GetTiposGasolinaAsync();
-            return new JsonResult(tipos);
         }
     }
 }

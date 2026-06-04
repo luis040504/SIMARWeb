@@ -3,7 +3,7 @@ const { promisePool: db } = require('../config/database');
 class Vehiculo {
     
     static async findAll() {
-        const [rows] = await db.query('SELECT id, numero_economico, marca, modelo, anio, color, placas, peso_toneladas, licencia_requerida, tipo_gasolina, tipo_desecho, descripcion, foto_url FROM vehiculos WHERE activo = TRUE');
+        const [rows] = await db.query('SELECT * FROM v_vehiculos_completo');
         return rows;
     }
 
@@ -13,18 +13,49 @@ class Vehiculo {
     }
 
     static async findById(id) {
-        const [rows] = await db.query('SELECT id, numero_economico, marca, modelo, anio, color, placas, peso_toneladas, licencia_requerida, tipo_gasolina, tipo_desecho, descripcion, foto_url FROM vehiculos WHERE id = ? AND activo = TRUE', [id]);
+        const [rows] = await db.query('SELECT * FROM v_vehiculos_completo WHERE id = ?', [id]);
         return rows[0];
-    }
-
-    static async getTiposDesecho() {
-        const [rows] = await db.query('SELECT nombre FROM tipos_desecho WHERE activo = TRUE');
-        return rows.map(row => row.nombre);
     }
 
     static async getTiposGasolina() {
         const [rows] = await db.query('SELECT nombre FROM tipos_gasolina');
         return rows.map(row => row.nombre);
+    }
+
+    // Métodos para sincronizar con el catálogo de residuos
+    static async sincronizarCatalogoResiduos(wasteTypesFromCatalog) {
+        // Limpiar tabla temporalmente o actualizar selectivamente
+        for (const waste of wasteTypesFromCatalog) {
+            await db.query(
+                `INSERT INTO tipos_residuo_catalogo (codigo_catalogo, nombre, tipo_residuo, descripcion, activo)
+                 VALUES (?, ?, ?, ?, TRUE)
+                 ON DUPLICATE KEY UPDATE
+                 nombre = VALUES(nombre),
+                 tipo_residuo = VALUES(tipo_residuo),
+                 descripcion = VALUES(descripcion),
+                 activo = TRUE`,
+                [waste.code, waste.name, waste.type, waste.description || null]
+            );
+        }
+        
+        // Marcar como inactivos los que ya no existen en el catálogo
+        const activeCodes = wasteTypesFromCatalog.map(w => w.code);
+        if (activeCodes.length > 0) {
+            const placeholders = activeCodes.map(() => '?').join(',');
+            await db.query(
+                `UPDATE tipos_residuo_catalogo 
+                 SET activo = FALSE 
+                 WHERE codigo_catalogo NOT IN (${placeholders})`,
+                activeCodes
+            );
+        }
+    }
+
+    static async getTiposResiduoDisponibles() {
+        const [rows] = await db.query(
+            'SELECT id, codigo_catalogo, nombre, tipo_residuo, descripcion FROM tipos_residuo_catalogo WHERE activo = TRUE ORDER BY codigo_catalogo'
+        );
+        return rows;
     }
 
     static async isPlacasUnique(placas, excludeId = null) {
@@ -59,9 +90,11 @@ class Vehiculo {
         const { 
             numero_economico, marca, modelo, anio, color, placas, 
             peso_toneladas, licencia_requerida, tipo_gasolina, 
-            tipo_desecho, descripcion, foto_url 
+            tipos_residuo_ids,  // Array de IDs de tipos de residuo
+            descripcion, foto    // foto es buffer binario
         } = data;
         
+        // Validaciones de unicidad
         const isPlacasUnique = await this.isPlacasUnique(placas);
         if (!isPlacasUnique) {
             throw new Error('PLACAS_DUPLICADAS');
@@ -73,26 +106,56 @@ class Vehiculo {
                 throw new Error('NUMERO_ECONOMICO_DUPLICADO');
             }
         }
-        
-        const [result] = await db.query(
-            `INSERT INTO vehiculos (numero_economico, marca, modelo, anio, color, placas, peso_toneladas, licencia_requerida, tipo_gasolina, tipo_desecho, descripcion, foto_url)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [numero_economico, marca, modelo, anio, color, placas, peso_toneladas, licencia_requerida, tipo_gasolina, tipo_desecho, descripcion, foto_url]
-        );
-        
-        return this.findById(result.insertId);
+
+        // Iniciar transacción
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // Insertar vehículo
+            const [result] = await connection.query(
+                `INSERT INTO vehiculos (numero_economico, marca, modelo, anio, color, placas, 
+                 peso_toneladas, licencia_requerida, tipo_gasolina, descripcion, foto)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [numero_economico, marca, modelo, anio, color, placas, peso_toneladas, 
+                 licencia_requerida, tipo_gasolina, descripcion, foto]
+            );
+
+            const vehiculoId = result.insertId;
+
+            // Insertar relaciones con tipos de residuo
+            if (tipos_residuo_ids && tipos_residuo_ids.length > 0) {
+                for (const tipoResiduoId of tipos_residuo_ids) {
+                    await connection.query(
+                        `INSERT INTO vehiculo_tipo_residuo (vehiculo_id, tipo_residuo_id)
+                         VALUES (?, ?)`,
+                        [vehiculoId, tipoResiduoId]
+                    );
+                }
+            }
+
+            await connection.commit();
+            return this.findById(vehiculoId);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 
     static async update(id, data) {
         const { 
             numero_economico, marca, modelo, anio, color, placas, 
             peso_toneladas, licencia_requerida, tipo_gasolina, 
-            tipo_desecho, descripcion, foto_url 
+            tipos_residuo_ids,  // Array de IDs de tipos de residuo
+            descripcion, foto
         } = data;
         
         const existing = await this.findById(id);
         if (!existing) return null;
         
+        // Validaciones de unicidad
         if (placas && placas !== existing.placas) {
             const isPlacasUnique = await this.isPlacasUnique(placas, id);
             if (!isPlacasUnique) {
@@ -106,18 +169,43 @@ class Vehiculo {
                 throw new Error('NUMERO_ECONOMICO_DUPLICADO');
             }
         }
-        
-        await db.query(
-            `UPDATE vehiculos 
-             SET numero_economico = ?, marca = ?, modelo = ?, anio = ?, color = ?, 
-                 placas = ?, peso_toneladas = ?, licencia_requerida = ?, 
-                 tipo_gasolina = ?, tipo_desecho = ?, descripcion = ?, foto_url = ?
-             WHERE id = ?`,
-            [numero_economico, marca, modelo, anio, color, placas, peso_toneladas, 
-             licencia_requerida, tipo_gasolina, tipo_desecho, descripcion, foto_url, id]
-        );
-        
-        return this.findById(id);
+
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // Actualizar vehículo
+            await connection.query(
+                `UPDATE vehiculos 
+                 SET numero_economico = ?, marca = ?, modelo = ?, anio = ?, color = ?, 
+                     placas = ?, peso_toneladas = ?, licencia_requerida = ?, 
+                     tipo_gasolina = ?, descripcion = ?, foto = ?
+                 WHERE id = ?`,
+                [numero_economico, marca, modelo, anio, color, placas, peso_toneladas, 
+                 licencia_requerida, tipo_gasolina, descripcion, foto, id]
+            );
+
+            // Actualizar relaciones (borrar existentes y crear nuevas)
+            await connection.query('DELETE FROM vehiculo_tipo_residuo WHERE vehiculo_id = ?', [id]);
+            
+            if (tipos_residuo_ids && tipos_residuo_ids.length > 0) {
+                for (const tipoResiduoId of tipos_residuo_ids) {
+                    await connection.query(
+                        `INSERT INTO vehiculo_tipo_residuo (vehiculo_id, tipo_residuo_id)
+                         VALUES (?, ?)`,
+                        [id, tipoResiduoId]
+                    );
+                }
+            }
+
+            await connection.commit();
+            return this.findById(id);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 
     static async delete(id) {

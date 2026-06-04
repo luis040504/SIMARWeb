@@ -5,13 +5,13 @@
 db = db.getSiblingDB('simar_recolecciones_db');
 
 // ============================================
-// COLECCIÓN: RECOLECCIONES (CON REFERENCIA A CONTRATO)
+// COLECCIÓN: RECOLECCIONES (CON MÚLTIPLES RESIDUOS)
 // ============================================
 db.createCollection('recolecciones', {
     validator: {
         $jsonSchema: {
             bsonType: 'object',
-            required: ['idContrato', 'cliente', 'fecha', 'direccion', 'vehiculos', 'estado'],
+            required: ['idContrato', 'cliente', 'fecha', 'direccion', 'vehiculos', 'estado', 'tiposResiduo'],
             properties: {
                 idContrato: {
                     bsonType: 'int',
@@ -60,13 +60,41 @@ db.createCollection('recolecciones', {
                     enum: ['Programada', 'En ruta', 'Completada', 'Cancelada'],
                     description: 'Estado de la recolección - requerido'
                 },
-                tipoResiduo: {
-                    bsonType: 'string',
-                    description: 'Tipo de residuo a recolectar'
-                },
-                cantidadEstimada: {
-                    bsonType: 'double',
-                    description: 'Cantidad estimada en toneladas'
+                tiposResiduo: {
+                    bsonType: 'array',
+                    minItems: 1,
+                    items: {
+                        bsonType: 'object',
+                        required: ['wasteTypeId', 'wasteTypeCode', 'wasteTypeName', 'cantidadEstimada', 'unidad'],
+                        properties: {
+                            wasteTypeId: {
+                                bsonType: 'int',
+                                description: 'ID del tipo de residuo en el catálogo'
+                            },
+                            wasteTypeCode: {
+                                bsonType: 'string',
+                                description: 'Código del residuo (ej: RP-RPBI-001)'
+                            },
+                            wasteTypeName: {
+                                bsonType: 'string',
+                                description: 'Nombre del residuo'
+                            },
+                            wasteType: {
+                                bsonType: 'string',
+                                enum: ['peligroso', 'especial'],
+                                description: 'Tipo de residuo (peligroso/especial)'
+                            },
+                            cantidadEstimada: {
+                                bsonType: 'double',
+                                description: 'Cantidad estimada en la unidad especificada'
+                            },
+                            unidad: {
+                                bsonType: 'string',
+                                description: 'Unidad de medida (kg, ton, lt, m3, pza)'
+                            }
+                        }
+                    },
+                    description: 'Lista de tipos de residuo a recolectar'
                 },
                 observaciones: {
                     bsonType: 'string',
@@ -95,9 +123,11 @@ db.createCollection('recolecciones', {
 db.recolecciones.createIndex({ cliente: 1 });
 db.recolecciones.createIndex({ fecha: -1 });
 db.recolecciones.createIndex({ estado: 1 });
-db.recolecciones.createIndex({ idContrato: 1 }); // NUEVO: índice para búsqueda por contrato
+db.recolecciones.createIndex({ idContrato: 1 });
 db.recolecciones.createIndex({ "vehiculos.vehiculo": 1 });
 db.recolecciones.createIndex({ "vehiculos.chofer": 1 });
+db.recolecciones.createIndex({ "tiposResiduo.wasteTypeId": 1 });
+db.recolecciones.createIndex({ "tiposResiduo.wasteTypeCode": 1 });
 db.recolecciones.createIndex({ cliente: 'text', direccion: 'text' });
 
 // ============================================
@@ -124,8 +154,24 @@ const recolecciones = [
             }
         ],
         estado: 'Programada',
-        tipoResiduo: 'Residuos Biológicos',
-        cantidadEstimada: 2.5,
+        tiposResiduo: [
+            {
+                wasteTypeId: 2,
+                wasteTypeCode: 'RP-RPBI-002',
+                wasteTypeName: 'Residuos no anatómicos',
+                wasteType: 'peligroso',
+                cantidadEstimada: 1.5,
+                unidad: 'kg'
+            },
+            {
+                wasteTypeId: 1,
+                wasteTypeCode: 'RP-RPBI-001',
+                wasteTypeName: 'Objetos punzocortantes',
+                wasteType: 'peligroso',
+                cantidadEstimada: 0.5,
+                unidad: 'kg'
+            }
+        ],
         observaciones: 'Recolección de residuos peligrosos biológico-infecciosos',
         activo: true,
         createdAt: now,
@@ -144,8 +190,16 @@ const recolecciones = [
             }
         ],
         estado: 'Programada',
-        tipoResiduo: 'Residuos Biológicos',
-        cantidadEstimada: 3.0,
+        tiposResiduo: [
+            {
+                wasteTypeId: 2,
+                wasteTypeCode: 'RP-RPBI-002',
+                wasteTypeName: 'Residuos no anatómicos',
+                wasteType: 'peligroso',
+                cantidadEstimada: 2.0,
+                unidad: 'kg'
+            }
+        ],
         observaciones: 'Segunda recolección del contrato',
         activo: true,
         createdAt: now,
@@ -164,8 +218,24 @@ const recolecciones = [
             }
         ],
         estado: 'Programada',
-        tipoResiduo: 'Residuos Reciclables',
-        cantidadEstimada: 5.0,
+        tiposResiduo: [
+            {
+                wasteTypeId: 5,
+                wasteTypeCode: 'RME-CAR-001',
+                wasteTypeName: 'Cartón y papel',
+                wasteType: 'especial',
+                cantidadEstimada: 3.0,
+                unidad: 'ton'
+            },
+            {
+                wasteTypeId: 6,
+                wasteTypeCode: 'RME-PLA-001',
+                wasteTypeName: 'Plástico industrial',
+                wasteType: 'especial',
+                cantidadEstimada: 2.0,
+                unidad: 'ton'
+            }
+        ],
         observaciones: 'Recolección de cartón, plástico y papel',
         activo: true,
         createdAt: now,
@@ -189,8 +259,16 @@ const recolecciones = [
             }
         ],
         estado: 'En ruta',
-        tipoResiduo: 'Residuos de Construcción',
-        cantidadEstimada: 8.5,
+        tiposResiduo: [
+            {
+                wasteTypeId: 8,
+                wasteTypeCode: 'RME-CON-001',
+                wasteTypeName: 'Residuos de construcción',
+                wasteType: 'especial',
+                cantidadEstimada: 8.5,
+                unidad: 'm3'
+            }
+        ],
         observaciones: 'Escombros y tierra contaminada',
         activo: true,
         createdAt: now,
@@ -209,8 +287,16 @@ const recolecciones = [
             }
         ],
         estado: 'Completada',
-        tipoResiduo: 'Residuos Peligrosos',
-        cantidadEstimada: 1.2,
+        tiposResiduo: [
+            {
+                wasteTypeId: 4,
+                wasteTypeCode: 'RP-SOL-001',
+                wasteTypeName: 'Solventes halogenados gastados',
+                wasteType: 'peligroso',
+                cantidadEstimada: 1.2,
+                unidad: 'lt'
+            }
+        ],
         observaciones: 'Recolección completada exitosamente',
         activo: true,
         createdAt: now,
@@ -221,4 +307,4 @@ const recolecciones = [
 db.recolecciones.insertMany(recolecciones);
 
 print('✅ Base de datos y colecciones creadas exitosamente');
-print('📊 Colección recolecciones inicializada con referencia a contratos');
+print('📊 Colección recolecciones actualizada con soporte para múltiples residuos');

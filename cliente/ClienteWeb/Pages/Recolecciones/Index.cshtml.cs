@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using ClienteWeb.Services;
+using ClienteWeb.Models;
+using System.Text.Json;
 
 namespace ClienteWeb.Pages.Recolecciones
 {
@@ -44,11 +46,11 @@ namespace ClienteWeb.Pages.Recolecciones
 
         // ============ DATOS PARA LA VISTA ============
         public List<RecoleccionDto> Recolecciones { get; set; } = new();
-        public List<VehiculoDto> Vehiculos { get; set; } = new();
+        public List<ClienteWeb.Services.VehiculoDto> Vehiculos { get; set; } = new();
         public List<ContratoItemDto> Contratos { get; set; } = new();
         public List<EmpleadoItemDto> Choferes { get; set; } = new();
         public List<EmpleadoItemDto> Tecnicos { get; set; } = new();
-
+        public List<ClienteWeb.Models.TipoResiduoCatalogoDto> TiposResiduoDisponibles { get; set; } = new();
 
         [TempData]
         public string? SuccessMessage { get; set; }
@@ -65,6 +67,17 @@ namespace ClienteWeb.Pages.Recolecciones
         {
             // Cargar vehículos para combobox
             Vehiculos = await _vehiculosService.GetAllAsync();
+
+            // Cargar tipos de residuo disponibles desde el catálogo de vehículos
+            var tiposResiduoServices = await _vehiculosService.GetTiposResiduoDisponiblesAsync();
+            TiposResiduoDisponibles = tiposResiduoServices.Select(t => new ClienteWeb.Models.TipoResiduoCatalogoDto
+            {
+                Id = t.Id,
+                CodigoCatalogo = t.CodigoCatalogo,
+                Nombre = t.Nombre,
+                TipoResiduo = t.TipoResiduo,
+                Descripcion = t.Descripcion
+            }).ToList();
 
             // Cargar contratos para combobox
             Contratos = await _recoleccionesService.GetContratosActivosAsync();
@@ -88,22 +101,110 @@ namespace ClienteWeb.Pages.Recolecciones
         }
 
         // ============ CRUD ============
-        public async Task<IActionResult> OnPostCreateAsync(RecoleccionCreateDto recoleccion)
+        public async Task<IActionResult> OnPostCreateAsync(
+            int idContrato,
+            string cliente,
+            DateTime fecha,
+            string direccion,
+            string tiposResiduo,
+            string vehiculos,
+            string? observaciones,
+            string estado = "Programada")
         {
-            if (!ModelState.IsValid)
+            // Validar campos requeridos
+            if (idContrato <= 0 || string.IsNullOrWhiteSpace(cliente) || string.IsNullOrWhiteSpace(direccion))
             {
                 ErrorMessage = "Datos inválidos. Verifica los campos requeridos.";
                 await CargarDatosAsync();
                 return Page();
             }
 
-            // Validar que tenga al menos un vehículo
-            if (recoleccion.Vehiculos == null || recoleccion.Vehiculos.Count == 0)
+            // Deserializar vehículos desde JSON
+            var vehiculosList = new List<VehiculoAsignadoInput>();
+            if (!string.IsNullOrEmpty(vehiculos))
             {
-                ErrorMessage = "Debe asignar al menos un vehículo con chofer";
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    vehiculosList = JsonSerializer.Deserialize<List<VehiculoAsignadoInput>>(vehiculos, options) ?? new List<VehiculoAsignadoInput>();
+                }
+                catch (Exception ex)
+                {
+                    ErrorMessage = $"Error al procesar los vehículos: {ex.Message}";
+                    await CargarDatosAsync();
+                    return Page();
+                }
+            }
+
+            // Validar vehículos
+            if (vehiculosList == null || vehiculosList.Count == 0)
+            {
+                ErrorMessage = "Debe asignar al menos un vehículo";
                 await CargarDatosAsync();
                 return Page();
             }
+
+            // Deserializar los tipos de residuo desde JSON
+            var tiposResiduoList = new List<ClienteWeb.Models.TipoResiduoRecoleccionDto>();
+            if (!string.IsNullOrEmpty(tiposResiduo))
+            {
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    tiposResiduoList = JsonSerializer.Deserialize<List<ClienteWeb.Models.TipoResiduoRecoleccionDto>>(tiposResiduo, options) ?? new List<ClienteWeb.Models.TipoResiduoRecoleccionDto>();
+                }
+                catch (Exception ex)
+                {
+                    ErrorMessage = $"Error al procesar los tipos de residuo: {ex.Message}";
+                    await CargarDatosAsync();
+                    return Page();
+                }
+            }
+
+            // Validar tipos de residuo
+            if (tiposResiduoList == null || tiposResiduoList.Count == 0)
+            {
+                ErrorMessage = "Debe seleccionar al menos un tipo de residuo con cantidad válida";
+                await CargarDatosAsync();
+                return Page();
+            }
+
+            // Validar que todas las cantidades sean mayores a 0
+            foreach (var residuo in tiposResiduoList)
+            {
+                if (residuo.CantidadEstimada <= 0)
+                {
+                    ErrorMessage = $"La cantidad para {residuo.WasteTypeName} debe ser mayor a 0";
+                    await CargarDatosAsync();
+                    return Page();
+                }
+            }
+
+            // Convertir VehiculoAsignadoInput a VehiculoAsignadoDto
+            var vehiculosDto = vehiculosList.Select(v => new ClienteWeb.Models.VehiculoAsignadoDto
+            {
+                Vehiculo = v.Vehiculo,
+                Chofer = v.Chofer,
+                Tecnicos = v.Tecnicos ?? new List<string>()
+            }).ToList();
+
+            var recoleccion = new RecoleccionCreateDto
+            {
+                IdContrato = idContrato,
+                Cliente = cliente,
+                Fecha = fecha,
+                Direccion = direccion,
+                Estado = estado,
+                TiposResiduo = tiposResiduoList,
+                Vehiculos = vehiculosDto,
+                Observaciones = observaciones
+            };
 
             var (success, error) = await _recoleccionesService.CreateAsync(recoleccion);
 
@@ -162,5 +263,13 @@ namespace ClienteWeb.Pages.Recolecciones
             var estados = await _recoleccionesService.GetEstadosAsync();
             return new JsonResult(estados);
         }
+    }
+
+    // ============ DTOs auxiliares SOLO para input del formulario ============
+    public class VehiculoAsignadoInput
+    {
+        public string Vehiculo { get; set; } = "";
+        public string Chofer { get; set; } = "";
+        public List<string> Tecnicos { get; set; } = new();
     }
 }

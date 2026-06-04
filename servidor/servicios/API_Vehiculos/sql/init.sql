@@ -1,12 +1,12 @@
 -- ============================================
--- BASE DE DATOS: VEHICULOS - SIMAR
+-- BASE DE DATOS: VEHICULOS - SIMAR (ACTUALIZADO)
 -- ============================================
 
 CREATE DATABASE IF NOT EXISTS simar_vehiculos_db;
 USE simar_vehiculos_db;
 
 -- ============================================
--- TABLA: VEHICULOS
+-- TABLA: VEHICULOS (ACTUALIZADA)
 -- ============================================
 CREATE TABLE IF NOT EXISTS vehiculos (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -19,9 +19,8 @@ CREATE TABLE IF NOT EXISTS vehiculos (
     peso_toneladas DECIMAL(8,2) NOT NULL,
     licencia_requerida ENUM('A', 'B', 'C', 'D', 'E') NOT NULL,
     tipo_gasolina VARCHAR(30) NOT NULL,
-    tipo_desecho TEXT NOT NULL,
     descripcion TEXT,
-    foto_url VARCHAR(500),
+    foto MEDIUMBLOB,  -- Cambiado de foto_url a foto (binario)
     activo BOOLEAN DEFAULT TRUE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -32,13 +31,32 @@ CREATE TABLE IF NOT EXISTS vehiculos (
 );
 
 -- ============================================
--- TABLA: TIPOS DE DESECHO (Catalogo)
+-- TABLA: TIPOS DE RESIDUO (CATÁLOGO EXTERNO)
+-- Esta tabla solo almacena IDs/referencias al catálogo
 -- ============================================
-CREATE TABLE IF NOT EXISTS tipos_desecho (
+CREATE TABLE IF NOT EXISTS tipos_residuo_catalogo (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
+    codigo_catalogo VARCHAR(50) NOT NULL UNIQUE,  -- Código del catálogo (ej: "RP-RPBI-001")
+    nombre VARCHAR(200) NOT NULL,
+    tipo_residuo VARCHAR(20) NOT NULL,  -- "peligroso" o "especial"
     descripcion TEXT,
     activo BOOLEAN DEFAULT TRUE
+);
+
+-- ============================================
+-- TABLA RELACIONAL: VEHICULO_TIPO_RESIDUO
+-- ============================================
+CREATE TABLE IF NOT EXISTS vehiculo_tipo_residuo (
+    vehiculo_id INT NOT NULL,
+    tipo_residuo_id INT NOT NULL,
+    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (vehiculo_id, tipo_residuo_id),
+    FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id) ON DELETE CASCADE,
+    FOREIGN KEY (tipo_residuo_id) REFERENCES tipos_residuo_catalogo(id),
+    
+    INDEX idx_vehiculo (vehiculo_id),
+    INDEX idx_tipo_residuo (tipo_residuo_id)
 );
 
 -- ============================================
@@ -51,18 +69,8 @@ CREATE TABLE IF NOT EXISTS tipos_gasolina (
 );
 
 -- ============================================
--- DATOS INICIALES (Catalogos)
+-- DATOS INICIALES (Catalogos locales)
 -- ============================================
-
-INSERT INTO tipos_desecho (nombre, descripcion) VALUES
-('Residuos Peligrosos', 'Materiales que representan un riesgo para la salud o el medio ambiente'),
-('Residuos Biologicos', 'Desechos provenientes de actividades medicas o de laboratorio'),
-('Residuos Reciclables', 'Papel, carton, plastico, vidrio y metales'),
-('Residuos Organicos', 'Desechos de origen biologico como alimentos y poda'),
-('Residuos de Construccion', 'Escombros, tierra, concreto y materiales de demolicion'),
-('Residuos Electronicos', 'Equipos electronicos en desuso'),
-('Residuos Industriales', 'Subproductos de procesos industriales'),
-('Residuos Varios', 'Otros tipos de residuos no clasificados');
 
 INSERT INTO tipos_gasolina (nombre, descripcion) VALUES
 ('Diesel', 'Combustible para motores diesel'),
@@ -72,36 +80,47 @@ INSERT INTO tipos_gasolina (nombre, descripcion) VALUES
 ('Electrico', 'Vehiculos de bateria electrica'),
 ('Hibrido', 'Combinacion de gasolina y electrico');
 
--- ============================================
--- EJEMPLOS DE VEHICULOS (Datos de prueba)
--- ============================================
-INSERT INTO vehiculos (numero_economico, marca, modelo, anio, color, placas, peso_toneladas, licencia_requerida, tipo_gasolina, tipo_desecho, descripcion, foto_url) VALUES
-('VH-001', 'Kenworth', 'T680', 2022, 'Blanco', 'ABC-1234', 15.5, 'E', 'Diesel', 'Residuos Peligrosos,Residuos Industriales', 'Tractocamion para residuos peligrosos', '/images/vehiculos/kenworth-t680.jpg'),
-('VH-002', 'Volvo', 'FH16', 2023, 'Rojo', 'DEF-5678', 18.0, 'E', 'Diesel', 'Residuos Industriales,Residuos de Construccion', 'Camion de carga pesada', '/images/vehiculos/volvo-fh16.jpg'),
-('VH-003', 'Mercedes-Benz', 'Actros', 2021, 'Gris', 'GHI-9012', 14.0, 'E', 'Diesel', 'Residuos Peligrosos', 'Transporte de materiales peligrosos', '/images/vehiculos/mercedes-actros.jpg'),
-('VH-004', 'Ford', 'F-550', 2023, 'Blanco', 'JKL-3456', 4.5, 'C', 'Diesel', 'Residuos Biologicos,Residuos Reciclables', 'Camion para recoleccion urbana', '/images/vehiculos/ford-f550.jpg'),
-('VH-005', 'International', 'HV Series', 2022, 'Azul', 'MNO-7890', 12.0, 'E', 'Diesel', 'Residuos Industriales', 'Camion para industria pesada', '/images/vehiculos/international-hv.jpg');
+-- NOTA: Los tipos de residuo se sincronizarán desde el microservicio de catálogo
+-- mediante un job o API call periódica, o se insertarán manualmente desde el seed
+-- inicial basado en el catálogo proporcionado.
 
 -- ============================================
 -- VISTAS UTILES
 -- ============================================
-CREATE VIEW v_vehiculos_activos AS
+
+-- Vista que incluye los tipos de residuo como JSON
+CREATE VIEW v_vehiculos_completo AS
 SELECT 
-    id,
-    numero_economico,
-    marca,
-    modelo,
-    anio,
-    color,
-    placas,
-    peso_toneladas,
-    licencia_requerida,
-    tipo_gasolina,
-    tipo_desecho,
-    descripcion,
-    foto_url
-FROM vehiculos
-WHERE activo = TRUE;
+    v.id,
+    v.numero_economico,
+    v.marca,
+    v.modelo,
+    v.anio,
+    v.color,
+    v.placas,
+    v.peso_toneladas,
+    v.licencia_requerida,
+    v.tipo_gasolina,
+    v.descripcion,
+    v.foto,
+    v.activo,
+    v.fecha_creacion,
+    v.fecha_actualizacion,
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', tr.id,
+                'codigo', tr.codigo_catalogo,
+                'nombre', tr.nombre,
+                'tipo', tr.tipo_residuo
+            )
+        )
+        FROM vehiculo_tipo_residuo vtr
+        JOIN tipos_residuo_catalogo tr ON vtr.tipo_residuo_id = tr.id
+        WHERE vtr.vehiculo_id = v.id AND tr.activo = TRUE
+    ) AS tipos_residuo
+FROM vehiculos v
+WHERE v.activo = TRUE;
 
 -- ============================================
 -- PROCEDIMIENTOS ALMACENADOS
@@ -113,14 +132,13 @@ CREATE PROCEDURE sp_buscar_vehiculos(
     IN p_search VARCHAR(100)
 )
 BEGIN
-    SELECT * FROM vehiculos 
+    SELECT * FROM v_vehiculos_completo 
     WHERE activo = TRUE 
     AND (
         marca LIKE CONCAT('%', p_search, '%')
         OR modelo LIKE CONCAT('%', p_search, '%')
         OR placas LIKE CONCAT('%', p_search, '%')
         OR numero_economico LIKE CONCAT('%', p_search, '%')
-        OR tipo_desecho LIKE CONCAT('%', p_search, '%')
     );
 END//
 
